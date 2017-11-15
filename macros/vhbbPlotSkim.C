@@ -696,7 +696,7 @@ void vhbbPlotSkim(
       nBytesRead+=bLoad(b_nJet,ientry);
       if     (nJet<2) continue;
       else if(selection==kWHHeavyFlavorCR && nJet!=2) continue;
-      else if(selection==kWH2TopCR && nJet<3) continue;
+      else if(selection==kWH2TopCR && nJet<44) continue;
       else if(selection==kWHSR && nJet>3) continue;
       if(debug) printf("Passed jet multiplicity\n");
 
@@ -839,6 +839,7 @@ void vhbbPlotSkim(
       case kQCD:
         theCategory=kPlotQCD;  break;
       case kVZ:
+        nBytesRead+=bLoad(b_nB,ientry);
         if(nB>=2) theCategory=kPlotVZbb;
         else      theCategory=kPlotVVLF;
         break;
@@ -855,6 +856,7 @@ void vhbbPlotSkim(
         else theCategory=kPlotWLF; // light flavor
         break;
       case kZjets:
+        nBytesRead+=bLoad(b_nB,ientry);
         if(nB>=2) theCategory=kPlotZbb;
         else if(nB==1) theCategory=kPlotZb;
         else theCategory=kPlotZLF; // light flavor
