@@ -19,6 +19,7 @@ TCanvas* finalPlot2018(
   vhbbPlot::selectionType selType,
   TString plotTreeFileName,
   bool isBlinded,
+  TString canvasName,
   TString varexp,
   TString selection,
   int nbins,
@@ -95,8 +96,13 @@ TCanvas* finalPlot2018(
   TH1D *hRatio = (TH1D*)histos[kPlotData]->Clone("hRatio");
   hRatio->SetDirectory(0);
   for(int nb=1; nb<=hRatio->GetNbinsX(); nb++) {
-    hRatio->SetBinContent( nb, hRatio->GetBinContent(nb) / hTotalBkg->GetBinContent(nb));
-    hRatio->SetBinError( nb, histos[kPlotData]->GetBinError(nb) / histos[kPlotData]->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
+    if(hTotalBkg->GetBinContent(nb)>0 && histos[kPlotData]->GetBinContent(nb)>0) {
+      hRatio->SetBinContent( nb, hRatio->GetBinContent(nb) / hTotalBkg->GetBinContent(nb));
+      hRatio->SetBinError( nb, histos[kPlotData]->GetBinError(nb) / histos[kPlotData]->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
+    } else {
+      hRatio->SetBinContent( nb, 1);
+      hRatio->SetBinError(nb, 1);
+    }
   } 
  
   TH1D *hErrorBand = (TH1D*)hTotalBkg->Clone("hErrorBand");
@@ -108,7 +114,7 @@ TCanvas* finalPlot2018(
     hRatioBand->SetBinContent(nb,1);
     hRatioBand->SetBinError(nb, hTotalBkg->GetBinError(nb) / hTotalBkg->GetBinContent(nb) / hRatio->GetBinContent(nb));
   }
-  THStack *hs = new THStack("hs",selectionNames[selType]);
+  THStack *hs = new THStack("hs",selectionNames[selType]); assert(hs);
   hs->Add(histos[ kPlotVZbb ] );   
   hs->Add(histos[ kPlotVVLF ] );   
   hs->Add(histos[ kPlotZLF  ] );    
@@ -130,22 +136,24 @@ TCanvas* finalPlot2018(
   pad1->SetLeftMargin(0.15);
   pad1->SetRightMargin(0.04);
   pad1->SetBottomMargin(0.03); 
-  pad1->SetGridx();         
+  //pad1->SetGridx();         
   pad1->Draw();             
   pad1->cd();              
   hs->Draw("HIST");
-  hs->GetXaxis()->SetLabelSize(0);
   hs->GetXaxis()->SetTitle("");
+  hs->GetXaxis()->SetLabelSize(0);
   hs->GetYaxis()->SetTitleOffset(1.2);
   hs->GetYaxis()->SetTitleSize(0.05);
   hs->GetYaxis()->SetTitle(Form("Events / %.1f %s",(xmax-xmin)/(float)nbins, units.Data()));
   hs->GetYaxis()->SetLabelSize(0.05);
-  hs->SetMaximum( 1.4*TMath::Max( hs->GetMaximum(), histos[kPlotData]->GetMaximum() ));
+  double plotMax=1.4;
+  if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/3.) plotMax=2.;
+  hs->SetMaximum( plotMax*TMath::Max( hs->GetMaximum(), histos[kPlotData]->GetMaximum() ));
   histos[kPlotVH]->Draw("HIST SAME");
   hErrorBand->Draw("E2 same");
   if(!isBlinded) histos[kPlotData]->Draw("P E0 SAME");
   TLegend *legend1=new TLegend(0.47,0.50,0.71,0.88);
-  TLegend *legend2=new TLegend(0.71,0.55,0.95,.88);
+  TLegend *legend2=new TLegend(0.71,0.555,0.95,.88);
   legend1->AddEntry(histos[ kPlotData ], histos[ kPlotData ]->GetTitle(),"lp");
   legend1->AddEntry(histos[ kPlotVH   ], histos[ kPlotVH   ]->GetTitle(),"lp");
   legend1->AddEntry(histos[ kPlotQCD  ], histos[ kPlotQCD  ]->GetTitle(),"f");
@@ -168,7 +176,7 @@ TCanvas* finalPlot2018(
   pad2->SetTopMargin(0);
   pad2->SetBottomMargin(0.4);
   pad2->SetRightMargin(0.04);
-  pad2->SetGridx(); 
+  //pad2->SetGridx(); 
   pad2->Draw();
   pad2->cd();
   hRatioBand->SetTitle("");
@@ -193,8 +201,8 @@ TCanvas* finalPlot2018(
   hRatio->Draw("P E0 x0 SAME");
   TLine *baseline = new TLine(xmin,1,xmax,1);
   baseline->SetLineStyle(kSolid); baseline->Draw("SAME");
-  canvas->Print(Form("MitVHBBAnalysis/plots/%s_%s%s.pdf",selectionNames[selType].Data(),varexp.Data(), extraString.Data()));
-  system(Form("gs -sDEVICE=png16m -dTextAlphaBits=4 -g1800x1440 -dUseCropBox -dFIXEDMEDIA -dPDFFitPage -o MitVHBBAnalysis/plots/%s_%s%s.png MitVHBBAnalysis/plots/%s_%s%s.pdf >/dev/null 2>&1",selectionNames[selType].Data(),varexp.Data(),extraString.Data(),selectionNames[selType].Data(),varexp.Data(),extraString.Data()));
+  canvas->Print(Form("MitVHBBAnalysis/plots/%s_%s%s.pdf",selectionNames[selType].Data(),canvasName.Data(), extraString.Data()));
+  system(Form("gs -sDEVICE=png16m -dTextAlphaBits=4 -g1800x1440 -dUseCropBox -dFIXEDMEDIA -dPDFFitPage -o MitVHBBAnalysis/plots/%s_%s%s.png MitVHBBAnalysis/plots/%s_%s%s.pdf >/dev/null 2>&1",selectionNames[selType].Data(),canvasName.Data(),extraString.Data(),selectionNames[selType].Data(),canvasName.Data(),extraString.Data()));
   return canvas;
 }
 
