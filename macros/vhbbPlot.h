@@ -1,6 +1,13 @@
+#ifndef vhbbPlot_h
+#define vhbbPlot_h
+
 #include <TBranch.h>
+#include <map>
+
 namespace vhbbPlot {
   
+  float theLumi=35900.;
+
   enum selectionType { 
     kWHLightFlavorCR,
     kWHHeavyFlavorCR,
@@ -45,6 +52,7 @@ namespace vhbbPlot {
     kPlotVH   , //12   
     nPlotCategories
   };
+  
   // This function loads the ith entry of the branch, only if it has not already been loaded
   int bLoad(TBranch *branch, Long64_t ientry) {
     if(!branch) return 0;
@@ -53,4 +61,52 @@ namespace vhbbPlot {
     if(readEntry != ientry) bytesRead = branch->GetEntry(ientry);
     return bytesRead;
   }
+
+  std::map<int, int> plotColors={
+    { kPlotData , kBlack },
+    { kPlotQCD  , kBlack },
+    { kPlotVZbb , kBlack },
+    { kPlotVVLF , kBlack },
+    { kPlotTT   , kBlack },
+    { kPlotTop  , kBlack },
+    { kPlotWbb  , kBlack },
+    { kPlotWb   , kBlack },
+    { kPlotWLF  , kBlack },
+    { kPlotZbb  , kBlack },
+    { kPlotZb   , kBlack },
+    { kPlotZLF  , kBlack },
+    { kPlotVH   , kBlack }
+  };
+  std::map<int, TString> plotNames={
+    { kPlotData , "Data"     },
+    { kPlotQCD  , "QCD"      },
+    { kPlotVZbb , "VZ(bb)"   },
+    { kPlotVVLF , "VV+LF"    },
+    { kPlotTT   , "t#bar{t}" },
+    { kPlotTop  , "Top"      },
+    { kPlotWbb  , "W+bb"     },
+    { kPlotWb   , "W+b"      },
+    { kPlotWLF  , "W+udcsg"  },
+    { kPlotZbb  , "Z+bb"     },
+    { kPlotZb   , "Z+b"      },
+    { kPlotZLF  , "Z+udcsg"  },
+    { kPlotVH   , "WH(125)"  }
+  };
+  std::map<int, TString> plotBaseNames={
+    { kPlotData , "Data" },
+    { kPlotQCD  , "QCD"  },
+    { kPlotVZbb , "VZbb" },
+    { kPlotVVLF , "VVLF" },
+    { kPlotTT   , "TT"   },
+    { kPlotTop  , "Top"  },
+    { kPlotWbb  , "Wbb"  },
+    { kPlotWb   , "Wb"   },
+    { kPlotWLF  , "WLF"  },
+    { kPlotZbb  , "Zbb"  },
+    { kPlotZb   , "Zb"   },
+    { kPlotZLF  , "ZLF"  },
+    { kPlotVH   , "VH"   }
+  }; 
 }
+
+#endif
