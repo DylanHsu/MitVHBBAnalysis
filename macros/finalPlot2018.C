@@ -194,7 +194,7 @@ TCanvas* finalPlot2018(
   TLine *baseline = new TLine(xmin,1,xmax,1);
   baseline->SetLineStyle(kSolid); baseline->Draw("SAME");
   canvas->Print(Form("MitVHBBAnalysis/plots/%s_%s%s.pdf",selectionNames[selType].Data(),varexp.Data(), extraString.Data()));
-  system(Form("gs -sDEVICE=png16m -dTextAlphaBits=4 -g1800x1440 -dUseCropBox -dFIXEDMEDIA -dPDFFitPage -o MitVHBBAnalysis/plots/%s_%s%s.png MitVHBBAnalysis/plots/%s_%s_%s.pdf >/dev/null 2>&1",selectionNames[selType].Data(),varexp.Data(),extraString.Data(),selectionNames[selType].Data(),varexp.Data(),extraString.Data()));
+  system(Form("gs -sDEVICE=png16m -dTextAlphaBits=4 -g1800x1440 -dUseCropBox -dFIXEDMEDIA -dPDFFitPage -o MitVHBBAnalysis/plots/%s_%s%s.png MitVHBBAnalysis/plots/%s_%s%s.pdf >/dev/null 2>&1",selectionNames[selType].Data(),varexp.Data(),extraString.Data(),selectionNames[selType].Data(),varexp.Data(),extraString.Data()));
   return canvas;
 }
 
