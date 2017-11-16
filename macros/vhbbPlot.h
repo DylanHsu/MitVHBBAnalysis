@@ -62,22 +62,22 @@ namespace vhbbPlot {
     return bytesRead;
   }
 
-  std::map<int, int> plotColors={
-    { kPlotData , kBlack },
-    { kPlotQCD  , kBlack },
-    { kPlotVZbb , kBlack },
-    { kPlotVVLF , kBlack },
-    { kPlotTT   , kBlack },
-    { kPlotTop  , kBlack },
-    { kPlotWbb  , kBlack },
-    { kPlotWb   , kBlack },
-    { kPlotWLF  , kBlack },
-    { kPlotZbb  , kBlack },
-    { kPlotZb   , kBlack },
-    { kPlotZLF  , kBlack },
-    { kPlotVH   , kBlack }
+  std::map<plotCategory, int> plotColors={
+    { kPlotData , kBlack      },
+    { kPlotQCD  , kGray       },
+    { kPlotVZbb , 842         },
+    { kPlotVVLF , kAzure-9    },
+    { kPlotTT   , kPink+8     },
+    { kPlotTop  , kPink+7     },
+    { kPlotWbb  , kViolet+2   },
+    { kPlotWb   , kViolet+8   },
+    { kPlotWLF  , kViolet+6   },
+    { kPlotZbb  , kPink+2     },
+    { kPlotZb   , kMagenta-10 },
+    { kPlotZLF  , kPink+1     },
+    { kPlotVH   , kRed+3      }
   };
-  std::map<int, TString> plotNames={
+  std::map<plotCategory, TString> plotNames={
     { kPlotData , "Data"     },
     { kPlotQCD  , "QCD"      },
     { kPlotVZbb , "VZ(bb)"   },
@@ -92,7 +92,7 @@ namespace vhbbPlot {
     { kPlotZLF  , "Z+udcsg"  },
     { kPlotVH   , "WH(125)"  }
   };
-  std::map<int, TString> plotBaseNames={
+  std::map<plotCategory, TString> plotBaseNames={
     { kPlotData , "Data" },
     { kPlotQCD  , "QCD"  },
     { kPlotVZbb , "VZbb" },
@@ -107,6 +107,21 @@ namespace vhbbPlot {
     { kPlotZLF  , "ZLF"  },
     { kPlotVH   , "VH"   }
   }; 
+  std::map<selectionType, TString> selectionNames={ 
+    { kWHLightFlavorCR    , "WHLightFlavorCR"    },
+    { kWHHeavyFlavorCR    , "WHHeavyFlavorCR"    },
+    { kWH2TopCR           , "WH2TopCR"           },
+    { kWHSR               , "WHSR"               },
+    { kZnnHLightFlavorCR  , "ZnnHLightFlavorCR"  },
+    { kZnnHHeavyFlavorCR  , "ZnnHHeavyFlavorCR"  },
+    { kZnnH2TopCR         , "ZnnH2TopCR"         },
+    { kZnnHMultijetCR     , "ZnnHMultijetCR"     },
+    { kZnnHSR             , "ZnnHSR"             },
+    { kZllHLightFlavorCR  , "ZllHLightFlavorCR"  },
+    { kZllHHeavyFlavorCR  , "ZllHHeavyFlavorCR"  },
+    { kZllH2TopCR         , "ZllH2TopCR"         },
+    { kZllHSR             , "ZllHSR"             }
+  };
 }
 
 #endif
