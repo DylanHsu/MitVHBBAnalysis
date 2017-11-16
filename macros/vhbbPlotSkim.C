@@ -693,7 +693,7 @@ void vhbbPlotSkim(
       nBytesRead+=bLoad(b_nJet,ientry);
       if     (nJet<2) continue;
       else if(selection==kWHHeavyFlavorCR && nJet!=2) continue;
-      else if(selection==kWH2TopCR && nJet<44) continue;
+      else if(selection==kWH2TopCR && nJet<4) continue;
       else if(selection==kWHSR && nJet>3) continue;
       if(debug) printf("Passed jet multiplicity\n");
 
