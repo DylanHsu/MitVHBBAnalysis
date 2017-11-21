@@ -12,24 +12,29 @@
 #include "PandaAnalysis/Utilities/src/RoccoR.cc"
 //#include <TRandom3.h>
 typedef std::map<UInt_t,std::vector<std::pair <UInt_t, UInt_t> > > MapType;
-bool leptonTriggersSkim(
+
+enum selectionType {
+  kSingleMuon,
+  kSingleElectron,
+  kDoubleMuonSoup,
+  kDoubleElectronSoup,
+  nSelTypes
+};
+bool leptonTriggerSkim(
   TString inputFileName, 
   TString outputFileName, 
-  TString flavor="muons",
+  selectionType selType=kSingleMuon,
   bool debug=false
 ) {
   gSystem->Load("libPandaTreeObjects.so"); 
   assert(inputFileName!=outputFileName);
-  assert(flavor=="muons" || flavor=="electrons");
-  int lepSelType=-1;
-  if(flavor=="muons") lepSelType=1;
-  else if(flavor=="electrons") lepSelType=2;
-
+  
   // Open input file
   printf("Opening file \"%s\"\n", inputFileName.Data());
   TFile *inputFile = TFile::Open(inputFileName,"READ");
   assert(inputFile && inputFile->IsOpen());
   TTree *inputTree = (TTree*)inputFile->Get("events"); assert(inputTree);
+  printf("Successfully opened file and loaded the events tree\n");
   
   //Read json file into boost property tree
   string jsonFile = "PandaAnalysis/data/certs/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt";
@@ -59,33 +64,30 @@ bool leptonTriggersSkim(
   
   // Set branch addresses
   panda::Event event; event.setStatus(*inputTree, {"!*"});
-  switch(lepSelType) {
-    case 1: event.setAddress(*inputTree, {"muons", "triggers", "triggerObjects", "runNumber", "lumiNumber", "eventNumber"}); break;
-    case 2: event.setAddress(*inputTree, {"electrons", "triggers", "triggerObjects", "runNumber", "lumiNumber", "eventNumber"}); break;
-    default: assert(0); break;
-  }
+  if(selType==kSingleMuon || selType==kDoubleMuonSoup)
+    event.setAddress(*inputTree, {"muons", "triggers", "triggerObjects", "runNumber", "lumiNumber", "eventNumber"});
+  else if(selType==kSingleElectron || selType==kDoubleElectronSoup)
+    event.setAddress(*inputTree, {"electrons", "triggers", "triggerObjects", "runNumber", "lumiNumber", "eventNumber"});
+  else
+    return false;
 
   // Register triggers
   unsigned refTriggerToken;
   vector<int> testTriggerEnums, refTriggerEnums;
-  switch(lepSelType) {
-    case 1:
-      refTriggerToken=event.registerTrigger("HLT_IsoMu24");
-      refTriggerEnums.push_back( panda::Muon::fIsoMu24 );
-      testTriggerEnums.push_back( panda::Muon::fIsoMu24          );
-      //testTriggerEnums.push_back( panda::Muon::fMu17Mu8FirstLeg  );
-      //testTriggerEnums.push_back( panda::Muon::fMu17Mu8SecondLeg );
-      //testTriggerEnums.push_back( panda::Muon::fIsoMu22er        );
-      //testTriggerEnums.push_back( panda::Muon::fIsoTkMu22er      );
-      //testTriggerEnums.push_back( panda::Muon::fIsoTkMu24        );  
-      break;
-    case 2:
-      refTriggerToken=event.registerTrigger("HLT_Ele27_WPTight_Gsf");
-      refTriggerEnums.push_back( panda::Electron::fEl27Tight );
-      testTriggerEnums.push_back( panda::Electron::fEl27Tight );
-      break;
-    default: assert(0); break;
-  }
+  if(selType==kSingleMuon) {
+    refTriggerToken=event.registerTrigger("HLT_IsoMu24");
+    refTriggerEnums.push_back( panda::Muon::fIsoMu24 );
+    testTriggerEnums.push_back( panda::Muon::fIsoMu24          );
+    //testTriggerEnums.push_back( panda::Muon::fMu17Mu8FirstLeg  );
+    //testTriggerEnums.push_back( panda::Muon::fMu17Mu8SecondLeg );
+    //testTriggerEnums.push_back( panda::Muon::fIsoMu22er        );
+    //testTriggerEnums.push_back( panda::Muon::fIsoTkMu22er      );
+    //testTriggerEnums.push_back( panda::Muon::fIsoTkMu24        );  
+  } else if(selType==kSingleElectron) {
+    refTriggerToken=event.registerTrigger("HLT_Ele27_WPTight_Gsf");
+    refTriggerEnums.push_back( panda::Electron::fEl27Tight );
+    testTriggerEnums.push_back( panda::Electron::fEl27Tight );
+  } else return false;
 
 
   //declare output variables
@@ -122,7 +124,7 @@ bool leptonTriggersSkim(
   // Begin event loop
   while (event.getEntry(*inputTree, iEntry++) > 0 && iEntry<=nentries) {
     if(debug) printf("######## Reading entry %ld/%ld ########################################################\n",iEntry,nentries);
-    else if(iEntry%100000==0) printf("######## Reading entry %ld/%ld ########################################################\n",iEntry,nentries);
+    else if(iEntry%1000==0) printf("######## Reading entry %ld/%ld ########################################################\n",iEntry,nentries);
     if(debug) printf("Processing runNum %d, LS %d, eventNum %llu\n", event.runNumber, event.lumiNumber, event.eventNumber);
     
     // Check data certification
@@ -148,7 +150,7 @@ bool leptonTriggersSkim(
     vector<panda::Muon*> tagMuons, probeMuons;
     vector<bool> passTestTriggers_;
     // Loop over muons
-    if(lepSelType==1 && event.muons.size()>0) for(unsigned iM = 0; iM != event.muons.size(); ++iM) {
+    if((selType==kSingleMuon || selType==kDoubleMuonSoup) && event.muons.size()>0) for(unsigned iM = 0; iM != event.muons.size(); ++iM) {
       panda::Muon *muon = &event.muons[iM];
       if(!muon->tight) continue;
       double ptCorrection=rochesterCorrection.kScaleDT(muon->charge, muon->pt(), muon->eta(), muon->phi(), 0, 0);
@@ -163,7 +165,7 @@ bool leptonTriggersSkim(
       passTestTriggers_.push_back(passTestTriggers);
     }
     // Loop over electrons
-    if(lepSelType==2 && event.electrons.size()>0) for(unsigned iE = 0; iE != event.electrons.size(); ++iE) {
+    if((selType==kSingleElectron || selType==kDoubleElectronSoup) && event.electrons.size()>0) for(unsigned iE = 0; iE != event.electrons.size(); ++iE) {
       panda::Electron *electron = &event.electrons[iE];
       if(!electron->tight) continue;
       if(electron->smearedPt < 25.) continue;
@@ -182,7 +184,7 @@ bool leptonTriggersSkim(
     out_evtNum=event.eventNumber;
     out_npv=event.npv;
     // Pair association
-    if(lepSelType==1) for(unsigned iTag=0; iTag<tagMuons.size(); iTag++) for(unsigned iProbe=0; iProbe<probeMuons.size(); iProbe++) {
+    if(selType==kSingleMuon) for(unsigned iTag=0; iTag<tagMuons.size(); iTag++) for(unsigned iProbe=0; iProbe<probeMuons.size(); iProbe++) {
       panda::Muon *tagMuon = tagMuons[iTag]; panda::Muon *probeMuon = probeMuons[iProbe];
       if(tagMuon==probeMuon) continue;
       // Pair-level info
