@@ -72,19 +72,21 @@ bool leptonTriggerSkim(
     return false;
 
   // Register triggers
-  unsigned refTriggerToken;
+  vector<unsigned> refTriggerTokens;
   vector<int> testTriggerEnums, refTriggerEnums;
   if(selType==kSingleMuon) {
-    refTriggerToken=event.registerTrigger("HLT_IsoMu24");
-    refTriggerEnums.push_back( panda::Muon::fIsoMu24 );
+    refTriggerTokens.push_back(event.registerTrigger("HLT_IsoMu24"));
+    refTriggerTokens.push_back(event.registerTrigger("HLT_IsoTkMu24"));
+    refTriggerEnums.push_back( panda::Muon::fIsoMu24   );
+    refTriggerEnums.push_back( panda::Muon::fIsoTkMu24 );
     testTriggerEnums.push_back( panda::Muon::fIsoMu24          );
+    testTriggerEnums.push_back( panda::Muon::fIsoTkMu24        );
     //testTriggerEnums.push_back( panda::Muon::fMu17Mu8FirstLeg  );
     //testTriggerEnums.push_back( panda::Muon::fMu17Mu8SecondLeg );
     //testTriggerEnums.push_back( panda::Muon::fIsoMu22er        );
     //testTriggerEnums.push_back( panda::Muon::fIsoTkMu22er      );
-    //testTriggerEnums.push_back( panda::Muon::fIsoTkMu24        );  
   } else if(selType==kSingleElectron) {
-    refTriggerToken=event.registerTrigger("HLT_Ele27_WPTight_Gsf");
+    refTriggerTokens.push_back(event.registerTrigger("HLT_Ele27_WPTight_Gsf"));
     refTriggerEnums.push_back( panda::Electron::fEl27Tight );
     testTriggerEnums.push_back( panda::Electron::fEl27Tight );
   } else return false;
@@ -118,13 +120,21 @@ bool leptonTriggerSkim(
   outputTree->Branch("tag",   "TLorentzVector", &p4_tag   );  
   outputTree->Branch("probe", "TLorentzVector", &p4_probe );          
   
-  long iEntry = 0, nPass=0, nFail=0;
+  long nPass=0, nFail=0;
   long nentries=inputTree->GetEntries();
-  if(nentries>1000 && debug) nentries=1000;
+  if(nentries>1000 && debug) nentries=47000;//nentries=1000;
   // Begin event loop
-  while (event.getEntry(*inputTree, iEntry++) > 0 && iEntry<=nentries) {
+  //for(long iEntry=0; iEntry!=nentries; iEntry++) {
+  for(long iEntry=45000; iEntry!=nentries; iEntry++) {
+
+  //while (event.getEntry(*inputTree, iEntry++) > 0 && iEntry<=nentries) {
     if(debug) printf("######## Reading entry %ld/%ld ########################################################\n",iEntry,nentries);
     else if(iEntry%1000==0) printf("######## Reading entry %ld/%ld ########################################################\n",iEntry,nentries);
+    try {
+      event.getEntry(*inputTree, iEntry);
+    } catch (runtime_error e) {
+      printf("@@@ WARNING @@@ Caught exception: %s\n", e.what());
+    }
     if(debug) printf("Processing runNum %d, LS %d, eventNum %llu\n", event.runNumber, event.lumiNumber, event.eventNumber);
     
     // Check data certification
@@ -142,9 +152,11 @@ bool leptonTriggerSkim(
       }
     }
     if(!certifiedEvent) { if(debug) printf("Event failed data certification\n"); continue; }
-    
+    /* 
     // Check the reference trigger
-    if(!event.triggerFired(refTriggerToken)) { if(debug) printf("Event did not pass the reference trigger\n");  continue; }
+    bool refTriggerFired=false;
+    for(unsigned i=0; i<refTriggerTokens.size(); i++) refTriggerFired |= event.triggerFired(refTriggerTokens[i]);
+    if(!refTriggerFired) { if(debug) printf("Event did not pass the reference trigger\n");  continue; }
     
     vector<panda::Electron*> tagElectrons, probeElectrons;
     vector<panda::Muon*> tagMuons, probeMuons;
@@ -197,6 +209,7 @@ bool leptonTriggerSkim(
       outputTree->Fill();
       if(pass) nPass++; else nFail++;
     }
+    */
   } // End event loop
   inputFile->Close();
   outputFile->cd(); outputTree->Write(); outputFile->Close();

@@ -8,15 +8,16 @@ cmsswDir=$CMSSW_BASE/src
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd $cmsswDir
 eval `scramv1 runtime -sh`
-tempInputFile=$origDir/$(basename $inputFileName)
-tempOutputFile=$origDir/triggerSkim_$(basename $inputFileName)
-xrdcp $inputFileName $tempInputFile
+#tempInputFile=$origDir/$(basename $inputFileName)
+#tempOutputFile=$origDir/triggerSkim_$(basename $inputFileName)
+#xrdcp $inputFileName $tempInputFile
 root -b -l <<EOF
 assert(0==gSystem->Load("MitVHBBAnalysis/macros/leptonTriggerSkim_C.so"))
-printf("leptonTriggerSkim(\"$tempInputFile\",\"$tempOutputFile\",$selection,false)\n")
-assert(leptonTriggerSkim("$tempInputFile","$tempOutputFile",$selection,false))
+printf("leptonTriggerSkim(\"$inputFileName\",\"$outputFileName\",$selection,false)\n")
+assert(leptonTriggerSkim("$inputFileName","$outputFileName",$selection,false))
 .q
 EOF
-cp $tempOutputFile $outputFileName
-rm $tempInputFile $tempOutputFile
+#rm $tempInputFile
+#cp $tempOutputFile $outputFileName
+#rm $tempInputFile $tempOutputFile
 cd $origDir
