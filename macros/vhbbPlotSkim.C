@@ -1,3 +1,4 @@
+#include "PandaAnalysis/Flat/interface/GeneralTree.h"
 #include <TSystem.h>
 #include <TTree.h>
 #include <TFile.h>
@@ -12,9 +13,10 @@
 #include <iomanip>
 #include <unistd.h>
 #include "vhbbPlot.h"
-#include "PandaAnalysis/Flat/interface/GeneralTree.h"
-using namespace vhbbPlot;
 
+// Script for making light weight plotting/training trees for VH analysis
+
+using namespace vhbbPlot;
 bool vhbbPlotSkim(
   TString inputFileName="", 
   TString outputFileName="",
@@ -40,7 +42,7 @@ bool vhbbPlotSkim(
     if(!inputFile) { throw std::runtime_error("Problem opening input file"); return false; }
   TTree *events = (TTree*)inputFile->Get("events");
   if(!events) { throw std::runtime_error("Problem loading tree"); return false; }
-
+  
   GeneralTree gt;
   gt.monohiggs      = true;
   gt.vbf            = false;
@@ -99,7 +101,9 @@ bool vhbbPlotSkim(
   float deltaPhiMetLep1, deltaPhiVH;
   float weight;
   float weight_pdfUp, weight_pdfDown;
-  float weight_r1f2, weight_r1f5, weight_r2f1, weight_r2f2, weight_r5f1, weight_r5f5;
+  float weight_scaleUp, weight_scaleDown;
+  float weight_lepSFUp;
+  float weight_cmvaUp, weight_cmvaDown; 
   
   plotTree->Branch("selectionBits"   , &selectionBits   );
   plotTree->Branch("nMinusOneBits"   , &nMinusOneBits   );
@@ -281,26 +285,26 @@ bool vhbbPlotSkim(
       if(passNMinusOne( cut, cutsWH2TopCR       )) nMinusOneBits |= kWH2TopCR;
       if(passNMinusOne( cut, cutsWHSR           )) nMinusOneBits |= kWHSR;
 
-      if(selection==kWHLightFlavorCR && (nMinusOneBits & kWHLightFlavorCR)==0) continue;
-      if(selection==kWHHeavyFlavorCR && (nMinusOneBits & kWHHeavyFlavorCR)==0) continue;
-      if(selection==kWH2TopCR        && (nMinusOneBits & kWH2TopCR)       ==0) continue;
-      if(selection==kWHSR            && (nMinusOneBits & kWHSR)           ==0) continue;
+      //if(selection==kWHLightFlavorCR && (nMinusOneBits & kWHLightFlavorCR)==0) continue;
+      //if(selection==kWHHeavyFlavorCR && (nMinusOneBits & kWHHeavyFlavorCR)==0) continue;
+      //if(selection==kWH2TopCR        && (nMinusOneBits & kWH2TopCR)       ==0) continue;
+      //if(selection==kWHSR            && (nMinusOneBits & kWHSR)           ==0) continue;
     }
 
     // Weighting
-    if(sample==kData)
-      weight=1;
+    if(sample==kData) weight=1;
     else if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
       nBytesRead+=bLoad(b["normalizedWeight"],ientry);
-	  nBytesRead+=bLoad(b["sf_pu"],ientry);
+	  nBytesRead+=bLoad(b["sf_npv"],ientry);
 	  if(sample==kWjets || sample==kZjets) { nBytesRead+=bLoad(b["sf_qcdV"],ientry); nBytesRead+=bLoad(b["sf_ewkV"],ientry); } 
       else { gt.sf_qcdV=1; gt.sf_ewkV=1; }
 	  //nBytesRead+=bLoad(sf_btag1,ientry);
  	  if(sample==kTT) nBytesRead+=bLoad(b["sf_tt"],ientry); else gt.sf_tt=1;
-      weight = normalizedWeight * gt.sf_pu * gt.sf_ewkV * gt.sf_qcdV * gt.sf_tt;
+      weight = normalizedWeight * theLumi * gt.sf_npv * gt.sf_ewkV * gt.sf_qcdV * gt.sf_tt;
       if (typeLepSel==1) {
         nBytesRead+=bLoad(b["muonSfReco"],ientry);
         nBytesRead+=bLoad(b["muonSfTight"],ientry);
+        nBytesRead+=bLoad(b["muonSfUnc"],ientry);
         nBytesRead+=bLoad(b["sf_muTrig"],ientry);
         weight *= gt.sf_muTrig * gt.muonSfReco[0] * gt.muonSfTight[0];
         // need muon trigger efficiency
@@ -309,6 +313,7 @@ bool vhbbPlotSkim(
       } else if(typeLepSel==2) {
         nBytesRead+=bLoad(b["electronSfReco"],ientry);
         nBytesRead+=bLoad(b["electronSfTight"],ientry);
+        nBytesRead+=bLoad(b["electronSfUnc"],ientry);
         nBytesRead+=bLoad(b["sf_eleTrig"],ientry);
         weight *= gt.sf_eleTrig * gt.electronSfReco[0] * gt.electronSfTight[0];
       }
@@ -323,6 +328,66 @@ bool vhbbPlotSkim(
         nBytesRead+=bLoad(b["sf_zhDown"],ientry);
         weight *= gt.sf_zh;
       }
+      
+      // CMVA weight
+      nBytesRead+=bLoad(b["sf_cmvaWeight_Cent"],ientry);
+      weight *= gt.sf_csvWeights[GeneralTree::csvCent];
+      
+      // #############################
+      // # Variations of the Weights #
+      // #############################
+      
+      // PDF and QCD scale
+      nBytesRead+=bLoad(b["pdfUp"],ientry);
+      nBytesRead+=bLoad(b["pdfDown"],ientry);
+      nBytesRead+=bLoad(b["scaleUp"],ientry);
+      nBytesRead+=bLoad(b["scaleDown"],ientry);
+      weight_pdfUp = weight * gt.pdfUp;
+      weight_pdfDown = weight * gt.pdfDown;
+      weight_scaleUp = weight * gt.scaleUp;
+      weight_scaleDown = weight * gt.scaleDown;
+      
+      // Lepton ID & ISO SF uncertainty
+      if(typeLepSel==1) weight_lepSFUp = weight * (1.+gt.muonSfUnc[0]);
+      else weight_lepSFUp = weight * (1.+gt.electronSfUnc[0]);
+      
+      // CMVA weight uncertainty
+      nBytesRead+=bLoad(b["sf_cmvaWeight_LFup"        ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_LFdown"      ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_HFup"        ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_HFdown"      ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats1up"  ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats1down"],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats2up"  ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats2down"],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats1up"  ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats1down"],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats2up"  ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats2down"],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_CErr1up"     ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_CErr1down"   ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_CErr2up"     ],ientry);
+      nBytesRead+=bLoad(b["sf_cmvaWeight_CErr2down"   ],ientry);
+      weight_cmvaUp = weight*sqrt(
+        pow(gt.sf_csvWeights[GeneralTree::csvLFup        ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFup        ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats1up  ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats2up  ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats1up  ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats2up  ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr1up     ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr2up     ], 2)
+      );
+      weight_cmvaDown = weight*sqrt(
+        pow(gt.sf_csvWeights[GeneralTree::csvLFdown      ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFdown      ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats1down], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats2down], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats1down], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats2down], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr1down   ], 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr2down   ], 2)
+      );
     }
     // Category Assignment
     switch(sample) {

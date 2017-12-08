@@ -52,15 +52,6 @@ namespace vhbbPlot {
     nPlotCategories
   };
   
-  // This function loads the ith entry of the branch, only if it has not already been loaded
-  int bLoad(TBranch *branch, Long64_t ientry) {
-    if(!branch) return 0;
-    int bytesRead=0;
-    Long64_t readEntry = branch->GetReadEntry();
-    if(readEntry != ientry) bytesRead = branch->GetEntry(ientry);
-    return bytesRead;
-  }
-
   std::map<plotCategory, int> plotColors={
     { kPlotData , kBlack      },
     { kPlotQCD  , kGray       },
@@ -121,22 +112,30 @@ namespace vhbbPlot {
     { kZllH2TopCR         , "ZllH2TopCR"         },
     { kZllHSR             , "ZllHSR"             }
   };
+  // This function loads the ith entry of the branch, only if it has not already been loaded
+  int bLoad(TBranch *branch, Long64_t ientry) {
+    if(!branch) return 0;
+    int bytesRead=0;
+    Long64_t readEntry = branch->GetReadEntry();
+    if(readEntry != ientry) bytesRead = branch->GetEntry(ientry);
+    return bytesRead;
+  }
+  bool passAllCuts( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
+    unsigned nCutsToPass=theCuts.size();
+    for(unsigned i=0; i<nCutsToPass; i++)
+      if(cutMap.find(theCuts[i])!=cutMap.end()) if(!cutMap[theCuts[i]])
+        return false;
+    return true;
+  }
+  bool passNMinusOne( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
+    unsigned nCutsToPass=theCuts.size();
+    unsigned nCutsPassed=0;
+    for(unsigned i=0; i<nCutsToPass; i++) {
+      if(cutMap.find(theCuts[i])!=cutMap.end())
+        nCutsPassed += (unsigned)cutMap[theCuts[i]];
+    }
+    return(nCutsPassed >= nCutsToPass-1);
 }
 
-bool passAllCuts( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
-  unsigned nCutsToPass=theCuts.size();
-  for(unsigned i=0; i<nCutsToPass; i++)
-    if(cutMap.find(theCuts[i])!=cutMap.end()) if(!cutMap[theCuts[i]])
-      return false;
-  return true;
-}
-bool passNMinusOne( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
-  unsigned nCutsToPass=theCuts.size();
-  unsigned nCutsPassed=0;
-  for(unsigned i=0; i<nCutsToPass; i++) {
-    if(cutMap.find(theCuts[i])!=cutMap.end())
-      nCutsPassed += (unsigned)cutMap[theCuts[i]];
-  }
-  return(nCutsPassed >= nCutsToPass-1);
 }
 #endif
