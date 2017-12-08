@@ -19,7 +19,7 @@ bool vhbbPlotSkim(
   TString inputFileName="", 
   TString outputFileName="",
   vhbbPlot::sampleType sample=nSampleTypes,
-  vhbbPlot::selectionType selection=nSelectionTypes,
+  vhbbPlot::selectionType selection = kWHLightFlavorCR,
   bool debug=false,
   Long64_t maxEntries=0
 ) {
@@ -64,6 +64,7 @@ bool vhbbPlotSkim(
       b[x->first] = events->GetBranch(x->first);
       if(!b[x->first]) { throw std::runtime_error(Form("Extra branch %s could not be found in events tree\n", x->first.Data())); return false; }
       b[x->first]->SetAddress(x->second);
+      if(debug) printf("Booking extra branch \"%s\"\n", x->first.Data());
       continue;
     }
     TBranch *dummyBranch = dummyTree->GetBranch(branchName);
@@ -72,6 +73,7 @@ bool vhbbPlotSkim(
     b[branchName] = events->GetBranch(branchName);
     if(!b[branchName]) { throw std::runtime_error(Form("Branch \"%s\" could not be found in events tree", x->first.Data())); return false; }
     b[branchName]->SetAddress(address);
+    if(debug) printf("Booking GeneralTree branch \"%s\"\n", branchName.Data());
   }
   delete dummyTree;
    
@@ -82,8 +84,8 @@ bool vhbbPlotSkim(
 
   TFile *outputFile = TFile::Open(outputFileName,"RECREATE");
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
-  int typeLepSel, theCategory;
-  int nJet;
+  unsigned char typeLepSel, theCategory, nJet;
+  unsigned selectionBits;
   float pfmet, pfmetphi, pfmetsig;
   float lepton1Pt, lepton1Eta, lepton1Phi;
   float lepton2Pt, lepton2Eta, lepton2Phi;
@@ -96,6 +98,7 @@ bool vhbbPlotSkim(
   float weight_pdfUp, weight_pdfDown;
   float weight_r1f2, weight_r1f5, weight_r2f1, weight_r2f2, weight_r5f1, weight_r5f5;
   
+  plotTree->Branch("selectionBits"   , &selectionBits   );
   plotTree->Branch("theCategory"     , &theCategory     );
   plotTree->Branch("nJet"            , &nJet            );
   plotTree->Branch("weight"          , &weight          );
@@ -132,7 +135,7 @@ bool vhbbPlotSkim(
 
     int nBytesRead=0;
     theCategory=-1; // plot category 
-    typeLepSel=-1; // 0: mixed e-mu, 1: all mu, 2: all e
+    typeLepSel=99; // 0: mixed e-mu, 1: all mu, 2: all e, 99: undefined
     
     // Vectors to keep around in memory
     TVector2 vectorBosonV2;
@@ -182,7 +185,7 @@ bool vhbbPlotSkim(
         if(gt.nTightMuon==1) typeLepSel=1; else {
           nBytesRead+=bLoad(b["nTightElectron"],ientry);
           if(gt.nTightElectron==1) typeLepSel=2;
-        } if(typeLepSel<0) continue;
+        } if(typeLepSel!=1 && typeLepSel!=2) continue;
         if(debug) printf("Passed lepton ID/iso multiplicity\n");
 
         // Lepton kinematics
@@ -221,7 +224,7 @@ bool vhbbPlotSkim(
       } // end preselection
       
       // Jet B-tagging
-      nBytesRead+=bLoad(b["jetCSV"],ientry);
+      nBytesRead+=bLoad(b["jetCMVA"],ientry);
       bDiscrMax=gt.jetCMVA[gt.hbbjtidx[0]];
       bDiscrMin=gt.jetCMVA[gt.hbbjtidx[1]];
       
@@ -235,27 +238,40 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["pfmetsig"],ientry);
       pfmetsig = gt.pfmetsig;
       
-      // Unused now, keep preselection loose
 
-      //bool passBTag=false;
-      //if     (selection==kWHSR           ) passBTag = (bDiscrMax >= bDiscrTight) && (bDiscrMin >= bDiscrLoose );
-      //else if(selection==kWHHeavyFlavorCR) passBTag = (bDiscrMax >= bDiscrTight) && (bDiscrMin >= bDiscrLoose );
-      //else if(selection==kWHLightFlavorCR) passBTag = (bDiscrMax >= bDiscrLoose) && (bDiscrMax <  bDiscrMedium);
-      //else if(selection==kWH2TopCR       ) passBTag = (bDiscrMax >= bDiscrTight) && (bDiscrMin >= bDiscrLoose );
-      //if(selection==kWHHeavyFlavorCR && nJet!=2) continue;
-      //if(selection==kWH2TopCR && nJet<4) continue;
-      //if(selection==kWHSR && nJet>3) continue;
-      //if(!passBTag) {
-      //  if(debug) printf("failed btag, bDiscrMax=%.4f, bDiscrMin=%.4f\n",bDiscrMax,bDiscrMin);
-      //  continue;
-      //}
-      //if(debug) printf("passed B tagging\n");
-      //if     (selection==kWHSR           ) passDijetMass = (hbbDijetMass >= 90) && (hbbDijetMass <  150);
-      //else if(selection==kWHHeavyFlavorCR) passDijetMass = (hbbDijetMass <  90) || (hbbDijetMass >= 150);
-      //else if(selection==kWHLightFlavorCR) passDijetMass = true;
-      //else if(selection==kWH2TopCR       ) passDijetMass = true;
 
     }
+    
+    // Set Selection Bits
+    selectionBits=0;
+    bool whCommonCuts =
+      /* 2nd lepton veto     */ gt.nLooseLep==1 &&
+      /* W pT > 100          */ vectorBosonPt>100 &&
+      /* pTjj > 100          */ hbbDijetPt>100 && 
+      /* pTe(m) > 30(25)     */ ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30)) &&
+      /* deltaPhiVH > 2.5    */ deltaPhiVH > 2.5 &&
+      /* deltaPhiMetLep1 < 2 */ deltaPhiMetLep1 < 2
+    ;
+
+    if(
+      pfmetsig > 2 &&
+      (bDiscrMax >= bDiscrLoose) && (bDiscrMax < bDiscrMedium)
+    ) selectionBits |= kWHLightFlavorCR;
+    if(
+      nJet==2 &&
+      (bDiscrMax >= bDiscrTight) && //(bDiscrMin >= bDiscrLoose ) &&
+      ((hbbDijetMass < 90) || (hbbDijetMass >= 150))
+    ) selectionBits |= kWHHeavyFlavorCR;
+    if(
+      nJet>=4 &&
+      pfmetsig > 2 &&
+      (bDiscrMax >= bDiscrTight) //&& (bDiscrMin >= bDiscrLoose ) 
+    ) selectionBits |= kWH2TopCR;
+    if(
+      nJet<4 &&
+      (bDiscrMax >= bDiscrTight) && (bDiscrMin >= bDiscrLoose ) &&
+      ((hbbDijetMass >= 90) && (hbbDijetMass <  150))
+    ) selectionBits |= kWHSR;
 
     // Weighting
     if(sample==kData)
