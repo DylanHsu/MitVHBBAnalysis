@@ -9,20 +9,19 @@ namespace vhbbPlot {
   float theLumi=35900.;
 
   enum selectionType { 
-    kWHLightFlavorCR,
-    kWHHeavyFlavorCR,
-    kWH2TopCR,
-    kWHSR,
-    kZnnHLightFlavorCR,
-    kZnnHHeavyFlavorCR,
-    kZnnH2TopCR,
-    kZnnHMultijetCR,
-    kZnnHSR,
-    kZllHLightFlavorCR,
-    kZllHHeavyFlavorCR,
-    kZllH2TopCR,
-    kZllHSR,
-    nSelectionTypes
+    kWHLightFlavorCR   = 0x1 <<  0,
+    kWHHeavyFlavorCR   = 0x1 <<  1,
+    kWH2TopCR          = 0x1 <<  2,
+    kWHSR              = 0x1 <<  3,
+    kZnnHLightFlavorCR = 0x1 <<  4,
+    kZnnHHeavyFlavorCR = 0x1 <<  5,
+    kZnnH2TopCR        = 0x1 <<  6,
+    kZnnHMultijetCR    = 0x1 <<  7,
+    kZnnHSR            = 0x1 <<  8,
+    kZllHLightFlavorCR = 0x1 <<  9,
+    kZllHHeavyFlavorCR = 0x1 << 10,
+    kZllH2TopCR        = 0x1 << 11,
+    kZllHSR            = 0x1 << 12 
   };
   enum sampleType {
     kData       , // 0 
@@ -72,7 +71,7 @@ namespace vhbbPlot {
     { kPlotWbb  , kViolet+2   },
     { kPlotWb   , kViolet+8   },
     { kPlotWLF  , kViolet+6   },
-    { kPlotZbb  , kPink+2     },
+    { kPlotZbb  , kRed-8      },
     { kPlotZb   , kMagenta-10 },
     { kPlotZLF  , kPink+1     },
     { kPlotVH   , kRed+3      }
@@ -124,4 +123,20 @@ namespace vhbbPlot {
   };
 }
 
+bool passAllCuts( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
+  unsigned nCutsToPass=theCuts.size();
+  for(unsigned i=0; i<nCutsToPass; i++)
+    if(cutMap.find(theCuts[i])!=cutMap.end()) if(!cutMap[theCuts[i]])
+      return false;
+  return true;
+}
+bool passNMinusOne( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
+  unsigned nCutsToPass=theCuts.size();
+  unsigned nCutsPassed=0;
+  for(unsigned i=0; i<nCutsToPass; i++) {
+    if(cutMap.find(theCuts[i])!=cutMap.end())
+      nCutsPassed += (unsigned)cutMap[theCuts[i]];
+  }
+  return(nCutsPassed >= nCutsToPass-1);
+}
 #endif

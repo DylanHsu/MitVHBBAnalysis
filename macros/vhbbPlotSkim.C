@@ -32,9 +32,12 @@ bool vhbbPlotSkim(
   if(!loadPandaAnalysisFlat) { throw std::runtime_error("Error loading shared object libPandaAnalysisFlat.so"); return false; }
 
   // Handle File IO
-  if(inputFileName==outputFileName) { throw std::runtime_error("Input file and output file are the same file"); return false; }
-  TFile *inputFile = TFile::Open(inputFileName, "READ");
-  if(!inputFile) { throw std::runtime_error("Problem opening input file"); return false; }
+  //bool batchMode=false;
+  //if(inputFileName!="") batchMode=true;
+  //if(batchMode) {
+    if(inputFileName==outputFileName) { throw std::runtime_error("Input file and output file are the same file"); return false; }
+    TFile *inputFile = TFile::Open(inputFileName, "READ");
+    if(!inputFile) { throw std::runtime_error("Problem opening input file"); return false; }
   TTree *events = (TTree*)inputFile->Get("events");
   if(!events) { throw std::runtime_error("Problem loading tree"); return false; }
 
@@ -85,7 +88,7 @@ bool vhbbPlotSkim(
   TFile *outputFile = TFile::Open(outputFileName,"RECREATE");
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
   unsigned char typeLepSel, theCategory, nJet;
-  unsigned selectionBits;
+  unsigned selectionBits, nMinusOneBits;
   float pfmet, pfmetphi, pfmetsig;
   float lepton1Pt, lepton1Eta, lepton1Phi;
   float lepton2Pt, lepton2Eta, lepton2Phi;
@@ -99,6 +102,7 @@ bool vhbbPlotSkim(
   float weight_r1f2, weight_r1f5, weight_r2f1, weight_r2f2, weight_r5f1, weight_r5f5;
   
   plotTree->Branch("selectionBits"   , &selectionBits   );
+  plotTree->Branch("nMinusOneBits"   , &nMinusOneBits   );
   plotTree->Branch("theCategory"     , &theCategory     );
   plotTree->Branch("nJet"            , &nJet            );
   plotTree->Branch("weight"          , &weight          );
@@ -141,9 +145,8 @@ bool vhbbPlotSkim(
     TVector2 vectorBosonV2;
     TLorentzVector hbbJet1P4, hbbJet2P4, hbbDijetP4;
     
-    // Selection
+    // Analysis Preselection
     if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
-      // Preselection
       {
         // Lepton multiplicity
         nBytesRead+=bLoad(b["nLooseLep"],ientry);
@@ -157,6 +160,7 @@ bool vhbbPlotSkim(
         // Jet multiplicity
         nBytesRead+=bLoad(b["nJet"],ientry);
         if     (gt.nJet<2) continue;
+        nJet=gt.nJet;
         // Jet kinematics
         nBytesRead+=bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
         nBytesRead+=bLoad(b["jetPt"],ientry);
@@ -237,41 +241,51 @@ bool vhbbPlotSkim(
       }
       nBytesRead+=bLoad(b["pfmetsig"],ientry);
       pfmetsig = gt.pfmetsig;
-      
-
 
     }
     
     // Set Selection Bits
-    selectionBits=0;
-    bool whCommonCuts =
-      /* 2nd lepton veto     */ gt.nLooseLep==1 &&
-      /* W pT > 100          */ vectorBosonPt>100 &&
-      /* pTjj > 100          */ hbbDijetPt>100 && 
-      /* pTe(m) > 30(25)     */ ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30)) &&
-      /* deltaPhiVH > 2.5    */ deltaPhiVH > 2.5 &&
-      /* deltaPhiMetLep1 < 2 */ deltaPhiMetLep1 < 2
-    ;
+    selectionBits=0; nMinusOneBits=0;
+    std::map<TString, bool> cut;
+    if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
+      cut["2ndLepVeto" ] = gt.nLooseLep==1;
+      cut["WpT"        ] = vectorBosonPt>100;
+      cut["pTjj"       ] = hbbDijetPt>100; 
+      cut["lepton1Pt"  ] = ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30));
+      cut["dPhiVH"     ] = deltaPhiVH > 2.5;
+      cut["dPhiMetLep1"] = deltaPhiMetLep1 < 2;
+      cut["tightBTag"  ] = (bDiscrMax >= bDiscrTight);
+      cut["tightBVeto" ] = (bDiscrMax < bDiscrTight);
+      cut["looseBTag"  ] = (bDiscrMax >= bDiscrLoose);
+      cut["looseBTag2" ] = (bDiscrMin >= bDiscrLoose);
+      cut["metSig"     ] = pfmetsig>2;
+      cut["nJet_WHTT"  ] = nJet>=4;
+      cut["nJet_WHHF"  ] = nJet==2;
+      cut["nJet_WHSR"  ] = nJet<4;
+      cut["mH_WHSR"    ] = ((hbbDijetMass >= 90) && (hbbDijetMass <  150));
+      
+      //bool allWHCuts = cut["2ndLepVeto"] && cut["WpT"] && cut["pTjj"] && cut["lepton1Pt"] && cut["dPhiVH"] && cut["dPhiMetLep1"];
+      vector<TString> cutsWHLightFlavorCR, cutsWHHeavyFlavorCR, cutsWH2TopCR, cutsWHSR;
+      cutsWHLightFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","looseBTag","tightBVeto","metSig"};
+      cutsWHHeavyFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHHF","tightBTag","mH_WHSR","metSig"};
+      cutsWH2TopCR        ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHTT","tightBTag"};
+      cutsWHSR            ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
 
-    if(
-      pfmetsig > 2 &&
-      (bDiscrMax >= bDiscrLoose) && (bDiscrMax < bDiscrMedium)
-    ) selectionBits |= kWHLightFlavorCR;
-    if(
-      nJet==2 &&
-      (bDiscrMax >= bDiscrTight) && //(bDiscrMin >= bDiscrLoose ) &&
-      ((hbbDijetMass < 90) || (hbbDijetMass >= 150))
-    ) selectionBits |= kWHHeavyFlavorCR;
-    if(
-      nJet>=4 &&
-      pfmetsig > 2 &&
-      (bDiscrMax >= bDiscrTight) //&& (bDiscrMin >= bDiscrLoose ) 
-    ) selectionBits |= kWH2TopCR;
-    if(
-      nJet<4 &&
-      (bDiscrMax >= bDiscrTight) && (bDiscrMin >= bDiscrLoose ) &&
-      ((hbbDijetMass >= 90) && (hbbDijetMass <  150))
-    ) selectionBits |= kWHSR;
+      if(passAllCuts( cut, cutsWHLightFlavorCR))   selectionBits |= kWHLightFlavorCR;
+      if(passAllCuts( cut, cutsWHHeavyFlavorCR))   selectionBits |= kWHHeavyFlavorCR;
+      if(passAllCuts( cut, cutsWH2TopCR       ))   selectionBits |= kWH2TopCR;
+      if(passAllCuts( cut, cutsWHSR           ))   selectionBits |= kWHSR;
+        
+      if(passNMinusOne( cut, cutsWHLightFlavorCR)) nMinusOneBits |= kWHLightFlavorCR;
+      if(passNMinusOne( cut, cutsWHHeavyFlavorCR)) nMinusOneBits |= kWHHeavyFlavorCR;
+      if(passNMinusOne( cut, cutsWH2TopCR       )) nMinusOneBits |= kWH2TopCR;
+      if(passNMinusOne( cut, cutsWHSR           )) nMinusOneBits |= kWHSR;
+
+      if(selection==kWHLightFlavorCR && (nMinusOneBits & kWHLightFlavorCR)==0) continue;
+      if(selection==kWHHeavyFlavorCR && (nMinusOneBits & kWHHeavyFlavorCR)==0) continue;
+      if(selection==kWH2TopCR        && (nMinusOneBits & kWH2TopCR)       ==0) continue;
+      if(selection==kWHSR            && (nMinusOneBits & kWHSR)           ==0) continue;
+    }
 
     // Weighting
     if(sample==kData)
