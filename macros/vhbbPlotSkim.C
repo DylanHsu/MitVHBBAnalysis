@@ -1,4 +1,5 @@
 #include "PandaAnalysis/Flat/interface/GeneralTree.h"
+#include <Compression.h>
 #include <TSystem.h>
 #include <TTree.h>
 #include <TFile.h>
@@ -87,7 +88,7 @@ bool vhbbPlotSkim(
   //if(!muTrigEffFile && muTrigEffFile->IsOpen()) { throw std::runtime_error(""); return false; }
   //TH2D *muTrigEff = (TH2D*)muTrigEffFile->Get("IsoMu24_OR_IsoTkMu24_PtEtaBins/efficienciesDATA/abseta_pt_DATA");
 
-  TFile *outputFile = TFile::Open(outputFileName,"RECREATE");
+  TFile *outputFile = TFile::Open(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
   unsigned char typeLepSel, theCategory, nJet;
   unsigned selectionBits, nMinusOneBits;
@@ -109,7 +110,6 @@ bool vhbbPlotSkim(
   plotTree->Branch("nMinusOneBits"   , &nMinusOneBits   );
   plotTree->Branch("theCategory"     , &theCategory     );
   plotTree->Branch("nJet"            , &nJet            );
-  plotTree->Branch("weight"          , &weight          );
   plotTree->Branch("pfmet"           , &pfmet           );
   plotTree->Branch("pfmetsig"        , &pfmetsig        );
   plotTree->Branch("pfmetphi"        , &pfmetphi        );
@@ -123,17 +123,22 @@ bool vhbbPlotSkim(
   plotTree->Branch("hbbJet2Pt"       , &hbbJet2Pt       );
   plotTree->Branch("hbbJet2Eta"      , &hbbJet2Eta      );
   plotTree->Branch("hbbJet2Phi"      , &hbbJet2Phi      );
+  plotTree->Branch("weight"          , &weight          );
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
     plotTree->Branch("typeLepSel"      , &typeLepSel      );
     plotTree->Branch("lepton1Pt"       , &lepton1Pt       );
     plotTree->Branch("lepton1Eta"      , &lepton1Eta      );
     plotTree->Branch("lepton1Phi"      , &lepton1Phi      );
-    plotTree->Branch("lepton2Pt"       , &lepton2Pt       );
-    plotTree->Branch("lepton2Eta"      , &lepton2Eta      );
-    plotTree->Branch("lepton2Phi"      , &lepton2Phi      );
     plotTree->Branch("vectorBosonPt"   , &vectorBosonPt   );
     plotTree->Branch("deltaPhiMetLep1" , &deltaPhiMetLep1 );
     plotTree->Branch("deltaPhiVH"      , &deltaPhiVH      );
+    plotTree->Branch("weight_pdfUp"    , &weight_pdfUp    );
+    plotTree->Branch("weight_pdfDown"  , &weight_pdfDown  );
+    plotTree->Branch("weight_scaleUp"  , &weight_scaleUp  );
+    plotTree->Branch("weight_scaleDown", &weight_scaleDown);
+    plotTree->Branch("weight_lepSFUp"  , &weight_lepSFUp  );
+    plotTree->Branch("weight_cmvaUp"   , &weight_cmvaUp   );
+    plotTree->Branch("weight_cmvaDown" , &weight_cmvaDown );
   }
   Long64_t nentries = events->GetEntries();
   if(maxEntries!=0) nentries = TMath::Min((ULong64_t)maxEntries, (ULong64_t)nentries);
@@ -267,11 +272,12 @@ bool vhbbPlotSkim(
       cut["nJet_WHHF"  ] = nJet==2;
       cut["nJet_WHSR"  ] = nJet<4;
       cut["mH_WHSR"    ] = ((hbbDijetMass >= 90) && (hbbDijetMass <  150));
+      cut["mH_Flip"    ] = ((hbbDijetMass < 90) || (hbbDijetMass >= 150));
       
       //bool allWHCuts = cut["2ndLepVeto"] && cut["WpT"] && cut["pTjj"] && cut["lepton1Pt"] && cut["dPhiVH"] && cut["dPhiMetLep1"];
       vector<TString> cutsWHLightFlavorCR, cutsWHHeavyFlavorCR, cutsWH2TopCR, cutsWHSR;
       cutsWHLightFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","looseBTag","tightBVeto","metSig"};
-      cutsWHHeavyFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHHF","tightBTag","mH_WHSR","metSig"};
+      cutsWHHeavyFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHHF","tightBTag","mH_Flip","metSig"};
       cutsWH2TopCR        ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHTT","tightBTag"};
       cutsWHSR            ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
 
@@ -340,18 +346,21 @@ bool vhbbPlotSkim(
       // PDF and QCD scale
       nBytesRead+=bLoad(b["pdfUp"],ientry);
       nBytesRead+=bLoad(b["pdfDown"],ientry);
-      nBytesRead+=bLoad(b["scaleUp"],ientry);
+      //nBytesRead+=bLoad(b["scaleUp"],ientry); // this is broken right now, thanks sid
+      nBytesRead+=bLoad(b["scale"],ientry);
       nBytesRead+=bLoad(b["scaleDown"],ientry);
       weight_pdfUp = weight * gt.pdfUp;
       weight_pdfDown = weight * gt.pdfDown;
-      weight_scaleUp = weight * gt.scaleUp;
-      weight_scaleDown = weight * gt.scaleDown;
+      weight_scaleUp = weight * (1.+std::max({gt.scale[0], gt.scale[1], gt.scale[2], gt.scale[3], gt.scale[4], gt.scale[5]}));
+      weight_scaleDown = weight * (1.+gt.scaleDown);
       
       // Lepton ID & ISO SF uncertainty
       if(typeLepSel==1) weight_lepSFUp = weight * (1.+gt.muonSfUnc[0]);
       else weight_lepSFUp = weight * (1.+gt.electronSfUnc[0]);
       
       // CMVA weight uncertainty
+      // https://cmssdt.cern.ch/lxr/source/PhysicsTools/Heppy/python/physicsutils/BTagWeightCalculator.py?v=CMSSW_8_0_20
+      // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Data_MC_Scale_Factors
       nBytesRead+=bLoad(b["sf_cmvaWeight_LFup"        ],ientry);
       nBytesRead+=bLoad(b["sf_cmvaWeight_LFdown"      ],ientry);
       nBytesRead+=bLoad(b["sf_cmvaWeight_HFup"        ],ientry);
@@ -368,26 +377,26 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["sf_cmvaWeight_CErr1down"   ],ientry);
       nBytesRead+=bLoad(b["sf_cmvaWeight_CErr2up"     ],ientry);
       nBytesRead+=bLoad(b["sf_cmvaWeight_CErr2down"   ],ientry);
-      weight_cmvaUp = weight*sqrt(
-        pow(gt.sf_csvWeights[GeneralTree::csvLFup        ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvHFup        ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvHFStats1up  ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvHFStats2up  ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvLFStats1up  ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvLFStats2up  ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvCErr1up     ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvCErr2up     ], 2)
-      );
-      weight_cmvaDown = weight*sqrt(
-        pow(gt.sf_csvWeights[GeneralTree::csvLFdown      ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvHFdown      ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvHFStats1down], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvHFStats2down], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvLFStats1down], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvLFStats2down], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvCErr1down   ], 2) +
-        pow(gt.sf_csvWeights[GeneralTree::csvCErr2down   ], 2)
-      );
+      weight_cmvaUp = weight*(1.+sqrt(
+        pow(gt.sf_csvWeights[GeneralTree::csvLFup       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFup       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats1up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats2up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats1up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats2up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr1up    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr2up    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2)
+      ));
+      weight_cmvaDown = weight*(1.-sqrt(
+        pow(gt.sf_csvWeights[GeneralTree::csvLFdown       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFdown       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats1down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvHFStats2down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats1down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvLFStats2down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr1down    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
+        pow(gt.sf_csvWeights[GeneralTree::csvCErr2down    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2)
+      ));
     }
     // Category Assignment
     switch(sample) {
