@@ -84,9 +84,9 @@ bool vhbbPlotSkim(
   delete dummyTree;
    
   // temporary
-  //TFile *muTrigEffFile = TFile::Open("/home/dhsu/CMSSW_8_0_29/src/PandaAnalysis/data/trigger_eff/muon_trig_Run2016BtoF.root", "READ");
-  //if(!muTrigEffFile && muTrigEffFile->IsOpen()) { throw std::runtime_error(""); return false; }
-  //TH2D *muTrigEff = (TH2D*)muTrigEffFile->Get("IsoMu24_OR_IsoTkMu24_PtEtaBins/efficienciesDATA/abseta_pt_DATA");
+  TFile *muTrigEffFile = TFile::Open("/home/dhsu/CMSSW_8_0_29/src/PandaAnalysis/data/trigger_eff/muon_trig_Run2016BtoF.root", "READ");
+  if(!muTrigEffFile && muTrigEffFile->IsOpen()) { throw std::runtime_error(""); return false; }
+  TH2D *muTrigEff = (TH2D*)muTrigEffFile->Get("IsoMu24_OR_IsoTkMu24_PtEtaBins/efficienciesDATA/abseta_pt_DATA");
 
   TFile *outputFile = TFile::Open(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
@@ -157,10 +157,17 @@ bool vhbbPlotSkim(
     // Analysis Preselection
     if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
       {
+        
         // Lepton multiplicity
         nBytesRead+=bLoad(b["nLooseLep"],ientry);
         if(gt.nLooseLep<1) continue; //N_al = 0
         if(debug) printf("Passed lepton multiplicity\n");
+        
+        // Trigger
+        if(sample==kData) {
+          nBytesRead+=bLoad(b["trigger"],ientry);
+          if( (gt.trigger & (1<<3 | 1<<1))==0 ) continue;
+        }
 
         nBytesRead+=bLoad(b["metFilter"],ientry);
         if(gt.metFilter!=1) continue;
@@ -195,9 +202,9 @@ bool vhbbPlotSkim(
 
         // Lepton ID and isolation
         nBytesRead+=bLoad(b["nTightMuon"],ientry);
-        if(gt.nTightMuon==1) typeLepSel=1; else {
+        if(gt.nTightMuon==1 && (gt.trigger & 1<<3)!=0) typeLepSel=1; else {
           nBytesRead+=bLoad(b["nTightElectron"],ientry);
-          if(gt.nTightElectron==1) typeLepSel=2;
+          if(gt.nTightElectron==1 && (gt.trigger & 1<<1)!=0) typeLepSel=2;
         } if(typeLepSel!=1 && typeLepSel!=2) continue;
         if(debug) printf("Passed lepton ID/iso multiplicity\n");
 
@@ -312,10 +319,11 @@ bool vhbbPlotSkim(
         nBytesRead+=bLoad(b["muonSfTight"],ientry);
         nBytesRead+=bLoad(b["muonSfUnc"],ientry);
         nBytesRead+=bLoad(b["sf_muTrig"],ientry);
-        weight *= gt.sf_muTrig * gt.muonSfReco[0] * gt.muonSfTight[0];
+        //weight *= gt.sf_muTrig * gt.muonSfReco[0] * gt.muonSfTight[0];
+        weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
         // need muon trigger efficiency
-        //double theTrigEff = muTrigEff->GetBinContent( muTrigEff->FindBin( fabs(lepton1Eta), TMath::Max((float)26., TMath::Min((float)500., lepton1Pt)) ) );
-        //weight *= theTrigEff;
+        double theTrigEff = muTrigEff->GetBinContent( muTrigEff->FindBin( fabs(lepton1Eta), TMath::Max((float)26., TMath::Min((float)500., lepton1Pt)) ) );
+        weight *= theTrigEff;
       } else if(typeLepSel==2) {
         nBytesRead+=bLoad(b["electronSfReco"],ientry);
         nBytesRead+=bLoad(b["electronSfTight"],ientry);
@@ -430,7 +438,7 @@ bool vhbbPlotSkim(
       case kVH:
         theCategory=kPlotVH; break;
       default:
-        theCategory=-1;
+        theCategory=nPlotCategories;
         break;
     }
     plotTree->Fill();

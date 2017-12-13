@@ -16,7 +16,8 @@
 
 #include "vhbbPlot.h"
 
-const int nPlotsWlnHbb=10;
+const int nPlotsWlnHbb=15;
+const int MVAVarType=1; //1=mass; 2=BDT
 
 using namespace vhbbPlot;
 void vhbbHistos(
@@ -26,8 +27,18 @@ void vhbbHistos(
   int theLepSel=-1, // -1: any; 0, e-mu; 1, mu only; 2, ele only
   bool isBlinded=true
 ) {
+  vector<double> MVAbins; TString MVAVarName;
+  if(MVAVarType==1) {
+    MVAVarName="Higgs mass classifier [GeV]";
+    if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) 
+      MVAbins={0,60,90,120,150,200,250};
+    if(selection==kWHSR) 
+      MVAbins={90,100,110,120,130,140,150};
+  } else throw std::runtime_error("bad MVAVarType");
+  
   int nPlots;
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) nPlots=nPlotsWlnHbb;
+  nPlots=99;
 
   system("mkdir -p MitVHBBAnalysis/plots");
   system("mkdir -p MitVHBBAnalysis/datacards");
@@ -88,29 +99,41 @@ void vhbbHistos(
   }
   
   // construct histograms
-  TString histoTitle; float xmin, xmax; int nbins;
+  vector<float> xmin(nPlots), xmax(nPlots);  vector<int> nbins(nPlots);
+  vector<TString> histoNames(nPlots), histoTitle(nPlots);
+  
   TH1D *histos[99][nPlotCategories];
-  TString histoNames[99];
-  if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) for(int thePlot=0; thePlot<nPlotsWlnHbb; thePlot++) {
-    switch(thePlot) {
-      case  0: histoNames[thePlot]="pTH"             ; histoTitle="Higgs daughter dijet p_{T} [GeV]"           ; nbins=  18; xmin=    50; xmax=   350; break; 
-      case  1: histoNames[thePlot]="mH"              ; histoTitle="Higgs daughter dijet mass [GeV]"            ; nbins=  25; xmin=     0; xmax=   250; break; 
-      case  2: histoNames[thePlot]="WpT"             ; histoTitle="W boson p_{T} [GeV]"                        ; nbins=  18; xmin=    50; xmax=   350; break; 
-      case  3: histoNames[thePlot]="deltaPhiVH"      ; histoTitle="#Delta#phi(H,W) [Rad]"                      ; nbins=  32; xmin=     0; xmax= 3.142; break; 
-      case  4: histoNames[thePlot]="pTBalanceDijetW" ; histoTitle="Higgs daughter dijet p_{T} / W boson p_{T}" ; nbins=  30; xmin=     0; xmax=     2; break; 
-      case  5: histoNames[thePlot]="lep1Pt"          ; histoTitle="Lepton p_{T} [GeV]"                         ; nbins=  23; xmin=    20; xmax=   250; break; 
-      case  6: histoNames[thePlot]="met"             ; histoTitle="p_{T}^{miss} [GeV]"                         ; nbins=  25; xmin=     0; xmax=   250; break; 
-      case  7: histoNames[thePlot]="mTW"             ; histoTitle="W transverse mass [GeV]"                    ; nbins=  20; xmin=     0; xmax=   200; break; 
-      case  8: histoNames[thePlot]="Hbjet1Pt"        ; histoTitle="Leading H daughter jet p_{T} [GeV]"         ; nbins=  38; xmin=    20; xmax=   400; break; 
-      case  9: histoNames[thePlot]="Hbjet2Pt"        ; histoTitle="Trailing H daughter jet p_{T} [GeV]"        ; nbins=  38; xmin=    20; xmax=   400; break; 
-      default: throw std::runtime_error("bad plot number"); break;
-    }
+  if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
+    int p=0;
+    histoNames[p]="pTH"             ; histoTitle[p]="Higgs daughter dijet p_{T} [GeV]"           ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
+    histoNames[p]="mH"              ; histoTitle[p]="Higgs daughter dijet mass [GeV]"            ; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
+    histoNames[p]="WpT"             ; histoTitle[p]="W boson p_{T} [GeV]"                        ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
+    histoNames[p]="deltaPhiVH"      ; histoTitle[p]="#Delta#phi(H,W) [Rad]"                      ; nbins[p]=  32; xmin[p]=     0; xmax[p]= 3.142; p++; 
+    histoNames[p]="pTBalanceDijetW" ; histoTitle[p]="Higgs daughter dijet p_{T} / W boson p_{T}" ; nbins[p]=  30; xmin[p]=     0; xmax[p]=     2; p++; 
+    histoNames[p]="lepton1Pt"       ; histoTitle[p]="Lepton p_{T} [GeV]"                         ; nbins[p]=  23; xmin[p]=    20; xmax[p]=   250; p++; 
+    histoNames[p]="met"             ; histoTitle[p]="p_{T}^{miss} [GeV]"                         ; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
+    histoNames[p]="mTW"             ; histoTitle[p]="W transverse mass [GeV]"                    ; nbins[p]=  20; xmin[p]=     0; xmax[p]=   200; p++; 
+    histoNames[p]="Hbjet1Pt"        ; histoTitle[p]="Leading H daughter jet p_{T} [GeV]"         ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
+    histoNames[p]="Hbjet2Pt"        ; histoTitle[p]="Trailing H daughter jet p_{T} [GeV]"        ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
+    histoNames[p]="dPhiHbbJet1MET"  ; histoTitle[p]="#Delta#phi(H daughter jet 1, E_{T}^{miss})" ; nbins[p]=  32; xmin[p]=     0; xmax[p]= 3.142; p++; 
+    histoNames[p]="dPhiHbbJet2MET"  ; histoTitle[p]="#Delta#phi(H daughter jet 2, E_{T}^{miss})" ; nbins[p]=  32; xmin[p]=     0; xmax[p]= 3.142; p++; 
+    histoNames[p]="bDiscrMin"       ; histoTitle[p]="Greater CMVA of Higgs daughter jets"        ; nbins[p]=  20; xmin[p]=   -1.; xmax[p]=    1.; p++; 
+    histoNames[p]="bDiscrMax"       ; histoTitle[p]="Lesser CMVA of Higgs daughters jets"        ; nbins[p]=  20; xmin[p]=   -1.; xmax[p]=    1.; p++; 
+    //case nPlotsWlnHbb-1: histoNames[p]="MVAVar"; histoTitle=MVAVarName; break;
+  }  
+  
+  for(int p=0; p<nPlots; p++) {
+    if(histoNames[p]=="") continue;
     for(theCategory=0; theCategory<nPlotCategories; theCategory++) {
-      histos[thePlot][theCategory] = new TH1D(Form("histo%d",theCategory), histoTitle, nbins, xmin, xmax);
-      histos[thePlot][theCategory]->Sumw2();
-      histos[thePlot][theCategory]->SetDirectory(0);
+      //if(thePlot==nPlotsWlnHbb-1)
+      //  histos[thePlot][theCategory] = new TH1D(Form("histo%d",theCategory), histoTitle, MVAbins.size()-1, MVAbins.data());
+      //else
+        histos[p][theCategory] = new TH1D(Form("histo%d",theCategory), histoTitle[p], nbins[p], xmin[p], xmax[p]);
+      histos[p][theCategory]->Sumw2();
+      histos[p][theCategory]->SetDirectory(0);
     }
   }
+  
 
   Long64_t nentries = plotTree->GetEntries();
   Long64_t oneTenth = nentries/10;
@@ -121,33 +144,44 @@ void vhbbHistos(
     plotTree->GetBranch("theCategory")->GetEntry(ientry); if(theCategory>=nPlotCategories) continue;
     if(isBlinded && theCategory==kPlotData && (selection==kWHSR)) continue;
     plotTree->GetEntry(ientry);
+    // physics calculations
     float mT = TMath::Sqrt(2.*pfmet*lepton1Pt*(1.-TMath::Cos(TVector2::Phi_mpi_pi(lepton1Phi-pfmetphi))));
     float balanceVH = hbbDijetPt/vectorBosonPt;
+    float dPhiHbbJet1MET = TMath::Abs(TVector2::Phi_mpi_pi( hbbJet1Phi - pfmetphi  ));
+    float dPhiHbbJet2MET = TMath::Abs(TVector2::Phi_mpi_pi( hbbJet2Phi - pfmetphi  ));
+
     float theVar; bool passFullSel = (selectionBits & selection)!=0; bool makePlot;
-    if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) for(int thePlot=0; thePlot<nPlotsWlnHbb; thePlot++) {
+    // hack
+    //if(typeLepSel==1 && theCategory==kPlotTop) weight*=-1.;
+    if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) for(int p=0; p<nPlots; p++) {
+      makePlot=false;
       // Variables -- change the makePlot for n-1 later
-      switch(thePlot) {
-        case  0: makePlot = passFullSel; theVar = TMath::Min(hbbDijetPt   , (float)  350); break; 
-        case  1: makePlot = passFullSel; theVar = TMath::Min(hbbDijetMass , (float)  250); break; 
-        case  2: makePlot = passFullSel; theVar = TMath::Min(vectorBosonPt, (float)  350); break; 
-        case  3: makePlot = passFullSel; theVar = TMath::Min(deltaPhiVH   , (float)3.142); break; 
-        case  4: makePlot = passFullSel; theVar = TMath::Min(balanceVH    , (float)    2); break; 
-        case  5: makePlot = passFullSel; theVar = TMath::Min(lepton1Pt    , (float)  250); break; 
-        case  6: makePlot = passFullSel; theVar = TMath::Min(pfmet        , (float)  250); break; 
-        case  7: makePlot = passFullSel; theVar = TMath::Min(mT           , (float)  200); break; 
-        case  8: makePlot = passFullSel; theVar = TMath::Min(hbbJet1Pt    , (float)  400); break; 
-        case  9: makePlot = passFullSel; theVar = TMath::Min(hbbJet2Pt    , (float)  400); break; 
-        default: throw std::runtime_error("bad plot number"); break;
-      }
-      if(makePlot) histos[thePlot][theCategory]->Fill(theVar, weight);
+      if      (histoNames[p]=="pTH"             ) { theVar = TMath::Min(hbbDijetPt    , xmax[p]); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && theVar<=100.); }
+      else if (histoNames[p]=="mH"              ) { theVar = TMath::Min(hbbDijetMass  , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="WpT"             ) { theVar = TMath::Min(vectorBosonPt , xmax[p]); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && theVar<=100.); }
+      else if (histoNames[p]=="deltaPhiVH"      ) { theVar = TMath::Min(deltaPhiVH    , xmax[p]); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && theVar>=2.5); }
+      else if (histoNames[p]=="pTBalanceDijetW" ) { theVar = TMath::Min(balanceVH     , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="lepton1Pt"       ) { theVar = TMath::Min(lepton1Pt     , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="pfmet"           ) { theVar = TMath::Min(pfmet         , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="pfmetsig"        ) { theVar = TMath::Min(pfmet         , xmax[p]); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && theVar<=2.); }
+      else if (histoNames[p]=="mTW"             ) { theVar = TMath::Min(mT            , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="Hbjet1Pt"        ) { theVar = TMath::Min(hbbJet1Pt     , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="Hbjet2Pt"        ) { theVar = TMath::Min(hbbJet2Pt     , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="dPhiHbbJet1MET"  ) { theVar = TMath::Min(dPhiHbbJet1MET, xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="dPhiHbbJet2MET"  ) { theVar = TMath::Min(dPhiHbbJet2MET, xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="bDiscrMin"       ) { theVar = TMath::Min(bDiscrMin     , xmax[p]); makePlot = passFullSel; }
+      else if (histoNames[p]=="bDiscrMax"       ) { theVar = TMath::Min(bDiscrMax     , xmax[p]); makePlot = passFullSel; }
+      else continue;
+      if(makePlot) histos[p][theCategory]->Fill(theVar, weight);
     }
   }
   TFile *output_plots = new TFile(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
-  for(int thePlot=0; thePlot<nPlots; thePlot++) {
-    TDirectory *plotDir = output_plots->mkdir(histoNames[thePlot]);
+  for(int p=0; p<nPlots; p++) {
+    if(histoNames[p]=="") continue;
+    TDirectory *plotDir = output_plots->mkdir(histoNames[p]);
     plotDir->cd();
     for(theCategory=kPlotData; theCategory!=nPlotCategories; theCategory++)
-      histos[thePlot][theCategory]->Write();
+      histos[p][theCategory]->Write();
 
   }
   output_plots->Close();
