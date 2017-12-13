@@ -7,6 +7,8 @@
 namespace vhbbPlot {
   
   float theLumi=35900.;
+  //const float bDiscrLoose = 0.5426, bDiscrMedium = 0.8484, bDiscrTight  = 0.9535; //csv
+  const float bDiscrLoose = -0.5884, bDiscrMedium = 0.4432, bDiscrTight  = 0.9432; //cmva
 
   enum selectionType { 
     kWHLightFlavorCR   = 0x1 <<  0,
@@ -52,7 +54,7 @@ namespace vhbbPlot {
     nPlotCategories
   };
   
-  std::map<plotCategory, int> plotColors={
+  std::map<int, int> plotColors={
     { kPlotData , kBlack      },
     { kPlotQCD  , kGray       },
     { kPlotVZbb , 842         },
@@ -82,7 +84,7 @@ namespace vhbbPlot {
     { kPlotZLF  , "Z+udcsg"  },
     { kPlotVH   , "WH(125)"  }
   };
-  std::map<plotCategory, TString> plotBaseNames={
+  std::map<int, TString> plotBaseNames={
     { kPlotData , "Data" },
     { kPlotQCD  , "QCD"  },
     { kPlotVZbb , "VZbb" },
@@ -97,7 +99,7 @@ namespace vhbbPlot {
     { kPlotZLF  , "ZLF"  },
     { kPlotVH   , "VH"   }
   }; 
-  std::map<selectionType, TString> selectionNames={ 
+  std::map<int, TString> selectionNames={ 
     { kWHLightFlavorCR    , "WHLightFlavorCR"    },
     { kWHHeavyFlavorCR    , "WHHeavyFlavorCR"    },
     { kWH2TopCR           , "WH2TopCR"           },

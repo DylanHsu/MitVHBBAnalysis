@@ -20,12 +20,11 @@ using namespace vhbbPlot;
 TList *finalPlot2018(
   vhbbPlot::selectionType selType, 
   TString inputFileName,
-  TString histoName="", 
   TString plotTitle="",
   TString extraText="",
   bool isBlinded=false
 ) {
-  const bool plotQCD=false;
+  const bool plotQCD=true;
   system("mkdir -p MitVHBBAnalysis/plots");
   TFile *inputFile = TFile::Open(inputFileName, "READ"); assert(inputFile);
   string rawName; {
@@ -36,7 +35,7 @@ TList *finalPlot2018(
   
   TList *listOfHistoNames=inputFile->GetListOfKeys();
   TList *listOfCanvases=new TList();
-  for(unsigned iHisto=0; iHisto<=listOfHistoNames->LastIndex(); iHisto++) {
+  for(unsigned iHisto=0; iHisto<=(unsigned)listOfHistoNames->LastIndex(); iHisto++) {
     TString theHistoName = listOfHistoNames->At(iHisto)->GetName();
     TString outPdf = Form("MitVHBBAnalysis/plots/%s_%s.pdf", rawName.c_str(), theHistoName.Data()); 
     TString outPng = Form("MitVHBBAnalysis/plots/%s_%s.png", rawName.c_str(), theHistoName.Data()); 
@@ -103,12 +102,13 @@ TList *finalPlot2018(
 
     // Start plotting stuff
     gStyle->SetOptStat(0);
-    TH1D *hRatio = (TH1D*)histos[kPlotData]->Clone("hRatio");
+    TH1D *hRatio = (TH1D*) (isBlinded? hTotalBkg->Clone("hRatio") : histos[kPlotData]->Clone("hRatio"));
     hRatio->SetDirectory(0);
     for(int nb=1; nb<=hRatio->GetNbinsX(); nb++) {
-      if(hTotalBkg->GetBinContent(nb)>0 && histos[kPlotData]->GetBinContent(nb)>0) {
+      if(hTotalBkg->GetBinContent(nb)>0 && hRatio->GetBinContent(nb)>0) {
         hRatio->SetBinContent( nb, hRatio->GetBinContent(nb) / hTotalBkg->GetBinContent(nb));
-        hRatio->SetBinError( nb, histos[kPlotData]->GetBinError(nb) / histos[kPlotData]->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
+        if(isBlinded) hRatio->SetBinError( nb, hRatio->GetBinError(nb) / hTotalBkg->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
+        else          hRatio->SetBinError( nb, hRatio->GetBinError(nb) / histos[kPlotData]->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
       } else {
         hRatio->SetBinContent( nb, 1);
         hRatio->SetBinError(nb, 1);
@@ -153,11 +153,12 @@ TList *finalPlot2018(
     int nbins=hs->GetXaxis()->GetNbins();
     float xmin=hs->GetXaxis()->GetBinLowEdge(1);
     float xmax=hs->GetXaxis()->GetBinLowEdge(nbins+1);
+    float binWidth=(xmax-xmin)/(float)nbins;
     hs->GetXaxis()->SetTitle("");
     hs->GetXaxis()->SetLabelSize(0);
     hs->GetYaxis()->SetTitleOffset(1.2);
     hs->GetYaxis()->SetTitleSize(0.05);
-    hs->GetYaxis()->SetTitle(Form("Events / %.1f %s",(xmax-xmin)/(float)nbins, units.c_str()));
+    hs->GetYaxis()->SetTitle(Form( (binWidth>=10.? "Events / %.0f %s" : binWidth>=1.? "Events / %.1f %s": "Events / %.2f %s"), binWidth, units.c_str()));
     hs->GetYaxis()->SetLabelSize(0.05);
     double plotMax=1.4;
     if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=2.;

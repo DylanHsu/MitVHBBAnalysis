@@ -27,8 +27,6 @@ bool vhbbPlotSkim(
   Long64_t maxEntries=0
 ) {
   const double theLumi=35900.;
-  //const float bDiscrLoose = 0.5426, bDiscrMedium = 0.8484, bDiscrTight  = 0.9535; //csv
-  const float bDiscrLoose = -0.5884, bDiscrMedium = 0.4432, bDiscrTight  = 0.9432; //cmva
   
   // Load Shared Objects for ACLIC
   bool loadPandaAnalysisFlat=(0==gSystem->Load("libPandaAnalysisFlat.so"));
