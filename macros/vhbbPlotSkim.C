@@ -116,7 +116,7 @@ bool vhbbPlotSkim(
   plotTree->Branch("nJet_jesDown"          , &nJet_jesDown          );
   plotTree->Branch("pfmet"                 , &pfmet                 );
   plotTree->Branch("pfmetUp"               , &pfmetUp               );
-  plotTree->Branch("pfmetUp"               , &pfmetDown             );
+  plotTree->Branch("pfmetDown"             , &pfmetDown             );
   plotTree->Branch("pfmetsig"              , &pfmetsig              );
   plotTree->Branch("pfmetphi"              , &pfmetphi              );
   plotTree->Branch("bDiscrMin"             , &bDiscrMin             );
@@ -288,6 +288,9 @@ bool vhbbPlotSkim(
 
       // Top reconstruction
       {
+        nBytesRead+=bLoad(b["pfmet"],ientry);
+        nBytesRead+=bLoad(b["pfmetUp"],ientry);
+        nBytesRead+=bLoad(b["pfmetDown"],ientry);
         nBytesRead+=bLoad(b["jetE"],ientry);
         nBytesRead+=bLoad(b["jetPt"],ientry);
         nBytesRead+=bLoad(b["jetEta"],ientry);
@@ -295,67 +298,72 @@ bool vhbbPlotSkim(
         nBytesRead+=bLoad(b["jetPtUp"],ientry);
         nBytesRead+=bLoad(b["jetPtDown"],ientry);
         nBytesRead+=bLoad(b["jetRegFac"],ientry);
+        nBytesRead+=bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
         TLorentzVector leptonP4, metP4, nuP4, jet1P4, jet2P4, WP4, topP4;
-        bool jet1IsCloser; float dRJet1W, dRJet2W;
+        bool jet1IsCloser; float jet1Mass, jet2Mass, dRJet1W, dRJet2W;
         leptonP4.SetPtEtaPhiM( lepton1Pt, lepton1Eta, lepton1Phi, (typeLepSel==1? 0.106:511e-6));
         // Nominal jet energies
-        metP4.SetPtEtaPhiM( pfmet, 0, pfmetphi, 0 );
+        metP4.SetPtEtaPhiM( gt.pfmet, 0, gt.pfmetphi, 0 );
         nuP4 = getNu4Momentum( leptonP4, metP4 );
         WP4 = leptonP4 + nuP4;
-        jet1P4.SetPtEtaPhiE(gt.jetPt[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]],gt.jetEta[gt.hbbjtidx[0]],gt.jetPhi[gt.hbbjtidx[0]],gt.jetE[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]]); 
-        jet2P4.SetPtEtaPhiE(gt.jetPt[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]],gt.jetEta[gt.hbbjtidx[1]],gt.jetPhi[gt.hbbjtidx[1]],gt.jetE[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]]);
-        dRJet1W=jet1P4.DeltaR(WP4); dRJet2W=jet2P4.DeltaR(WP4);
+        jet1P4.SetPtEtaPhiE(gt.jetPt[gt.hbbjtidx[0]],gt.jetEta[gt.hbbjtidx[0]],gt.jetPhi[gt.hbbjtidx[0]],gt.jetE[gt.hbbjtidx[0]]); 
+        jet2P4.SetPtEtaPhiE(gt.jetPt[gt.hbbjtidx[1]],gt.jetEta[gt.hbbjtidx[1]],gt.jetPhi[gt.hbbjtidx[1]],gt.jetE[gt.hbbjtidx[1]]);
+        jet1Mass=jet1P4.M(); jet2Mass=jet2P4.M();
+        jet1P4.SetPtEtaPhiM(gt.jetPt[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]],gt.jetEta[gt.hbbjtidx[0]],gt.jetPhi[gt.hbbjtidx[0]], jet1Mass); 
+        jet2P4.SetPtEtaPhiM(gt.jetPt[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]],gt.jetEta[gt.hbbjtidx[1]],gt.jetPhi[gt.hbbjtidx[1]], jet2Mass);
+        dRJet1W=jet1P4.DeltaR(leptonP4); dRJet2W=jet2P4.DeltaR(leptonP4);
         jet1IsCloser = (dRJet1W < dRJet2W);
         topP4 = jet1IsCloser? jet1P4+WP4 : jet2P4+WP4;
         topMass = topP4.M();
+        if(debug) printf("reconstructed a top mass of %.1f GeV from lepton (pT, eta, phi)=(%.1f,%.2f,%.2f), MET (pT,phi)=(%.1f,%.2f), jet (pT,eta,phi,M)=(%.1f,%.2f,%.2f,%.1f), nu (pT,eta,phi)=(%.1f, %.2f, %.2f), W (pT,eta,phi,M)=(%.1f,%.2f,%.2f,%.1f)\n", topMass, lepton1Pt, lepton1Eta, lepton1Phi, gt.pfmet, gt.pfmetphi, jet1IsCloser? jet1P4.Pt():jet2P4.Pt(), jet1IsCloser? jet1P4.Eta():jet2P4.Eta(), jet1IsCloser? jet1P4.Phi():jet2P4.Phi(), jet1IsCloser? jet1P4.M():jet2P4.M(), nuP4.Pt(),nuP4.Eta(),nuP4.Phi(), WP4.Pt(), WP4.Eta(), WP4.Phi(), WP4.M());
         // Top mass with jet energies varied up
-        metP4.SetPtEtaPhiM( pfmetUp, 0, pfmetphi, 0 );
+        metP4.SetPtEtaPhiM( gt.pfmetUp, 0, gt.pfmetphi, 0 );
         nuP4 = getNu4Momentum( leptonP4, metP4 );
         WP4 = leptonP4 + nuP4;
-        jet1P4.SetPtEtaPhiE(
+        jet1P4.SetPtEtaPhiM(
           gt.jetPtUp[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]],
           gt.jetEta[gt.hbbjtidx[0]],
           gt.jetPhi[gt.hbbjtidx[0]],
-          gt.jetE[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]]*gt.jetPtUp[gt.hbbjtidx[0]]/gt.jetPt[gt.hbbjtidx[0]]
+          jet1Mass
         ); 
-        jet2P4.SetPtEtaPhiE(
+        jet2P4.SetPtEtaPhiM(
           gt.jetPtUp[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]],
           gt.jetEta[gt.hbbjtidx[1]],
           gt.jetPhi[gt.hbbjtidx[1]],
-          gt.jetE[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]]*gt.jetPtUp[gt.hbbjtidx[1]]/gt.jetPt[gt.hbbjtidx[1]]
+          jet2Mass
         );
-        dRJet1W=jet1P4.DeltaR(WP4); dRJet2W=jet2P4.DeltaR(WP4);
+        dRJet1W=jet1P4.DeltaR(leptonP4); dRJet2W=jet2P4.DeltaR(leptonP4);
         jet1IsCloser = (dRJet1W < dRJet2W);
         topP4 = jet1IsCloser? jet1P4+WP4 : jet2P4+WP4;
         topMass_jesUp = topP4.M();
         // Top mass with jet energies varied down
-        metP4.SetPtEtaPhiM( pfmetDown, 0, pfmetphi, 0 );
+        metP4.SetPtEtaPhiM( gt.pfmetDown, 0, gt.pfmetphi, 0 );
         nuP4 = getNu4Momentum( leptonP4, metP4 );
         WP4 = leptonP4 + nuP4;
-        jet1P4.SetPtEtaPhiE(
+        jet1P4.SetPtEtaPhiM(
           gt.jetPtDown[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]],
           gt.jetEta[gt.hbbjtidx[0]],
           gt.jetPhi[gt.hbbjtidx[0]],
-          gt.jetE[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]]*gt.jetPtDown[gt.hbbjtidx[0]]/gt.jetPt[gt.hbbjtidx[0]]
+          jet1Mass
         ); 
-        jet2P4.SetPtEtaPhiE(
+        jet2P4.SetPtEtaPhiM(
           gt.jetPtDown[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]],
           gt.jetEta[gt.hbbjtidx[1]],
           gt.jetPhi[gt.hbbjtidx[1]],
-          gt.jetE[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]]*gt.jetPtDown[gt.hbbjtidx[1]]/gt.jetPt[gt.hbbjtidx[1]]
+          jet2Mass
         );
-        dRJet1W=jet1P4.DeltaR(WP4); dRJet2W=jet2P4.DeltaR(WP4);
+        dRJet1W=jet1P4.DeltaR(leptonP4); dRJet2W=jet2P4.DeltaR(leptonP4);
         jet1IsCloser = (dRJet1W < dRJet2W);
         topP4 = jet1IsCloser? jet1P4+WP4 : jet2P4+WP4;
         topMass_jesDown = topP4.M();
       }
 
       // VH reconstruction
-      nBytesRead+=bLoad(b["hbbpt_reg"    ],ientry);
-      nBytesRead+=bLoad(b["hbbpt_jesUp"  ],ientry);
-      nBytesRead+=bLoad(b["hbbpt_jesDown"],ientry);
-      nBytesRead+=bLoad(b["hbbphi"],ientry);
       { 
+        nBytesRead+=bLoad(b["hbbpt_reg"    ],ientry);
+        nBytesRead+=bLoad(b["hbbpt_jesUp"  ],ientry);
+        nBytesRead+=bLoad(b["hbbpt_jesDown"],ientry);
+        nBytesRead+=bLoad(b["hbbphi"],ientry);
         TVector2 hbbDijetV2;
         hbbDijetV2.SetMagPhi(gt.hbbpt_reg, gt.hbbphi);
         deltaPhiVH = vectorBosonV2.DeltaPhi(hbbDijetV2);
