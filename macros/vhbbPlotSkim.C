@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include "vhbbPlot.h"
+#include "formulas.h"
 
 // Script for making light weight plotting/training trees for VH analysis
 
@@ -88,55 +89,75 @@ bool vhbbPlotSkim(
 
   TFile *outputFile = TFile::Open(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
-  unsigned char typeLepSel, theCategory, nJet;
-  unsigned selectionBits, nMinusOneBits;
-  float pfmet, pfmetphi, pfmetsig;
+  unsigned char typeLepSel, theCategory, nJet, nJet_jesUp, nJet_jesDown;
+  unsigned selectionBits, nMinusOneBits, selectionBits_jesUp, selectionBits_jesDown;
+  float pfmet, pfmetphi, pfmetsig, pfmetUp, pfmetDown;
   float lepton1Pt, lepton1Eta, lepton1Phi;
   float lepton2Pt, lepton2Eta, lepton2Phi;
-  float hbbJet1Pt, hbbJet1Eta, hbbJet1Phi;
-  float hbbJet2Pt, hbbJet2Eta, hbbJet2Phi;
-  float vectorBosonPt, hbbDijetPt, hbbDijetMass;
+  float hbbJet1Pt, hbbJet1PtUp, hbbJet1PtDown, hbbJet1Eta, hbbJet1Phi;
+  float hbbJet2Pt, hbbJet2PtUp, hbbJet2PtDown, hbbJet2Eta, hbbJet2Phi;
+  float vectorBosonPt, hbbDijetPt, hbbDijetPtUp, hbbDijetPtDown, hbbDijetMass, hbbDijetMassUp, hbbDijetMassDown;
   float bDiscrMin, bDiscrMax;
-  float deltaPhiMetLep1, deltaPhiVH;
+  float deltaPhiMetLep1, deltaPhiVH, deltaPhiVH_jesUp, deltaPhiVH_jesDown;
+  float topMass, topMass_jesUp, topMass_jesDown;
   float weight;
   float weight_pdfUp, weight_pdfDown;
   float weight_scaleUp, weight_scaleDown;
   float weight_lepSFUp;
   float weight_cmvaUp, weight_cmvaDown; 
   
-  plotTree->Branch("selectionBits"   , &selectionBits   );
-  plotTree->Branch("nMinusOneBits"   , &nMinusOneBits   );
-  plotTree->Branch("theCategory"     , &theCategory     );
-  plotTree->Branch("nJet"            , &nJet            );
-  plotTree->Branch("pfmet"           , &pfmet           );
-  plotTree->Branch("pfmetsig"        , &pfmetsig        );
-  plotTree->Branch("pfmetphi"        , &pfmetphi        );
-  plotTree->Branch("hbbDijetPt"      , &hbbDijetPt      );
-  plotTree->Branch("hbbDijetMass"    , &hbbDijetMass    );
-  plotTree->Branch("bDiscrMin"       , &bDiscrMin       );
-  plotTree->Branch("bDiscrMax"       , &bDiscrMax       );
-  plotTree->Branch("hbbJet1Pt"       , &hbbJet1Pt       );
-  plotTree->Branch("hbbJet1Eta"      , &hbbJet1Eta      );
-  plotTree->Branch("hbbJet1Phi"      , &hbbJet1Phi      );
-  plotTree->Branch("hbbJet2Pt"       , &hbbJet2Pt       );
-  plotTree->Branch("hbbJet2Eta"      , &hbbJet2Eta      );
-  plotTree->Branch("hbbJet2Phi"      , &hbbJet2Phi      );
-  plotTree->Branch("weight"          , &weight          );
+  plotTree->Branch("selectionBits"         , &selectionBits         );
+  plotTree->Branch("selectionBits_jesUp"   , &selectionBits_jesUp   );
+  plotTree->Branch("selectionBits_jesDown" , &selectionBits_jesDown );
+  plotTree->Branch("nMinusOneBits"         , &nMinusOneBits         );
+  plotTree->Branch("theCategory"           , &theCategory           );
+  plotTree->Branch("nJet"                  , &nJet                  );
+  plotTree->Branch("nJet_jesUp"            , &nJet_jesUp            );
+  plotTree->Branch("nJet_jesDown"          , &nJet_jesDown          );
+  plotTree->Branch("pfmet"                 , &pfmet                 );
+  plotTree->Branch("pfmetUp"               , &pfmetUp               );
+  plotTree->Branch("pfmetUp"               , &pfmetDown             );
+  plotTree->Branch("pfmetsig"              , &pfmetsig              );
+  plotTree->Branch("pfmetphi"              , &pfmetphi              );
+  plotTree->Branch("bDiscrMin"             , &bDiscrMin             );
+  plotTree->Branch("bDiscrMax"             , &bDiscrMax             );
+  plotTree->Branch("hbbDijetPt"            , &hbbDijetPt            );
+  plotTree->Branch("hbbDijetPtUp"          , &hbbDijetPtUp          );
+  plotTree->Branch("hbbDijetPtDown"        , &hbbDijetPtDown        );
+  plotTree->Branch("hbbDijetMass"          , &hbbDijetMass          );
+  plotTree->Branch("hbbDijetMassUp"        , &hbbDijetMassUp        );
+  plotTree->Branch("hbbDijetMassDown"      , &hbbDijetMassDown      );
+  plotTree->Branch("hbbJet1Pt"             , &hbbJet1Pt             );
+  plotTree->Branch("hbbJet1PtUp"           , &hbbJet1PtUp           );
+  plotTree->Branch("hbbJet1PtDown"         , &hbbJet1PtDown         );
+  plotTree->Branch("hbbJet1Eta"            , &hbbJet1Eta            );
+  plotTree->Branch("hbbJet1Phi"            , &hbbJet1Phi            );
+  plotTree->Branch("hbbJet2Pt"             , &hbbJet2Pt             );
+  plotTree->Branch("hbbJet2PtUp"           , &hbbJet2PtUp           );
+  plotTree->Branch("hbbJet2PtDown"         , &hbbJet2PtDown         );
+  plotTree->Branch("hbbJet2Eta"            , &hbbJet2Eta            );
+  plotTree->Branch("hbbJet2Phi"            , &hbbJet2Phi            );
+  plotTree->Branch("weight"                , &weight                );
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
-    plotTree->Branch("typeLepSel"      , &typeLepSel      );
-    plotTree->Branch("lepton1Pt"       , &lepton1Pt       );
-    plotTree->Branch("lepton1Eta"      , &lepton1Eta      );
-    plotTree->Branch("lepton1Phi"      , &lepton1Phi      );
-    plotTree->Branch("vectorBosonPt"   , &vectorBosonPt   );
-    plotTree->Branch("deltaPhiMetLep1" , &deltaPhiMetLep1 );
-    plotTree->Branch("deltaPhiVH"      , &deltaPhiVH      );
-    plotTree->Branch("weight_pdfUp"    , &weight_pdfUp    );
-    plotTree->Branch("weight_pdfDown"  , &weight_pdfDown  );
-    plotTree->Branch("weight_scaleUp"  , &weight_scaleUp  );
-    plotTree->Branch("weight_scaleDown", &weight_scaleDown);
-    plotTree->Branch("weight_lepSFUp"  , &weight_lepSFUp  );
-    plotTree->Branch("weight_cmvaUp"   , &weight_cmvaUp   );
-    plotTree->Branch("weight_cmvaDown" , &weight_cmvaDown );
+    plotTree->Branch("typeLepSel"              , &typeLepSel               );
+    plotTree->Branch("lepton1Pt"               , &lepton1Pt                );
+    plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
+    plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
+    plotTree->Branch("vectorBosonPt"           , &vectorBosonPt            );
+    plotTree->Branch("deltaPhiMetLep1"         , &deltaPhiMetLep1          );
+    plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
+    plotTree->Branch("deltaPhiVH_jesUp"        , &deltaPhiVH_jesUp         );
+    plotTree->Branch("deltaPhiVH_jesDown"      , &deltaPhiVH_jesDown       );
+    plotTree->Branch("topMass"                 , &topMass                  );
+    plotTree->Branch("topMass_jesUp"           , &topMass_jesUp            );
+    plotTree->Branch("topMass_jesDown"         , &topMass_jesDown          );
+    plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
+    plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
+    plotTree->Branch("weight_scaleUp"          , &weight_scaleUp           );
+    plotTree->Branch("weight_scaleDown"        , &weight_scaleDown         );
+    plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
+    plotTree->Branch("weight_cmvaUp"           , &weight_cmvaUp            );
+    plotTree->Branch("weight_cmvaDown"         , &weight_cmvaDown          );
   }
   Long64_t nentries = events->GetEntries();
   if(maxEntries!=0) nentries = TMath::Min((ULong64_t)maxEntries, (ULong64_t)nentries);
@@ -174,28 +195,45 @@ bool vhbbPlotSkim(
         // Jet multiplicity
         nBytesRead+=bLoad(b["nJet"],ientry);
         if     (gt.nJet<2) continue;
-        nJet=gt.nJet;
+        nJet=gt.nJet; nJet_jesUp=gt.nJet; nJet_jesDown=gt.nJet;
         // Jet kinematics
         nBytesRead+=bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
         nBytesRead+=bLoad(b["jetPt"],ientry);
         if(debug) printf("hbb jet1 pt %.2f, jet2 pt %.2f\n", gt.jetPt[gt.hbbjtidx[0]], gt.jetPt[gt.hbbjtidx[1]]);
         if(gt.jetPt[gt.hbbjtidx[0]]<25 || gt.jetPt[gt.hbbjtidx[1]]<25) continue;
         
-        nBytesRead+=bLoad(b["hbbpt"],ientry);
+        nBytesRead+=bLoad(b["hbbpt_reg"],ientry);
+        nBytesRead+=bLoad(b["hbbpt_jesUp"],ientry);
+        nBytesRead+=bLoad(b["hbbpt_jesDown"],ientry);
         nBytesRead+=bLoad(b["hbbeta"],ientry);
         nBytesRead+=bLoad(b["hbbphi"],ientry);
-        nBytesRead+=bLoad(b["hbbm"],ientry);
+        nBytesRead+=bLoad(b["hbbm_reg"],ientry);
+        nBytesRead+=bLoad(b["hbbm_jesUp"],ientry);
+        nBytesRead+=bLoad(b["hbbm_jesDown"],ientry);
         nBytesRead+=bLoad(b["jetEta"],ientry);
         nBytesRead+=bLoad(b["jetPhi"],ientry);
-        hbbDijetPt = gt.hbbpt;
-        hbbDijetMass = gt.hbbm;
-        hbbJet1Pt=gt.jetPt[gt.hbbjtidx[0]]; hbbJet1Eta=gt.jetEta[gt.hbbjtidx[0]]; hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[0]];
-        hbbJet2Pt=gt.jetPt[gt.hbbjtidx[1]]; hbbJet1Eta=gt.jetEta[gt.hbbjtidx[1]]; hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[1]];
+        nBytesRead+=bLoad(b["jetPtUp"],ientry);
+        nBytesRead+=bLoad(b["jetPtDown"],ientry);
+        nBytesRead+=bLoad(b["jetRegFac"],ientry);
+        hbbDijetPt = gt.hbbpt_reg;
+        hbbDijetPtUp = gt.hbbpt_jesUp;
+        hbbDijetPtDown = gt.hbbpt_jesDown;
+        hbbDijetMass = gt.hbbm_reg;
+        hbbDijetMassUp = gt.hbbm_jesUp;
+        hbbDijetMassDown = gt.hbbm_jesDown;
+        hbbJet1Pt=gt.jetRegFac[gt.hbbjtidx[0]] * gt.jetPt[gt.hbbjtidx[0]]; 
+        hbbJet1PtUp=gt.jetRegFac[gt.hbbjtidx[0]] * gt.jetPtUp[gt.hbbjtidx[0]]; 
+        hbbJet1PtDown=gt.jetRegFac[gt.hbbjtidx[0]] * gt.jetPtDown[gt.hbbjtidx[0]]; 
+        hbbJet1Eta=gt.jetEta[gt.hbbjtidx[0]];
+        hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[0]];
+        hbbJet2Pt=gt.jetRegFac[gt.hbbjtidx[1]] * gt.jetPt[gt.hbbjtidx[1]];
+        hbbJet2PtUp=gt.jetRegFac[gt.hbbjtidx[1]] * gt.jetPtUp[gt.hbbjtidx[1]]; 
+        hbbJet2PtDown=gt.jetRegFac[gt.hbbjtidx[1]] * gt.jetPtDown[gt.hbbjtidx[1]]; 
+        hbbJet1Eta=gt.jetEta[gt.hbbjtidx[1]];
+        hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[1]];
         if(debug) printf("hbbDijetPt %.2f, hbbDijetMass %.2f\n", hbbDijetPt, hbbDijetMass); 
-        if(hbbDijetPt<50.) continue;
-        //bool passDijetMass=false;
-        if(hbbDijetMass<0 || hbbDijetMass>250.) continue;
-        //if(!passDijetMass) continue;
+        if(hbbDijetPt<50. && hbbDijetPtUp<50.) continue;
+        if((hbbDijetMass<0 && hbbDijetMassDown<0)|| (hbbDijetMass>250. && hbbDijetMassUp>250.)) continue;
         if(debug) printf("passed jet kinematics\n");
 
         // Lepton ID and isolation
@@ -222,7 +260,9 @@ bool vhbbPlotSkim(
         
         // Met
         nBytesRead+=bLoad(b["pfmet"],ientry);
-        pfmet = gt.pfmet;
+        nBytesRead+=bLoad(b["pfmetUp"],ientry);
+        nBytesRead+=bLoad(b["pfmetDown"],ientry);
+        pfmet = gt.pfmet; pfmetUp = gt.pfmetUp; pfmetDown = gt.pfmetDown;
         
         //if(gt.pfmet<30) continue;
         //if(debug) printf("passed MET\n");
@@ -245,13 +285,84 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["jetCMVA"],ientry);
       bDiscrMax=gt.jetCMVA[gt.hbbjtidx[0]];
       bDiscrMin=gt.jetCMVA[gt.hbbjtidx[1]];
-      
-      // Other stuff
-      nBytesRead+=bLoad(b["hbbpt"],ientry);
+
+      // Top reconstruction
+      {
+        nBytesRead+=bLoad(b["jetE"],ientry);
+        nBytesRead+=bLoad(b["jetPt"],ientry);
+        nBytesRead+=bLoad(b["jetEta"],ientry);
+        nBytesRead+=bLoad(b["jetPhi"],ientry);
+        nBytesRead+=bLoad(b["jetPtUp"],ientry);
+        nBytesRead+=bLoad(b["jetPtDown"],ientry);
+        nBytesRead+=bLoad(b["jetRegFac"],ientry);
+        TLorentzVector leptonP4, metP4, nuP4, jet1P4, jet2P4, WP4, topP4;
+        bool jet1IsCloser; float dRJet1W, dRJet2W;
+        leptonP4.SetPtEtaPhiM( lepton1Pt, lepton1Eta, lepton1Phi, (typeLepSel==1? 0.106:511e-6));
+        // Nominal jet energies
+        metP4.SetPtEtaPhiM( pfmet, 0, pfmetphi, 0 );
+        nuP4 = getNu4Momentum( leptonP4, metP4 );
+        WP4 = leptonP4 + nuP4;
+        jet1P4.SetPtEtaPhiE(gt.jetPt[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]],gt.jetEta[gt.hbbjtidx[0]],gt.jetPhi[gt.hbbjtidx[0]],gt.jetE[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]]); 
+        jet2P4.SetPtEtaPhiE(gt.jetPt[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]],gt.jetEta[gt.hbbjtidx[1]],gt.jetPhi[gt.hbbjtidx[1]],gt.jetE[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]]);
+        dRJet1W=jet1P4.DeltaR(WP4); dRJet2W=jet2P4.DeltaR(WP4);
+        jet1IsCloser = (dRJet1W < dRJet2W);
+        topP4 = jet1IsCloser? jet1P4+WP4 : jet2P4+WP4;
+        topMass = topP4.M();
+        // Top mass with jet energies varied up
+        metP4.SetPtEtaPhiM( pfmetUp, 0, pfmetphi, 0 );
+        nuP4 = getNu4Momentum( leptonP4, metP4 );
+        WP4 = leptonP4 + nuP4;
+        jet1P4.SetPtEtaPhiE(
+          gt.jetPtUp[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]],
+          gt.jetEta[gt.hbbjtidx[0]],
+          gt.jetPhi[gt.hbbjtidx[0]],
+          gt.jetE[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]]*gt.jetPtUp[gt.hbbjtidx[0]]/gt.jetPt[gt.hbbjtidx[0]]
+        ); 
+        jet2P4.SetPtEtaPhiE(
+          gt.jetPtUp[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]],
+          gt.jetEta[gt.hbbjtidx[1]],
+          gt.jetPhi[gt.hbbjtidx[1]],
+          gt.jetE[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]]*gt.jetPtUp[gt.hbbjtidx[1]]/gt.jetPt[gt.hbbjtidx[1]]
+        );
+        dRJet1W=jet1P4.DeltaR(WP4); dRJet2W=jet2P4.DeltaR(WP4);
+        jet1IsCloser = (dRJet1W < dRJet2W);
+        topP4 = jet1IsCloser? jet1P4+WP4 : jet2P4+WP4;
+        topMass_jesUp = topP4.M();
+        // Top mass with jet energies varied down
+        metP4.SetPtEtaPhiM( pfmetDown, 0, pfmetphi, 0 );
+        nuP4 = getNu4Momentum( leptonP4, metP4 );
+        WP4 = leptonP4 + nuP4;
+        jet1P4.SetPtEtaPhiE(
+          gt.jetPtDown[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]],
+          gt.jetEta[gt.hbbjtidx[0]],
+          gt.jetPhi[gt.hbbjtidx[0]],
+          gt.jetE[gt.hbbjtidx[0]]*gt.jetRegFac[gt.hbbjtidx[0]]*gt.jetPtDown[gt.hbbjtidx[0]]/gt.jetPt[gt.hbbjtidx[0]]
+        ); 
+        jet2P4.SetPtEtaPhiE(
+          gt.jetPtDown[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]],
+          gt.jetEta[gt.hbbjtidx[1]],
+          gt.jetPhi[gt.hbbjtidx[1]],
+          gt.jetE[gt.hbbjtidx[1]]*gt.jetRegFac[gt.hbbjtidx[1]]*gt.jetPtDown[gt.hbbjtidx[1]]/gt.jetPt[gt.hbbjtidx[1]]
+        );
+        dRJet1W=jet1P4.DeltaR(WP4); dRJet2W=jet2P4.DeltaR(WP4);
+        jet1IsCloser = (dRJet1W < dRJet2W);
+        topP4 = jet1IsCloser? jet1P4+WP4 : jet2P4+WP4;
+        topMass_jesDown = topP4.M();
+      }
+
+      // VH reconstruction
+      nBytesRead+=bLoad(b["hbbpt_reg"    ],ientry);
+      nBytesRead+=bLoad(b["hbbpt_jesUp"  ],ientry);
+      nBytesRead+=bLoad(b["hbbpt_jesDown"],ientry);
       nBytesRead+=bLoad(b["hbbphi"],ientry);
       { 
-        TVector2 hbbDijetV2; hbbDijetV2.SetMagPhi(gt.hbbpt, gt.hbbphi);
+        TVector2 hbbDijetV2;
+        hbbDijetV2.SetMagPhi(gt.hbbpt_reg, gt.hbbphi);
         deltaPhiVH = vectorBosonV2.DeltaPhi(hbbDijetV2);
+        hbbDijetV2.SetMagPhi(gt.hbbpt_jesUp, gt.hbbphi);
+        deltaPhiVH_jesUp = vectorBosonV2.DeltaPhi(hbbDijetV2);
+        hbbDijetV2.SetMagPhi(gt.hbbpt_jesDown, gt.hbbphi);
+        deltaPhiVH_jesDown = vectorBosonV2.DeltaPhi(hbbDijetV2);
       }
       nBytesRead+=bLoad(b["pfmetsig"],ientry);
       pfmetsig = gt.pfmetsig;
@@ -260,8 +371,14 @@ bool vhbbPlotSkim(
     
     // Set Selection Bits
     selectionBits=0; nMinusOneBits=0;
-    std::map<TString, bool> cut;
+    std::map<TString, bool> cut, cut_jesUp, cut_jesDown;;
     if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
+      vector<TString> cutsWHLightFlavorCR, cutsWHHeavyFlavorCR, cutsWH2TopCR, cutsWHSR;
+      cutsWHLightFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","looseBTag","tightBVeto","metSig"};
+      cutsWHHeavyFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHHF","tightBTag","mH_Flip","metSig"};
+      cutsWH2TopCR        ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHTT","tightBTag"};
+      cutsWHSR            ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
+
       cut["2ndLepVeto" ] = gt.nLooseLep==1;
       cut["WpT"        ] = vectorBosonPt>100;
       cut["pTjj"       ] = hbbDijetPt>100; 
@@ -278,29 +395,46 @@ bool vhbbPlotSkim(
       cut["nJet_WHSR"  ] = nJet<4;
       cut["mH_WHSR"    ] = ((hbbDijetMass >= 90) && (hbbDijetMass <  150));
       cut["mH_Flip"    ] = ((hbbDijetMass < 90) || (hbbDijetMass >= 150));
-      
-      //bool allWHCuts = cut["2ndLepVeto"] && cut["WpT"] && cut["pTjj"] && cut["lepton1Pt"] && cut["dPhiVH"] && cut["dPhiMetLep1"];
-      vector<TString> cutsWHLightFlavorCR, cutsWHHeavyFlavorCR, cutsWH2TopCR, cutsWHSR;
-      cutsWHLightFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","looseBTag","tightBVeto","metSig"};
-      cutsWHHeavyFlavorCR ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHHF","tightBTag","mH_Flip","metSig"};
-      cutsWH2TopCR        ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHTT","tightBTag"};
-      cutsWHSR            ={"2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiMetLep1","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
 
+      cut_jesUp=cut;
+      cut_jesUp["pTjj"       ] = hbbDijetPtUp>100; 
+      cut_jesUp["dPhiVH"     ] = deltaPhiVH_jesUp > 2.5;
+      cut_jesUp["nJet_WHTT"  ] = nJet_jesUp>=4;
+      cut_jesUp["nJet_WHHF"  ] = nJet_jesUp==2;
+      cut_jesUp["nJet_WHSR"  ] = nJet_jesUp<4;
+      cut_jesUp["mH_WHSR"    ] = ((hbbDijetMassUp >= 90) && (hbbDijetMassUp <  150));
+      cut_jesUp["mH_Flip"    ] = ((hbbDijetMassUp < 90) || (hbbDijetMassUp >= 150));
+      
+      cut_jesDown=cut; 
+      cut_jesDown["pTjj"       ] = hbbDijetPtDown>100; 
+      cut_jesDown["dPhiVH"     ] = deltaPhiVH_jesDown > 2.5;
+      cut_jesDown["nJet_WHTT"  ] = nJet_jesDown>=4;
+      cut_jesDown["nJet_WHHF"  ] = nJet_jesDown==2;
+      cut_jesDown["nJet_WHSR"  ] = nJet_jesDown<4;
+      cut_jesDown["mH_WHSR"    ] = ((hbbDijetMassDown >= 90) && (hbbDijetMassDown <  150));
+      cut_jesDown["mH_Flip"    ] = ((hbbDijetMassDown < 90) || (hbbDijetMassDown >= 150));
+      
       if(passAllCuts( cut, cutsWHLightFlavorCR))   selectionBits |= kWHLightFlavorCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorCR))   selectionBits |= kWHHeavyFlavorCR;
       if(passAllCuts( cut, cutsWH2TopCR       ))   selectionBits |= kWH2TopCR;
       if(passAllCuts( cut, cutsWHSR           ))   selectionBits |= kWHSR;
         
+      if(passAllCuts( cut_jesUp, cutsWHLightFlavorCR))   selectionBits_jesUp |= kWHLightFlavorCR;
+      if(passAllCuts( cut_jesUp, cutsWHHeavyFlavorCR))   selectionBits_jesUp |= kWHHeavyFlavorCR;
+      if(passAllCuts( cut_jesUp, cutsWH2TopCR       ))   selectionBits_jesUp |= kWH2TopCR;
+      if(passAllCuts( cut_jesUp, cutsWHSR           ))   selectionBits_jesUp |= kWHSR;
+        
+      if(passAllCuts( cut_jesDown, cutsWHLightFlavorCR))   selectionBits_jesDown |= kWHLightFlavorCR;
+      if(passAllCuts( cut_jesDown, cutsWHHeavyFlavorCR))   selectionBits_jesDown |= kWHHeavyFlavorCR;
+      if(passAllCuts( cut_jesDown, cutsWH2TopCR       ))   selectionBits_jesDown |= kWH2TopCR;
+      if(passAllCuts( cut_jesDown, cutsWHSR           ))   selectionBits_jesDown |= kWHSR;
+        
       if(passNMinusOne( cut, cutsWHLightFlavorCR)) nMinusOneBits |= kWHLightFlavorCR;
       if(passNMinusOne( cut, cutsWHHeavyFlavorCR)) nMinusOneBits |= kWHHeavyFlavorCR;
       if(passNMinusOne( cut, cutsWH2TopCR       )) nMinusOneBits |= kWH2TopCR;
       if(passNMinusOne( cut, cutsWHSR           )) nMinusOneBits |= kWHSR;
-
-      //if(selection==kWHLightFlavorCR && (nMinusOneBits & kWHLightFlavorCR)==0) continue;
-      //if(selection==kWHHeavyFlavorCR && (nMinusOneBits & kWHHeavyFlavorCR)==0) continue;
-      //if(selection==kWH2TopCR        && (nMinusOneBits & kWH2TopCR)       ==0) continue;
-      //if(selection==kWHSR            && (nMinusOneBits & kWHSR)           ==0) continue;
     }
+    if(nMinusOneBits==0) continue;
 
     // Weighting
     if(sample==kData) weight=1;
