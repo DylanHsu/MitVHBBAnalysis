@@ -18,7 +18,7 @@
 // Script for making light weight plotting/training trees for VH analysis
 
 using namespace vhbbPlot;
-bool vhbbPlotSkimOld(
+bool vhbbPlotSkim(
   TString inputFileName="", 
   TString outputFileName="",
   vhbbPlot::sampleType sample=nSampleTypes,
