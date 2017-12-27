@@ -157,8 +157,6 @@ void mutualInfTruth(
     varMutualInfs.push_back( std::pair<unsigned, float> (h1,mutualInfWithTruth));
     float mutualError=sqrt(mutualError2);
     varMutualInfErrors[h1]=mutualError;
-    pairwiseMutualInf->SetBinContent(pairwiseMutualInf->FindBin(h1,h1), mutualInfWithTruth);
-    pairwiseMutualInf->SetBinError(pairwiseMutualInf->FindBin(h1,h1), mutualError);
     
   }
   sort(varMutualInfs.begin(), varMutualInfs.end(), [=](std::pair<unsigned, float>& a, std::pair<unsigned, float>& b) {
@@ -166,8 +164,11 @@ void mutualInfTruth(
   });
   printf("Rank     I(T;A)       Error  Name(A)\n");
   printf("---------------------------------------\n");
-  for(unsigned i=0; i<varMutualInfs.size(); i++)
+  for(unsigned i=0; i<varMutualInfs.size(); i++) {
     printf("%4d %10.2e  %10.2e  %s\n", i+1, varMutualInfs[i].second, varMutualInfErrors[varMutualInfs[i].first], varNames[varMutualInfs[i].first].Data());
+    pairwiseMutualInf->SetBinContent(pairwiseMutualInf->FindBin(i,i), varMutualInfs[i].second);
+    pairwiseMutualInf->SetBinError(pairwiseMutualInf->FindBin(i,i), varMutualInfErrors[varMutualInfs[i].first]);
+  }
   
   // pairwise correlations
   for(unsigned h1=0; h1<nVars; h1++) {
@@ -201,19 +202,24 @@ void mutualInfTruth(
       }
       float mutualError=sqrt(mutualError2);
       if(debug) printf("Mutual information with truth for variable pair (\"%s\",\"%s\"): %.2e\n", varNames[h1].Data(), varNames[h2].Data(), mutualInfWithTruth);
-      pairwiseMutualInf->SetBinContent(pairwiseMutualInf->FindBin(h1,h2), mutualInfWithTruth);
-      pairwiseMutualInf->SetBinError(pairwiseMutualInf->FindBin(h1,h2), mutualError);
-      pairwiseMutualInf->SetBinContent(pairwiseMutualInf->FindBin(h2,h1), mutualInfWithTruth);
-      pairwiseMutualInf->SetBinError(pairwiseMutualInf->FindBin(h2,h1), mutualError);
+      unsigned k1,k2;
+      for(unsigned i=0; i<varMutualInfs.size(); i++) {
+        if(varMutualInfs[i].first==h1) k1=i;
+        if(varMutualInfs[i].first==h2) k2=i;
+      }
+      pairwiseMutualInf->SetBinContent(pairwiseMutualInf->FindBin(k1,k2), mutualInfWithTruth);
+      pairwiseMutualInf->SetBinError(pairwiseMutualInf->FindBin(k1,k2), mutualError);
+      pairwiseMutualInf->SetBinContent(pairwiseMutualInf->FindBin(k2,k1), mutualInfWithTruth);
+      pairwiseMutualInf->SetBinError(pairwiseMutualInf->FindBin(k2,k1), mutualError);
 
     }
   }
   // Set axis labels
   pairwiseMutualInf->GetXaxis()->SetLabelSize(0.025);
   pairwiseMutualInf->GetYaxis()->SetLabelSize(0.025);
-  for(unsigned h1=0; h1<nVars; h1++) {
-    pairwiseMutualInf->GetXaxis()->SetBinLabel(h1+1, varTitles[h1]);
-    pairwiseMutualInf->GetYaxis()->SetBinLabel(h1+1, varTitles[h1]);
+  for(unsigned i=0; i<varMutualInfs.size(); i++) {
+    pairwiseMutualInf->GetXaxis()->SetBinLabel(i+1, varTitles[varMutualInfs[i].first]);
+    pairwiseMutualInf->GetYaxis()->SetBinLabel(i+1, varTitles[varMutualInfs[i].first]);
   }
 
   // Start Drawing stuff
