@@ -35,7 +35,7 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
   TCut preselectionCut;
   
   if(isBoosted) {
-    TCut preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHFJSR);
+    TCut preselectionCut = Form("(selectionBits & %d)!=0 && weight<500. && fj1ECFN_2_4_20>0", vhbbPlot::kWHFJSR);
     
     TString dPhil1W   = "dPhil1W   := fabs(TVector2::Phi_mpi_pi(lepton1Phi   - topWBosonPhi))";
     TString dPhil1fj1 = "dPhil1fj1 := fabs(TVector2::Phi_mpi_pi(lepton1Phi   - fj1Phi  ))";
@@ -46,56 +46,56 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
 
     //ECF definitions
     std::map<string, TString> psi, psiName;
-    psi["2_10_4_1_05_2"] = "psi_2_10_4_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_10/pow(fj1ECFN_1_2_05,4.00)))";
-    psi["1_20_4_1_05_2"] = "psi_1_20_4_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/pow(fj1ECFN_1_2_05,4.00)))";
-    psi["2_10_3_1_10_2"] = "psi_2_10_3_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_10/pow(fj1ECFN_1_2_10,2.00)))";
-    psi["2_20_4_1_10_2"] = "psi_2_20_4_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_20/pow(fj1ECFN_1_2_10,4.00)))";
-    psi["2_05_3_1_05_2"] = "psi_2_05_3_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_05/pow(fj1ECFN_1_2_05,2.00)))";
-    psi["2_20_3_1_20_2"] = "psi_2_20_3_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_20/pow(fj1ECFN_1_2_20,2.00)))";
-    psi["1_20_4_2_05_3"] = "psi_1_20_4_2_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/pow(fj1ECFN_2_3_05,2.00)))";
-    psi["2_10_4_2_05_3"] = "psi_2_10_4_2_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_10/pow(fj1ECFN_2_3_05,2.00)))";
-    psi["3_20_3_1_20_2"] = "psi_3_20_3_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_3_3_20/pow(fj1ECFN_1_2_20,3.00)))";
-    psi["1_20_3_1_10_2"] = "psi_1_20_3_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_20/pow(fj1ECFN_1_2_10,2.00)))";
-    psi["1_10_3_1_05_2"] = "psi_1_10_3_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_10/pow(fj1ECFN_1_2_05,2.00)))";
-    psi["3_10_3_1_10_2"] = "psi_3_10_3_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_3_3_10/pow(fj1ECFN_1_2_10,3.00)))";
-    psi["3_10_3_1_20_2"] = "psi_3_10_3_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_3_3_10/pow(fj1ECFN_1_2_20,1.50)))";
-    psi["3_05_3_1_10_2"] = "psi_3_05_3_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_3_3_05/pow(fj1ECFN_1_2_10,1.50)))";
-    psi["2_20_4_1_20_2"] = "psi_2_20_4_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_20/pow(fj1ECFN_1_2_20,2.00)))";
-    psi["2_10_4_1_10_2"] = "psi_2_10_4_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_10/pow(fj1ECFN_1_2_10,2.00)))";
-    psi["1_20_4_1_10_2"] = "psi_1_20_4_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/pow(fj1ECFN_1_2_10,2.00)))";
-    psi["2_20_4_2_10_3"] = "psi_2_20_4_2_10_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_20/pow(fj1ECFN_2_3_10,2.00)))";
-    psi["1_20_3_1_05_2"] = "psi_1_20_3_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_20/pow(fj1ECFN_1_2_05,4.00)))";
-    psi["2_20_3_1_10_2"] = "psi_2_20_3_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_20/pow(fj1ECFN_1_2_10,4.00)))";
-    psi["2_20_4_3_10_3"] = "psi_2_20_4_3_10_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_20/pow(fj1ECFN_3_3_10,1.33)))";
-    psi["1_20_4_3_05_3"] = "psi_1_20_4_3_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/pow(fj1ECFN_3_3_05,1.33)))";
-    psi["2_10_4_3_05_3"] = "psi_2_10_4_3_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_10/pow(fj1ECFN_3_3_05,1.33)))";
-    psi["2_05_4_1_05_2"] = "psi_2_05_4_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_05/pow(fj1ECFN_1_2_05,2.00)))";
-    psi["2_20_4_3_05_3"] = "psi_2_20_4_3_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_20/pow(fj1ECFN_3_3_05,2.67)))";
-    psi["1_10_4_1_05_2"] = "psi_1_10_4_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_10/pow(fj1ECFN_1_2_05,2.00)))";
-    psi["3_05_3_1_05_2"] = "psi_3_05_3_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_3_3_05/pow(fj1ECFN_1_2_05,3.00)))";
-    psi["2_10_3_1_05_2"] = "psi_2_10_3_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_10/pow(fj1ECFN_1_2_05,4.00)))";
-    psi["1_20_4_1_10_3"] = "psi_1_20_4_1_10_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/pow(fj1ECFN_1_3_10,2.00)))";
-    psi["1_20_4_2_10_4"] = "psi_1_20_4_2_10_4 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/fj1ECFN_2_4_10))";
-    psi["2_10_4_1_20_4"] = "psi_2_10_4_1_20_4 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_10/fj1ECFN_1_4_20))";
-    psi["1_10_3_2_05_3"] = "psi_1_10_3_2_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_10/fj1ECFN_2_3_05))";
-    psi["2_05_3_1_10_3"] = "psi_2_05_3_1_10_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_05/fj1ECFN_1_3_10))";
-    psi["1_20_3_3_05_3"] = "psi_1_20_3_3_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_20/pow(fj1ECFN_3_3_05,1.33)))";
-    psi["3_05_3_1_20_3"] = "psi_3_05_3_1_20_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_3_3_05/pow(fj1ECFN_1_3_20,0.75)))";
-    psi["1_05_3_1_05_2"] = "psi_1_05_3_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_05/fj1ECFN_1_2_05))";
-    psi["2_05_3_1_10_2"] = "psi_2_05_3_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_05/fj1ECFN_1_2_10))";
-    psi["1_10_3_1_10_2"] = "psi_1_10_3_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_10/fj1ECFN_1_2_10))";
-    psi["2_05_4_1_10_2"] = "psi_2_05_4_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_05/fj1ECFN_1_2_10))";
-    psi["1_20_4_2_10_3"] = "psi_1_20_4_2_10_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/fj1ECFN_2_3_10))";
-    psi["1_20_4_1_20_2"] = "psi_1_20_4_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_20/fj1ECFN_1_2_20))";
-    psi["2_05_4_2_05_3"] = "psi_2_05_4_2_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_05/fj1ECFN_2_3_05))";
-    psi["1_10_4_1_10_2"] = "psi_1_10_4_1_10_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_10/fj1ECFN_1_2_10))";
-    psi["2_10_4_1_20_2"] = "psi_2_10_4_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_10/fj1ECFN_1_2_20))";
-    psi["2_10_3_1_20_2"] = "psi_2_10_3_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_3_10/fj1ECFN_1_2_20))";
-    psi["1_10_4_2_05_3"] = "psi_1_10_4_2_05_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_10/fj1ECFN_2_3_05))";
-    psi["1_05_4_1_05_2"] = "psi_1_05_4_1_05_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_4_05/fj1ECFN_1_2_05))";
-    psi["2_10_4_2_10_3"] = "psi_2_10_4_2_10_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_10/fj1ECFN_2_3_10))";
-    psi["1_20_3_1_20_2"] = "psi_1_20_3_1_20_2 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_1_3_20/fj1ECFN_1_2_20))";
-    psi["2_20_4_2_20_3"] = "psi_2_20_4_2_20_3 := TMath::Max(0.,TMath::Min(5.,fj1ECFN_2_4_20/fj1ECFN_2_3_20))";
+    psi["2_10_4_1_05_2"] = "psi_2_10_4_1_05_2 := fj1ECFN_2_4_10/pow(fj1ECFN_1_2_05,4.00)";
+    psi["1_20_4_1_05_2"] = "psi_1_20_4_1_05_2 := fj1ECFN_1_4_20/pow(fj1ECFN_1_2_05,4.00)";
+    psi["2_10_3_1_10_2"] = "psi_2_10_3_1_10_2 := fj1ECFN_2_3_10/pow(fj1ECFN_1_2_10,2.00)";
+    psi["2_20_4_1_10_2"] = "psi_2_20_4_1_10_2 := fj1ECFN_2_4_20/pow(fj1ECFN_1_2_10,4.00)";
+    psi["2_05_3_1_05_2"] = "psi_2_05_3_1_05_2 := fj1ECFN_2_3_05/pow(fj1ECFN_1_2_05,2.00)";
+    psi["2_20_3_1_20_2"] = "psi_2_20_3_1_20_2 := fj1ECFN_2_3_20/pow(fj1ECFN_1_2_20,2.00)";
+    psi["1_20_4_2_05_3"] = "psi_1_20_4_2_05_3 := fj1ECFN_1_4_20/pow(fj1ECFN_2_3_05,2.00)";
+    psi["2_10_4_2_05_3"] = "psi_2_10_4_2_05_3 := fj1ECFN_2_4_10/pow(fj1ECFN_2_3_05,2.00)";
+    psi["3_20_3_1_20_2"] = "psi_3_20_3_1_20_2 := fj1ECFN_3_3_20/pow(fj1ECFN_1_2_20,3.00)";
+    psi["1_20_3_1_10_2"] = "psi_1_20_3_1_10_2 := fj1ECFN_1_3_20/pow(fj1ECFN_1_2_10,2.00)";
+    psi["1_10_3_1_05_2"] = "psi_1_10_3_1_05_2 := fj1ECFN_1_3_10/pow(fj1ECFN_1_2_05,2.00)";
+    psi["3_10_3_1_10_2"] = "psi_3_10_3_1_10_2 := fj1ECFN_3_3_10/pow(fj1ECFN_1_2_10,3.00)";
+    psi["3_10_3_1_20_2"] = "psi_3_10_3_1_20_2 := fj1ECFN_3_3_10/pow(fj1ECFN_1_2_20,1.50)";
+    psi["3_05_3_1_10_2"] = "psi_3_05_3_1_10_2 := fj1ECFN_3_3_05/pow(fj1ECFN_1_2_10,1.50)";
+    psi["2_20_4_1_20_2"] = "psi_2_20_4_1_20_2 := fj1ECFN_2_4_20/pow(fj1ECFN_1_2_20,2.00)";
+    psi["2_10_4_1_10_2"] = "psi_2_10_4_1_10_2 := fj1ECFN_2_4_10/pow(fj1ECFN_1_2_10,2.00)";
+    psi["1_20_4_1_10_2"] = "psi_1_20_4_1_10_2 := fj1ECFN_1_4_20/pow(fj1ECFN_1_2_10,2.00)";
+    psi["2_20_4_2_10_3"] = "psi_2_20_4_2_10_3 := fj1ECFN_2_4_20/pow(fj1ECFN_2_3_10,2.00)";
+    psi["1_20_3_1_05_2"] = "psi_1_20_3_1_05_2 := fj1ECFN_1_3_20/pow(fj1ECFN_1_2_05,4.00)";
+    psi["2_20_3_1_10_2"] = "psi_2_20_3_1_10_2 := fj1ECFN_2_3_20/pow(fj1ECFN_1_2_10,4.00)";
+    psi["2_20_4_3_10_3"] = "psi_2_20_4_3_10_3 := fj1ECFN_2_4_20/pow(fj1ECFN_3_3_10,1.33)";
+    psi["1_20_4_3_05_3"] = "psi_1_20_4_3_05_3 := fj1ECFN_1_4_20/pow(fj1ECFN_3_3_05,1.33)";
+    psi["2_10_4_3_05_3"] = "psi_2_10_4_3_05_3 := fj1ECFN_2_4_10/pow(fj1ECFN_3_3_05,1.33)";
+    psi["2_05_4_1_05_2"] = "psi_2_05_4_1_05_2 := fj1ECFN_2_4_05/pow(fj1ECFN_1_2_05,2.00)";
+    psi["2_20_4_3_05_3"] = "psi_2_20_4_3_05_3 := fj1ECFN_2_4_20/pow(fj1ECFN_3_3_05,2.67)";
+    psi["1_10_4_1_05_2"] = "psi_1_10_4_1_05_2 := fj1ECFN_1_4_10/pow(fj1ECFN_1_2_05,2.00)";
+    psi["3_05_3_1_05_2"] = "psi_3_05_3_1_05_2 := fj1ECFN_3_3_05/pow(fj1ECFN_1_2_05,3.00)";
+    psi["2_10_3_1_05_2"] = "psi_2_10_3_1_05_2 := fj1ECFN_2_3_10/pow(fj1ECFN_1_2_05,4.00)";
+    psi["1_20_4_1_10_3"] = "psi_1_20_4_1_10_3 := fj1ECFN_1_4_20/pow(fj1ECFN_1_3_10,2.00)";
+    psi["1_20_4_2_10_4"] = "psi_1_20_4_2_10_4 := fj1ECFN_1_4_20/pow(fj1ECFN_2_4_10,1.00)";
+    psi["2_10_4_1_20_4"] = "psi_2_10_4_1_20_4 := fj1ECFN_2_4_10/pow(fj1ECFN_1_4_20,1.00)";
+    psi["1_10_3_2_05_3"] = "psi_1_10_3_2_05_3 := fj1ECFN_1_3_10/pow(fj1ECFN_2_3_05,1.00)";
+    psi["2_05_3_1_10_3"] = "psi_2_05_3_1_10_3 := fj1ECFN_2_3_05/pow(fj1ECFN_1_3_10,1.00)";
+    psi["1_20_3_3_05_3"] = "psi_1_20_3_3_05_3 := fj1ECFN_1_3_20/pow(fj1ECFN_3_3_05,1.33)";
+    psi["3_05_3_1_20_3"] = "psi_3_05_3_1_20_3 := fj1ECFN_3_3_05/pow(fj1ECFN_1_3_20,0.75)";
+    psi["1_05_3_1_05_2"] = "psi_1_05_3_1_05_2 := fj1ECFN_1_3_05/pow(fj1ECFN_1_2_05,1.00)";
+    psi["2_05_3_1_10_2"] = "psi_2_05_3_1_10_2 := fj1ECFN_2_3_05/pow(fj1ECFN_1_2_10,1.00)";
+    psi["1_10_3_1_10_2"] = "psi_1_10_3_1_10_2 := fj1ECFN_1_3_10/pow(fj1ECFN_1_2_10,1.00)";
+    psi["2_05_4_1_10_2"] = "psi_2_05_4_1_10_2 := fj1ECFN_2_4_05/pow(fj1ECFN_1_2_10,1.00)";
+    psi["1_20_4_2_10_3"] = "psi_1_20_4_2_10_3 := fj1ECFN_1_4_20/pow(fj1ECFN_2_3_10,1.00)";
+    psi["1_20_4_1_20_2"] = "psi_1_20_4_1_20_2 := fj1ECFN_1_4_20/pow(fj1ECFN_1_2_20,1.00)";
+    psi["2_05_4_2_05_3"] = "psi_2_05_4_2_05_3 := fj1ECFN_2_4_05/pow(fj1ECFN_2_3_05,1.00)";
+    psi["1_10_4_1_10_2"] = "psi_1_10_4_1_10_2 := fj1ECFN_1_4_10/pow(fj1ECFN_1_2_10,1.00)";
+    psi["2_10_4_1_20_2"] = "psi_2_10_4_1_20_2 := fj1ECFN_2_4_10/pow(fj1ECFN_1_2_20,1.00)";
+    psi["2_10_3_1_20_2"] = "psi_2_10_3_1_20_2 := fj1ECFN_2_3_10/pow(fj1ECFN_1_2_20,1.00)";
+    psi["1_10_4_2_05_3"] = "psi_1_10_4_2_05_3 := fj1ECFN_1_4_10/pow(fj1ECFN_2_3_05,1.00)";
+    psi["1_05_4_1_05_2"] = "psi_1_05_4_1_05_2 := fj1ECFN_1_4_05/pow(fj1ECFN_1_2_05,1.00)";
+    psi["2_10_4_2_10_3"] = "psi_2_10_4_2_10_3 := fj1ECFN_2_4_10/pow(fj1ECFN_2_3_10,1.00)";
+    psi["1_20_3_1_20_2"] = "psi_1_20_3_1_20_2 := fj1ECFN_1_3_20/pow(fj1ECFN_1_2_20,1.00)";
+    psi["2_20_4_2_20_3"] = "psi_2_20_4_2_20_3 := fj1ECFN_2_4_20/pow(fj1ECFN_2_3_20,1.00)";
     
     factory->AddVariable( "nIsojet"                           , "N central AK4 jets"                , ""           , 'I');
     factory->AddVariable( "fj1Pt"                             , "FJ p_{T}"                          , "GeV"        , 'F');
@@ -228,7 +228,7 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
   factory->BookMethod(
     TMVA::Types::kBDT,
     trainName,
-    "!H:!V:NTrees=2000:MinNodeSize=5%:MaxDepth=4:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=1000:PruneMethod=NoPruning"
+    "!H:!V:NTrees=1000:MinNodeSize=5%:MaxDepth=4:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=1000:PruneMethod=NoPruning"
   );
   factory->TrainAllMethods();
   factory->TestAllMethods();
