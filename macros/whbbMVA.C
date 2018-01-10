@@ -41,8 +41,8 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
     TString dPhil1fj1 = "dPhil1fj1 := fabs(TVector2::Phi_mpi_pi(lepton1Phi   - fj1Phi  ))";
     TString dPhiWfj1  = "dPhiWfj1  := fabs(TVector2::Phi_mpi_pi(topWBosonPhi - fj1Phi  ))";
     TString dEtal1fj1 = "dEtal1fj1 := fabs(lepton1Eta   - fj1Eta )";
-    TString greaterSubjetCSV = "greaterSubjetCSV := TMath::Min(1., TMath::Max(0., fj1MaxCSV)";
-    TString lesserSubjetCSV  = "lesserSubjetCSV  := TMath::Min(1., TMath::Max(0., fj1MinCSV)";
+    TString greaterSubjetCSV = "greaterSubjetCSV := TMath::Min(1., TMath::Max(0., fj1MaxCSV))";
+    TString lesserSubjetCSV  = "lesserSubjetCSV  := TMath::Min(1., TMath::Max(0., fj1MinCSV))";
 
     //ECF definitions
     std::map<string, TString> psi, psiName;
