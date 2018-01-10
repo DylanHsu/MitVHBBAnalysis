@@ -7,7 +7,13 @@
 #include <TString.h>
 #include "vhbbPlot.h"
 
-void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=false) {
+void whbbMVA(
+  TString plotTreeFileName, 
+  TString extraString="", 
+  bool isBoosted=false, 
+  bool useGaussDeco=false,
+  float eventFrac=1
+) {
   gROOT->ProcessLine("TMVA::gConfig().GetVariablePlotting().fMaxNumOfAllowedVariablesForScatterPlots = 100");
   TFile *output_file;
   TMVA::Factory *factory;
@@ -20,12 +26,14 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
   TString trainName="BDT_multiClass_"+TString(isBoosted?"boosted":"resolved")+(extraString == "" ? "" : "_"+extraString);
   output_file=TFile::Open("/data/t3home000/dhsu/trainingResult_whbb_"+trainName+".root", "RECREATE");
   //factory = new TMVA::Factory("bdt", output_file, "!V:!Silent:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Multiclass");
-  factory = new TMVA::Factory("bdt", output_file, "!V:!Silent:DrawProgressBar:Transformations=I:AnalysisType=Multiclass");
+  TString factoryOptions="!V:!Silent:DrawProgressBar:AnalysisType=Multiclass";
+  if(useGaussDeco) factoryOptions += ":Transformations=G,D";
+  else             factoryOptions += ":Transformations=I";
+  factory = new TMVA::Factory("bdt", output_file, factoryOptions);
   
   factory->AddTree(plotTree,"Signal",1.0, "theCategory==12", "test train");
   factory->AddTree(plotTree,"W+jets",1.0, "theCategory==6 || theCategory==7 || theCategory==8", "test train");
   factory->AddTree(plotTree,"N-top" ,1.0, "theCategory==4 || theCategory==5 ", "test train");
-  //factory->AddTree(plotTree,"Other" ,1.0, "theCategory==1 || theCategory==2 || theCategory==3 || theCategory==9 || theCategory==10 || theCategory==11", "test train");
   factory->AddTree(plotTree,"Other" ,1.0, "theCategory==2 || theCategory==3 || theCategory==9 || theCategory==10 || theCategory==11", "test train"); // no QCD
   factory->SetWeightExpression("weight", "Signal");
   factory->SetWeightExpression("weight", "W+jets");
@@ -35,67 +43,67 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
   TCut preselectionCut;
   
   if(isBoosted) {
-    TCut preselectionCut = Form("(selectionBits & %d)!=0 && weight<500. && fj1ECFN_2_4_20>0", vhbbPlot::kWHFJSR);
+    preselectionCut = Form("(selectionBits & %d)!=0 && weight<500. && fj1ECFN_2_4_20>0", vhbbPlot::kWHFJSR);
     
     TString dPhil1W   = "dPhil1W   := fabs(TVector2::Phi_mpi_pi(lepton1Phi   - topWBosonPhi))";
     TString dPhil1fj1 = "dPhil1fj1 := fabs(TVector2::Phi_mpi_pi(lepton1Phi   - fj1Phi  ))";
     TString dPhiWfj1  = "dPhiWfj1  := fabs(TVector2::Phi_mpi_pi(topWBosonPhi - fj1Phi  ))";
     TString dEtal1fj1 = "dEtal1fj1 := fabs(lepton1Eta   - fj1Eta )";
-    TString greaterSubjetCSV = "greaterSubjetCSV := TMath::Min(1., TMath::Max(0., fj1MaxCSV))";
-    TString lesserSubjetCSV  = "lesserSubjetCSV  := TMath::Min(1., TMath::Max(0., fj1MinCSV))";
+    TString greaterSubjetCSV = "greaterSubjetCSV := fj1MaxCSV!=fj1MaxCSV? 0. : TMath::Min(1., TMath::Max(0., fj1MaxCSV))";
+    TString lesserSubjetCSV  = "lesserSubjetCSV  := fj1MinCSV!=fj1MinCSV? 0. : TMath::Min(1., TMath::Max(0., fj1MinCSV))";
 
     //ECF definitions
     std::map<string, TString> psi, psiName;
-    psi["2_10_4_1_05_2"] = "psi_2_10_4_1_05_2 := fj1ECFN_2_4_10/pow(fj1ECFN_1_2_05,4.00)";
-    psi["1_20_4_1_05_2"] = "psi_1_20_4_1_05_2 := fj1ECFN_1_4_20/pow(fj1ECFN_1_2_05,4.00)";
-    psi["2_10_3_1_10_2"] = "psi_2_10_3_1_10_2 := fj1ECFN_2_3_10/pow(fj1ECFN_1_2_10,2.00)";
-    psi["2_20_4_1_10_2"] = "psi_2_20_4_1_10_2 := fj1ECFN_2_4_20/pow(fj1ECFN_1_2_10,4.00)";
-    psi["2_05_3_1_05_2"] = "psi_2_05_3_1_05_2 := fj1ECFN_2_3_05/pow(fj1ECFN_1_2_05,2.00)";
-    psi["2_20_3_1_20_2"] = "psi_2_20_3_1_20_2 := fj1ECFN_2_3_20/pow(fj1ECFN_1_2_20,2.00)";
-    psi["1_20_4_2_05_3"] = "psi_1_20_4_2_05_3 := fj1ECFN_1_4_20/pow(fj1ECFN_2_3_05,2.00)";
-    psi["2_10_4_2_05_3"] = "psi_2_10_4_2_05_3 := fj1ECFN_2_4_10/pow(fj1ECFN_2_3_05,2.00)";
-    psi["3_20_3_1_20_2"] = "psi_3_20_3_1_20_2 := fj1ECFN_3_3_20/pow(fj1ECFN_1_2_20,3.00)";
-    psi["1_20_3_1_10_2"] = "psi_1_20_3_1_10_2 := fj1ECFN_1_3_20/pow(fj1ECFN_1_2_10,2.00)";
-    psi["1_10_3_1_05_2"] = "psi_1_10_3_1_05_2 := fj1ECFN_1_3_10/pow(fj1ECFN_1_2_05,2.00)";
-    psi["3_10_3_1_10_2"] = "psi_3_10_3_1_10_2 := fj1ECFN_3_3_10/pow(fj1ECFN_1_2_10,3.00)";
-    psi["3_10_3_1_20_2"] = "psi_3_10_3_1_20_2 := fj1ECFN_3_3_10/pow(fj1ECFN_1_2_20,1.50)";
-    psi["3_05_3_1_10_2"] = "psi_3_05_3_1_10_2 := fj1ECFN_3_3_05/pow(fj1ECFN_1_2_10,1.50)";
-    psi["2_20_4_1_20_2"] = "psi_2_20_4_1_20_2 := fj1ECFN_2_4_20/pow(fj1ECFN_1_2_20,2.00)";
-    psi["2_10_4_1_10_2"] = "psi_2_10_4_1_10_2 := fj1ECFN_2_4_10/pow(fj1ECFN_1_2_10,2.00)";
-    psi["1_20_4_1_10_2"] = "psi_1_20_4_1_10_2 := fj1ECFN_1_4_20/pow(fj1ECFN_1_2_10,2.00)";
-    psi["2_20_4_2_10_3"] = "psi_2_20_4_2_10_3 := fj1ECFN_2_4_20/pow(fj1ECFN_2_3_10,2.00)";
-    psi["1_20_3_1_05_2"] = "psi_1_20_3_1_05_2 := fj1ECFN_1_3_20/pow(fj1ECFN_1_2_05,4.00)";
-    psi["2_20_3_1_10_2"] = "psi_2_20_3_1_10_2 := fj1ECFN_2_3_20/pow(fj1ECFN_1_2_10,4.00)";
-    psi["2_20_4_3_10_3"] = "psi_2_20_4_3_10_3 := fj1ECFN_2_4_20/pow(fj1ECFN_3_3_10,1.33)";
-    psi["1_20_4_3_05_3"] = "psi_1_20_4_3_05_3 := fj1ECFN_1_4_20/pow(fj1ECFN_3_3_05,1.33)";
-    psi["2_10_4_3_05_3"] = "psi_2_10_4_3_05_3 := fj1ECFN_2_4_10/pow(fj1ECFN_3_3_05,1.33)";
-    psi["2_05_4_1_05_2"] = "psi_2_05_4_1_05_2 := fj1ECFN_2_4_05/pow(fj1ECFN_1_2_05,2.00)";
-    psi["2_20_4_3_05_3"] = "psi_2_20_4_3_05_3 := fj1ECFN_2_4_20/pow(fj1ECFN_3_3_05,2.67)";
-    psi["1_10_4_1_05_2"] = "psi_1_10_4_1_05_2 := fj1ECFN_1_4_10/pow(fj1ECFN_1_2_05,2.00)";
-    psi["3_05_3_1_05_2"] = "psi_3_05_3_1_05_2 := fj1ECFN_3_3_05/pow(fj1ECFN_1_2_05,3.00)";
-    psi["2_10_3_1_05_2"] = "psi_2_10_3_1_05_2 := fj1ECFN_2_3_10/pow(fj1ECFN_1_2_05,4.00)";
-    psi["1_20_4_1_10_3"] = "psi_1_20_4_1_10_3 := fj1ECFN_1_4_20/pow(fj1ECFN_1_3_10,2.00)";
-    psi["1_20_4_2_10_4"] = "psi_1_20_4_2_10_4 := fj1ECFN_1_4_20/pow(fj1ECFN_2_4_10,1.00)";
-    psi["2_10_4_1_20_4"] = "psi_2_10_4_1_20_4 := fj1ECFN_2_4_10/pow(fj1ECFN_1_4_20,1.00)";
-    psi["1_10_3_2_05_3"] = "psi_1_10_3_2_05_3 := fj1ECFN_1_3_10/pow(fj1ECFN_2_3_05,1.00)";
-    psi["2_05_3_1_10_3"] = "psi_2_05_3_1_10_3 := fj1ECFN_2_3_05/pow(fj1ECFN_1_3_10,1.00)";
-    psi["1_20_3_3_05_3"] = "psi_1_20_3_3_05_3 := fj1ECFN_1_3_20/pow(fj1ECFN_3_3_05,1.33)";
-    psi["3_05_3_1_20_3"] = "psi_3_05_3_1_20_3 := fj1ECFN_3_3_05/pow(fj1ECFN_1_3_20,0.75)";
-    psi["1_05_3_1_05_2"] = "psi_1_05_3_1_05_2 := fj1ECFN_1_3_05/pow(fj1ECFN_1_2_05,1.00)";
-    psi["2_05_3_1_10_2"] = "psi_2_05_3_1_10_2 := fj1ECFN_2_3_05/pow(fj1ECFN_1_2_10,1.00)";
-    psi["1_10_3_1_10_2"] = "psi_1_10_3_1_10_2 := fj1ECFN_1_3_10/pow(fj1ECFN_1_2_10,1.00)";
-    psi["2_05_4_1_10_2"] = "psi_2_05_4_1_10_2 := fj1ECFN_2_4_05/pow(fj1ECFN_1_2_10,1.00)";
-    psi["1_20_4_2_10_3"] = "psi_1_20_4_2_10_3 := fj1ECFN_1_4_20/pow(fj1ECFN_2_3_10,1.00)";
-    psi["1_20_4_1_20_2"] = "psi_1_20_4_1_20_2 := fj1ECFN_1_4_20/pow(fj1ECFN_1_2_20,1.00)";
-    psi["2_05_4_2_05_3"] = "psi_2_05_4_2_05_3 := fj1ECFN_2_4_05/pow(fj1ECFN_2_3_05,1.00)";
-    psi["1_10_4_1_10_2"] = "psi_1_10_4_1_10_2 := fj1ECFN_1_4_10/pow(fj1ECFN_1_2_10,1.00)";
-    psi["2_10_4_1_20_2"] = "psi_2_10_4_1_20_2 := fj1ECFN_2_4_10/pow(fj1ECFN_1_2_20,1.00)";
-    psi["2_10_3_1_20_2"] = "psi_2_10_3_1_20_2 := fj1ECFN_2_3_10/pow(fj1ECFN_1_2_20,1.00)";
-    psi["1_10_4_2_05_3"] = "psi_1_10_4_2_05_3 := fj1ECFN_1_4_10/pow(fj1ECFN_2_3_05,1.00)";
-    psi["1_05_4_1_05_2"] = "psi_1_05_4_1_05_2 := fj1ECFN_1_4_05/pow(fj1ECFN_1_2_05,1.00)";
-    psi["2_10_4_2_10_3"] = "psi_2_10_4_2_10_3 := fj1ECFN_2_4_10/pow(fj1ECFN_2_3_10,1.00)";
-    psi["1_20_3_1_20_2"] = "psi_1_20_3_1_20_2 := fj1ECFN_1_3_20/pow(fj1ECFN_1_2_20,1.00)";
-    psi["2_20_4_2_20_3"] = "psi_2_20_4_2_20_3 := fj1ECFN_2_4_20/pow(fj1ECFN_2_3_20,1.00)";
+    psi["2_10_4_1_05_2"] = "psi_2_10_4_1_05_2 := fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)";
+    psi["1_20_4_1_05_2"] = "psi_1_20_4_1_05_2 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)";
+    psi["2_10_3_1_10_2"] = "psi_2_10_3_1_10_2 := fj1ECFN_2_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)";
+    psi["2_20_4_1_10_2"] = "psi_2_20_4_1_10_2 := fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),4.00)";
+    psi["2_05_3_1_05_2"] = "psi_2_05_3_1_05_2 := fj1ECFN_2_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)";
+    psi["2_20_3_1_20_2"] = "psi_2_20_3_1_20_2 := fj1ECFN_2_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),2.00)";
+    psi["1_20_4_2_05_3"] = "psi_1_20_4_2_05_3 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_05),2.00)";
+    psi["2_10_4_2_05_3"] = "psi_2_10_4_2_05_3 := fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_2_3_05),2.00)";
+    psi["3_20_3_1_20_2"] = "psi_3_20_3_1_20_2 := fj1ECFN_3_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),3.00)";
+    psi["1_20_3_1_10_2"] = "psi_1_20_3_1_10_2 := fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)";
+    psi["1_10_3_1_05_2"] = "psi_1_10_3_1_05_2 := fj1ECFN_1_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)";
+    psi["3_10_3_1_10_2"] = "psi_3_10_3_1_10_2 := fj1ECFN_3_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),3.00)";
+    psi["3_10_3_1_20_2"] = "psi_3_10_3_1_20_2 := fj1ECFN_3_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.50)";
+    psi["3_05_3_1_10_2"] = "psi_3_05_3_1_10_2 := fj1ECFN_3_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.50)";
+    psi["2_20_4_1_20_2"] = "psi_2_20_4_1_20_2 := fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),2.00)";
+    psi["2_10_4_1_10_2"] = "psi_2_10_4_1_10_2 := fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)";
+    psi["1_20_4_1_10_2"] = "psi_1_20_4_1_10_2 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)";
+    psi["2_20_4_2_10_3"] = "psi_2_20_4_2_10_3 := fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_10),2.00)";
+    psi["1_20_3_1_05_2"] = "psi_1_20_3_1_05_2 := fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)";
+    psi["2_20_3_1_10_2"] = "psi_2_20_3_1_10_2 := fj1ECFN_2_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),4.00)";
+    psi["2_20_4_3_10_3"] = "psi_2_20_4_3_10_3 := fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_3_3_10),1.33)";
+    psi["1_20_4_3_05_3"] = "psi_1_20_4_3_05_3 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_3_3_05),1.33)";
+    psi["2_10_4_3_05_3"] = "psi_2_10_4_3_05_3 := fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_3_3_05),1.33)";
+    psi["2_05_4_1_05_2"] = "psi_2_05_4_1_05_2 := fj1ECFN_2_4_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)";
+    psi["2_20_4_3_05_3"] = "psi_2_20_4_3_05_3 := fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_3_3_05),2.67)";
+    psi["1_10_4_1_05_2"] = "psi_1_10_4_1_05_2 := fj1ECFN_1_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)";
+    psi["3_05_3_1_05_2"] = "psi_3_05_3_1_05_2 := fj1ECFN_3_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),3.00)";
+    psi["2_10_3_1_05_2"] = "psi_2_10_3_1_05_2 := fj1ECFN_2_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)";
+    psi["1_20_4_1_10_3"] = "psi_1_20_4_1_10_3 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_3_10),2.00)";
+    psi["1_20_4_2_10_4"] = "psi_1_20_4_2_10_4 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_2_4_10),1.00)";
+    psi["2_10_4_1_20_4"] = "psi_2_10_4_1_20_4 := fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_4_20),1.00)";
+    psi["1_10_3_2_05_3"] = "psi_1_10_3_2_05_3 := fj1ECFN_1_3_10/pow(TMath::Max(0.,fj1ECFN_2_3_05),1.00)";
+    psi["2_05_3_1_10_3"] = "psi_2_05_3_1_10_3 := fj1ECFN_2_3_05/pow(TMath::Max(0.,fj1ECFN_1_3_10),1.00)";
+    psi["1_20_3_3_05_3"] = "psi_1_20_3_3_05_3 := fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_3_3_05),1.33)";
+    psi["3_05_3_1_20_3"] = "psi_3_05_3_1_20_3 := fj1ECFN_3_3_05/pow(TMath::Max(0.,fj1ECFN_1_3_20),0.75)";
+    psi["1_05_3_1_05_2"] = "psi_1_05_3_1_05_2 := fj1ECFN_1_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),1.00)";
+    psi["2_05_3_1_10_2"] = "psi_2_05_3_1_10_2 := fj1ECFN_2_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)";
+    psi["1_10_3_1_10_2"] = "psi_1_10_3_1_10_2 := fj1ECFN_1_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)";
+    psi["2_05_4_1_10_2"] = "psi_2_05_4_1_10_2 := fj1ECFN_2_4_05/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)";
+    psi["1_20_4_2_10_3"] = "psi_1_20_4_2_10_3 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_10),1.00)";
+    psi["1_20_4_1_20_2"] = "psi_1_20_4_1_20_2 := fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)";
+    psi["2_05_4_2_05_3"] = "psi_2_05_4_2_05_3 := fj1ECFN_2_4_05/pow(TMath::Max(0.,fj1ECFN_2_3_05),1.00)";
+    psi["1_10_4_1_10_2"] = "psi_1_10_4_1_10_2 := fj1ECFN_1_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)";
+    psi["2_10_4_1_20_2"] = "psi_2_10_4_1_20_2 := fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)";
+    psi["2_10_3_1_20_2"] = "psi_2_10_3_1_20_2 := fj1ECFN_2_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)";
+    psi["1_10_4_2_05_3"] = "psi_1_10_4_2_05_3 := fj1ECFN_1_4_10/pow(TMath::Max(0.,fj1ECFN_2_3_05),1.00)";
+    psi["1_05_4_1_05_2"] = "psi_1_05_4_1_05_2 := fj1ECFN_1_4_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),1.00)";
+    psi["2_10_4_2_10_3"] = "psi_2_10_4_2_10_3 := fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_2_3_10),1.00)";
+    psi["1_20_3_1_20_2"] = "psi_1_20_3_1_20_2 := fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)";
+    psi["2_20_4_2_20_3"] = "psi_2_20_4_2_20_3 := fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_20),1.00)";
     
     factory->AddVariable( "nIsojet"                           , "N central AK4 jets"                , ""           , 'I');
     factory->AddVariable( "fj1Pt"                             , "FJ p_{T}"                          , "GeV"        , 'F');
@@ -105,7 +113,6 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
     factory->AddVariable( "fj1DoubleCSV"                      , "FJ double B-tag"                   , ""           , 'F');
     factory->AddVariable( "fj1HTTMass"                        , "FJ HTT mass"                       , "GeV"        , 'F');
     factory->AddVariable( "fj1HTTFRec"                        , "FJ HTT f_{rec}"                    , ""           , 'F');
-    factory->AddVariable( "fj1SDEFrac100"                     , "FJ SD E frac. hardest 100"         , ""           , 'F');
     factory->AddVariable( "fj1MSD"                            , "FJ soft drop mass"                 , "GeV"        , 'F');
     factory->AddVariable( "fj1Tau32"                          , "FJ #tau_{32}"                      , ""           , 'F');
     factory->AddVariable( "fj1Tau32SD"                        , "FJ #tau_{32}^{SD}"                 , ""           , 'F');
@@ -172,8 +179,9 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
     factory->AddVariable( psi["2_10_4_2_10_3"]                , "#psi(2,1.0,4;2,1.0,3)"             , ""           , 'F'); 
     factory->AddVariable( psi["1_20_3_1_20_2"]                , "#psi(1,2.0,3;1,2.0,2)"             , ""           , 'F'); 
     factory->AddVariable( psi["2_20_4_2_20_3"]                , "#psi(2,2.0,4;2,2.0,3)"             , ""           , 'F'); 
+    //factory->AddVariable( "fj1SDEFrac100"                     , "FJ SD E frac. hardest 100"         , ""           , 'F');
   } else {
-    TCut preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHSR);
+    preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHSR);
     
     TString dPhil1W   = "dPhil1W  := fabs(TVector2::Phi_mpi_pi(lepton1Phi   - topWBosonPhi))";
     TString dPhil1b1  = "dPhil1b1 := fabs(TVector2::Phi_mpi_pi(lepton1Phi   - hbbJet1Phi  ))";
@@ -224,11 +232,27 @@ void whbbMVA(TString plotTreeFileName, TString extraString="", bool isBoosted=fa
     factory->AddVariable( dEtaWb2                             , "|#Delta#eta(W,b2)|"                , ""           , 'F');
     factory->AddVariable( dEtab1b2                            , "|#Delta#eta(b1,b2)|"               , ""           , 'F');
   }
-  factory->PrepareTrainingAndTestTree(preselectionCut, "");
+  TString prepareOptions="";
+  if(eventFrac<1) {
+    unsigned nTrain_Signal = round(eventFrac/2.*plotTree->GetEntries(preselectionCut && "theCategory==12"                                   ));
+    unsigned nTrain_Wjets  = round(eventFrac/2.*plotTree->GetEntries(preselectionCut && "theCategory==6 || theCategory==7 || theCategory==8"));
+    unsigned nTrain_Ntop   = round(eventFrac/2.*plotTree->GetEntries(preselectionCut && "theCategory==4 || theCategory==5"                  ));
+    unsigned nTrain_Other  = round(eventFrac/2.*plotTree->GetEntries(preselectionCut && "theCategory==2 || theCategory==3 || theCategory==9 || theCategory==10 || theCategory==11"));
+    prepareOptions=Form("NormMode=None:nTrain_Signal=%d:nTest_Signal=%d:nTrain_W+jets=%d:nTest_W+jets=%d:nTrain_N-top=%d:nTest_N-top=%d:nTrain_Other=%d:nTest_Other=%d",
+      nTrain_Signal,nTrain_Signal,
+      nTrain_Wjets,nTrain_Wjets,
+      nTrain_Ntop,nTrain_Ntop,
+      nTrain_Other,nTrain_Other);
+  } else {
+    prepareOptions=Form("NormMode=None");
+  }
+  factory->PrepareTrainingAndTestTree(preselectionCut, prepareOptions);
+  TString hyperparameters="!H:!V:NTrees=1000:MinNodeSize=5%:MaxDepth=4:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=1000:PruneMethod=NoPruning";
+  if(useGaussDeco) hyperparameters += ":VarTransform=G,D";
   factory->BookMethod(
     TMVA::Types::kBDT,
     trainName,
-    "!H:!V:NTrees=1000:MinNodeSize=5%:MaxDepth=4:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=1000:PruneMethod=NoPruning"
+    hyperparameters
   );
   factory->TrainAllMethods();
   factory->TestAllMethods();
