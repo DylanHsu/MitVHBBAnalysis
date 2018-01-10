@@ -46,9 +46,9 @@ TList *finalPlot2018(
       if(!plotQCD && i==kPlotQCD) continue;
       // Construct histograms
       if (i==kPlotVH) {
-        if(selType==kWHSR) plotName="WH(125)";
+        if(selType==kWHSR) plotName="WH(125)x10";
         else if(selType==kWHLightFlavorCR || selType==kWHHeavyFlavorCR || selType==kWH2TopCR) plotName="WH(125)x100";
-        else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)";
+        else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)x10";
         else plotName="ZH(125)x100";
       } else plotName=plotNames[i]; 
 
@@ -62,9 +62,8 @@ TList *finalPlot2018(
       // Scaling
       //if(i!=kPlotData) histos[i]->Scale(theLumi);
       if(i==kPlotQCD) histos[i]->Scale(1.0);
-      if(i==kPlotVH && selType!=kWHSR && selType!=kZnnHSR && selType!=kZllHSR) {
-        histos[i]->Scale(100.);
-      }
+      if(i==kPlotVH && selType!=kWHSR && selType!=kZnnHSR && selType!=kZllHSR) histos[i]->Scale(100.);
+      if(i==kPlotVH && (selType==kWHSR || selType==kZnnHSR || selType==kZllHSR)) histos[i]->Scale(10.);
       
       // Colors
       if(i==kPlotData) {
@@ -72,6 +71,7 @@ TList *finalPlot2018(
         histos[i]->SetLineColor(plotColors[i]); 
         histos[i]->SetMarkerStyle(20);
       } else if(i==kPlotVH) {
+        histos[i]->SetMarkerColor(plotColors[i]); 
         histos[i]->SetLineColor(plotColors[i]); 
         histos[i]->SetLineWidth(3);
         histos[i]->SetFillStyle(0);
@@ -81,7 +81,31 @@ TList *finalPlot2018(
         histos[i]->SetMarkerColor(plotColors[i]);
         histos[i]->SetFillStyle(1001);
       }
-
+    }
+    string units=""; {
+      size_t lastOpenBrace = string(xlabel).find_last_of("[");
+      size_t lastCloseBrace = string(xlabel).find_last_of("]");
+      if(lastOpenBrace!=string::npos && lastCloseBrace!=string::npos) 
+        units = string(xlabel).substr(lastOpenBrace+1, lastCloseBrace-lastOpenBrace-1);
+    }
+    // Bin width calculation
+    int nbins=histos[kPlotData]->GetXaxis()->GetNbins();
+    bool variableWidth=false; float binWidth=-1;
+    for(int nb=1; nb<=nbins; nb++) { 
+      if(nb==1) { binWidth=histos[kPlotData]->GetXaxis()->GetBinWidth(nb); continue; }
+      if(!variableWidth && TMath::Abs(binWidth/((float)histos[kPlotData]->GetXaxis()->GetBinWidth(nb))-1.) > 0.02) variableWidth=true;
+      if(histos[kPlotData]->GetXaxis()->GetBinWidth(nb) < binWidth) binWidth=histos[kPlotData]->GetXaxis()->GetBinWidth(nb);
+    }
+    float xmin=histos[kPlotData]->GetXaxis()->GetBinLowEdge(1);
+    float xmax=histos[kPlotData]->GetXaxis()->GetBinLowEdge(nbins+1);
+    
+    for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {
+      plotCategory i = static_cast<plotCategory>(iCat);
+      if(variableWidth) for(int nb=1; nb<=nbins; nb++) { 
+        if(binWidth!=histos[i]->GetXaxis()->GetBinWidth(nb))
+          histos[i]->SetBinContent(nb, histos[i]->GetBinContent(nb) / histos[i]->GetXaxis()->GetBinWidth(nb)*binWidth);
+          histos[i]->SetBinError(nb, histos[i]->GetBinError(nb) / histos[i]->GetXaxis()->GetBinWidth(nb)*binWidth);
+      }
       // Summing Up
       if(!hTotalBkg) {
         hTotalBkg=(TH1D*)histos[i]->Clone("hTotal");
@@ -92,12 +116,6 @@ TList *finalPlot2018(
       if(hTotalBkg && i!=kPlotData && i!=kPlotVH) {
         hTotalBkg->Add(histos[i]);
       }
-    }
-    string units=""; {
-      size_t lastOpenBrace = string(xlabel).find_last_of("[");
-      size_t lastCloseBrace = string(xlabel).find_last_of("]");
-      if(lastOpenBrace!=string::npos && lastCloseBrace!=string::npos) 
-        units = string(xlabel).substr(lastOpenBrace+1, lastCloseBrace-lastOpenBrace-1);
     }
 
     // Start plotting stuff
@@ -149,19 +167,20 @@ TList *finalPlot2018(
     //pad1->SetGridx();         
     pad1->Draw();             
     pad1->cd();              
+    if(variableWidth) pad1->SetLogy();
     hs->Draw("HIST");
-    int nbins=hs->GetXaxis()->GetNbins();
-    float xmin=hs->GetXaxis()->GetBinLowEdge(1);
-    float xmax=hs->GetXaxis()->GetBinLowEdge(nbins+1);
-    float binWidth=(xmax-xmin)/(float)nbins;
+    
+    //float binWidth=(xmax-xmin)/(float)nbins;
+    
     hs->GetXaxis()->SetTitle("");
     hs->GetXaxis()->SetLabelSize(0);
     hs->GetYaxis()->SetTitleOffset(1.2);
     hs->GetYaxis()->SetTitleSize(0.05);
     hs->GetYaxis()->SetTitle(Form( (binWidth>=10.? "Events / %.0f %s" : binWidth>=1.? "Events / %.1f %s": "Events / %.2f %s"), binWidth, units.c_str()));
     hs->GetYaxis()->SetLabelSize(0.05);
-    double plotMax=1.4;
+    float plotMax=1.4;
     if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=2.;
+    if(variableWidth) { hs->SetMinimum(1); plotMax=100; if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=1000.; }
     hs->SetMaximum( plotMax*TMath::Max( hs->GetMaximum(), histos[kPlotData]->GetMaximum() ));
     histos[kPlotVH]->Draw("HIST SAME");
     hErrorBand->Draw("E2 same");

@@ -9,21 +9,26 @@ namespace vhbbPlot {
   float theLumi=35900.;
   //const float bDiscrLoose = 0.5426, bDiscrMedium = 0.8484, bDiscrTight  = 0.9535; //csv
   const float bDiscrLoose = -0.5884, bDiscrMedium = 0.4432, bDiscrTight  = 0.9432; //cmva
+  const float doubleBCut = 0.8; // double b tagger
 
   enum selectionType { 
     kWHLightFlavorCR   = 0x1 <<  0,
     kWHHeavyFlavorCR   = 0x1 <<  1,
     kWH2TopCR          = 0x1 <<  2,
     kWHSR              = 0x1 <<  3,
-    kZnnHLightFlavorCR = 0x1 <<  4,
-    kZnnHHeavyFlavorCR = 0x1 <<  5,
-    kZnnH2TopCR        = 0x1 <<  6,
-    kZnnHMultijetCR    = 0x1 <<  7,
-    kZnnHSR            = 0x1 <<  8,
-    kZllHLightFlavorCR = 0x1 <<  9,
-    kZllHHeavyFlavorCR = 0x1 << 10,
-    kZllH2TopCR        = 0x1 << 11,
-    kZllHSR            = 0x1 << 12 
+    kWHLightFlavorFJCR = 0x1 <<  4,
+    kWHHeavyFlavorFJCR = 0x1 <<  5,
+    kWH2TopFJCR        = 0x1 <<  6,
+    kWHFJSR            = 0x1 <<  7, 
+    kZnnHLightFlavorCR = 0x1 <<  8,
+    kZnnHHeavyFlavorCR = 0x1 <<  9,
+    kZnnH2TopCR        = 0x1 << 10,
+    kZnnHMultijetCR    = 0x1 << 11,
+    kZnnHSR            = 0x1 << 12,
+    kZllHLightFlavorCR = 0x1 << 13,
+    kZllHHeavyFlavorCR = 0x1 << 14,
+    kZllH2TopCR        = 0x1 << 15,
+    kZllHSR            = 0x1 << 16 
   };
   enum sampleType {
     kData       , // 0 
@@ -59,15 +64,17 @@ namespace vhbbPlot {
     { kPlotQCD  , kGray       },
     { kPlotVZbb , 842         },
     { kPlotVVLF , kAzure-9    },
-    { kPlotTT   , kPink+8     },
-    { kPlotTop  , kPink+7     },
+    { kPlotTT   , kOrange-2   },
+    { kPlotTop  , kYellow-6   },
+//    { kPlotTop  , kPink+7     },
     { kPlotWbb  , kViolet+2   },
     { kPlotWb   , kViolet+8   },
     { kPlotWLF  , kViolet+6   },
     { kPlotZbb  , kRed-8      },
     { kPlotZb   , kMagenta-10 },
     { kPlotZLF  , kPink+1     },
-    { kPlotVH   , kRed+3      }
+//    { kPlotVH   , kOrange+9   }
+    { kPlotVH   , kRed+1      }
   };
   std::map<plotCategory, TString> plotNames={
     { kPlotData , "Data"     },
