@@ -104,6 +104,7 @@ bool vhbbPlotSkim(
   // For boosted categories, the number of 30 GeV AK4 jets not in the fat jet
   int nIsojet=0, nIsojet_jesUp=0, nIsojet_jesDown=0; 
   vector<unsigned char> isojets, isojets_jesUp, isojets_jesDown;
+  unsigned char isojetNBtags;   
 
   float weight;
   float weight_pdfUp, weight_pdfDown;
@@ -361,6 +362,7 @@ bool vhbbPlotSkim(
           nBytesRead+=bLoad(b["electronPt"],ientry);
           nBytesRead+=bLoad(b["electronEta"],ientry);
           nBytesRead+=bLoad(b["electronPhi"],ientry);
+          nBytesRead+=bLoad(b["electronCombIso"],ientry);
           lepton1Pt = gt.electronPt[0]; lepton1Eta = gt.electronEta[0]; lepton1Phi = gt.electronPhi[0]; lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
         } else continue;
         if(debug) printf("Passed lepton kinematics\n");
@@ -459,7 +461,7 @@ bool vhbbPlotSkim(
         nBytesRead+=bLoad(b["nFatjet"],ientry);
         if     (gt.nFatjet==0) continue;
         // Jet kinematics
-        nBytesRead+=bLoad(b["fj1Pt"],ientry);
+        nBytesRead+=bLoad(b["fj1Eta"],ientry);
         if(fabs(gt.fj1Eta)>2.4) continue;
         if(debug) printf("passed jet kinematics\n");
 
@@ -482,6 +484,7 @@ bool vhbbPlotSkim(
           nBytesRead+=bLoad(b["electronPt"],ientry);
           nBytesRead+=bLoad(b["electronEta"],ientry);
           nBytesRead+=bLoad(b["electronPhi"],ientry);
+          nBytesRead+=bLoad(b["electronCombIso"],ientry);
           lepton1Pt = gt.electronPt[0]; lepton1Eta = gt.electronEta[0]; lepton1Phi = gt.electronPhi[0]; lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
         } else continue;
         if(debug) printf("Passed lepton kinematics\n");
@@ -514,9 +517,9 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["fj1PtSmeared"],ientry);   
       nBytesRead+=bLoad(b["fj1PtSmearedUp"],ientry);     
       nBytesRead+=bLoad(b["fj1PtSmearedDown"],ientry);       
+      nBytesRead+=bLoad(b["fj1Pt"],ientry);
       nBytesRead+=bLoad(b["fj1Phi"],ientry);
       nBytesRead+=bLoad(b["fj1MSD"],ientry);
-      nBytesRead+=bLoad(b["fj1Eta"],ientry);
       nBytesRead+=bLoad(b["fj1M"],ientry);
       nBytesRead+=bLoad(b["fj1MaxCSV"],ientry);
       nBytesRead+=bLoad(b["fj1MinCSV"],ientry);
@@ -538,14 +541,14 @@ bool vhbbPlotSkim(
       isojets.clear();
       isojets_jesUp.clear();
       isojets_jesDown.clear();
-      unsigned char isojetNBtags=0;
+      isojetNBtags=0;
       for(unsigned char iJ=0; iJ<gt.nJet; iJ++) {
         // Cannot use jetIso for counting central jets right now
         //if(!gt.jetIso[iJ]) continue; 
         if(fabs(gt.jetEta[iJ])>2.4) continue;
-        if(get.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
         float dRJetFatjet=sqrt(pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2));
         if(dRJetFatjet<2.25) continue;
+        if(gt.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
         if(gt.jetPt[iJ]>30) isojets.push_back(iJ);
         if(gt.jetPtUp[iJ]>30) isojets_jesUp.push_back(iJ);
         if(gt.jetPtDown[iJ]>30) isojets_jesDown.push_back(iJ);

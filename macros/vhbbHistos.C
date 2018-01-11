@@ -426,7 +426,7 @@ void vhbbHistos(
     reader->AddVariable( "fabs(topWBosonEta - hbbJet1Eta  )"                                                , &dEtaWb1               );    
     reader->AddVariable( "fabs(topWBosonEta - hbbJet2Eta  )"                                                , &dEtaWb2               );    
     reader->AddVariable( "fabs(hbbJet1Eta   - hbbJet2Eta  )"                                                , &dEtab1b2              );    
-    reader->BookMVA("BDT", "weights/bdt_BDT_multiClass__dec22_test1.weights.xml");
+    reader->BookMVA("BDT", "weights/bdt_BDT_multiClass_resolved_jan10_I_test2.weights.xml");
   }
 
   // begin plot tree loop
