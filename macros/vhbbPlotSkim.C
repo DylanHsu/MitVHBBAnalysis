@@ -18,6 +18,11 @@
 
 // Script for making light weight plotting/training trees for VH analysis
 
+// This controls whether to cut on the number of fatjets in the resolved regions
+// False means you will use all possible events to do the resolved VH
+// True means the events with a fatjet are reserved for boosted VH
+const bool useBoostedCategory=false; 
+
 using namespace vhbbPlot;
 bool vhbbPlotSkim(
   TString inputFileName="", 
@@ -321,7 +326,7 @@ bool vhbbPlotSkim(
         nBytesRead+=bLoad(b["nJet"],ientry);
         nBytesRead+=bLoad(b["nFatjet"],ientry);
         if     (gt.nJet<2) continue;
-        if     (gt.nFatjet!=0) continue;
+        if     (useBoostedCategory && gt.nFatjet!=0) continue;
         // Jet kinematics
         nBytesRead+=bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
         nBytesRead+=bLoad(b["jetPt"],ientry);
@@ -546,8 +551,8 @@ bool vhbbPlotSkim(
         // Cannot use jetIso for counting central jets right now
         //if(!gt.jetIso[iJ]) continue; 
         if(fabs(gt.jetEta[iJ])>2.4) continue;
-        float dRJetFatjet=sqrt(pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2));
-        if(dRJetFatjet<2.25) continue;
+        float dR2JetFatjet=pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2);
+        if(dR2JetFatjet<2.25) continue;
         if(gt.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
         if(gt.jetPt[iJ]>30) isojets.push_back(iJ);
         if(gt.jetPtUp[iJ]>30) isojets_jesUp.push_back(iJ);
