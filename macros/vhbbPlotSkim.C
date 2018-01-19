@@ -1,4 +1,5 @@
 #include "PandaAnalysis/Flat/interface/GeneralTree.h"
+#include "PandaAnalysis/Utilities/src/CSVHelper.cc"
 #include <Compression.h>
 #include <TSystem.h>
 #include <TTree.h>
@@ -87,9 +88,11 @@ bool vhbbPlotSkim(
   }
    
   // temporary
-  TFile *muTrigEffFile = TFile::Open("/home/dhsu/CMSSW_8_0_29/src/PandaAnalysis/data/trigger_eff/muon_trig_Run2016BtoF.root", "READ");
-  if(!muTrigEffFile && muTrigEffFile->IsOpen()) { throw std::runtime_error(""); return false; }
-  TH2D *muTrigEff = (TH2D*)muTrigEffFile->Get("IsoMu24_OR_IsoTkMu24_PtEtaBins/efficienciesDATA/abseta_pt_DATA");
+  //TFile *muTrigEffFile = TFile::Open("/home/dhsu/CMSSW_8_0_29/src/PandaAnalysis/data/trigger_eff/muon_trig_Run2016BtoF.root", "READ");
+  //if(!muTrigEffFile && muTrigEffFile->IsOpen()) { throw std::runtime_error(""); return false; }
+  //TH2D *muTrigEff = (TH2D*)muTrigEffFile->Get("IsoMu24_OR_IsoTkMu24_PtEtaBins/efficienciesDATA/abseta_pt_DATA");
+  
+  CSVHelper *cmvaReweighter = new CSVHelper("PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root"   , "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root"   , 5);
 
   TFile *outputFile = TFile::Open(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
@@ -110,12 +113,32 @@ bool vhbbPlotSkim(
   int nIsojet=0, nIsojet_jesUp=0, nIsojet_jesDown=0; 
   vector<unsigned char> isojets, isojets_jesUp, isojets_jesDown;
   unsigned char isojetNBtags;   
+  
+  // CMVA jet kinematic decorrelated weight nuisances
+  vector<double> jetPts[5][3], jetPtsUp[5][3], jetPtsDown[5][3], jetEtas[5][3], jetCMVAs[5][3];
+  vector<int> jetFlavors[5][3];
+  for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+    jetPts    [iPt][iEta].reserve(20);
+    jetPtsUp  [iPt][iEta].reserve(20);
+    jetPtsDown[iPt][iEta].reserve(20);
+    jetEtas   [iPt][iEta].reserve(20);
+    jetCMVAs  [iPt][iEta].reserve(20);
+    jetFlavors[iPt][iEta].reserve(20);
+  }
 
   float weight;
   float weight_pdfUp, weight_pdfDown;
-  float weight_scaleUp, weight_scaleDown;
+  float weight_QCDr1f2, weight_QCDr1f5, weight_QCDr2f1, weight_QCDr2f2, weight_QCDr5f1, weight_QCDr5f5;
   float weight_lepSFUp;
-  float weight_cmvaUp, weight_cmvaDown; 
+  float weight_cmvaLFUp      [5][3] , weight_cmvaLFDown      [5][3]; 
+  float weight_cmvaHFUp      [5][3] , weight_cmvaHFDown      [5][3]; 
+  float weight_cmvaHFStats1Up[5][3] , weight_cmvaHFStats1Down[5][3]; 
+  float weight_cmvaHFStats2Up[5][3] , weight_cmvaHFStats2Down[5][3]; 
+  float weight_cmvaLFStats1Up[5][3] , weight_cmvaLFStats1Down[5][3]; 
+  float weight_cmvaLFStats2Up[5][3] , weight_cmvaLFStats2Down[5][3]; 
+  float weight_cmvaCErr1Up   [5][3] , weight_cmvaCErr1Down   [5][3]; 
+  float weight_cmvaCErr2Up   [5][3] , weight_cmvaCErr2Down   [5][3]; 
+  float weight_cmvaJESUp     [5][3] , weight_cmvaJESDown     [5][3]; 
   
   float weight_btag0BUp, weight_btag0BDown;
   float weight_btag0MUp, weight_btag0MDown;
@@ -137,58 +160,78 @@ bool vhbbPlotSkim(
   plotTree->Branch("pfmetphi"        , &gt.pfmetphi     );
   plotTree->Branch("weight"          , &weight          );
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
-    plotTree->Branch("nJet"            , &gt.nJet         );
-    plotTree->Branch("hbbDijetPt"      , &hbbDijetPt      );
-    plotTree->Branch("hbbDijetPtUp"    , &hbbDijetPtUp    );
-    plotTree->Branch("hbbDijetPtDown"  , &hbbDijetPtDown  );
-    plotTree->Branch("hbbDijetPt"      , &hbbDijetPt      );
-    plotTree->Branch("hbbDijetMass"    , &hbbDijetMass    );
-    plotTree->Branch("hbbDijetMassUp"  , &hbbDijetMassUp  );
-    plotTree->Branch("hbbDijetMassDown", &hbbDijetMassDown);
-    plotTree->Branch("bDiscrMin"       , &bDiscrMin       );
-    plotTree->Branch("bDiscrMax"       , &bDiscrMax       );
-    plotTree->Branch("hbbJet1Pt"       , &hbbJet1Pt       );
-    plotTree->Branch("hbbJet1Eta"      , &hbbJet1Eta      );
-    plotTree->Branch("hbbJet1Phi"      , &hbbJet1Phi      );
-    plotTree->Branch("hbbJet2Pt"       , &hbbJet2Pt       );
-    plotTree->Branch("hbbJet2Eta"      , &hbbJet2Eta      );
-    plotTree->Branch("hbbJet2Phi"      , &hbbJet2Phi      );
-    plotTree->Branch("hbbJet1PtUp"     , &hbbJet1PtUp     );
-    plotTree->Branch("hbbJet1PtDown"   , &hbbJet1PtDown   );
-    plotTree->Branch("hbbJet2PtUp"     , &hbbJet2PtUp     );
-    plotTree->Branch("hbbJet2PtDown"   , &hbbJet2PtDown   );
-    plotTree->Branch("typeLepSel"            , &typeLepSel               );
-    plotTree->Branch("lepton1Pt"             , &lepton1Pt                );
-    plotTree->Branch("lepton1Eta"            , &lepton1Eta               );
-    plotTree->Branch("lepton1Phi"            , &lepton1Phi               );
-    plotTree->Branch("lepton1RelIso"         , &lepton1RelIso            );
-    plotTree->Branch("topMassLep1Met"        , &gt.topMassLep1Met        );
-    plotTree->Branch("topMassLep1Met_jesUp"  , &gt.topMassLep1Met_jesUp  );
-    plotTree->Branch("topMassLep1Met_jesDown", &gt.topMassLep1Met_jesDown);
-    plotTree->Branch("topWBosonPt"           , &gt.topWBosonPt           );
-    plotTree->Branch("topWBosonPt_jesUp"     , &topWBosonPt_jesUp        );
-    plotTree->Branch("topWBosonPt_jesDown"   , &topWBosonPt_jesDown      );
-    plotTree->Branch("topWBosonEta"          , &gt.topWBosonEta          );
-    plotTree->Branch("topWBosonPhi"          , &gt.topWBosonPhi          );
-    plotTree->Branch("mT"                    , &gt.mT                    );
-    plotTree->Branch("mT_jesUp"              , &mT_jesUp                 );
-    plotTree->Branch("mT_jesDown"            , &mT_jesDown               );
-    plotTree->Branch("sumEtSoft1"            , &gt.sumEtSoft1            );
-    plotTree->Branch("nSoft2"                , &gt.nSoft2                );
-    plotTree->Branch("nSoft5"                , &gt.nSoft5                );
-    plotTree->Branch("nSoft10"               , &gt.nSoft10               );
-    plotTree->Branch("topWBosonCosThetaCS"   , &gt.topWBosonCosThetaCS   );
-    plotTree->Branch("hbbCosThetaJJ"         , &gt.hbbCosThetaJJ         );
-    plotTree->Branch("hbbCosThetaCSJ1"       , &gt.hbbCosThetaCSJ1       );
-    plotTree->Branch("deltaPhiLep1Met"       , &deltaPhiLep1Met          );
-    plotTree->Branch("deltaPhiVH"            , &deltaPhiVH               );
-    plotTree->Branch("weight_pdfUp"          , &weight_pdfUp             );
-    plotTree->Branch("weight_pdfDown"        , &weight_pdfDown           );
-    plotTree->Branch("weight_scaleUp"        , &weight_scaleUp           );
-    plotTree->Branch("weight_scaleDown"      , &weight_scaleDown         );
-    plotTree->Branch("weight_lepSFUp"        , &weight_lepSFUp           );
-    plotTree->Branch("weight_cmvaUp"         , &weight_cmvaUp            );
-    plotTree->Branch("weight_cmvaDown"       , &weight_cmvaDown          );
+    plotTree->Branch("nJet"                    , &gt.nJet                  );
+    plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
+    plotTree->Branch("hbbDijetPtUp"            , &hbbDijetPtUp             );
+    plotTree->Branch("hbbDijetPtDown"          , &hbbDijetPtDown           );
+    plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
+    plotTree->Branch("hbbDijetMass"            , &hbbDijetMass             );
+    plotTree->Branch("hbbDijetMassUp"          , &hbbDijetMassUp           );
+    plotTree->Branch("hbbDijetMassDown"        , &hbbDijetMassDown         );
+    plotTree->Branch("bDiscrMin"               , &bDiscrMin                );
+    plotTree->Branch("bDiscrMax"               , &bDiscrMax                );
+    plotTree->Branch("hbbJet1Pt"               , &hbbJet1Pt                );
+    plotTree->Branch("hbbJet1Eta"              , &hbbJet1Eta               );
+    plotTree->Branch("hbbJet1Phi"              , &hbbJet1Phi               );
+    plotTree->Branch("hbbJet2Pt"               , &hbbJet2Pt                );
+    plotTree->Branch("hbbJet2Eta"              , &hbbJet2Eta               );
+    plotTree->Branch("hbbJet2Phi"              , &hbbJet2Phi               );
+    plotTree->Branch("hbbJet1PtUp"             , &hbbJet1PtUp              );
+    plotTree->Branch("hbbJet1PtDown"           , &hbbJet1PtDown            );
+    plotTree->Branch("hbbJet2PtUp"             , &hbbJet2PtUp              );
+    plotTree->Branch("hbbJet2PtDown"           , &hbbJet2PtDown            );
+    plotTree->Branch("typeLepSel"              , &typeLepSel               );
+    plotTree->Branch("lepton1Pt"               , &lepton1Pt                );
+    plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
+    plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
+    plotTree->Branch("lepton1RelIso"           , &lepton1RelIso            );
+    plotTree->Branch("topMassLep1Met"          , &gt.topMassLep1Met        );
+    plotTree->Branch("topMassLep1Met_jesUp"    , &gt.topMassLep1Met_jesUp  );
+    plotTree->Branch("topMassLep1Met_jesDown"  , &gt.topMassLep1Met_jesDown);
+    plotTree->Branch("topWBosonPt"             , &gt.topWBosonPt           );
+    plotTree->Branch("topWBosonPt_jesUp"       , &topWBosonPt_jesUp        );
+    plotTree->Branch("topWBosonPt_jesDown"     , &topWBosonPt_jesDown      );
+    plotTree->Branch("topWBosonEta"            , &gt.topWBosonEta          );
+    plotTree->Branch("topWBosonPhi"            , &gt.topWBosonPhi          );
+    plotTree->Branch("mT"                      , &gt.mT                    );
+    plotTree->Branch("mT_jesUp"                , &mT_jesUp                 );
+    plotTree->Branch("mT_jesDown"              , &mT_jesDown               );
+    plotTree->Branch("sumEtSoft1"              , &gt.sumEtSoft1            );
+    plotTree->Branch("nSoft2"                  , &gt.nSoft2                );
+    plotTree->Branch("nSoft5"                  , &gt.nSoft5                );
+    plotTree->Branch("nSoft10"                 , &gt.nSoft10               );
+    plotTree->Branch("topWBosonCosThetaCS"     , &gt.topWBosonCosThetaCS   );
+    plotTree->Branch("hbbCosThetaJJ"           , &gt.hbbCosThetaJJ         );
+    plotTree->Branch("hbbCosThetaCSJ1"         , &gt.hbbCosThetaCSJ1       );
+    plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
+    plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
+    plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
+    plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
+    plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
+    plotTree->Branch("weight_QCDr1f5"          , &weight_QCDr1f5           );
+    plotTree->Branch("weight_QCDr2f1"          , &weight_QCDr2f1           );
+    plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
+    plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
+    plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
+    plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
+    plotTree->Branch("weight_cmvaLFUp"         , weight_cmvaLFUp         , "weight_cmvaLFUp[5][3]/F"        );
+    plotTree->Branch("weight_cmvaHFUp"         , weight_cmvaHFUp         , "weight_cmvaHFUp[5][3]/F"        );
+    plotTree->Branch("weight_cmvaHFStats1Up"   , weight_cmvaHFStats1Up   , "weight_cmvaHFStats1Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaHFStats2Up"   , weight_cmvaHFStats2Up   , "weight_cmvaHFStats2Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaLFStats1Up"   , weight_cmvaLFStats1Up   , "weight_cmvaLFStats1Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaLFStats2Up"   , weight_cmvaLFStats2Up   , "weight_cmvaLFStats2Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaCErr1Up"      , weight_cmvaCErr1Up      , "weight_cmvaCErr1Up[5][3]/F"     );
+    plotTree->Branch("weight_cmvaCErr2Up"      , weight_cmvaCErr2Up      , "weight_cmvaCErr2Up[5][3]/F"     );
+    plotTree->Branch("weight_cmvaJESUp"        , weight_cmvaJESUp        , "weight_cmvaJESUp[5][3]/F"       );
+    plotTree->Branch("weight_cmvaLFDown"       , weight_cmvaLFDown       , "weight_cmvaLFDown[5][3]/F"      );
+    plotTree->Branch("weight_cmvaHFDown"       , weight_cmvaHFDown       , "weight_cmvaHFDown[5][3]/F"      );
+    plotTree->Branch("weight_cmvaHFStats1Down" , weight_cmvaHFStats1Down , "weight_cmvaHFStats1Down[5][3]/F");
+    plotTree->Branch("weight_cmvaHFStats2Down" , weight_cmvaHFStats2Down , "weight_cmvaHFStats2Down[5][3]/F");
+    plotTree->Branch("weight_cmvaLFStats1Down" , weight_cmvaLFStats1Down , "weight_cmvaLFStats1Down[5][3]/F");
+    plotTree->Branch("weight_cmvaLFStats2Down" , weight_cmvaLFStats2Down , "weight_cmvaLFStats2Down[5][3]/F");
+    plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
+    plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
+    plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
   } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
     plotTree->Branch("topWBosonPt"           , &gt.topWBosonPt           );
     plotTree->Branch("topWBosonPt_jesUp"     , &topWBosonPt_jesUp        );
@@ -278,13 +321,33 @@ bool vhbbPlotSkim(
     plotTree->Branch("fj1ECFN_1_4_40", (float*)dummyTree->GetBranch("fj1ECFN_1_4_40")->GetAddress());
     plotTree->Branch("fj1ECFN_2_4_40", (float*)dummyTree->GetBranch("fj1ECFN_2_4_40")->GetAddress());
     plotTree->Branch("fj1ECFN_3_4_40", (float*)dummyTree->GetBranch("fj1ECFN_3_4_40")->GetAddress());
-    plotTree->Branch("weight_pdfUp"          , &weight_pdfUp             );
-    plotTree->Branch("weight_pdfDown"        , &weight_pdfDown           );
-    plotTree->Branch("weight_scaleUp"        , &weight_scaleUp           );
-    plotTree->Branch("weight_scaleDown"      , &weight_scaleDown         );
-    plotTree->Branch("weight_lepSFUp"        , &weight_lepSFUp           );
-    plotTree->Branch("weight_cmvaUp"         , &weight_cmvaUp            );
-    plotTree->Branch("weight_cmvaDown"       , &weight_cmvaDown          );
+    plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
+    plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
+    plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
+    plotTree->Branch("weight_QCDr1f5"          , &weight_QCDr1f5           );
+    plotTree->Branch("weight_QCDr2f1"          , &weight_QCDr2f1           );
+    plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
+    plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
+    plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
+    plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
+    plotTree->Branch("weight_cmvaLFUp"         , weight_cmvaLFUp         , "weight_cmvaLFUp[5][3]/F"        );
+    plotTree->Branch("weight_cmvaHFUp"         , weight_cmvaHFUp         , "weight_cmvaHFUp[5][3]/F"        );
+    plotTree->Branch("weight_cmvaHFStats1Up"   , weight_cmvaHFStats1Up   , "weight_cmvaHFStats1Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaHFStats2Up"   , weight_cmvaHFStats2Up   , "weight_cmvaHFStats2Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaLFStats1Up"   , weight_cmvaLFStats1Up   , "weight_cmvaLFStats1Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaLFStats2Up"   , weight_cmvaLFStats2Up   , "weight_cmvaLFStats2Up[5][3]/F"  );
+    plotTree->Branch("weight_cmvaCErr1Up"      , weight_cmvaCErr1Up      , "weight_cmvaCErr1Up[5][3]/F"     );
+    plotTree->Branch("weight_cmvaCErr2Up"      , weight_cmvaCErr2Up      , "weight_cmvaCErr2Up[5][3]/F"     );
+    plotTree->Branch("weight_cmvaJESUp"        , weight_cmvaJESUp        , "weight_cmvaJESUp[5][3]/F"       );
+    plotTree->Branch("weight_cmvaLFDown"       , weight_cmvaLFDown       , "weight_cmvaLFDown[5][3]/F"      );
+    plotTree->Branch("weight_cmvaHFDown"       , weight_cmvaHFDown       , "weight_cmvaHFDown[5][3]/F"      );
+    plotTree->Branch("weight_cmvaHFStats1Down" , weight_cmvaHFStats1Down , "weight_cmvaHFStats1Down[5][3]/F");
+    plotTree->Branch("weight_cmvaHFStats2Down" , weight_cmvaHFStats2Down , "weight_cmvaHFStats2Down[5][3]/F");
+    plotTree->Branch("weight_cmvaLFStats1Down" , weight_cmvaLFStats1Down , "weight_cmvaLFStats1Down[5][3]/F");
+    plotTree->Branch("weight_cmvaLFStats2Down" , weight_cmvaLFStats2Down , "weight_cmvaLFStats2Down[5][3]/F");
+    plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
+    plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
+    plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
   }
   
 
@@ -298,7 +361,15 @@ bool vhbbPlotSkim(
     int nBytesRead=0;
     theCategory=-1; // plot category 
     typeLepSel=99; // 0: mixed e-mu, 1: all mu, 2: all e, 99: undefined
-    
+    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+      jetPts    [iPt][iEta].clear();
+      jetPtsUp  [iPt][iEta].clear();
+      jetPtsDown[iPt][iEta].clear();
+      jetEtas   [iPt][iEta].clear();
+      jetCMVAs  [iPt][iEta].clear();
+      jetFlavors[iPt][iEta].clear();
+    }
+ 
     // Vectors to keep around in memory
     TVector2 vectorBosonV2;
     TLorentzVector hbbJet1P4, hbbJet2P4, hbbDijetP4;
@@ -324,25 +395,26 @@ bool vhbbPlotSkim(
      
         // Jet multiplicity
         nBytesRead+=bLoad(b["nJet"],ientry);
-        nBytesRead+=bLoad(b["nFatjet"],ientry);
+        if(useBoostedCategory) { nBytesRead+=bLoad(b["nFatjet"],ientry); nBytesRead+=bLoad(b["fj1Pt"],ientry); nBytesRead+=bLoad(b["fj1Eta"],ientry); }
         if     (gt.nJet<2) continue;
-        if     (useBoostedCategory && gt.nFatjet!=0) continue;
+        if     (useBoostedCategory && gt.nFatjet!=0 && gt.fj1Pt>=220 && fabs(gt.fj1Eta)<2.4) continue;
         // Jet kinematics
         nBytesRead+=bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
         nBytesRead+=bLoad(b["jetPt"],ientry);
-        if(debug) printf("hbb jet1 pt %.2f, jet2 pt %.2f\n", gt.jetPt[gt.hbbjtidx[0]], gt.jetPt[gt.hbbjtidx[1]]);
-        if(gt.jetPt[gt.hbbjtidx[0]]<25 || gt.jetPt[gt.hbbjtidx[1]]<25) continue;
+        nBytesRead+=bLoad(b["jetRegFac"],ientry);
+        nBytesRead+=bLoad(b["jetEta"],ientry);
+        nBytesRead+=bLoad(b["jetPhi"],ientry);
+        hbbJet1Pt=gt.jetRegFac[0]*gt.jetPt[gt.hbbjtidx[0]]; hbbJet1Eta=gt.jetEta[gt.hbbjtidx[0]]; hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[0]];
+        hbbJet2Pt=gt.jetRegFac[1]*gt.jetPt[gt.hbbjtidx[1]]; hbbJet2Eta=gt.jetEta[gt.hbbjtidx[1]]; hbbJet2Phi=gt.jetPhi[gt.hbbjtidx[1]];
+        if(debug) printf("hbb jet1 pt %.2f, jet2 pt %.2f\n", hbbJet1Pt, hbbJet2Pt);
+        if(hbbJet1Pt<25 || hbbJet2Pt<25) continue;
         
         nBytesRead+=bLoad(b["hbbpt_reg"],ientry);
         nBytesRead+=bLoad(b["hbbeta"],ientry);
         nBytesRead+=bLoad(b["hbbphi"],ientry);
         nBytesRead+=bLoad(b["hbbm_reg"],ientry);
-        nBytesRead+=bLoad(b["jetEta"],ientry);
-        nBytesRead+=bLoad(b["jetPhi"],ientry);
         hbbDijetPt = gt.hbbpt_reg;
         hbbDijetMass = gt.hbbm_reg;
-        hbbJet1Pt=gt.jetPt[gt.hbbjtidx[0]]; hbbJet1Eta=gt.jetEta[gt.hbbjtidx[0]]; hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[0]];
-        hbbJet2Pt=gt.jetPt[gt.hbbjtidx[1]]; hbbJet2Eta=gt.jetEta[gt.hbbjtidx[1]]; hbbJet2Phi=gt.jetPhi[gt.hbbjtidx[1]];
         if(debug) printf("hbbDijetPt %.2f, hbbDijetMass %.2f\n", hbbDijetPt, hbbDijetMass); 
         if(hbbDijetPt<50.) continue;
         if(hbbDijetMass<0 || hbbDijetMass>250.) continue;
@@ -426,10 +498,10 @@ bool vhbbPlotSkim(
       hbbDijetMassDown = gt.hbbm_reg_jesDown;
       nBytesRead+=bLoad(b["jetPtUp"],ientry);
       nBytesRead+=bLoad(b["jetPtDown"],ientry);
-      hbbJet1PtUp = gt.jetPtUp[gt.hbbjtidx[0]];
-      hbbJet1PtDown = gt.jetPtDown[gt.hbbjtidx[0]];
-      hbbJet2PtUp = gt.jetPtUp[gt.hbbjtidx[1]];
-      hbbJet2PtDown = gt.jetPtDown[gt.hbbjtidx[1]];
+      hbbJet1PtUp = gt.jetRegFac[0]*gt.jetPtUp[gt.hbbjtidx[0]];
+      hbbJet1PtDown = gt.jetRegFac[0]*gt.jetPtDown[gt.hbbjtidx[0]];
+      hbbJet2PtUp = gt.jetRegFac[1]*gt.jetPtUp[gt.hbbjtidx[1]];
+      hbbJet2PtDown = gt.jetRegFac[1]*gt.jetPtDown[gt.hbbjtidx[1]];
       nBytesRead+=bLoad(b["topWBosonCosThetaCS"],ientry);
       nBytesRead+=bLoad(b["hbbCosThetaJJ"],ientry);
       nBytesRead+=bLoad(b["hbbCosThetaCSJ1"],ientry);
@@ -441,6 +513,31 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["nSoft2"],ientry);
       nBytesRead+=bLoad(b["nSoft5"],ientry);
       nBytesRead+=bLoad(b["nSoft10"],ientry);
+      
+      nBytesRead+=bLoad(b["jetGenFlavor"],ientry);
+
+      // CMVA jet kinematic decorrelated weight nuisances
+      for(unsigned iJ=0; iJ<(unsigned)gt.nJet; iJ++) {
+        unsigned iPt, iEta;
+        double jetAbsEta=fabs(gt.jetEta[iJ]);
+        if      (gt.jetPt[iJ] >= 19.99 && gt.jetPt[iJ] < 30 ) iPt = 0;
+        else if (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
+        else if (gt.jetPt[iJ] >= 40    && gt.jetPt[iJ] < 60 ) iPt = 2;
+        else if (gt.jetPt[iJ] >= 60    && gt.jetPt[iJ] < 100) iPt = 3;
+        else if (gt.jetPt[iJ] >= 100                        ) iPt = 4;
+        else continue;
+        if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
+        else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
+        else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
+        else continue;
+        jetPts    [iPt][iEta].push_back(gt.jetPt        [iJ]);
+        jetEtas   [iPt][iEta].push_back(gt.jetEta       [iJ]);
+        jetCMVAs  [iPt][iEta].push_back(gt.jetCMVA      [iJ]);
+        jetFlavors[iPt][iEta].push_back(gt.jetGenFlavor [iJ]);
+        
+        if(gt.jetPtUp  [iJ]>=20.) jetPtsUp  [iPt][iEta].push_back(gt.jetPtUp      [iJ]); // Choose iPt based on the varied jet Pt? not sure
+        if(gt.jetPtDown[iJ]>=20.) jetPtsDown[iPt][iEta].push_back(gt.jetPtDown    [iJ]);
+      }
       
       // End WH Resolved Category 
     } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) { 
@@ -661,9 +758,9 @@ bool vhbbPlotSkim(
       cut["mH_Flip"    ] = ((hbbDijetMass < 90) || (hbbDijetMass >= 150));
 
       vector<TString> cutsWHLightFlavorCR, cutsWHHeavyFlavorCR, cutsWH2TopCR, cutsWHSR;
-      cutsWHLightFlavorCR ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiLep1Met","looseBTag","tightBVeto","metSig"};
-      cutsWHHeavyFlavorCR ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHHF","tightBTag","mH_Flip","metSig"};
-      cutsWH2TopCR        ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHTT","tightBTag"};
+      cutsWHLightFlavorCR ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt",         "dPhiLep1Met","looseBTag","tightBVeto","metSig"};
+      cutsWHHeavyFlavorCR ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt",         "dPhiLep1Met","nJet_WHHF","tightBTag","mH_Flip","metSig"};
+      cutsWH2TopCR        ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt",         "dPhiLep1Met","nJet_WHTT","tightBTag"};
       cutsWHSR            ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
 
       if(passAllCuts( cut, cutsWHLightFlavorCR))   selectionBits |= kWHLightFlavorCR;
@@ -805,71 +902,56 @@ bool vhbbPlotSkim(
         nBytesRead+=bLoad(b["sf_zhDown"],ientry);
         weight *= gt.sf_zh;
       }
-      // #############################
-      // # Variations of the Weights #
-      // #############################
+      //float weight_noCsvCent=weight;
+      nBytesRead+=bLoad(b["sf_cmvaWeight_Cent"],ientry);
+      weight *= gt.sf_csvWeights[GeneralTree::csvCent];
+      
       // PDF and QCD scale
       nBytesRead+=bLoad(b["pdfUp"],ientry);
       nBytesRead+=bLoad(b["pdfDown"],ientry);
-      //nBytesRead+=bLoad(b["scaleUp"],ientry); // this is broken right now, thanks sid
       nBytesRead+=bLoad(b["scale"],ientry);
-      nBytesRead+=bLoad(b["scaleDown"],ientry);
       weight_pdfUp = weight * gt.pdfUp;
       weight_pdfDown = weight * gt.pdfDown;
-      weight_scaleUp = weight * (1.+std::max({gt.scale[0], gt.scale[1], gt.scale[2], gt.scale[3], gt.scale[4], gt.scale[5]}));
-      weight_scaleDown = weight * (1.+gt.scaleDown);
+      weight_QCDr1f2 = weight * (1.+gt.scale[0]);
+      weight_QCDr1f5 = weight * (1.+gt.scale[1]);
+      weight_QCDr2f1 = weight * (1.+gt.scale[2]);
+      weight_QCDr2f2 = weight * (1.+gt.scale[3]);
+      weight_QCDr5f1 = weight * (1.+gt.scale[4]);
+      weight_QCDr5f5 = weight * (1.+gt.scale[5]);
+
+      // #############################
+      // # Variations of the Weights #
+      // #############################
       
       if(selection>=kWHLightFlavorCR && selection<=kWHFJSR) { // WH weights
         // Lepton ID & ISO SF uncertainty
         if(typeLepSel==1) weight_lepSFUp = weight * (1.+gt.muonSfUnc[0]);
         else weight_lepSFUp = weight * (1.+gt.electronSfUnc[0]);
-      //}
-      //if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
-        // WH resolved weights
-
-        // CMVA weight
-        nBytesRead+=bLoad(b["sf_cmvaWeight_Cent"],ientry);
-        weight *= gt.sf_csvWeights[GeneralTree::csvCent];
-      
         // CMVA weight uncertainty
         // https://cmssdt.cern.ch/lxr/source/PhysicsTools/Heppy/python/physicsutils/BTagWeightCalculator.py?v=CMSSW_8_0_20
         // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Data_MC_Scale_Factors
-        nBytesRead+=bLoad(b["sf_cmvaWeight_LFup"        ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_LFdown"      ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_HFup"        ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_HFdown"      ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats1up"  ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats1down"],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats2up"  ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_HFStats2down"],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats1up"  ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats1down"],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats2up"  ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_LFStats2down"],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_CErr1up"     ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_CErr1down"   ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_CErr2up"     ],ientry);
-        nBytesRead+=bLoad(b["sf_cmvaWeight_CErr2down"   ],ientry);
-        weight_cmvaUp = weight*(1.+sqrt(
-          pow(gt.sf_csvWeights[GeneralTree::csvLFup       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvHFup       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvHFStats1up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvHFStats2up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvLFStats1up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvLFStats2up ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvCErr1up    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvCErr2up    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2)
-        ));
-        weight_cmvaDown = weight*(1.-sqrt(
-          pow(gt.sf_csvWeights[GeneralTree::csvLFdown       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvHFdown       ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvHFStats1down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvHFStats2down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvLFStats1down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvLFStats2down ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvCErr1down    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2) +
-          pow(gt.sf_csvWeights[GeneralTree::csvCErr2down    ] / gt.sf_csvWeights[GeneralTree::csvCent] - 1., 2)
-        ));
+        for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
+          double centralWeight = cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+          weight_cmvaJESUp       [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvJESup       , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaLFUp        [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvLFup        , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaHFUp        [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvHFup        , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaHFStats1Up  [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvHFStats1up  , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaHFStats2Up  [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvHFStats2up  , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaLFStats1Up  [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvLFStats1up  , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaLFStats2Up  [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvLFStats2up  , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaCErr1Up     [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCErr1up     , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaCErr2Up     [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCErr2up     , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaJESDown     [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvJESdown     , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaLFDown      [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvLFdown      , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaHFDown      [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvHFdown      , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaHFStats1Down[iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvHFStats1down, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaHFStats2Down[iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvHFStats2down, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaLFStats1Down[iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvLFStats1down, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaLFStats2Down[iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvLFStats2down, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaCErr1Down   [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCErr1down   , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+          weight_cmvaCErr2Down   [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCErr2down   , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
+        }
       }
       /*if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
         // WH boosted weights

@@ -12,6 +12,7 @@ void whbbMVA(
   TString extraString="", 
   bool isBoosted=false, 
   bool useGaussDeco=false,
+  bool useMulticlass=true,
   float eventFrac=1
 ) {
   gROOT->ProcessLine("TMVA::gConfig().GetVariablePlotting().fMaxNumOfAllowedVariablesForScatterPlots = 100");
@@ -23,23 +24,31 @@ void whbbMVA(
   TTree *plotTree = (TTree*)plotTreeFile->Get("plotTree"); assert(plotTree);
   
   // Initialize the factory
-  TString trainName="BDT_multiClass_"+TString(isBoosted?"boosted":"resolved")+(extraString == "" ? "" : "_"+extraString);
+  TString trainName="BDT_"+TString(useMulticlass?"multiClass_":"singleClass_")+TString(isBoosted?"boosted":"resolved")+(extraString == "" ? "" : "_"+extraString);
   output_file=TFile::Open("/data/t3home000/dhsu/mva/whbb/trainingResult_whbb_"+trainName+".root", "RECREATE");
   //factory = new TMVA::Factory("bdt", output_file, "!V:!Silent:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Multiclass");
-  TString factoryOptions="!V:!Silent:DrawProgressBar:AnalysisType=Multiclass";
-  if(useGaussDeco) factoryOptions += ":Transformations=G,D";
-  else             factoryOptions += ":Transformations=I";
+  TString factoryOptions="!V:!Silent:DrawProgressBar";
+  if(useMulticlass) factoryOptions+=":AnalysisType=Multiclass";
+  else              factoryOptions+=":AnalysisType=Classification";
+  if(useGaussDeco)  factoryOptions += ":Transformations=G,D";
+  else              factoryOptions += ":Transformations=I";
   factory = new TMVA::Factory("bdt", output_file, factoryOptions);
   
-  factory->AddTree(plotTree,"Signal",1.0, "theCategory==12", "test train");
-  factory->AddTree(plotTree,"W+jets",1.0, "theCategory==6 || theCategory==7 || theCategory==8", "test train");
-  factory->AddTree(plotTree,"N-top" ,1.0, "theCategory==4 || theCategory==5 ", "test train");
-  factory->AddTree(plotTree,"Other" ,1.0, "theCategory==2 || theCategory==3 || theCategory==9 || theCategory==10 || theCategory==11", "test train"); // no QCD
-  factory->SetWeightExpression("weight", "Signal");
-  factory->SetWeightExpression("weight", "W+jets");
-  factory->SetWeightExpression("weight", "N-top" );
-  factory->SetWeightExpression("weight", "Other" );
-  
+  if(useMulticlass) {
+    factory->AddTree(plotTree,"Signal",1.0, "theCategory==12", "test train");
+    factory->AddTree(plotTree,"W+jets",1.0, "theCategory==6 || theCategory==7 || theCategory==8", "test train");
+    factory->AddTree(plotTree,"N-top" ,1.0, "theCategory==4 || theCategory==5 ", "test train");
+    factory->AddTree(plotTree,"Other" ,1.0, "theCategory==2 || theCategory==3 || theCategory==9 || theCategory==10 || theCategory==11", "test train"); // no QCD
+    factory->SetWeightExpression("weight", "Signal");
+    factory->SetWeightExpression("weight", "W+jets");
+    factory->SetWeightExpression("weight", "N-top" );
+    factory->SetWeightExpression("weight", "Other" );
+  } else {
+    factory->AddTree(plotTree,"Signal",1.0, "theCategory==12", "test train");
+    factory->AddTree(plotTree,"Background",1.0, "theCategory==2 || theCategory==3 || theCategory==4 || theCategory==5 || theCategory==6 || theCategory==7 || theCategory==8 || theCategory==9 || theCategory==10 || theCategory==11", "test train"); // no qcd
+    factory->SetWeightExpression("weight", "Signal");
+    factory->SetWeightExpression("weight", "Background");
+  } 
   TCut preselectionCut;
   
   if(isBoosted) {

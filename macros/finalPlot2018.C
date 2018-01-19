@@ -167,7 +167,7 @@ TList *finalPlot2018(
     //pad1->SetGridx();         
     pad1->Draw();             
     pad1->cd();              
-    if(variableWidth) pad1->SetLogy();
+    //if(variableWidth) pad1->SetLogy();
     hs->Draw("HIST");
     
     //float binWidth=(xmax-xmin)/(float)nbins;
@@ -180,7 +180,7 @@ TList *finalPlot2018(
     hs->GetYaxis()->SetLabelSize(0.05);
     float plotMax=1.4;
     if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=2.;
-    if(variableWidth) { hs->SetMinimum(1); plotMax=100; if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=1000.; }
+    //if(variableWidth) { hs->SetMinimum(1); plotMax=100; if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=1000.; }
     hs->SetMaximum( plotMax*TMath::Max( hs->GetMaximum(), histos[kPlotData]->GetMaximum() ));
     histos[kPlotVH]->Draw("HIST SAME");
     hErrorBand->Draw("E2 same");

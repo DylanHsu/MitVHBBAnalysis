@@ -26,6 +26,7 @@ vector<pair<string, string> > parseTmvaXmlFile(
   bool startOfList=false;
   unsigned nVar=0;
   vector<pair<string, string> > varLabelExprs;
+  printf("Parsing XML file \"%s\" to get the list of variables...\n", xmlFile.c_str());
   while(getline(ifs,line)) {
     size_t pos1,pos2; string token;
     
@@ -45,7 +46,7 @@ vector<pair<string, string> > parseTmvaXmlFile(
     if(varIndexStr=="" || varIndexStr=="" || varLabel=="") continue;
     varLabelExprs.emplace_back(varLabel, varExpr);
     
-    printf("Parsed variable #%d: label \"%s\" => expression \"%s\"\n", atoi(varIndexStr.c_str()), varLabel.c_str(), varExpr.c_str());
+    printf("\tParsed variable #%d: label \"%s\" => expression \"%s\"\n", atoi(varIndexStr.c_str()), varLabel.c_str(), varExpr.c_str());
     if(varLabelExprs.size()>=nVar || line.find("</Variables>") != string::npos)  break;
   }
   ifs.close();
