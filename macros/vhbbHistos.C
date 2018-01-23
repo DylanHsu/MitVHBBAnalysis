@@ -567,6 +567,7 @@ void vhbbHistos(
     histo_eleSFUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFUp"  , theCategory)); histo_eleSFUp  [theCategory]->SetDirectory(0);
     histo_muSFUp   [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFUp"   , theCategory)); histo_muSFUp   [theCategory]->SetDirectory(0);
     for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+      histo_cmvaJESUp       [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaJESUp_pt%d_eta%d"       , theCategory, iPt, iEta)); histo_cmvaJESUp        [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaLFUp        [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFUp_pt%d_eta%d"        , theCategory, iPt, iEta)); histo_cmvaLFUp         [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaHFUp        [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFUp_pt%d_eta%d"        , theCategory, iPt, iEta)); histo_cmvaHFUp         [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaHFStats1Up  [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats1Up_pt%d_eta%d"  , theCategory, iPt, iEta)); histo_cmvaHFStats1Up   [iPt][iEta][theCategory]->SetDirectory(0);
@@ -575,6 +576,7 @@ void vhbbHistos(
       histo_cmvaLFStats2Up  [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats2Up_pt%d_eta%d"  , theCategory, iPt, iEta)); histo_cmvaLFStats2Up   [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaCErr1Up     [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr1Up_pt%d_eta%d"     , theCategory, iPt, iEta)); histo_cmvaCErr1Up      [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaCErr2Up     [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr2Up_pt%d_eta%d"     , theCategory, iPt, iEta)); histo_cmvaCErr2Up      [iPt][iEta][theCategory]->SetDirectory(0);
+      histo_cmvaJESDown     [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaJESDown_pt%d_eta%d"     , theCategory, iPt, iEta)); histo_cmvaJESDown      [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaLFDown      [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFDown_pt%d_eta%d"      , theCategory, iPt, iEta)); histo_cmvaLFDown       [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaHFDown      [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFDown_pt%d_eta%d"      , theCategory, iPt, iEta)); histo_cmvaHFDown       [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaHFStats1Down[iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats1Down_pt%d_eta%d", theCategory, iPt, iEta)); histo_cmvaHFStats1Down [iPt][iEta][theCategory]->SetDirectory(0);
@@ -860,21 +862,21 @@ void vhbbHistos(
     if(selection>=kWHLightFlavorCR && selection<=kWHSR) for(int p=0; p<nPlots; p++) {
       makePlot=false;
       // Variables -- change the makePlot for n-1 later
-      if      (histoNames[p]=="pTH"                 ) { theVar = TMath::Min(hbbDijetPt    , float(xmax[p]-0.001)); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && theVar<=100.); }
+      if      (histoNames[p]=="pTH"                 ) { theVar = TMath::Min(hbbDijetPt    , float(xmax[p]-0.001)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && theVar<=100.); }
       else if (histoNames[p]=="mH"                  ) { theVar = TMath::Min(hbbDijetMass  , float(xmax[p]-0.001)); makePlot = passFullSel; }
-      else if (histoNames[p]=="WpT"                 ) { theVar = TMath::Min(topWBosonPt   , float(xmax[p]-0.001)); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && theVar<=100.); }
-      else if (histoNames[p]=="deltaPhiVH"          ) { theVar = TMath::Min(deltaPhiVH    , float(xmax[p]-0.001)); makePlot = passFullSel || (selection==kWHSR && (nMinusOneBits & selection)!=0 && theVar<2.5); }
+      else if (histoNames[p]=="WpT"                 ) { theVar = TMath::Min(topWBosonPt   , float(xmax[p]-0.001)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && theVar<=100.); }
+      else if (histoNames[p]=="deltaPhiVH"          ) { theVar = TMath::Min(deltaPhiVH    , float(xmax[p]-0.001)); makePlot = passFullSel != (selection==kWHSR && (nMinusOneBits & selection)!=0 && theVar<2.5); }
       else if (histoNames[p]=="pTBalanceDijetW"     ) { theVar = TMath::Min(balanceVH     , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="lepton1Pt"           ) { theVar = TMath::Min(lepton1Pt     , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="pfmet"               ) { theVar = TMath::Min(pfmet         , float(xmax[p]-0.001)); makePlot = passFullSel; }
-      else if (histoNames[p]=="pfmetsig"            ) { theVar = TMath::Min(pfmet         , float(xmax[p]-0.001)); makePlot = passFullSel || ((selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR) && (nMinusOneBits & selection)!=0 && theVar<=2.); }
+      else if (histoNames[p]=="pfmetsig"            ) { theVar = TMath::Min(pfmet         , float(xmax[p]-0.001)); makePlot = passFullSel != ((selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR) && (nMinusOneBits & selection)!=0 && theVar<=2.); }
       else if (histoNames[p]=="mTW"                 ) { theVar = TMath::Min(mT            , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="Hbjet1Pt"            ) { theVar = TMath::Min(hbbJet1Pt     , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="Hbjet2Pt"            ) { theVar = TMath::Min(hbbJet2Pt     , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="dPhiHbbJet1MET"      ) { theVar = TMath::Min(dPhiHbbJet1MET, float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="dPhiHbbJet2MET"      ) { theVar = TMath::Min(dPhiHbbJet2MET, float(xmax[p]-0.001)); makePlot = passFullSel; }
-      else if (histoNames[p]=="bDiscrMin"           ) { theVar = TMath::Min(bDiscrMin     , float(xmax[p]-0.001)); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && (selection==kWHSR && theVar<bDiscrLoose )); }
-      else if (histoNames[p]=="bDiscrMax"           ) { theVar = TMath::Min(bDiscrMax     , float(xmax[p]-0.001)); makePlot = passFullSel || ((nMinusOneBits & selection)!=0 && ((selection==kWHLightFlavorCR && (theVar<bDiscrLoose || theVar>bDiscrMedium) ) || (selection!=kWHLightFlavorCR && theVar<bDiscrTight)) ); }
+      else if (histoNames[p]=="bDiscrMin"           ) { theVar = TMath::Min(bDiscrMin     , float(xmax[p]-0.001)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && (selection==kWHSR && theVar<bDiscrLoose )); }
+      else if (histoNames[p]=="bDiscrMax"           ) { theVar = TMath::Min(bDiscrMax     , float(xmax[p]-0.001)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && ((selection==kWHLightFlavorCR && (theVar<bDiscrLoose || theVar>bDiscrMedium) ) || (selection!=kWHLightFlavorCR && theVar<bDiscrTight)) ); }
       else if (histoNames[p]=="topMassLep1Met"      ) { theVar = TMath::Min(topMassLep1Met, float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="sumEtSoft1"          ) { theVar = TMath::Min(sumEtSoft1    , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="nSoft2"              ) { theVar = nSoft2                                          ; makePlot = passFullSel; }

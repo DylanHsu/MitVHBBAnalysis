@@ -19,10 +19,11 @@
 
 // Script for making light weight plotting/training trees for VH analysis
 
-// This controls whether to cut on the number of fatjets in the resolved regions
+// useBoostedCategory - This controls whether to cut on the number of fatjets in the resolved regions
 // False means you will use all possible events to do the resolved VH
 // True means the events with a fatjet are reserved for boosted VH
-const bool useBoostedCategory=false; 
+
+const bool useFlatVJetsKFactor=true;
 
 using namespace vhbbPlot;
 bool vhbbPlotSkim(
@@ -31,7 +32,8 @@ bool vhbbPlotSkim(
   vhbbPlot::sampleType sample=nSampleTypes,
   vhbbPlot::selectionType selection = kWHLightFlavorCR,
   bool debug=false,
-  Long64_t maxEntries=0
+  Long64_t maxEntries=0,
+  bool useBoostedCategory=false
 ) {
   const double theLumi=35900.;
   
@@ -98,7 +100,7 @@ bool vhbbPlotSkim(
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
   unsigned char typeLepSel, theCategory;
   unsigned selectionBits, selectionBits_jesUp, selectionBits_jesDown, nMinusOneBits;
-  float lepton1Pt, lepton1Eta, lepton1Phi, lepton1RelIso;
+  float lepton1Pt, lepton1Eta, lepton1Phi, lepton1RelIso, lepton1D0, lepton1DZ;
   float lepton2Pt, lepton2Eta, lepton2Phi;
   float hbbJet1Pt, hbbJet1Eta, hbbJet1Phi;
   float hbbJet2Pt, hbbJet2Eta, hbbJet2Phi;
@@ -185,6 +187,8 @@ bool vhbbPlotSkim(
     plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
     plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
     plotTree->Branch("lepton1RelIso"           , &lepton1RelIso            );
+    plotTree->Branch("lepton1D0"               , &lepton1D0                );
+    plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
     plotTree->Branch("topMassLep1Met"          , &gt.topMassLep1Met        );
     plotTree->Branch("topMassLep1Met_jesUp"    , &gt.topMassLep1Met_jesUp  );
     plotTree->Branch("topMassLep1Met_jesDown"  , &gt.topMassLep1Met_jesDown);
@@ -244,6 +248,8 @@ bool vhbbPlotSkim(
     plotTree->Branch("lepton1Eta"            , &lepton1Eta               );
     plotTree->Branch("lepton1Phi"            , &lepton1Phi               );
     plotTree->Branch("lepton1RelIso"         , &lepton1RelIso            );
+    plotTree->Branch("lepton1D0"               , &lepton1D0                );
+    plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
     plotTree->Branch("nIsojet"               , &nIsojet                  );
     plotTree->Branch("mT"                    , &gt.mT                    );
     plotTree->Branch("mT_jesUp"              , &mT_jesUp                 );
@@ -395,9 +401,13 @@ bool vhbbPlotSkim(
      
         // Jet multiplicity
         nBytesRead+=bLoad(b["nJet"],ientry);
-        if(useBoostedCategory) { nBytesRead+=bLoad(b["nFatjet"],ientry); nBytesRead+=bLoad(b["fj1Pt"],ientry); nBytesRead+=bLoad(b["fj1Eta"],ientry); }
         if     (gt.nJet<2) continue;
-        if     (useBoostedCategory && gt.nFatjet!=0 && gt.fj1Pt>=220 && fabs(gt.fj1Eta)<2.4) continue;
+        if(useBoostedCategory) { 
+          nBytesRead+=bLoad(b["nFatjet"],ientry);
+          nBytesRead+=bLoad(b["fj1Pt"],ientry);
+          nBytesRead+=bLoad(b["fj1Eta"],ientry);
+          if(gt.nFatjet!=0 && gt.fj1Pt>=220 && fabs(gt.fj1Eta)<2.4) continue;
+        }
         // Jet kinematics
         nBytesRead+=bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
         nBytesRead+=bLoad(b["jetPt"],ientry);
@@ -433,14 +443,28 @@ bool vhbbPlotSkim(
           nBytesRead+=bLoad(b["muonPt"],ientry);
           nBytesRead+=bLoad(b["muonEta"],ientry);
           nBytesRead+=bLoad(b["muonPhi"],ientry);
+          nBytesRead+=bLoad(b["muonD0"],ientry);
+          nBytesRead+=bLoad(b["muonDZ"],ientry);
           nBytesRead+=bLoad(b["muonCombIso"],ientry);
-          lepton1Pt = gt.muonPt[0]; lepton1Eta = gt.muonEta[0]; lepton1Phi = gt.muonPhi[0]; lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
+          lepton1Pt     = gt.muonPt[0];
+          lepton1Eta    = gt.muonEta[0];
+          lepton1Phi    = gt.muonPhi[0]; 
+          lepton1D0     = gt.muonD0[0];
+          lepton1DZ     = gt.muonDZ[0];
+          lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
         } else if(typeLepSel==2) {
           nBytesRead+=bLoad(b["electronPt"],ientry);
           nBytesRead+=bLoad(b["electronEta"],ientry);
           nBytesRead+=bLoad(b["electronPhi"],ientry);
+          nBytesRead+=bLoad(b["electronD0"],ientry);
+          nBytesRead+=bLoad(b["electronDZ"],ientry);
           nBytesRead+=bLoad(b["electronCombIso"],ientry);
-          lepton1Pt = gt.electronPt[0]; lepton1Eta = gt.electronEta[0]; lepton1Phi = gt.electronPhi[0]; lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
+          lepton1Pt     = gt.electronPt[0]; 
+          lepton1Eta    = gt.electronEta[0];
+          lepton1Phi    = gt.electronPhi[0];
+          lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
+          lepton1D0     = gt.electronD0[0];
+          lepton1DZ     = gt.electronDZ[0];
         } else continue;
         if(debug) printf("Passed lepton kinematics\n");
         
@@ -744,10 +768,11 @@ bool vhbbPlotSkim(
       cut["WpT"        ] = gt.topWBosonPt>100;
       cut["pTjj"       ] = hbbDijetPt>100; 
       cut["lepton1Pt"  ] = ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30));
+      cut["lepton1IP"  ] = (typeLepSel==1 && lepton1D0<0.20 && lepton1DZ<0.50) || (typeLepSel==2 && ((fabs(lepton1Eta)<1.479 && lepton1D0<0.05 && lepton1DZ<0.10) || (fabs(lepton1Eta)>=1.479 && lepton1D0<0.10 && lepton1DZ<0.20)));
       cut["dPhiVH"     ] = deltaPhiVH > 2.5;
       cut["dPhiLep1Met"] = deltaPhiLep1Met < 2;
       cut["tightBTag"  ] = (bDiscrMax >= bDiscrTight);
-      cut["tightBVeto" ] = (bDiscrMax < bDiscrTight);
+      cut["mediumBVeto"] = (bDiscrMax < bDiscrMedium);
       cut["looseBTag"  ] = (bDiscrMax >= bDiscrLoose);
       cut["looseBTag2" ] = (bDiscrMin >= bDiscrLoose);
       cut["metSig"     ] = gt.pfmetsig>2;
@@ -755,13 +780,13 @@ bool vhbbPlotSkim(
       cut["nJet_WHHF"  ] = gt.nJet==2;
       cut["nJet_WHSR"  ] = gt.nJet<4;
       cut["mH_WHSR"    ] = ((hbbDijetMass >= 90) && (hbbDijetMass <  150));
-      cut["mH_Flip"    ] = ((hbbDijetMass < 90) || (hbbDijetMass >= 150));
+      cut["mH_Flip"    ] = ((hbbDijetMass <  90) || (hbbDijetMass >= 150));
 
       vector<TString> cutsWHLightFlavorCR, cutsWHHeavyFlavorCR, cutsWH2TopCR, cutsWHSR;
-      cutsWHLightFlavorCR ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt",         "dPhiLep1Met","looseBTag","tightBVeto","metSig"};
-      cutsWHHeavyFlavorCR ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt",         "dPhiLep1Met","nJet_WHHF","tightBTag","mH_Flip","metSig"};
-      cutsWH2TopCR        ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt",         "dPhiLep1Met","nJet_WHTT","tightBTag"};
-      cutsWHSR            ={"ultraLepIso", "2ndLepVeto","WpT","pTjj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
+      cutsWHLightFlavorCR ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
+      cutsWHHeavyFlavorCR ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","nJet_WHHF","tightBTag","mH_Flip","metSig"};
+      cutsWH2TopCR        ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","nJet_WHTT","tightBTag"};
+      cutsWHSR            ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj","dPhiVH","dPhiLep1Met","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
 
       if(passAllCuts( cut, cutsWHLightFlavorCR))   selectionBits |= kWHLightFlavorCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorCR))   selectionBits |= kWHHeavyFlavorCR;
@@ -808,6 +833,7 @@ bool vhbbPlotSkim(
       cut["WpT"        ] = gt.topWBosonPt>100;
       cut["pTfj"       ] = gt.fj1Pt>220; 
       cut["lepton1Pt"  ] = ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30));
+      cut["lepton1IP"  ] = (typeLepSel==1 && lepton1D0<0.20 && lepton1DZ<0.50) || (typeLepSel==2 && ((fabs(lepton1Eta)<1.479 && lepton1D0<0.05 && lepton1DZ<0.10) || (fabs(lepton1Eta)>=1.479 && lepton1D0<0.10 && lepton1DZ<0.20)));
       cut["dPhiVH"     ] = deltaPhiVH > 2.5;
       cut["dPhiLep1Met"] = deltaPhiLep1Met < 2;
       cut["nJet_WHFJTT"] = nIsojet>=2;
@@ -821,10 +847,10 @@ bool vhbbPlotSkim(
       cut["metSig"     ] = gt.pfmetsig>2;
       
       vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWH2TopFJCR, cutsWHFJSR;
-      cutsWHLightFlavorFJCR ={"ultraLepIso", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met",              "isojet0Btag","DoubleBVeto",               "metSig"};
-      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJHF","isojet0Btag","DoubleB"    ,"mH_FJFlip"   ,"metSig"};
-      cutsWH2TopFJCR        ={"ultraLepIso", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJTT","isojet0Btag","DoubleB"                            };
-      cutsWHFJSR            ={"ultraLepIso", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJSR","isojet0Btag","DoubleB"    ,"mH_WHFJSR"            };
+      cutsWHLightFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met",              "isojet0Btag","DoubleBVeto",               "metSig"};
+      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJHF","isojet0Btag","DoubleB"    ,"mH_FJFlip"   ,"metSig"};
+      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJTT","isojet0Btag","DoubleB"                            };
+      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJSR","isojet0Btag","DoubleB"    ,"mH_WHFJSR"            };
 
       if(passAllCuts( cut, cutsWHLightFlavorFJCR))   selectionBits |= kWHLightFlavorFJCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorFJCR))   selectionBits |= kWHHeavyFlavorFJCR;
@@ -869,8 +895,18 @@ bool vhbbPlotSkim(
     else {
       nBytesRead+=bLoad(b["normalizedWeight"],ientry);
       nBytesRead+=bLoad(b["sf_npv"],ientry);
-      if(sample==kWjets || sample==kZjets) { nBytesRead+=bLoad(b["sf_qcdV"],ientry); nBytesRead+=bLoad(b["sf_ewkV"],ientry); } 
-      else { gt.sf_qcdV=1; gt.sf_ewkV=1; }
+      if(sample==kWjets || sample==kZjets) {
+        if(useFlatVJetsKFactor) {
+          gt.sf_qcdV=(sample==kWjets)?1.21:1.23;
+          gt.sf_ewkV=1.00;
+        } else {
+          nBytesRead+=bLoad(b["sf_qcdV"],ientry);
+          nBytesRead+=bLoad(b["sf_ewkV"],ientry);
+        }
+      } else { 
+        gt.sf_qcdV=1;
+        gt.sf_ewkV=1;
+      }
       //nBytesRead+=bLoad(sf_btag1,ientry);
       if(sample==kTT) nBytesRead+=bLoad(b["sf_tt"],ientry); else gt.sf_tt=1;
       weight = normalizedWeight * theLumi * gt.sf_npv * gt.sf_ewkV * gt.sf_qcdV * gt.sf_tt;
@@ -905,6 +941,11 @@ bool vhbbPlotSkim(
       //float weight_noCsvCent=weight;
       nBytesRead+=bLoad(b["sf_cmvaWeight_Cent"],ientry);
       weight *= gt.sf_csvWeights[GeneralTree::csvCent];
+      //for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+      //  double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
+      //  double centralWeight = cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+      //  weight *= centralWeight;
+      //}
       
       // PDF and QCD scale
       nBytesRead+=bLoad(b["pdfUp"],ientry);

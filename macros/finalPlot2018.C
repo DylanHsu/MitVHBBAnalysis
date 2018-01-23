@@ -22,7 +22,8 @@ TList *finalPlot2018(
   TString inputFileName,
   TString plotTitle="",
   TString extraText="",
-  bool isBlinded=false
+  bool isBlinded=false,
+  bool normSignalToBkg=false
 ) {
   const bool plotQCD=true;
   system("mkdir -p MitVHBBAnalysis/plots");
@@ -44,10 +45,13 @@ TList *finalPlot2018(
     for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {
       plotCategory i = static_cast<plotCategory>(iCat);
       if(!plotQCD && i==kPlotQCD) continue;
-      // Construct histograms
+      // Construct histograms - needs to be worked on
       if (i==kPlotVH) {
-        if(selType==kWHSR) plotName="WH(125)x10";
-        else if(selType==kWHLightFlavorCR || selType==kWHHeavyFlavorCR || selType==kWH2TopCR) plotName="WH(125)x100";
+        if(selType==kWHSR) {
+          if(normSignalToBkg) plotName="WH(125)x10";
+          else                plotName="WH(125)x?"; 
+
+        } else if(selType==kWHLightFlavorCR || selType==kWHHeavyFlavorCR || selType==kWH2TopCR) plotName="WH(125)x100";
         else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)x10";
         else plotName="ZH(125)x100";
       } else plotName=plotNames[i]; 
@@ -63,8 +67,8 @@ TList *finalPlot2018(
       //if(i!=kPlotData) histos[i]->Scale(theLumi);
       if(i==kPlotQCD) histos[i]->Scale(1.0);
       if(i==kPlotVH && selType!=kWHSR && selType!=kZnnHSR && selType!=kZllHSR) histos[i]->Scale(100.);
-      if(i==kPlotVH && (selType==kWHSR || selType==kZnnHSR || selType==kZllHSR)) histos[i]->Scale(10.);
-      
+      if(i==kPlotVH && !normSignalToBkg && (selType==kWHSR || selType==kZnnHSR || selType==kZllHSR)) histos[i]->Scale(10.);
+
       // Colors
       if(i==kPlotData) {
         histos[i]->SetMarkerColor(plotColors[i]); 
@@ -117,6 +121,18 @@ TList *finalPlot2018(
         hTotalBkg->Add(histos[i]);
       }
     }
+    float signalInflationFactor=10;
+    if(normSignalToBkg) {
+      signalInflationFactor = hTotalBkg->Integral(1., hTotalBkg->GetNbinsX()) / histos[kPlotVH]->Integral(1., histos[kPlotVH]->GetNbinsX());
+      histos[kPlotVH]->Scale(signalInflationFactor);
+      TString plotName;
+      // needs to be worked on
+      if(selType<=kWHFJSR) plotName = Form("WH(125)x%d", (int)round(signalInflationFactor));
+      else                 plotName = Form("ZH(125)x%d", (int)round(signalInflationFactor));
+      histos[kPlotVH]->SetName(plotName);
+      histos[kPlotVH]->SetTitle(plotName);
+    }
+   
 
     // Start plotting stuff
     gStyle->SetOptStat(0);
@@ -181,7 +197,8 @@ TList *finalPlot2018(
     float plotMax=1.4;
     if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=2.;
     //if(variableWidth) { hs->SetMinimum(1); plotMax=100; if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=1000.; }
-    hs->SetMaximum( plotMax*TMath::Max( hs->GetMaximum(), histos[kPlotData]->GetMaximum() ));
+    float theMax = TMath::Max(histos[kPlotVH]->GetMaximum(),TMath::Max(hs->GetMaximum(), histos[kPlotData]->GetMaximum()));
+    hs->SetMaximum( plotMax*theMax);
     histos[kPlotVH]->Draw("HIST SAME");
     hErrorBand->Draw("E2 same");
     if(!isBlinded) histos[kPlotData]->Draw("P E0 SAME");
