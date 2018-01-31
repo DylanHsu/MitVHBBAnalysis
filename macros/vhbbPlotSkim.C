@@ -23,7 +23,7 @@
 // False means you will use all possible events to do the resolved VH
 // True means the events with a fatjet are reserved for boosted VH
 
-const bool useFlatVJetsKFactor=true;
+const bool useHtBinnedVJetsKFactor=true;
 
 using namespace vhbbPlot;
 bool vhbbPlotSkim(
@@ -159,6 +159,7 @@ bool vhbbPlotSkim(
   plotTree->Branch("pfmetUp"         , &gt.pfmetUp      );
   plotTree->Branch("pfmetDown"       , &gt.pfmetDown    );
   plotTree->Branch("pfmetsig"        , &gt.pfmetsig     );
+  plotTree->Branch("puppimetsig"     , &gt.puppimetsig  );
   plotTree->Branch("pfmetphi"        , &gt.pfmetphi     );
   plotTree->Branch("weight"          , &weight          );
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
@@ -356,6 +357,31 @@ bool vhbbPlotSkim(
     plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
   }
   
+  // Parse the file name to determine the kfactor
+  double theQCDKFactor=1.; vector<double> theEWKCorrPars; 
+  if(useHtBinnedVJetsKFactor) {
+    unsigned htLow=0, htHigh=0;
+    if(sample==kWjets || sample==kZjets) {
+      // Determine the HT bin
+      // Assume the sample names are of the form "/path/to/WJets_ht100to200.root"
+      string inputFileNameStr(inputFileName);
+      size_t htWord    = inputFileNameStr.find("ht");
+      size_t toWord    = inputFileNameStr.find("to");
+      size_t lastDot   = inputFileNameStr.find_last_of(".");
+      htLow   = atoi(inputFileNameStr.substr(htWord+2, toWord-htWord-2).c_str());
+      htHigh  = atoi(inputFileNameStr.substr(toWord+2, lastDot-toWord-2).c_str());
+      if(htLow==0 || htHigh==0) {
+        throw std::runtime_error(Form("Warning: Error parsing the filename \"%s\", probably it is not of the form \"/path/to/WJets_ht100to200.root\" (go fix that)", inputFileName.Data()));
+        return false;
+      }
+      theQCDKFactor = qcdKFactor(sample, htLow, htHigh);
+      theEWKCorrPars = EWKCorrPars(sample);
+      if(theEWKCorrPars.size()<4) {
+        throw std::runtime_error("Warning: theEWKCorrPars does not have 4 array elements, make sure function EWKCorrPars is being called correctly!");
+        return false;
+      }
+    }
+  }
 
   delete dummyTree; // no longer needed
   Long64_t nentries = events->GetEntries();
@@ -480,6 +506,7 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["pfmetDown"],ientry);
       nBytesRead+=bLoad(b["pfmetphi"],ientry);
       nBytesRead+=bLoad(b["pfmetsig"],ientry);
+      nBytesRead+=bLoad(b["puppimetsig"],ientry);
       
       // Jet B-tagging
       nBytesRead+=bLoad(b["jetCMVA"],ientry);
@@ -589,6 +616,10 @@ bool vhbbPlotSkim(
         // Jet kinematics
         nBytesRead+=bLoad(b["fj1Eta"],ientry);
         if(fabs(gt.fj1Eta)>2.4) continue;
+        nBytesRead+=bLoad(b["fj1ECFN_2_4_20"],ientry);
+        if(*((float*)b["fj1ECFN_2_4_20"]->GetAddress()) <= 0) continue;
+        nBytesRead+=bLoad(b["fj1MSD"],ientry);
+        if(gt.fj1MSD < 50) continue; // Low fatjet mass veto
         if(debug) printf("passed jet kinematics\n");
 
         // Lepton ID and isolation
@@ -627,6 +658,7 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["pfmetDown"],ientry);
       nBytesRead+=bLoad(b["pfmetphi"],ientry);
       nBytesRead+=bLoad(b["pfmetsig"],ientry);
+      nBytesRead+=bLoad(b["puppimetsig"],ientry);
       
       // Fatjet Properties
       nBytesRead+=bLoad(b["fj1Tau32"],ientry);
@@ -645,7 +677,6 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["fj1PtSmearedDown"],ientry);       
       nBytesRead+=bLoad(b["fj1Pt"],ientry);
       nBytesRead+=bLoad(b["fj1Phi"],ientry);
-      nBytesRead+=bLoad(b["fj1MSD"],ientry);
       nBytesRead+=bLoad(b["fj1M"],ientry);
       nBytesRead+=bLoad(b["fj1MaxCSV"],ientry);
       nBytesRead+=bLoad(b["fj1MinCSV"],ientry);
@@ -775,7 +806,7 @@ bool vhbbPlotSkim(
       cut["mediumBVeto"] = (bDiscrMax < bDiscrMedium);
       cut["looseBTag"  ] = (bDiscrMax >= bDiscrLoose);
       cut["looseBTag2" ] = (bDiscrMin >= bDiscrLoose);
-      cut["metSig"     ] = gt.pfmetsig>2;
+      cut["metSig"     ] = gt.puppimetsig>3;//gt.pfmetsig>2;
       cut["nJet_WHTT"  ] = gt.nJet>=4;
       cut["nJet_WHHF"  ] = gt.nJet==2;
       cut["nJet_WHSR"  ] = gt.nJet<4;
@@ -844,13 +875,13 @@ bool vhbbPlotSkim(
       cut["DoubleB"    ] = gt.fj1DoubleCSV >= 0.8;
       cut["DoubleBVeto"] = gt.fj1DoubleCSV < 0.8;
       cut["isojet0Btag"] = isojetNBtags==0;
-      cut["metSig"     ] = gt.pfmetsig>2;
+      cut["metSig"     ] = gt.puppimetsig>3;//gt.pfmetsig>2;
       
       vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWH2TopFJCR, cutsWHFJSR;
-      cutsWHLightFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met",              "isojet0Btag","DoubleBVeto",               "metSig"};
-      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJHF","isojet0Btag","DoubleB"    ,"mH_FJFlip"   ,"metSig"};
-      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJTT","isojet0Btag","DoubleB"                            };
-      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJSR","isojet0Btag","DoubleB"    ,"mH_WHFJSR"            };
+      cutsWHLightFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met",              "isojet0Btag","DoubleBVeto",               "metSig","ecfSanity"};
+      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJHF","isojet0Btag","DoubleB"    ,"mH_FJFlip"   ,"metSig","ecfSanity"};
+      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJTT","isojet0Btag","DoubleB"                            ,"ecfSanity"};
+      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJSR","isojet0Btag","DoubleB"    ,"mH_WHFJSR"            ,"ecfSanity"};
 
       if(passAllCuts( cut, cutsWHLightFlavorFJCR))   selectionBits |= kWHLightFlavorFJCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorFJCR))   selectionBits |= kWHHeavyFlavorFJCR;
@@ -896,9 +927,10 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["normalizedWeight"],ientry);
       nBytesRead+=bLoad(b["sf_npv"],ientry);
       if(sample==kWjets || sample==kZjets) {
-        if(useFlatVJetsKFactor) {
-          gt.sf_qcdV=(sample==kWjets)?1.21:1.23;
-          gt.sf_ewkV=1.00;
+        if(useHtBinnedVJetsKFactor) {
+          nBytesRead+=bLoad(b["trueGenBosonPt"],ientry);
+          gt.sf_qcdV=theQCDKFactor;
+          gt.sf_ewkV=theEWKCorrPars[0]+theEWKCorrPars[1]*(TMath::Power((gt.trueGenBosonPt+theEWKCorrPars[2]),theEWKCorrPars[3]));
         } else {
           nBytesRead+=bLoad(b["sf_qcdV"],ientry);
           nBytesRead+=bLoad(b["sf_ewkV"],ientry);

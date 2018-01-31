@@ -111,6 +111,10 @@ namespace vhbbPlot {
     { kWHHeavyFlavorCR    , "WHHeavyFlavorCR"    },
     { kWH2TopCR           , "WH2TopCR"           },
     { kWHSR               , "WHSR"               },
+    { kWHLightFlavorFJCR  , "WHLightFlavorFJCR"  },
+    { kWHHeavyFlavorFJCR  , "WHHeavyFlavorFJCR"  },
+    { kWH2TopFJCR         , "WH2TopFJCR"         },
+    { kWHFJSR             , "WHFJSR"             },
     { kZnnHLightFlavorCR  , "ZnnHLightFlavorCR"  },
     { kZnnHHeavyFlavorCR  , "ZnnHHeavyFlavorCR"  },
     { kZnnH2TopCR         , "ZnnH2TopCR"         },
@@ -144,7 +148,33 @@ namespace vhbbPlot {
         nCutsPassed += (unsigned)cutMap[theCuts[i]];
     }
     return(nCutsPassed >= nCutsToPass-1);
-}
+  }
+
+  double qcdKFactor(vhbbPlot::sampleType sample, unsigned htLow, unsigned htHigh) {
+    double theQCDKFactor=1;
+    if(sample==kWjets) {
+      if     (htLow>=100 && htHigh<= 200) theQCDKFactor = 1.459;
+      else if(htLow>=200 && htHigh<= 200) theQCDKFactor = 1.434;
+      else if(htLow>=400 && htHigh<= 200) theQCDKFactor = 1.532;
+      else if(htLow>=600                ) theQCDKFactor = 1.004;
+    } else if(sample==kZjets) {
+      if     (htLow>=100 && htHigh<= 200) theQCDKFactor = 1.588;
+      else if(htLow>=200 && htHigh<= 200) theQCDKFactor = 1.438;
+      else if(htLow>=400 && htHigh<= 200) theQCDKFactor = 1.494;
+      else if(htLow>=600                ) theQCDKFactor = 1.139;
+    }
+    return theQCDKFactor;
+  }
+
+  vector<double> EWKCorrPars(vhbbPlot::sampleType sample) {
+    vector<double> theEWKCorrPars(4);
+    if(sample==kWjets)
+      theEWKCorrPars = {-0.830041, 7.93714, 877.978, -0.213831};
+    else if(sample==kZjets)
+      theEWKCorrPars = {-0.1808051, 6.04146, 759.098, -0.242556};
+    return theEWKCorrPars;
+  }
+
 
 }
 #endif
