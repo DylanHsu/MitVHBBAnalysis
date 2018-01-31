@@ -154,13 +154,13 @@ namespace vhbbPlot {
     double theQCDKFactor=1;
     if(sample==kWjets) {
       if     (htLow>=100 && htHigh<= 200) theQCDKFactor = 1.459;
-      else if(htLow>=200 && htHigh<= 200) theQCDKFactor = 1.434;
-      else if(htLow>=400 && htHigh<= 200) theQCDKFactor = 1.532;
+      else if(htLow>=200 && htHigh<= 400) theQCDKFactor = 1.434;
+      else if(htLow>=400 && htHigh<= 600) theQCDKFactor = 1.532;
       else if(htLow>=600                ) theQCDKFactor = 1.004;
     } else if(sample==kZjets) {
       if     (htLow>=100 && htHigh<= 200) theQCDKFactor = 1.588;
-      else if(htLow>=200 && htHigh<= 200) theQCDKFactor = 1.438;
-      else if(htLow>=400 && htHigh<= 200) theQCDKFactor = 1.494;
+      else if(htLow>=200 && htHigh<= 400) theQCDKFactor = 1.438;
+      else if(htLow>=400 && htHigh<= 600) theQCDKFactor = 1.494;
       else if(htLow>=600                ) theQCDKFactor = 1.139;
     }
     return theQCDKFactor;
