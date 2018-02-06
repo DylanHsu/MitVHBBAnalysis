@@ -26,7 +26,8 @@ TList *finalPlot2018(
   bool normSignalToBkg=false
 ) {
   const bool plotQCD=true;
-  system("mkdir -p MitVHBBAnalysis/plots");
+  TString plotDir="MitVHBBAnalysis/plots";
+  system(Form("mkdir -p %s",plotDir.Data()));
   TFile *inputFile = TFile::Open(inputFileName, "READ"); assert(inputFile);
   string rawName; {
     size_t lastDot = string(inputFileName).find_last_of(".");
@@ -47,11 +48,10 @@ TList *finalPlot2018(
       if(!plotQCD && i==kPlotQCD) continue;
       // Construct histograms - needs to be worked on
       if (i==kPlotVH) {
-        if(selType==kWHSR) {
-          if(normSignalToBkg) plotName="WH(125)x10";
-          else                plotName="WH(125)x?"; 
-
-        } else if(selType==kWHLightFlavorCR || selType==kWHHeavyFlavorCR || selType==kWH2TopCR) plotName="WH(125)x100";
+        if(selType==kWHSR || selType==kWHFJSR) {
+          if(normSignalToBkg) plotName="WH(125)x?";
+          else                plotName="WH(125)x10"; 
+        } else if(selType>=kWHLightFlavorCR && selType<kWHFJSR) plotName="WH(125)x100";
         else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)x10";
         else plotName="ZH(125)x100";
       } else plotName=plotNames[i]; 
@@ -66,8 +66,8 @@ TList *finalPlot2018(
       // Scaling
       //if(i!=kPlotData) histos[i]->Scale(theLumi);
       if(i==kPlotQCD) histos[i]->Scale(1.0);
-      if(i==kPlotVH && selType!=kWHSR && selType!=kZnnHSR && selType!=kZllHSR) histos[i]->Scale(100.);
-      if(i==kPlotVH && !normSignalToBkg && (selType==kWHSR || selType==kZnnHSR || selType==kZllHSR)) histos[i]->Scale(10.);
+      if(i==kPlotVH && selType!=kWHSR && selType!=kWHFJSR && selType!=kZnnHSR && selType!=kZllHSR) histos[i]->Scale(100.);
+      if(i==kPlotVH && !normSignalToBkg && (selType==kWHSR || selType==kWHFJSR || selType==kZnnHSR || selType==kZllHSR)) histos[i]->Scale(10.);
 
       // Colors
       if(i==kPlotData) {

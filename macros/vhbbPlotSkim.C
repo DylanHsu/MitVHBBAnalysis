@@ -89,11 +89,6 @@ bool vhbbPlotSkim(
     if(debug) printf("Booking GeneralTree branch \"%s\"\n", branchName.Data());
   }
    
-  // temporary
-  //TFile *muTrigEffFile = TFile::Open("/home/dhsu/CMSSW_8_0_29/src/PandaAnalysis/data/trigger_eff/muon_trig_Run2016BtoF.root", "READ");
-  //if(!muTrigEffFile && muTrigEffFile->IsOpen()) { throw std::runtime_error(""); return false; }
-  //TH2D *muTrigEff = (TH2D*)muTrigEffFile->Get("IsoMu24_OR_IsoTkMu24_PtEtaBins/efficienciesDATA/abseta_pt_DATA");
-  
   CSVHelper *cmvaReweighter = new CSVHelper("PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root"   , "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root"   , 5);
 
   TFile *outputFile = TFile::Open(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
@@ -141,7 +136,8 @@ bool vhbbPlotSkim(
   float weight_cmvaCErr1Up   [5][3] , weight_cmvaCErr1Down   [5][3]; 
   float weight_cmvaCErr2Up   [5][3] , weight_cmvaCErr2Down   [5][3]; 
   float weight_cmvaJESUp     [5][3] , weight_cmvaJESDown     [5][3]; 
-  
+  float weight_VHCorrUp, weight_VHCorrDown; 
+
   float weight_btag0BUp, weight_btag0BDown;
   float weight_btag0MUp, weight_btag0MDown;
   float *sf_btag0      = (float*)dummyTree->GetBranch("sf_btag0"     )->GetAddress();
@@ -210,6 +206,8 @@ bool vhbbPlotSkim(
     plotTree->Branch("hbbCosThetaCSJ1"         , &gt.hbbCosThetaCSJ1       );
     plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
     plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
+    plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
+    plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
     plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
     plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
     plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
@@ -328,6 +326,8 @@ bool vhbbPlotSkim(
     plotTree->Branch("fj1ECFN_1_4_40", (float*)dummyTree->GetBranch("fj1ECFN_1_4_40")->GetAddress());
     plotTree->Branch("fj1ECFN_2_4_40", (float*)dummyTree->GetBranch("fj1ECFN_2_4_40")->GetAddress());
     plotTree->Branch("fj1ECFN_3_4_40", (float*)dummyTree->GetBranch("fj1ECFN_3_4_40")->GetAddress());
+    plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
+    plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
     plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
     plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
     plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
@@ -368,8 +368,13 @@ bool vhbbPlotSkim(
       size_t htWord    = inputFileNameStr.find("ht");
       size_t toWord    = inputFileNameStr.find("to");
       size_t lastDot   = inputFileNameStr.find_last_of(".");
-      htLow   = atoi(inputFileNameStr.substr(htWord+2, toWord-htWord-2).c_str());
-      htHigh  = atoi(inputFileNameStr.substr(toWord+2, lastDot-toWord-2).c_str());
+      string htLowStr   = inputFileNameStr.substr(htWord+2, toWord-htWord-2);
+      string htHighStr  = inputFileNameStr.substr(toWord+2, lastDot-toWord-2);
+      htLow   = atoi(htLowStr.c_str());
+      if(htHighStr=="inf"||htHighStr=="Inf")
+        htHigh=99999;
+      else
+        htHigh  = atoi(htHighStr.c_str());
       if(htLow==0 || htHigh==0) {
         throw std::runtime_error(Form("Warning: Error parsing the filename \"%s\", probably it is not of the form \"/path/to/WJets_ht100to200.root\" (go fix that)", inputFileName.Data()));
         return false;
@@ -871,6 +876,7 @@ bool vhbbPlotSkim(
       cut["nJet_WHFJHF"] = nIsojet==0;
       cut["nJet_WHFJSR"] = nIsojet<2;
       cut["mH_WHFJSR"  ] = ((gt.fj1MSD>=MSDmin && gt.fj1MSD<MSDmax));
+      //cut["mH_WHFJTT"  ] = (gt.fj1MSD>=150);
       cut["mH_FJFlip"  ] = ((gt.fj1MSD<MSDmin || gt.fj1MSD>=MSDmax));
       cut["DoubleB"    ] = gt.fj1DoubleCSV >= 0.8;
       cut["DoubleBVeto"] = gt.fj1DoubleCSV < 0.8;
@@ -879,9 +885,9 @@ bool vhbbPlotSkim(
       
       vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWH2TopFJCR, cutsWHFJSR;
       cutsWHLightFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met",              "isojet0Btag","DoubleBVeto",               "metSig","ecfSanity"};
-      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJHF","isojet0Btag","DoubleB"    ,"mH_FJFlip"   ,"metSig","ecfSanity"};
-      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJTT","isojet0Btag","DoubleB"                            ,"ecfSanity"};
-      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJSR","isojet0Btag","DoubleB"    ,"mH_WHFJSR"            ,"ecfSanity"};
+      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJHF",              "DoubleB"    ,"mH_FJFlip"   ,"metSig","ecfSanity"};
+      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJTT",              "DoubleB"    ,                        "ecfSanity"};
+      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJSR","isojet0Btag","DoubleB"    ,"mH_WHFJSR"   ,         "ecfSanity"};
 
       if(passAllCuts( cut, cutsWHLightFlavorFJCR))   selectionBits |= kWHLightFlavorFJCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorFJCR))   selectionBits |= kWHHeavyFlavorFJCR;
@@ -959,16 +965,17 @@ bool vhbbPlotSkim(
         nBytesRead+=bLoad(b["sf_eleTrig"],ientry);
         weight *= gt.sf_eleTrig * gt.electronSfReco[0] * gt.electronSfTight[0];
       }
+      float sf_vh=1, sf_vhUp=1, sf_vhDown=1;
       if(sample==kVZ) {
         nBytesRead+=bLoad(b["sf_wz"],ientry);
         nBytesRead+=bLoad(b["sf_zz"],ientry);
         nBytesRead+=bLoad(b["sf_zzUnc"],ientry);
         weight *= gt.sf_wz * gt.sf_zz;
       } else if(sample==kVH) {
-        nBytesRead+=bLoad(b["sf_zh"],ientry);
-        nBytesRead+=bLoad(b["sf_zhUp"],ientry);
-        nBytesRead+=bLoad(b["sf_zhDown"],ientry);
-        weight *= gt.sf_zh;
+        nBytesRead+=bLoad(b["sf_vh"],ientry);
+        nBytesRead+=bLoad(b["sf_vhUp"],ientry);
+        nBytesRead+=bLoad(b["sf_vhDown"],ientry);
+        weight *= gt.sf_vh;
       }
       //float weight_noCsvCent=weight;
       nBytesRead+=bLoad(b["sf_cmvaWeight_Cent"],ientry);
@@ -985,12 +992,14 @@ bool vhbbPlotSkim(
       nBytesRead+=bLoad(b["scale"],ientry);
       weight_pdfUp = weight * gt.pdfUp;
       weight_pdfDown = weight * gt.pdfDown;
-      weight_QCDr1f2 = weight * (1.+gt.scale[0]);
-      weight_QCDr1f5 = weight * (1.+gt.scale[1]);
-      weight_QCDr2f1 = weight * (1.+gt.scale[2]);
-      weight_QCDr2f2 = weight * (1.+gt.scale[3]);
-      weight_QCDr5f1 = weight * (1.+gt.scale[4]);
-      weight_QCDr5f5 = weight * (1.+gt.scale[5]);
+      weight_QCDr1f2 = weight * gt.scale[0];
+      weight_QCDr1f5 = weight * gt.scale[1];
+      weight_QCDr2f1 = weight * gt.scale[2];
+      weight_QCDr2f2 = weight * gt.scale[3];
+      weight_QCDr5f1 = weight * gt.scale[4];
+      weight_QCDr5f5 = weight * gt.scale[5];
+      weight_VHCorrUp   = (sample==kVH)? weight * gt.sf_vhUp   / gt.sf_vh : weight;
+      weight_VHCorrDown = (sample==kVH)? weight * gt.sf_vhDown / gt.sf_vh : weight;
 
       // #############################
       // # Variations of the Weights #

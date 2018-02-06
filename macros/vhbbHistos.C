@@ -3,6 +3,7 @@
 #include "PandaAnalysis/Utilities/src/CSVHelper.cc"
 #include <Compression.h>
 #include <TCanvas.h>
+#include <TF1.h>
 #include <TFile.h>
 #include <TH1D.h>
 #include <THStack.h>
@@ -23,6 +24,12 @@
 
 #include "vhbbPlot.h"
 
+const vector<TString> wptCorrFilenames = {
+  "MitVHBBAnalysis/wptCorrections_InclusiveResolved_Linear.root",
+  "MitVHBBAnalysis/wptCorrections_Resolved_Linear.root",
+  "MitVHBBAnalysis/wptCorrections_Boosted_Linear.root",
+};
+
 using namespace vhbbPlot;
 void vhbbHistos(
   TString plotTreeFileName,
@@ -32,39 +39,55 @@ void vhbbHistos(
   int theLepSel=-1, // -1: any; 0, e-mu; 1, mu only; 2, ele only
   bool isBlinded=true,
   int MVAVarType=3, //1=Higgs pT; 2=Multiclass BDT; 3=Single-Class BDT;
-  TString bdtWeightsResolved="weights/bdt_BDT_multiClass_resolved_jan10_I_test2.weights.xml",
-  TString bdtWeightsBoosted="weights/bdt_BDT_multiClass_boosted_jan10_I_test2.weights.xml"
+  bool lowMass=true, // only for WH HF CR
+  int wptCorrType=-1,
+  TString bdtWeightsResolved="weights/bdt_BDT_multiClass_resolved_34vars_jan23_mk1.weights.xml",
+  TString bdtWeightsBoosted="weights/bdt_BDT_multiClass_boosted_74vars_jan23_mk1.weights.xml"
 ) {
   if(dataCardDir!="") system(Form("mkdir -p MitVHBBAnalysis/datacards/%s",dataCardDir.Data()));
+  bool useWptCorr=(wptCorrType>=0 && wptCorrType<wptCorrFilenames.size());
+  TString wptCorrFilename;
+  if(useWptCorr) wptCorrFilename = wptCorrFilenames[wptCorrType];
+    
+  char shapeType[64];
   vector<float> MVAbins; TString MVAVarName;
   if(MVAVarType==1) {
     MVAVarName="Higgs p_{T} classifier [GeV]";
-    if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) MVAbins={100,120,140,160,180,200,250,300,350};
-    else if(selection==kWHSR)                                                              MVAbins={100,120,140,160,180,200,250,300,350};
-    else throw std::runtime_error("bad selection argument");
+    if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) {
+      MVAbins={100,120,140,160,180,200,250,300,350};
+      sprintf(shapeType,"ptShape");
+    } else if(selection==kWHSR) {
+      MVAbins={100,120,140,160,180,200,250,300,350};
+      sprintf(shapeType,"ptShape");
+    } else throw std::runtime_error("bad selection argument");
   } else if(MVAVarType==2) {
     if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) {
       MVAbins={-1,-.8,-.6,-.4,-.2,0,.2,.4,.6,.8,1}; 
       MVAVarName="Discriminator: Lesser CMVA";
+      sprintf(shapeType,"lesserCMVAShape");
     } else if(selection==kWHLightFlavorFJCR || selection==kWHHeavyFlavorFJCR || selection==kWH2TopFJCR) {
-      MVAbins={0,20,40,60,80,100,120,140,160,180,200,220,240};
+      MVAbins={50,70,90,110,130,150,170,190,210,230,250};
       MVAVarName="Discriminator: Fatjet soft drop mass";
+      sprintf(shapeType,"softDropMassShape");
     } else if(selection==kWHSR || selection==kWHFJSR) {
-      //MVAbins={0.2,0.4,0.6,0.7,0.75,0.8,0.85,0.9,0.925,0.95};
       MVAbins={0.20,0.40,0.60,0.70,0.80,0.85,0.9,0.95,1.00};
       MVAVarName="Multiclass BDT";
+      sprintf(shapeType,"multiClassBDTShape");
     }
     else throw std::runtime_error("bad selection argument");
   } else if(MVAVarType==3) {
     if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) {
       MVAbins={-1,-.8,-.6,-.4,-.2,0,.2,.4,.6,.8,1}; 
       MVAVarName="Discriminator: Lesser CMVA";
+      sprintf(shapeType,"lesserCMVAShape");
     } else if(selection==kWHLightFlavorFJCR || selection==kWHHeavyFlavorFJCR || selection==kWH2TopFJCR) {
       MVAbins={0,20,40,60,80,100,120,140,160,180,200,220,240};
       MVAVarName="Discriminator: Fatjet soft drop mass";
+      sprintf(shapeType,"softDropMassShape");
     } else if(selection==kWHSR || selection==kWHFJSR) {
       MVAbins={0.20,0.40,0.60,0.70,0.80,0.85,0.9,0.95,1.00};
       MVAVarName="Single class BDT";
+      sprintf(shapeType,"singleClassBDTShape"); 
     }
     else throw std::runtime_error("bad selection argument");
   } else throw std::runtime_error("bad MVAVarType");
@@ -78,7 +101,13 @@ void vhbbHistos(
   string theJecUncertainties = "PandaAnalysis/data/jec/23Sep2016V4/Summer16_23Sep2016V4_MC_UncertaintySources_AK4PFchs.txt";
   JetCorrectionUncertainty *jcuTotal = new JetCorrectionUncertainty(*(new JetCorrectorParameters(theJecUncertainties, "Total")));
   CSVHelper *cmvaReweighter = new CSVHelper("PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root"   , "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root"   , 5);
-  
+  TFile *wptCorrFile=0; TF1 *theWptCorr=0;
+  if(useWptCorr) {
+    wptCorrFile = TFile::Open(wptCorrFilename, "READ");
+    assert(wptCorrFile && wptCorrFile->IsOpen());
+    theWptCorr = (TF1*)wptCorrFile->Get("wptCorr_nominal");
+    assert(theWptCorr);
+  }
   // Initialize the tree
   TTree *plotTree = (TTree*)plotTreeFile->Get("plotTree"); assert(plotTree);
   unsigned char typeLepSel, theCategory;
@@ -96,6 +125,7 @@ void vhbbHistos(
   float deltaPhiLep1Met, deltaPhiVH;
   float topMassLep1Met;
   float weight;
+  float weight_VHCorrUp, weight_VHCorrDown;
   float weight_pdfUp, weight_pdfDown;
   float weight_QCDr1f2, weight_QCDr1f5, weight_QCDr2f1, weight_QCDr2f2, weight_QCDr5f1, weight_QCDr5f5, weight_lepSFUp;
   float weight_cmvaJESUp     [5][3] , weight_cmvaJESDown     [5][3] , 
@@ -243,6 +273,8 @@ void vhbbHistos(
   plotTree->SetBranchAddress("pfmetsig"        , &pfmetsig        );
   plotTree->SetBranchAddress("pfmetphi"        , &pfmetphi        );
   plotTree->SetBranchAddress("weight"          , &weight          );
+  plotTree->SetBranchAddress("weight_VHCorrUp"    , &weight_VHCorrUp     );
+  plotTree->SetBranchAddress("weight_VHCorrDown"  , &weight_VHCorrDown   );
   plotTree->SetBranchAddress("weight_pdfUp"       , &weight_pdfUp        );
   plotTree->SetBranchAddress("weight_pdfDown"     , &weight_pdfDown      );
   plotTree->SetBranchAddress("weight_QCDr1f2"     , &weight_QCDr1f2      );
@@ -403,8 +435,7 @@ void vhbbHistos(
   vector<TString> histoNames(nPlots), histoTitles(nPlots);
   
   int pMVAVar=-1;
-  if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
-    int p=0;
+  if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) { int p=0;
     histoNames[p]="pTH"                    ; histoTitles[p]="Higgs daughter dijet p_{T} [GeV]"           ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
     histoNames[p]="mH"                     ; histoTitles[p]="Higgs daughter dijet mass [GeV]"            ; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
     histoNames[p]="WpT"                    ; histoTitles[p]="W boson p_{T} [GeV]"                        ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
@@ -420,7 +451,7 @@ void vhbbHistos(
     histoNames[p]="bDiscrMin"              ; histoTitles[p]="Lesser CMVA of Higgs daughter jets"         ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
     histoNames[p]="bDiscrMax"              ; histoTitles[p]="Greater CMVA of Higgs daughter jets"        ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
     histoNames[p]="topMassLep1Met"         ; histoTitles[p]="Reco top mass [GeV]"                        ; nbins[p]=  22; xmin[p]=   60.; xmax[p]=  500.; p++; 
-    histoNames[p]="nAddJetZeroOrOne"       ; histoTitles[p]="Has more than 2 jets"                       ; nbins[p]=   2; xmin[p]=    0.; xmax[p]=    2.; p++; 
+    histoNames[p]="nJet"                   ; histoTitles[p]="N AK4 CHS jets pT>20"                       ; nbins[p]=   8; xmin[p]=    0.; xmax[p]=    8.; p++; 
     histoNames[p]="sumEtSoft1"             ; histoTitles[p]="#sum E_{T}(soft 1)"                         ; nbins[p]=  40; xmin[p]=    0.; xmax[p]=  200.; p++; 
     histoNames[p]="nSoft2"                 ; histoTitles[p]="N^{soft}_{2}"                               ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=   25.; p++; 
     histoNames[p]="nSoft5"                 ; histoTitles[p]="N^{soft}_{5}"                               ; nbins[p]=  10; xmin[p]=    0.; xmax[p]=   10.; p++; 
@@ -440,83 +471,84 @@ void vhbbHistos(
     histoNames[p]="dEtaWb1"                ; histoTitles[p]="|#Delta#eta(W,b1)|"                         ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    5.; p++; 
     histoNames[p]="dEtaWb2"                ; histoTitles[p]="|#Delta#eta(W,b2)|"                         ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    5.; p++; 
     histoNames[p]="dEtab1b2"               ; histoTitles[p]="|#Delta#eta(b1,b2)|"                        ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    5.; p++; 
+    histoNames[p]="bdtValue"               ; histoTitles[p]="BDT output"                                 ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    1.; p++; 
     histoNames[p]="MVAVar"                 ; histoTitles[p]=MVAVarName; pMVAVar=p; p++;
-  } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
-    int p=0;
+  } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) { int p=0;
     histoNames[p]="nIsojet"                ; histoTitles[p]="N central AK4 jets"                         ; nbins[p]=   7; xmin[p]=    0.; xmax[p]=    7.; p++;
-    histoNames[p]="fj1Pt"                  ; histoTitles[p]="FJ p_{T}"                                   ; nbins[p]=  20; xmin[p]=  200.; xmax[p]= 2200.; p++;
+    histoNames[p]="fj1Pt"                  ; histoTitles[p]="FJ p_{T} [GeV]"                             ; nbins[p]=  20; xmin[p]=  200.; xmax[p]=  600.; p++;
     histoNames[p]="fj1Eta"                 ; histoTitles[p]="FJ #eta"                                    ; nbins[p]=  20; xmin[p]=  -2.5; xmax[p]=   2.5; p++;
     histoNames[p]="greaterSubjetCSV"       ; histoTitles[p]="FJ greater subjet B-tag (CSV)"              ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="lesserSubjetCSV"        ; histoTitles[p]="FJ lesser subjet B-tag (CSV)"               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
-    histoNames[p]="fj1DoubleCSV"           ; histoTitles[p]="FJ double B-tag"                            ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
-    histoNames[p]="fj1HTTMass"             ; histoTitles[p]="FJ HTT mass"                                ; nbins[p]=  13; xmin[p]=  260.; xmax[p]=    5.; p++;
-    histoNames[p]="fj1HTTFRec"             ; histoTitles[p]="FJ HTT f_{rec}"                             ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    5.; p++;
-    histoNames[p]="fj1MSD"                 ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++;
+    histoNames[p]="fj1DoubleCSV"           ; histoTitles[p]="FJ double B-tag"                            ; nbins[p]=  40; xmin[p]=    0.; xmax[p]=    1.; p++;
+    histoNames[p]="fj1HTTMass"             ; histoTitles[p]="FJ HTT mass [GeV]"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  200.; p++;
+    histoNames[p]="fj1HTTFRec"             ; histoTitles[p]="FJ HTT f_{rec}"                             ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=   0.4; p++;
+    histoNames[p]="fj1MSD"                 ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  25; xmin[p]=   50.; xmax[p]=  300.; p++;
     histoNames[p]="fj1Tau32"               ; histoTitles[p]="FJ #tau_{32}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau32SD"             ; histoTitles[p]="FJ #tau_{32}^{SD}"                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau21"               ; histoTitles[p]="FJ #tau_{21}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau21SD"             ; histoTitles[p]="FJ #tau_{21}^{SD}"                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
-    histoNames[p]="lepton1Pt"              ; histoTitles[p]="Lepton p_{T}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 2000.; p++;
-    histoNames[p]="deltaPhiVH"             ; histoTitles[p]="#Delta#phi(W,H)"                            ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3.142; p++;
-    histoNames[p]="deltaPhiLep1Met"        ; histoTitles[p]="#Delta#phi(lepton,p_{T}^{miss})"            ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    5.; p++;
-    histoNames[p]="topWBosonPt"            ; histoTitles[p]="W boson p_{T}"                              ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 2000.; p++;
-    histoNames[p]="mT"                     ; histoTitles[p]="W boson m_{T}"                              ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  400.; p++;
-    histoNames[p]="pfmetsig"               ; histoTitles[p]="E_{T}^{miss} sig."                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=   20.; p++;
-    histoNames[p]="pfmet"                  ; histoTitles[p]="p_{T}^{miss}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 2000.; p++;
-    histoNames[p]="dPhil1W"                ; histoTitles[p]="#Delta#phi(lep,W)"                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3.142; p++;
-    histoNames[p]="dPhil1fj1"              ; histoTitles[p]="#Delta#phi(lep,FJ)"                         ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3.142; p++;
-    histoNames[p]="dPhiWfj1"               ; histoTitles[p]="#Delta#phi(W,FJ)"                           ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3.142; p++;
+    histoNames[p]="lepton1Pt"              ; histoTitles[p]="Lepton p_{T} [GeV]"                         ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  500.; p++;
+    histoNames[p]="deltaPhiVH"             ; histoTitles[p]="#Delta#phi(W,H) [Rad]"                      ; nbins[p]=  20; xmin[p]= 1.571; xmax[p]= 3.142; p++;
+    histoNames[p]="deltaPhiLep1Met"        ; histoTitles[p]="#Delta#phi(lepton,p_{T}^{miss}) [Rad]"      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3.142; p++;
+    histoNames[p]="topWBosonPt"            ; histoTitles[p]="W boson p_{T} [GeV]"                        ; nbins[p]=  20; xmin[p]=  140.; xmax[p]=  540.; p++;
+    histoNames[p]="mT"                     ; histoTitles[p]="W boson m_{T} [GeV]"                        ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  200.; p++;
+    histoNames[p]="pfmetsig"               ; histoTitles[p]="E_{T}^{miss} sig."                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=   10.; p++;
+    histoNames[p]="pfmet"                  ; histoTitles[p]="p_{T}^{miss} [GeV]"                         ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  500.; p++;
+    histoNames[p]="dPhil1W"                ; histoTitles[p]="#Delta#phi(lep,W) [Rad]"                    ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 1.571; p++;
+    histoNames[p]="dPhil1fj1"              ; histoTitles[p]="#Delta#phi(lep,FJ) [Rad]"                   ; nbins[p]=  20; xmin[p]= 1.571; xmax[p]= 3.142; p++;
+    histoNames[p]="dPhiWfj1"               ; histoTitles[p]="#Delta#phi(W,FJ) [Rad]"                     ; nbins[p]=  20; xmin[p]= 1.571; xmax[p]= 3.142; p++;
     histoNames[p]="dEtal1fj1"              ; histoTitles[p]="|#Delta#eta(lep,FJ)|"                       ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    5.; p++;
-    histoNames[p]="psi021004010502"        ; histoTitles[p]="#psi(2,1.0,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.5 ; p++;
-    histoNames[p]="psi012004010502"        ; histoTitles[p]="#psi(1,2.0,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.3 ; p++;
-    histoNames[p]="psi021003011002"        ; histoTitles[p]="#psi(2,1.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.4 ; p++;
-    histoNames[p]="psi022004011002"        ; histoTitles[p]="#psi(2,2.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.3 ; p++;
-    histoNames[p]="psi020503010502"        ; histoTitles[p]="#psi(2,0.5,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.5 ; p++;
-    histoNames[p]="psi022003012002"        ; histoTitles[p]="#psi(2,2.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.4 ; p++;
-    histoNames[p]="psi012004020503"        ; histoTitles[p]="#psi(1,2.0,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  2.0 ; p++;
-    histoNames[p]="psi021004020503"        ; histoTitles[p]="#psi(2,1.0,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  3.0 ; p++;
-    histoNames[p]="psi032003012002"        ; histoTitles[p]="#psi(3,2.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  20.0; p++;
-    histoNames[p]="psi012003011002"        ; histoTitles[p]="#psi(1,2.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.3 ; p++;
-    histoNames[p]="psi011003010502"        ; histoTitles[p]="#psi(1,1.0,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.4 ; p++;
-    histoNames[p]="psi031003011002"        ; histoTitles[p]="#psi(3,1.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  8.0 ; p++;
-    histoNames[p]="psi031003012002"        ; histoTitles[p]="#psi(3,1.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.4 ; p++;
-    histoNames[p]="psi030503011002"        ; histoTitles[p]="#psi(3,0.5,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.4 ; p++;
-    histoNames[p]="psi022004012002"        ; histoTitles[p]="#psi(2,2.0,4,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.0 ; p++;
-    histoNames[p]="psi021004011002"        ; histoTitles[p]="#psi(2,1.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi012004011002"        ; histoTitles[p]="#psi(1,2.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.0 ; p++;
-    histoNames[p]="psi022004021003"        ; histoTitles[p]="#psi(2,2.0,4,2,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  2.0 ; p++;
-    histoNames[p]="psi012003010502"        ; histoTitles[p]="#psi(1,2.0,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  30.0; p++;
-    histoNames[p]="psi022003011002"        ; histoTitles[p]="#psi(2,2.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  50.0; p++;
-    histoNames[p]="psi022004031003"        ; histoTitles[p]="#psi(2,2.0,4,3,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi012004030503"        ; histoTitles[p]="#psi(1,2.0,4,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi021004030503"        ; histoTitles[p]="#psi(2,1.0,4,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi020504010502"        ; histoTitles[p]="#psi(2,0.5,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi022004030503"        ; histoTitles[p]="#psi(2,2.0,4,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  50.0; p++;
-    histoNames[p]="psi011004010502"        ; histoTitles[p]="#psi(1,1.0,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi030503010502"        ; histoTitles[p]="#psi(3,0.5,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  6.0 ; p++;
-    histoNames[p]="psi021003010502"        ; histoTitles[p]="#psi(2,1.0,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  50.0; p++;
-    histoNames[p]="psi012004011003"        ; histoTitles[p]="#psi(1,2.0,4,1,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  4.0 ; p++;
-    histoNames[p]="psi012004021004"        ; histoTitles[p]="#psi(1,2.0,4,2,1.0,4)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.8 ; p++;
-    histoNames[p]="psi021004012004"        ; histoTitles[p]="#psi(2,1.0,4,1,2.0,4)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  4.0 ; p++;
-    histoNames[p]="psi011003020503"        ; histoTitles[p]="#psi(1,1.0,3,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.9 ; p++;
-    histoNames[p]="psi020503011003"        ; histoTitles[p]="#psi(2,0.5,3,1,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  3.0 ; p++;
-    histoNames[p]="psi012003030503"        ; histoTitles[p]="#psi(1,2.0,3,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  3.0 ; p++;
-    histoNames[p]="psi030503012003"        ; histoTitles[p]="#psi(3,0.5,3,1,2.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  5.0 ; p++;
-    histoNames[p]="psi010503010502"        ; histoTitles[p]="#psi(1,0.5,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.2 ; p++;
-    histoNames[p]="psi020503011002"        ; histoTitles[p]="#psi(2,0.5,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.2 ; p++;
-    histoNames[p]="psi011003011002"        ; histoTitles[p]="#psi(1,1.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.2 ; p++;
-    histoNames[p]="psi020504011002"        ; histoTitles[p]="#psi(2,0.5,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.0 ; p++;
-    histoNames[p]="psi012004021003"        ; histoTitles[p]="#psi(1,2.0,4,2,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi012004012002"        ; histoTitles[p]="#psi(1,2.0,4,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.0 ; p++;
-    histoNames[p]="psi020504020503"        ; histoTitles[p]="#psi(2,0.5,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.2 ; p++;
-    histoNames[p]="psi011004011002"        ; histoTitles[p]="#psi(1,1.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.0 ; p++;
-    histoNames[p]="psi021004012002"        ; histoTitles[p]="#psi(2,1.0,4,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.0 ; p++;
-    histoNames[p]="psi021003012002"        ; histoTitles[p]="#psi(2,1.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.2 ; p++;
-    histoNames[p]="psi011004020503"        ; histoTitles[p]="#psi(1,1.0,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi010504010502"        ; histoTitles[p]="#psi(1,0.5,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi021004021003"        ; histoTitles[p]="#psi(2,1.0,4,2,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi012003012002"        ; histoTitles[p]="#psi(1,2.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
-    histoNames[p]="psi022004022003"        ; histoTitles[p]="#psi(2,2.0,4,2,2.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  0.1 ; p++;
+    histoNames[p]="psi021004010502"        ; histoTitles[p]="#psi(2,1.0,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.2  ; p++;
+    histoNames[p]="psi012004010502"        ; histoTitles[p]="#psi(1,2.0,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
+    histoNames[p]="psi021003011002"        ; histoTitles[p]="#psi(2,1.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.6  ; p++;
+    histoNames[p]="psi022004011002"        ; histoTitles[p]="#psi(2,2.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
+    histoNames[p]="psi020503010502"        ; histoTitles[p]="#psi(2,0.5,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.6  ; p++;
+    histoNames[p]="psi022003012002"        ; histoTitles[p]="#psi(2,2.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.4  ; p++;
+    histoNames[p]="psi012004020503"        ; histoTitles[p]="#psi(1,2.0,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.6  ; p++;
+    histoNames[p]="psi021004020503"        ; histoTitles[p]="#psi(2,1.0,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 1    ; p++;
+    histoNames[p]="psi032003012002"        ; histoTitles[p]="#psi(3,2.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 4    ; p++;
+    histoNames[p]="psi012003011002"        ; histoTitles[p]="#psi(1,2.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.4  ; p++;
+    histoNames[p]="psi011003010502"        ; histoTitles[p]="#psi(1,1.0,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.5  ; p++;
+    histoNames[p]="psi031003011002"        ; histoTitles[p]="#psi(3,1.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3.5  ; p++;
+    histoNames[p]="psi031003012002"        ; histoTitles[p]="#psi(3,1.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.4  ; p++;
+    histoNames[p]="psi030503011002"        ; histoTitles[p]="#psi(3,0.5,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.5  ; p++;
+    histoNames[p]="psi022004012002"        ; histoTitles[p]="#psi(2,2.0,4,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.01 ; p++;
+    histoNames[p]="psi021004011002"        ; histoTitles[p]="#psi(2,1.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.04 ; p++;
+    histoNames[p]="psi012004011002"        ; histoTitles[p]="#psi(1,2.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.02 ; p++;
+    histoNames[p]="psi022004021003"        ; histoTitles[p]="#psi(2,2.0,4,2,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.8  ; p++;
+    histoNames[p]="psi012003010502"        ; histoTitles[p]="#psi(1,2.0,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3    ; p++;
+    histoNames[p]="psi022003011002"        ; histoTitles[p]="#psi(2,2.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 7    ; p++;
+    histoNames[p]="psi022004031003"        ; histoTitles[p]="#psi(2,2.0,4,3,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.05 ; p++;
+    histoNames[p]="psi012004030503"        ; histoTitles[p]="#psi(1,2.0,4,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.08 ; p++;
+    histoNames[p]="psi021004030503"        ; histoTitles[p]="#psi(2,1.0,4,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
+    histoNames[p]="psi020504010502"        ; histoTitles[p]="#psi(2,0.5,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.08 ; p++;
+    histoNames[p]="psi022004030503"        ; histoTitles[p]="#psi(2,2.0,4,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 2    ; p++;
+    histoNames[p]="psi011004010502"        ; histoTitles[p]="#psi(1,1.0,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.06 ; p++;
+    histoNames[p]="psi030503010502"        ; histoTitles[p]="#psi(3,0.5,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 2    ; p++;
+    histoNames[p]="psi021003010502"        ; histoTitles[p]="#psi(2,1.0,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 5    ; p++;
+    histoNames[p]="psi012004011003"        ; histoTitles[p]="#psi(1,2.0,4,1,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 1    ; p++;
+    histoNames[p]="psi012004021004"        ; histoTitles[p]="#psi(1,2.0,4,2,1.0,4)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.7  ; p++;
+    histoNames[p]="psi021004012004"        ; histoTitles[p]="#psi(2,1.0,4,1,2.0,4)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3    ; p++;
+    histoNames[p]="psi011003020503"        ; histoTitles[p]="#psi(1,1.0,3,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.9  ; p++;
+    histoNames[p]="psi020503011003"        ; histoTitles[p]="#psi(2,0.5,3,1,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3    ; p++;
+    histoNames[p]="psi012003030503"        ; histoTitles[p]="#psi(1,2.0,3,3,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 1    ; p++;
+    histoNames[p]="psi030503012003"        ; histoTitles[p]="#psi(3,0.5,3,1,2.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 2    ; p++;
+    histoNames[p]="psi010503010502"        ; histoTitles[p]="#psi(1,0.5,3,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.3  ; p++;
+    histoNames[p]="psi020503011002"        ; histoTitles[p]="#psi(2,0.5,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.3  ; p++;
+    histoNames[p]="psi011003011002"        ; histoTitles[p]="#psi(1,1.0,3,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.2  ; p++;
+    histoNames[p]="psi020504011002"        ; histoTitles[p]="#psi(2,0.5,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.04 ; p++;
+    histoNames[p]="psi012004021003"        ; histoTitles[p]="#psi(1,2.0,4,2,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.06 ; p++;
+    histoNames[p]="psi012004012002"        ; histoTitles[p]="#psi(1,2.0,4,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.007; p++;
+    histoNames[p]="psi020504020503"        ; histoTitles[p]="#psi(2,0.5,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.2  ; p++;
+    histoNames[p]="psi011004011002"        ; histoTitles[p]="#psi(1,1.0,4,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.02 ; p++;
+    histoNames[p]="psi021004012002"        ; histoTitles[p]="#psi(2,1.0,4,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.01 ; p++;
+    histoNames[p]="psi021003012002"        ; histoTitles[p]="#psi(2,1.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.2  ; p++;
+    histoNames[p]="psi011004020503"        ; histoTitles[p]="#psi(1,1.0,4,2,0.5,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
+    histoNames[p]="psi010504010502"        ; histoTitles[p]="#psi(1,0.5,4,1,0.5,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.05 ; p++;
+    histoNames[p]="psi021004021003"        ; histoTitles[p]="#psi(2,1.0,4,2,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
+    histoNames[p]="psi012003012002"        ; histoTitles[p]="#psi(1,2.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
+    histoNames[p]="psi022004022003"        ; histoTitles[p]="#psi(2,2.0,4,2,2.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.04 ; p++;
+    histoNames[p]="bdtValue"               ; histoTitles[p]="BDT output"                                 ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    1.; p++; 
     histoNames[p]="MVAVar"                 ; histoTitles[p]=MVAVarName; pMVAVar=p; p++;
   }
   assert(pMVAVar!=-1);
@@ -534,6 +566,8 @@ void vhbbHistos(
       histos[p][theCategory]->SetDirectory(0);
     }
   }
+  TH1D *histo_VHCorrUp    [nPlotCategories];
+  TH1D *histo_VHCorrDown  [nPlotCategories];
   TH1D *histo_pdfUp    [nPlotCategories];
   TH1D *histo_pdfDown  [nPlotCategories];
   TH1D *histo_QCDr1f2  [nPlotCategories];
@@ -556,16 +590,18 @@ void vhbbHistos(
   TH1D *histo_jesUp   [nPlotCategories];
   TH1D *histo_jesDown [nPlotCategories];
   for(theCategory=0; theCategory<nPlotCategories; theCategory++) {
-    histo_pdfUp    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_pdfUp"    , theCategory)); histo_pdfUp    [theCategory]->SetDirectory(0);
-    histo_pdfDown  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_pdfDown"  , theCategory)); histo_pdfDown  [theCategory]->SetDirectory(0);
-    histo_QCDr1f2  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f2"  , theCategory)); histo_QCDr1f2  [theCategory]->SetDirectory(0);
-    histo_QCDr1f5  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f5"  , theCategory)); histo_QCDr1f5  [theCategory]->SetDirectory(0);
-    histo_QCDr2f1  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f1"  , theCategory)); histo_QCDr2f1  [theCategory]->SetDirectory(0);
-    histo_QCDr2f2  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f2"  , theCategory)); histo_QCDr2f2  [theCategory]->SetDirectory(0);
-    histo_QCDr5f1  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f1"  , theCategory)); histo_QCDr5f1  [theCategory]->SetDirectory(0);
-    histo_QCDr5f5  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f5"  , theCategory)); histo_QCDr5f5  [theCategory]->SetDirectory(0);
-    histo_eleSFUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFUp"  , theCategory)); histo_eleSFUp  [theCategory]->SetDirectory(0);
-    histo_muSFUp   [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFUp"   , theCategory)); histo_muSFUp   [theCategory]->SetDirectory(0);
+    histo_VHCorrUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VHCorrUp"  , theCategory)); histo_VHCorrUp  [theCategory]->SetDirectory(0);
+    histo_VHCorrDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VHCorrDown", theCategory)); histo_VHCorrDown[theCategory]->SetDirectory(0);
+    histo_pdfUp      [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_pdfUp"    , theCategory)); histo_pdfUp     [theCategory]->SetDirectory(0);
+    histo_pdfDown    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_pdfDown"  , theCategory)); histo_pdfDown   [theCategory]->SetDirectory(0);
+    histo_QCDr1f2    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f2"  , theCategory)); histo_QCDr1f2   [theCategory]->SetDirectory(0);
+    histo_QCDr1f5    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f5"  , theCategory)); histo_QCDr1f5   [theCategory]->SetDirectory(0);
+    histo_QCDr2f1    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f1"  , theCategory)); histo_QCDr2f1   [theCategory]->SetDirectory(0);
+    histo_QCDr2f2    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f2"  , theCategory)); histo_QCDr2f2   [theCategory]->SetDirectory(0);
+    histo_QCDr5f1    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f1"  , theCategory)); histo_QCDr5f1   [theCategory]->SetDirectory(0);
+    histo_QCDr5f5    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f5"  , theCategory)); histo_QCDr5f5   [theCategory]->SetDirectory(0);
+    histo_eleSFUp    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFUp"  , theCategory)); histo_eleSFUp   [theCategory]->SetDirectory(0);
+    histo_muSFUp     [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFUp"   , theCategory)); histo_muSFUp    [theCategory]->SetDirectory(0);
     for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
       histo_cmvaJESUp       [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaJESUp_pt%d_eta%d"       , theCategory, iPt, iEta)); histo_cmvaJESUp        [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaLFUp        [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFUp_pt%d_eta%d"        , theCategory, iPt, iEta)); histo_cmvaLFUp         [iPt][iEta][theCategory]->SetDirectory(0);
@@ -595,123 +631,123 @@ void vhbbHistos(
   std::map <string, float*> mvaInputRefs;
   string str_greaterSubjetCSV = "fj1MaxCSV!=fj1MaxCSV?0.:TMath::Min(1.,TMath::Max(0.,fj1MaxCSV))";
   string str_lesserSubjetCSV  = "fj1MinCSV!=fj1MinCSV?0.:TMath::Min(1.,TMath::Max(0.,fj1MinCSV))";
-  mvaInputRefs["hbbDijetMass"                                        ]=&hbbDijetMass        ;    
-  mvaInputRefs["hbbDijetPt"                                          ]=&hbbDijetPt          ;    
-  mvaInputRefs["topWBosonPt"                                         ]=&topWBosonPt         ;    
-  mvaInputRefs["bDiscrMin"                                           ]=&bDiscrMin           ;    
-  mvaInputRefs["topMassLep1Met"                                      ]=&topMassLep1Met      ;    
-  mvaInputRefs["deltaPhiVH"                                          ]=&deltaPhiVH          ;    
-  mvaInputRefs["TMath::Min(nJet-2,1)"                                ]=&nAddJetZeroOrOne    ;    
-  mvaInputRefs["deltaPhiLep1Met"                                     ]=&deltaPhiLep1Met     ;    
-  mvaInputRefs["mT"                                                  ]=&mT                  ;    
-  mvaInputRefs["pfmet"                                               ]=&pfmet               ;    
-  mvaInputRefs["nSoft5"                                              ]=&mvaNSoft5           ;    
-  mvaInputRefs["lepton1Pt"                                           ]=&lepton1Pt           ;    
-  mvaInputRefs["bDiscrMax"                                           ]=&bDiscrMax           ;    
-  mvaInputRefs["pfmetsig"                                            ]=&pfmetsig            ;    
-  mvaInputRefs["sumEtSoft1"                                          ]=&sumEtSoft1          ;    
-  mvaInputRefs["nSoft2"                                              ]=&mvaNSoft2           ;    
-  mvaInputRefs["nSoft10"                                             ]=&mvaNSoft10          ;    
-  mvaInputRefs["topWBosonCosThetaCS"                                 ]=&topWBosonCosThetaCS ;    
-  mvaInputRefs["hbbCosThetaJJ"                                       ]=&hbbCosThetaJJ       ;    
-  mvaInputRefs["hbbCosThetaCSJ1"                                     ]=&hbbCosThetaCSJ1     ;    
-  mvaInputRefs["hbbJet1Pt"                                           ]=&hbbJet1Pt           ;    
-  mvaInputRefs["hbbJet2Pt"                                           ]=&hbbJet2Pt           ;    
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-topWBosonPhi))" ]=&dPhil1W             ;    
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-hbbJet1Phi))"   ]=&dPhil1b1            ;    
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-hbbJet2Phi))"   ]=&dPhil1b2            ;    
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))" ]=&dPhiWb1             ;    
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))" ]=&dPhiWb2             ;    
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(hbbJet1Phi-hbbJet2Phi))"   ]=&dPhib1b2            ;    
-  mvaInputRefs["fabs(lepton1Eta-topWBosonEta)"                       ]=&dEtal1W             ;    
-  mvaInputRefs["fabs(lepton1Eta-hbbJet1Eta)"                         ]=&dEtal1b1            ;    
-  mvaInputRefs["fabs(lepton1Eta-hbbJet2Eta)"                         ]=&dEtal1b2            ;    
-  mvaInputRefs["fabs(topWBosonEta-hbbJet1Eta)"                       ]=&dEtaWb1             ;    
-  mvaInputRefs["fabs(topWBosonEta-hbbJet2Eta)"                       ]=&dEtaWb2             ;    
-  mvaInputRefs["fabs(hbbJet1Eta-hbbJet2Eta)"                         ]=&dEtab1b2            ;    
-  mvaInputRefs["nIsojet"                                             ]=&mva_nIsojet         ;
-  mvaInputRefs["fj1Pt"                                               ]=&fj1Pt               ;
-  mvaInputRefs["fj1Eta"                                              ]=&fj1Eta              ;
-  mvaInputRefs[str_greaterSubjetCSV                                  ]=&fj1MaxCSV           ;
-  mvaInputRefs[str_lesserSubjetCSV                                   ]=&fj1MinCSV           ;
-  mvaInputRefs["fj1DoubleCSV"                                        ]=&fj1DoubleCSV        ;
-  mvaInputRefs["fj1HTTMass"                                          ]=&fj1HTTMass          ;
-  mvaInputRefs["fj1HTTFRec"                                          ]=&fj1HTTFRec          ;
-  mvaInputRefs["fj1MSD"                                              ]=&fj1MSD              ;
-  mvaInputRefs["fj1Tau32"                                            ]=&fj1Tau32            ;
-  mvaInputRefs["fj1Tau32SD"                                          ]=&fj1Tau32SD          ;
-  mvaInputRefs["fj1Tau21"                                            ]=&fj1Tau21            ;
-  mvaInputRefs["fj1Tau21SD"                                          ]=&fj1Tau21SD          ;
-  mvaInputRefs["lepton1Pt"                                           ]=&lepton1Pt           ;
-  mvaInputRefs["deltaPhiVH"                                          ]=&deltaPhiVH          ;
-  mvaInputRefs["deltaPhiLep1Met"                                     ]=&deltaPhiLep1Met     ;
-  mvaInputRefs["topWBosonPt"                                         ]=&topWBosonPt         ;
-  mvaInputRefs["mT"                                                  ]=&mT                  ;
-  mvaInputRefs["pfmetsig"                                            ]=&pfmetsig            ;
-  mvaInputRefs["pfmet"                                               ]=&pfmet               ;
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-topWBosonPhi))" ]=&dPhil1W             ;
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-fj1Phi))"       ]=&dPhil1fj1           ;
-  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-fj1Phi))"     ]=&dPhiWfj1            ;
-  mvaInputRefs["fabs(lepton1Eta-fj1Eta)"                             ]=&dEtal1fj1           ;
-  mvaInputRefs["psi021004010502"                                     ]=&mvaPsi["021004010502"]; 
-  mvaInputRefs["psi012004010502"                                     ]=&mvaPsi["012004010502"]; 
-  mvaInputRefs["psi021003011002"                                     ]=&mvaPsi["021003011002"]; 
-  mvaInputRefs["psi022004011002"                                     ]=&mvaPsi["022004011002"]; 
-  mvaInputRefs["psi020503010502"                                     ]=&mvaPsi["020503010502"]; 
-  mvaInputRefs["psi022003012002"                                     ]=&mvaPsi["022003012002"]; 
-  mvaInputRefs["psi012004020503"                                     ]=&mvaPsi["012004020503"]; 
-  mvaInputRefs["psi021004020503"                                     ]=&mvaPsi["021004020503"]; 
-  mvaInputRefs["psi032003012002"                                     ]=&mvaPsi["032003012002"]; 
-  mvaInputRefs["psi012003011002"                                     ]=&mvaPsi["012003011002"]; 
-  mvaInputRefs["psi011003010502"                                     ]=&mvaPsi["011003010502"]; 
-  mvaInputRefs["psi031003011002"                                     ]=&mvaPsi["031003011002"]; 
-  mvaInputRefs["psi031003012002"                                     ]=&mvaPsi["031003012002"]; 
-  mvaInputRefs["psi030503011002"                                     ]=&mvaPsi["030503011002"]; 
-  mvaInputRefs["psi022004012002"                                     ]=&mvaPsi["022004012002"]; 
-  mvaInputRefs["psi021004011002"                                     ]=&mvaPsi["021004011002"]; 
-  mvaInputRefs["psi012004011002"                                     ]=&mvaPsi["012004011002"]; 
-  mvaInputRefs["psi022004021003"                                     ]=&mvaPsi["022004021003"]; 
-  mvaInputRefs["psi012003010502"                                     ]=&mvaPsi["012003010502"]; 
-  mvaInputRefs["psi022003011002"                                     ]=&mvaPsi["022003011002"]; 
-  mvaInputRefs["psi022004031003"                                     ]=&mvaPsi["022004031003"]; 
-  mvaInputRefs["psi012004030503"                                     ]=&mvaPsi["012004030503"]; 
-  mvaInputRefs["psi021004030503"                                     ]=&mvaPsi["021004030503"]; 
-  mvaInputRefs["psi020504010502"                                     ]=&mvaPsi["020504010502"]; 
-  mvaInputRefs["psi022004030503"                                     ]=&mvaPsi["022004030503"]; 
-  mvaInputRefs["psi011004010502"                                     ]=&mvaPsi["011004010502"]; 
-  mvaInputRefs["psi030503010502"                                     ]=&mvaPsi["030503010502"]; 
-  mvaInputRefs["psi021003010502"                                     ]=&mvaPsi["021003010502"]; 
-  mvaInputRefs["psi012004011003"                                     ]=&mvaPsi["012004011003"]; 
-  mvaInputRefs["psi012004021004"                                     ]=&mvaPsi["012004021004"]; 
-  mvaInputRefs["psi021004012004"                                     ]=&mvaPsi["021004012004"]; 
-  mvaInputRefs["psi011003020503"                                     ]=&mvaPsi["011003020503"]; 
-  mvaInputRefs["psi020503011003"                                     ]=&mvaPsi["020503011003"]; 
-  mvaInputRefs["psi012003030503"                                     ]=&mvaPsi["012003030503"]; 
-  mvaInputRefs["psi030503012003"                                     ]=&mvaPsi["030503012003"]; 
-  mvaInputRefs["psi010503010502"                                     ]=&mvaPsi["010503010502"]; 
-  mvaInputRefs["psi020503011002"                                     ]=&mvaPsi["020503011002"]; 
-  mvaInputRefs["psi011003011002"                                     ]=&mvaPsi["011003011002"]; 
-  mvaInputRefs["psi020504011002"                                     ]=&mvaPsi["020504011002"]; 
-  mvaInputRefs["psi012004021003"                                     ]=&mvaPsi["012004021003"]; 
-  mvaInputRefs["psi012004012002"                                     ]=&mvaPsi["012004012002"]; 
-  mvaInputRefs["psi020504020503"                                     ]=&mvaPsi["020504020503"]; 
-  mvaInputRefs["psi011004011002"                                     ]=&mvaPsi["011004011002"]; 
-  mvaInputRefs["psi021004012002"                                     ]=&mvaPsi["021004012002"]; 
-  mvaInputRefs["psi021003012002"                                     ]=&mvaPsi["021003012002"]; 
-  mvaInputRefs["psi011004020503"                                     ]=&mvaPsi["011004020503"]; 
-  mvaInputRefs["psi010504010502"                                     ]=&mvaPsi["010504010502"]; 
-  mvaInputRefs["psi021004021003"                                     ]=&mvaPsi["021004021003"]; 
-  mvaInputRefs["psi012003012002"                                     ]=&mvaPsi["012003012002"]; 
-  mvaInputRefs["psi022004022003"                                     ]=&mvaPsi["022004022003"]; 
-  TMVA::Reader *reader; TString theBDTWeights="";
+  mvaInputRefs["hbbDijetMass"                                          ]=&hbbDijetMass          ;    
+  mvaInputRefs["hbbDijetPt"                                            ]=&hbbDijetPt            ;    
+  mvaInputRefs["topWBosonPt"                                           ]=&topWBosonPt           ;    
+  mvaInputRefs["bDiscrMin"                                             ]=&bDiscrMin             ;    
+  mvaInputRefs["topMassLep1Met"                                        ]=&topMassLep1Met        ;    
+  mvaInputRefs["deltaPhiVH"                                            ]=&deltaPhiVH            ;    
+  mvaInputRefs["TMath::Min(nJet-2,1)"                                  ]=&nAddJetZeroOrOne      ;    
+  mvaInputRefs["deltaPhiLep1Met"                                       ]=&deltaPhiLep1Met       ;    
+  mvaInputRefs["mT"                                                    ]=&mT                    ;    
+  mvaInputRefs["pfmet"                                                 ]=&pfmet                 ;    
+  mvaInputRefs["nSoft5"                                                ]=&mvaNSoft5             ;    
+  mvaInputRefs["lepton1Pt"                                             ]=&lepton1Pt             ;    
+  mvaInputRefs["bDiscrMax"                                             ]=&bDiscrMax             ;    
+  mvaInputRefs["pfmetsig"                                              ]=&pfmetsig              ;    
+  mvaInputRefs["sumEtSoft1"                                            ]=&sumEtSoft1            ;    
+  mvaInputRefs["nSoft2"                                                ]=&mvaNSoft2             ;    
+  mvaInputRefs["nSoft10"                                               ]=&mvaNSoft10            ;    
+  mvaInputRefs["topWBosonCosThetaCS"                                   ]=&topWBosonCosThetaCS   ;    
+  mvaInputRefs["hbbCosThetaJJ"                                         ]=&hbbCosThetaJJ         ;    
+  mvaInputRefs["hbbCosThetaCSJ1"                                       ]=&hbbCosThetaCSJ1       ;    
+  mvaInputRefs["hbbJet1Pt"                                             ]=&hbbJet1Pt             ;    
+  mvaInputRefs["hbbJet2Pt"                                             ]=&hbbJet2Pt             ;    
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-topWBosonPhi))"   ]=&dPhil1W               ;    
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-hbbJet1Phi))"     ]=&dPhil1b1              ;    
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-hbbJet2Phi))"     ]=&dPhil1b2              ;    
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))"   ]=&dPhiWb1               ;    
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))"   ]=&dPhiWb2               ;    
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(hbbJet1Phi-hbbJet2Phi))"     ]=&dPhib1b2              ;    
+  mvaInputRefs["fabs(lepton1Eta-topWBosonEta)"                         ]=&dEtal1W               ;    
+  mvaInputRefs["fabs(lepton1Eta-hbbJet1Eta)"                           ]=&dEtal1b1              ;    
+  mvaInputRefs["fabs(lepton1Eta-hbbJet2Eta)"                           ]=&dEtal1b2              ;    
+  mvaInputRefs["fabs(topWBosonEta-hbbJet1Eta)"                         ]=&dEtaWb1               ;    
+  mvaInputRefs["fabs(topWBosonEta-hbbJet2Eta)"                         ]=&dEtaWb2               ;    
+  mvaInputRefs["fabs(hbbJet1Eta-hbbJet2Eta)"                           ]=&dEtab1b2              ;    
+  mvaInputRefs["nIsojet"                                               ]=&mva_nIsojet           ;
+  mvaInputRefs["fj1Pt"                                                 ]=&fj1Pt                 ;
+  mvaInputRefs["fj1Eta"                                                ]=&fj1Eta                ;
+  mvaInputRefs[str_greaterSubjetCSV                                    ]=&fj1MaxCSV             ;
+  mvaInputRefs[str_lesserSubjetCSV                                     ]=&fj1MinCSV             ;
+  mvaInputRefs["fj1DoubleCSV"                                          ]=&fj1DoubleCSV          ;
+  mvaInputRefs["fj1HTTMass"                                            ]=&fj1HTTMass            ;
+  mvaInputRefs["fj1HTTFRec"                                            ]=&fj1HTTFRec            ;
+  mvaInputRefs["fj1MSD"                                                ]=&fj1MSD                ;
+  mvaInputRefs["fj1Tau32"                                              ]=&fj1Tau32              ;
+  mvaInputRefs["fj1Tau32SD"                                            ]=&fj1Tau32SD            ;
+  mvaInputRefs["fj1Tau21"                                              ]=&fj1Tau21              ;
+  mvaInputRefs["fj1Tau21SD"                                            ]=&fj1Tau21SD            ;
+  mvaInputRefs["lepton1Pt"                                             ]=&lepton1Pt             ;
+  mvaInputRefs["deltaPhiVH"                                            ]=&deltaPhiVH            ;
+  mvaInputRefs["deltaPhiLep1Met"                                       ]=&deltaPhiLep1Met       ;
+  mvaInputRefs["topWBosonPt"                                           ]=&topWBosonPt           ;
+  mvaInputRefs["mT"                                                    ]=&mT                    ;
+  mvaInputRefs["pfmetsig"                                              ]=&pfmetsig              ;
+  mvaInputRefs["pfmet"                                                 ]=&pfmet                 ;
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-topWBosonPhi))"   ]=&dPhil1W               ;
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(lepton1Phi-fj1Phi))"         ]=&dPhil1fj1             ;
+  mvaInputRefs["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-fj1Phi))"       ]=&dPhiWfj1              ;
+  mvaInputRefs["fabs(lepton1Eta-fj1Eta)"                               ]=&dEtal1fj1             ;
+  mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)"]=&mvaPsi["021004010502"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)"]=&mvaPsi["012004010502"]; 
+  mvaInputRefs["fj1ECFN_2_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)"]=&mvaPsi["021003011002"]; 
+  mvaInputRefs["fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),4.00)"]=&mvaPsi["022004011002"]; 
+  mvaInputRefs["fj1ECFN_2_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)"]=&mvaPsi["020503010502"]; 
+  mvaInputRefs["fj1ECFN_2_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),2.00)"]=&mvaPsi["022003012002"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_05),2.00)"]=&mvaPsi["012004020503"]; 
+  mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_2_3_05),2.00)"]=&mvaPsi["021004020503"]; 
+  mvaInputRefs["fj1ECFN_3_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),3.00)"]=&mvaPsi["032003012002"]; 
+  mvaInputRefs["fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)"]=&mvaPsi["012003011002"]; 
+  mvaInputRefs["fj1ECFN_1_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)"]=&mvaPsi["011003010502"]; 
+  mvaInputRefs["fj1ECFN_3_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),3.00)"]=&mvaPsi["031003011002"]; 
+  mvaInputRefs["fj1ECFN_3_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.50)"]=&mvaPsi["031003012002"]; 
+  mvaInputRefs["fj1ECFN_3_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.50)"]=&mvaPsi["030503011002"]; 
+  mvaInputRefs["fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),2.00)"]=&mvaPsi["022004012002"]; 
+  mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)"]=&mvaPsi["021004011002"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),2.00)"]=&mvaPsi["012004011002"]; 
+  mvaInputRefs["fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_10),2.00)"]=&mvaPsi["022004021003"]; 
+  mvaInputRefs["fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)"]=&mvaPsi["012003010502"]; 
+  mvaInputRefs["fj1ECFN_2_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_10),4.00)"]=&mvaPsi["022003011002"]; 
+  mvaInputRefs["fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_3_3_10),1.33)"]=&mvaPsi["022004031003"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_3_3_05),1.33)"]=&mvaPsi["012004030503"]; 
+  mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_3_3_05),1.33)"]=&mvaPsi["021004030503"]; 
+  mvaInputRefs["fj1ECFN_2_4_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)"]=&mvaPsi["020504010502"]; 
+  mvaInputRefs["fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_3_3_05),2.67)"]=&mvaPsi["022004030503"]; 
+  mvaInputRefs["fj1ECFN_1_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),2.00)"]=&mvaPsi["011004010502"]; 
+  mvaInputRefs["fj1ECFN_3_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),3.00)"]=&mvaPsi["030503010502"]; 
+  mvaInputRefs["fj1ECFN_2_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_05),4.00)"]=&mvaPsi["021003010502"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_3_10),2.00)"]=&mvaPsi["012004011003"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_2_4_10),1.00)"]=&mvaPsi["012004021004"]; 
+  mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_4_20),1.00)"]=&mvaPsi["021004012004"]; 
+  mvaInputRefs["fj1ECFN_1_3_10/pow(TMath::Max(0.,fj1ECFN_2_3_05),1.00)"]=&mvaPsi["011003020503"]; 
+  mvaInputRefs["fj1ECFN_2_3_05/pow(TMath::Max(0.,fj1ECFN_1_3_10),1.00)"]=&mvaPsi["020503011003"]; 
+  mvaInputRefs["fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_3_3_05),1.33)"]=&mvaPsi["012003030503"]; 
+  mvaInputRefs["fj1ECFN_3_3_05/pow(TMath::Max(0.,fj1ECFN_1_3_20),0.75)"]=&mvaPsi["030503012003"]; 
+  mvaInputRefs["fj1ECFN_1_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),1.00)"]=&mvaPsi["010503010502"]; 
+  mvaInputRefs["fj1ECFN_2_3_05/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)"]=&mvaPsi["020503011002"]; 
+  mvaInputRefs["fj1ECFN_1_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)"]=&mvaPsi["011003011002"]; 
+  mvaInputRefs["fj1ECFN_2_4_05/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)"]=&mvaPsi["020504011002"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_10),1.00)"]=&mvaPsi["012004021003"]; 
+  mvaInputRefs["fj1ECFN_1_4_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)"]=&mvaPsi["012004012002"]; 
+  mvaInputRefs["fj1ECFN_2_4_05/pow(TMath::Max(0.,fj1ECFN_2_3_05),1.00)"]=&mvaPsi["020504020503"]; 
+  mvaInputRefs["fj1ECFN_1_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_10),1.00)"]=&mvaPsi["011004011002"]; 
+  mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)"]=&mvaPsi["021004012002"]; 
+  mvaInputRefs["fj1ECFN_2_3_10/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)"]=&mvaPsi["021003012002"]; 
+  mvaInputRefs["fj1ECFN_1_4_10/pow(TMath::Max(0.,fj1ECFN_2_3_05),1.00)"]=&mvaPsi["011004020503"]; 
+  mvaInputRefs["fj1ECFN_1_4_05/pow(TMath::Max(0.,fj1ECFN_1_2_05),1.00)"]=&mvaPsi["010504010502"]; 
+  mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_2_3_10),1.00)"]=&mvaPsi["021004021003"]; 
+  mvaInputRefs["fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)"]=&mvaPsi["012003012002"]; 
+  mvaInputRefs["fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_20),1.00)"]=&mvaPsi["022004022003"]; 
+  TMVA::Reader *reader=0; TString theBDTWeights="";
   // to do - not hardcoded
   if(MVAVarType==2) {
     reader=new TMVA::Reader(); // =new TMVA::Reader();
-    if(selection==kWHSR)        theBDTWeights = bdtWeightsResolved; //"weights/bdt_BDT_multiClass_resolved_jan10_I_test2.weights.xml";
-    else if(selection==kWHFJSR) theBDTWeights = bdtWeightsBoosted; // "weights/bdt_BDT_multiClass_boosted_jan10_I_test2.weights.xml";
+    if(selection<=kWHSR)        theBDTWeights = bdtWeightsResolved; //"weights/bdt_BDT_multiClass_resolved_jan10_I_test2.weights.xml";
+    else if(selection<=kWHFJSR) theBDTWeights = bdtWeightsBoosted; // "weights/bdt_BDT_multiClass_boosted_jan10_I_test2.weights.xml";
   } else if(MVAVarType==3) {
     reader=new TMVA::Reader(); // =new TMVA::Reader();
-    if(selection==kWHSR)        theBDTWeights = bdtWeightsResolved; //"weights/bdt_BDT_multiClass_resolved_whAll_jan11_singleClass.weights.xml";
+    if(selection<=kWHSR)        theBDTWeights = bdtWeightsResolved; //"weights/bdt_BDT_multiClass_resolved_whAll_jan11_singleClass.weights.xml";
     //else if(selection==kWHFJSR) theBDTWeights = "weights/bdt_BDT_multiClass_boosted_jan10_I_test2.weights.xml";
   } 
   if(theBDTWeights!="") {
@@ -755,7 +791,7 @@ void vhbbHistos(
       dEtaWb1  = fabs(topWBosonEta - hbbJet1Eta  );
       dEtaWb2  = fabs(topWBosonEta - hbbJet2Eta  );
       dEtab1b2 = fabs(hbbJet1Eta   - hbbJet2Eta  );
-    } else if (selection>=kWHLightFlavorFJCR && selection>=kWHFJSR) {
+    } else if (selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
       dPhil1W   = fabs(TVector2::Phi_mpi_pi(lepton1Phi   - topWBosonPhi));
       dPhil1fj1 = fabs(TVector2::Phi_mpi_pi(lepton1Phi   - fj1Phi  ));
       dPhiWfj1  = fabs(TVector2::Phi_mpi_pi(topWBosonPhi - fj1Phi  ));
@@ -812,6 +848,15 @@ void vhbbHistos(
       mvaPsi["012003012002"] = fj1ECFN["1_3_20"]/pow(TMath::Max(0.0f,fj1ECFN["1_2_20"]),1.00);
       mvaPsi["022004022003"] = fj1ECFN["2_4_20"]/pow(TMath::Max(0.0f,fj1ECFN["2_3_20"]),1.00);
     }
+
+    // Wpt correction
+    if(useWptCorr) {
+      if(theCategory==kPlotWbb || theCategory==kPlotWb || theCategory==kPlotWLF) {
+        float wptCorrFactor=theWptCorr->Eval(TMath::Min(topWBosonPt,(float)499.99));
+        weight *= wptCorrFactor;
+      }
+    }
+
     float weight_jesUp=weight, weight_jesDown=weight;
     //jcuTotal->setJetPt(hbbJet1Pt); jcuTotal->setJetEta(hbbJet1Eta);
     //weight_jesUp   *= (1+jcuTotal->getUncertainty(true));
@@ -821,6 +866,18 @@ void vhbbHistos(
     //weight_jesUp   *= (1+jcuTotal->getUncertainty(false));
     //jcuTotal->setJetPt(hbbJet2Pt); jcuTotal->setJetEta(hbbJet2Eta);
     //weight_jesDown *= (1-jcuTotal->getUncertainty(false));
+
+
+    float theVar; 
+    bool passFullSel         = (selectionBits & selection)!=0; 
+    bool passFullSel_jesUp   = (selectionBits_jesUp & selection)!=0; 
+    bool passFullSel_jesDown = (selectionBits_jesDown & selection)!=0; 
+    bool passMassSplit=true;
+    if(selection==kWHHeavyFlavorCR) { // Mass splitting for the WH HF CR
+      if(lowMass  && hbbDijetMass>=90.) passMassSplit=false;
+      if(!lowMass && hbbDijetMass<150.) passMassSplit=false;
+    }
+    float bdtValue=0;
     switch(MVAVarType) {
       case 1:
       default:
@@ -830,36 +887,43 @@ void vhbbHistos(
           MVAVar=fj1Pt;
         break;
       case 2:
+        if(passFullSel) {
+          if(
+            selection==kWHLightFlavorCR || 
+            selection==kWHHeavyFlavorCR || 
+            selection==kWHLightFlavorFJCR ||
+            selection==kWHHeavyFlavorFJCR
+          ) bdtValue=(reader->EvaluateMulticlass("BDT")[1]);
+          else if(
+            selection==kWH2TopCR || 
+            selection==kWH2TopFJCR
+          ) bdtValue=(reader->EvaluateMulticlass("BDT")[2]);
+          else bdtValue=(reader->EvaluateMulticlass("BDT")[0]);
+        }
         if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) 
           MVAVar=bDiscrMin;
         else if(selection==kWHSR)
-          MVAVar=(reader->EvaluateMulticlass("BDT")[0]);
+          MVAVar=bdtValue;
         else if(selection==kWHLightFlavorFJCR || selection==kWHHeavyFlavorFJCR || selection==kWH2TopFJCR) 
           MVAVar=fj1MSD;
         else if(selection==kWHFJSR)
-          MVAVar=(reader->EvaluateMulticlass("BDT")[0]);
+          MVAVar=bdtValue;
         break;
       case 3:
+        if(passFullSel) bdtValue=reader->EvaluateMVA("BDT");
         if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) 
           MVAVar=bDiscrMin;
         else if(selection==kWHSR)
-          MVAVar=reader->EvaluateMVA("BDT");
+          MVAVar=bdtValue;
         else if(selection==kWHLightFlavorFJCR || selection==kWHHeavyFlavorFJCR || selection==kWH2TopFJCR) 
           MVAVar=fj1MSD;
         else if(selection==kWHFJSR)
-          MVAVar=reader->EvaluateMVA("BDT");
+          MVAVar=bdtValue;
         break;
     }
     MVAVar=TMath::Min(MVAVar, (float)(MVAbins[MVAbins.size()-1]-0.001));
-
-    float theVar; 
-    bool passFullSel         = (selectionBits & selection)!=0; 
-    bool passFullSel_jesUp   = (selectionBits_jesUp & selection)!=0; 
-    bool passFullSel_jesDown = (selectionBits_jesDown & selection)!=0; 
     bool makePlot;
-    // hack
-    //if(typeLepSel==1 && theCategory==kPlotTop) weight*=-1.;
-    if(selection>=kWHLightFlavorCR && selection<=kWHSR) for(int p=0; p<nPlots; p++) {
+    if(selection>=kWHLightFlavorCR && selection<=kWHSR) { for(int p=0; p<nPlots; p++) {
       makePlot=false;
       // Variables -- change the makePlot for n-1 later
       if      (histoNames[p]=="pTH"                 ) { theVar = TMath::Min(hbbDijetPt    , float(xmax[p]-0.001)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && theVar<=100.); }
@@ -878,6 +942,7 @@ void vhbbHistos(
       else if (histoNames[p]=="bDiscrMin"           ) { theVar = TMath::Min(bDiscrMin     , float(xmax[p]-0.001)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && (selection==kWHSR && theVar<bDiscrLoose )); }
       else if (histoNames[p]=="bDiscrMax"           ) { theVar = TMath::Min(bDiscrMax     , float(xmax[p]-0.001)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && ((selection==kWHLightFlavorCR && (theVar<bDiscrLoose || theVar>bDiscrMedium) ) || (selection!=kWHLightFlavorCR && theVar<bDiscrTight)) ); }
       else if (histoNames[p]=="topMassLep1Met"      ) { theVar = TMath::Min(topMassLep1Met, float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="nJet"                ) { theVar = TMath::Min((float)nJet   , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="sumEtSoft1"          ) { theVar = TMath::Min(sumEtSoft1    , float(xmax[p]-0.001)); makePlot = passFullSel; }
       else if (histoNames[p]=="nSoft2"              ) { theVar = nSoft2                                          ; makePlot = passFullSel; }
       else if (histoNames[p]=="nSoft5"              ) { theVar = nSoft5                                          ; makePlot = passFullSel; }
@@ -897,13 +962,96 @@ void vhbbHistos(
       else if (histoNames[p]=="dEtaWb1"             ) { theVar = dEtaWb1                                         ; makePlot = passFullSel; }
       else if (histoNames[p]=="dEtaWb2"             ) { theVar = dEtaWb2                                         ; makePlot = passFullSel; }
       else if (histoNames[p]=="dEtab1b2"            ) { theVar = dEtab1b2                                        ; makePlot = passFullSel; }
+      else if (histoNames[p]=="bdtValue"            ) { theVar = bdtValue                                        ; makePlot = passFullSel; }
+      else if (histoNames[p]=="MVAVar"              ) { theVar = MVAVar                                          ; makePlot = passFullSel && passMassSplit; }
+      else continue;
+      if(!makePlot) continue;
+      histos[p][theCategory]->Fill(theVar, weight);
+    }} else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) { for(int p=0; p<nPlots; p++) {
+      if      (histoNames[p]=="nIsojet"             ) { theVar = mva_nIsojet                                             ; makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1Pt"               ) { theVar = TMath::Min(fj1Pt                 , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1Eta"              ) { theVar = TMath::Min(fj1Eta                , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="greaterSubjetCSV"    ) { theVar = TMath::Min(fj1MaxCSV             , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="lesserSubjetCSV"     ) { theVar = TMath::Min(fj1MinCSV             , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1DoubleCSV"        ) { theVar = TMath::Min(fj1DoubleCSV          , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1HTTMass"          ) { theVar = TMath::Min(fj1HTTMass            , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1HTTFRec"          ) { theVar = TMath::Min(fj1HTTFRec            , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1MSD"              ) { theVar = TMath::Min(fj1MSD                , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1Tau32"            ) { theVar = TMath::Min(fj1Tau32              , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1Tau32SD"          ) { theVar = TMath::Min(fj1Tau32SD            , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1Tau21"            ) { theVar = TMath::Min(fj1Tau21              , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1Tau21SD"          ) { theVar = TMath::Min(fj1Tau21SD            , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="lepton1Pt"           ) { theVar = TMath::Min(lepton1Pt             , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="deltaPhiVH"          ) { theVar = TMath::Min(deltaPhiVH            , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="deltaPhiLep1Met"     ) { theVar = TMath::Min(deltaPhiLep1Met       , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="topWBosonPt"         ) { theVar = TMath::Min(topWBosonPt           , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="mT"                  ) { theVar = TMath::Min(mT                    , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="pfmetsig"            ) { theVar = TMath::Min(pfmetsig              , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="pfmet"               ) { theVar = TMath::Min(pfmet                 , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="dPhil1W"             ) { theVar = TMath::Min(dPhil1W               , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="dPhil1fj1"           ) { theVar = TMath::Min(dPhil1fj1             , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="dPhiWfj1"            ) { theVar = TMath::Min(dPhiWfj1              , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="dEtal1fj1"           ) { theVar = TMath::Min(dEtal1fj1             , float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021004010502"     ) { theVar = TMath::Min(mvaPsi["021004010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004010502"     ) { theVar = TMath::Min(mvaPsi["012004010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021003011002"     ) { theVar = TMath::Min(mvaPsi["021003011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022004011002"     ) { theVar = TMath::Min(mvaPsi["022004011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi020503010502"     ) { theVar = TMath::Min(mvaPsi["020503010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022003012002"     ) { theVar = TMath::Min(mvaPsi["022003012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004020503"     ) { theVar = TMath::Min(mvaPsi["012004020503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021004020503"     ) { theVar = TMath::Min(mvaPsi["021004020503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi032003012002"     ) { theVar = TMath::Min(mvaPsi["032003012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012003011002"     ) { theVar = TMath::Min(mvaPsi["012003011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi011003010502"     ) { theVar = TMath::Min(mvaPsi["011003010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi031003011002"     ) { theVar = TMath::Min(mvaPsi["031003011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi031003012002"     ) { theVar = TMath::Min(mvaPsi["031003012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi030503011002"     ) { theVar = TMath::Min(mvaPsi["030503011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022004012002"     ) { theVar = TMath::Min(mvaPsi["022004012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021004011002"     ) { theVar = TMath::Min(mvaPsi["021004011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004011002"     ) { theVar = TMath::Min(mvaPsi["012004011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022004021003"     ) { theVar = TMath::Min(mvaPsi["022004021003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012003010502"     ) { theVar = TMath::Min(mvaPsi["012003010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022003011002"     ) { theVar = TMath::Min(mvaPsi["022003011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022004031003"     ) { theVar = TMath::Min(mvaPsi["022004031003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004030503"     ) { theVar = TMath::Min(mvaPsi["012004030503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021004030503"     ) { theVar = TMath::Min(mvaPsi["021004030503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi020504010502"     ) { theVar = TMath::Min(mvaPsi["020504010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022004030503"     ) { theVar = TMath::Min(mvaPsi["022004030503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi011004010502"     ) { theVar = TMath::Min(mvaPsi["011004010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi030503010502"     ) { theVar = TMath::Min(mvaPsi["030503010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021003010502"     ) { theVar = TMath::Min(mvaPsi["021003010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004011003"     ) { theVar = TMath::Min(mvaPsi["012004011003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004021004"     ) { theVar = TMath::Min(mvaPsi["012004021004"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021004012004"     ) { theVar = TMath::Min(mvaPsi["021004012004"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi011003020503"     ) { theVar = TMath::Min(mvaPsi["011003020503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi020503011003"     ) { theVar = TMath::Min(mvaPsi["020503011003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012003030503"     ) { theVar = TMath::Min(mvaPsi["012003030503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi030503012003"     ) { theVar = TMath::Min(mvaPsi["030503012003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi010503010502"     ) { theVar = TMath::Min(mvaPsi["010503010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi020503011002"     ) { theVar = TMath::Min(mvaPsi["020503011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi011003011002"     ) { theVar = TMath::Min(mvaPsi["011003011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi020504011002"     ) { theVar = TMath::Min(mvaPsi["020504011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004021003"     ) { theVar = TMath::Min(mvaPsi["012004021003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012004012002"     ) { theVar = TMath::Min(mvaPsi["012004012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi020504020503"     ) { theVar = TMath::Min(mvaPsi["020504020503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi011004011002"     ) { theVar = TMath::Min(mvaPsi["011004011002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021004012002"     ) { theVar = TMath::Min(mvaPsi["021004012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021003012002"     ) { theVar = TMath::Min(mvaPsi["021003012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi011004020503"     ) { theVar = TMath::Min(mvaPsi["011004020503"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi010504010502"     ) { theVar = TMath::Min(mvaPsi["010504010502"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi021004021003"     ) { theVar = TMath::Min(mvaPsi["021004021003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi012003012002"     ) { theVar = TMath::Min(mvaPsi["012003012002"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="psi022004022003"     ) { theVar = TMath::Min(mvaPsi["022004022003"], float(xmax[p]-0.001)); makePlot = passFullSel; }
+      else if (histoNames[p]=="bdtValue"            ) { theVar = bdtValue                                        ; makePlot = passFullSel; }
       else if (histoNames[p]=="MVAVar"              ) { theVar = MVAVar                                          ; makePlot = passFullSel; }
       else continue;
       if(!makePlot) continue;
       histos[p][theCategory]->Fill(theVar, weight);
-    }
+    }}
     // Fill systematic shapes
-    if(passFullSel && theCategory!=kPlotData) {
+    if(passFullSel && passMassSplit && theCategory!=kPlotData) {
+      histo_VHCorrUp    [theCategory]->Fill(MVAVar, weight_VHCorrUp    ); 
+      histo_VHCorrDown  [theCategory]->Fill(MVAVar, weight_VHCorrDown  ); 
       histo_pdfUp    [theCategory]->Fill(MVAVar, weight_pdfUp    ); 
       histo_pdfDown  [theCategory]->Fill(MVAVar, weight_pdfDown  ); 
       histo_QCDr1f2  [theCategory]->Fill(MVAVar, weight_QCDr1f2  ); 
@@ -955,17 +1103,21 @@ void vhbbHistos(
   char leptonChar='l';
   if(theLepSel==1) leptonChar='m';
   if(theLepSel==2) leptonChar='e';
-  char shapeType[64];
-  if     (MVAVarType==1) sprintf(shapeType,"ptShape");
-  else if(MVAVarType==2) sprintf(shapeType,"multiClassBDTShape");
-  else if(MVAVarType==3) sprintf(shapeType,"singleClassBDTShape");
-  if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) { for(int nb=1; nb<=histos[pMVAVar][kPlotData]->GetNbinsX(); nb++) {
+  
+  if(selection>=kWHLightFlavorCR && selection<=kWHSR) { for(int nb=1; nb<=histos[pMVAVar][kPlotData]->GetNbinsX(); nb++) {
     float bgSum=0;
     for(int ic=0; ic<nPlotCategories; ic++)
       if(ic!=kPlotVH) bgSum+=histos[pMVAVar][ic]->GetBinContent(nb);
     if(bgSum<1e-3 && histos[pMVAVar][kPlotVH]->GetBinContent(nb)<1e-3) continue;
     char outputLimitsShape[512];
-    sprintf(outputLimitsShape,"MitVHBBAnalysis/datacards/%s/histo_limits_W%cnHbb_%s_%s_bin%d.txt",dataCardDir.Data(),leptonChar,selectionNames[selection].Data(), shapeType, nb-1);
+    if(selection==kWHHeavyFlavorCR) {
+      if(lowMass)
+        sprintf(outputLimitsShape,"MitVHBBAnalysis/datacards/%s/histo_limits_W%cnHbb_%sLowMass_%s_bin%d.txt",dataCardDir.Data(),leptonChar,selectionNames[selection].Data(), shapeType, nb-1);
+      else
+        sprintf(outputLimitsShape,"MitVHBBAnalysis/datacards/%s/histo_limits_W%cnHbb_%sHighMass_%s_bin%d.txt",dataCardDir.Data(),leptonChar,selectionNames[selection].Data(), shapeType, nb-1);
+    } else {
+      sprintf(outputLimitsShape,"MitVHBBAnalysis/datacards/%s/histo_limits_W%cnHbb_%s_%s_bin%d.txt",dataCardDir.Data(),leptonChar,selectionNames[selection].Data(), shapeType, nb-1);
+    }
     ofstream card; card.open(outputLimitsShape);
     card << Form("imax 1 number of channels\n");
     card << Form("jmax * number of background\n");
@@ -976,6 +1128,12 @@ void vhbbHistos(
     card << Form("process "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%9d ", ic==kPlotVH?0:ic); card<<std::endl;
     card << Form("rate    "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%9.3f ", histos[pMVAVar][ic]->GetBinContent(nb)); card<<std::endl;
     // Systematics - Shape Uncertainties
+    // VH EWK Corrections
+    card<<Form("VH_EWKCorr lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) 
+      card << ((ic==kPlotVH)? Form("%7.5f/%7.5f ",
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,histo_VHCorrDown[ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1,
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Min(2.0,histo_VHCorrUp  [ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1
+      ): "- "); card<<std::endl;
     // PDF Acceptance
     card<<Form("pdf_qqbar_ACCEPT lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) 
       card << ((ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotWbb||ic==kPlotWb||ic==kPlotWLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotVH)? Form("%7.5f/%7.5f ",
@@ -1079,6 +1237,133 @@ void vhbbHistos(
       card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",plotBaseNames[kPlotWLF].Data(),plotBaseNames[kPlotWLF].Data()) << std::endl;
     }
  
+  }}
+
+  if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) { for(int nb=1; nb<=histos[pMVAVar][kPlotData]->GetNbinsX(); nb++) {
+    float bgSum=0;
+    for(int ic=0; ic<nPlotCategories; ic++)
+      if(ic!=kPlotVH) bgSum+=histos[pMVAVar][ic]->GetBinContent(nb);
+    if(bgSum<1e-3 && histos[pMVAVar][kPlotVH]->GetBinContent(nb)<1e-3) continue;
+    char outputLimitsShape[512];
+    sprintf(outputLimitsShape,"MitVHBBAnalysis/datacards/%s/histo_limits_W%cnHbb_%s_%s_bin%d.txt",dataCardDir.Data(),leptonChar,selectionNames[selection].Data(), shapeType, nb-1);
+    
+    ofstream card; card.open(outputLimitsShape);
+    card << Form("imax 1 number of channels\n");
+    card << Form("jmax * number of background\n");
+    card << Form("kmax * number of nuisance parameters\n");
+    card << Form("Observation %d\n", (int)round(isBlinded? bgSum : histos[pMVAVar][kPlotData]->GetBinContent(nb))); 
+    card << Form("bin     "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%s ",Form("W%cn%sb%d",leptonChar,selectionNames[selection].Data(),nb-1)); card<<std::endl;
+    card << Form("process "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%9s ",plotBaseNames[ic].Data()); card<<std::endl;
+    card << Form("process "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%9d ", ic==kPlotVH?0:ic); card<<std::endl;
+    card << Form("rate    "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%9.3f ", histos[pMVAVar][ic]->GetBinContent(nb)); card<<std::endl;
+    // Systematics - Shape Uncertainties
+    // VH EWK Corrections
+    card<<Form("VH_EWKCorr lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) 
+      card << ((ic==kPlotVH)? Form("%7.5f/%7.5f ",
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,histo_VHCorrDown[ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1,
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Min(2.0,histo_VHCorrUp  [ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1
+      ): "- "); card<<std::endl;
+    // PDF Acceptance
+    card<<Form("pdf_qqbar_ACCEPT lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) 
+      card << ((ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotWbb||ic==kPlotWb||ic==kPlotWLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotVH)? Form("%7.5f/%7.5f ",
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,histo_pdfDown[ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1,
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Min(2.0,histo_pdfUp  [ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1
+      ): "- "); card<<std::endl;
+    card<<Form("pdf_qg_ACCEPT lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) 
+      card << ((ic==kPlotTop)? Form("%7.5f/%7.5f ",
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,histo_pdfDown[ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1,
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Min(2.0,histo_pdfUp  [ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1
+      ): "- "); card<<std::endl;
+    card<<Form("pdf_gg_ACCEPT lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) 
+      card << ((ic==kPlotTT)? Form("%7.5f/%7.5f ",
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,histo_pdfDown[ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1,
+        histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Min(2.0,histo_pdfUp  [ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb)):1
+      ): "- "); card<<std::endl;
+    // QCD Scale
+    for(int ic=kPlotData+1; ic<nPlotCategories; ic++) {
+      if(ic==kPlotTop) continue; // Bug in MiniAOD
+      card<<Form("QCDscale_%s lnN ",plotBaseNames[ic].Data());
+      for(int jc=kPlotData+1; jc<nPlotCategories; jc++) {
+        double scaleUp=1, scaleDown=1;
+        if(jc==ic && histos[pMVAVar][ic]->GetBinContent(nb)>0) {
+          scaleUp  =histos[pMVAVar][ic]->GetBinContent(nb);
+          scaleDown=scaleUp;
+          scaleUp=TMath::Max(scaleUp,histo_QCDr1f2[ic]->GetBinContent(nb)); scaleDown=TMath::Min(scaleDown,histo_QCDr1f2[ic]->GetBinContent(nb)); 
+          scaleUp=TMath::Max(scaleUp,histo_QCDr1f5[ic]->GetBinContent(nb)); scaleDown=TMath::Min(scaleDown,histo_QCDr1f5[ic]->GetBinContent(nb));
+          scaleUp=TMath::Max(scaleUp,histo_QCDr2f1[ic]->GetBinContent(nb)); scaleDown=TMath::Min(scaleDown,histo_QCDr2f1[ic]->GetBinContent(nb));
+          scaleUp=TMath::Max(scaleUp,histo_QCDr2f2[ic]->GetBinContent(nb)); scaleDown=TMath::Min(scaleDown,histo_QCDr2f2[ic]->GetBinContent(nb));
+          scaleUp=TMath::Max(scaleUp,histo_QCDr5f1[ic]->GetBinContent(nb)); scaleDown=TMath::Min(scaleDown,histo_QCDr5f1[ic]->GetBinContent(nb));
+          scaleUp=TMath::Max(scaleUp,histo_QCDr5f5[ic]->GetBinContent(nb)); scaleDown=TMath::Min(scaleDown,histo_QCDr5f5[ic]->GetBinContent(nb));
+          scaleUp  /=histos[pMVAVar][ic]->GetBinContent(nb);
+          scaleDown/=histos[pMVAVar][ic]->GetBinContent(nb);
+          scaleUp  =TMath::Min(scaleUp,2.0);
+          scaleDown=TMath::Max(scaleDown,0.5);
+        }
+        card << (jc!=ic? "- ":Form("%7.5f/%7.5f ", scaleDown, scaleUp));
+      }
+      card<<std::endl;
+    }
+    // BTag Shape Uncertainty
+    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+      card<<Form("CMS_bTagWeightJES_Pt%d_Eta%d      lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaJESDown     [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaJESUp     [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightLF_Pt%d_Eta%d       lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaLFDown      [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaLFUp      [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightHF_Pt%d_Eta%d       lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaHFDown      [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaHFUp      [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightHFStats1_Pt%d_Eta%d lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaHFStats1Down[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaHFStats1Up[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightHFStats2_Pt%d_Eta%d lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaHFStats2Down[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaHFStats2Up[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightLFStats1_Pt%d_Eta%d lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaLFStats1Down[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaLFStats1Up[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightLFStats2_Pt%d_Eta%d lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaLFStats2Down[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaLFStats2Up[iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightCErr1_Pt%d_Eta%d    lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaCErr1Down   [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaCErr1Up   [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+      card<<Form("CMS_bTagWeightCErr2_Pt%d_Eta%d    lnN ", iPt, iEta); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f/%7.5f ", histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaCErr2Down   [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1, histos[pMVAVar][ic]->GetBinContent(nb)>0? TMath::Max(0.5,TMath::Min(2.0,histo_cmvaCErr2Up   [iPt][iEta][ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb))):1 ); card<<std::endl;
+    }
+    //// Total Jet Energy Scale Shape Uncertainty
+    // TODO: check that the jesUp/Down is nonzero
+    card<<Form("CMS_scale_j lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< "1.04 "; card<<std::endl;
+    // Muon SF Shape
+    card<<Form("CMS_eff2016_m lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f ",
+      histos[pMVAVar][ic]->GetBinContent(nb)>0? histo_muSFUp  [ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb):1
+    ); card<<std::endl;
+    // Electron SF Shape
+    card<<Form("CMS_eff2016_e lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<Form("%7.5f ",
+      histos[pMVAVar][ic]->GetBinContent(nb)>0? histo_eleSFUp  [ic]->GetBinContent(nb)/histos[pMVAVar][ic]->GetBinContent(nb):1
+    ); card<<std::endl;
+
+    // Systematics -- Normalization Uncertainties
+    // Muon Energy Scale Norm
+    card<<Form("CMS_scale2016_m lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< "1.01 "; card <<std::endl;
+    // Electron Energy Scale Norm
+    card<<Form("CMS_scale2016_e lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< "1.01 "; card<<std::endl;
+    // Trigger
+    card<<Form("CMS_trigger2016 lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< "1.01 "; card << std::endl;
+    // JES (temporary)
+    //card<<Form("CMS_scale_j lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< "1.020 "; card << std::endl;
+    // Lumi
+    card<<Form("lumi_13TeV2016 lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< "1.025 "; card << std::endl;
+    // VH Cross Section
+    card<<Form("pdf_qqbar lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< ((ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotVH)?"1.01 ":"- "); card << std::endl;
+    card<<Form("pdf_gg lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< ((ic==kPlotTop)?"1.01 ":"- "); card << std::endl;
+    // Single Top Cross Section
+    card<<Form("CMS_VH_TopNorm lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< (ic==kPlotTop? "1.30 ":"- "); card<<std::endl;
+    // Diboson Cross Section
+    card<<Form("CMS_VH_VVNorm lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.30 ":"- "); card<<std::endl;
+    // VH BDT
+    if((selection==kWHSR || selection==kWHFJSR) && (MVAVarType==2 || MVAVarType==3)) {
+      card<<Form("CMS_VH_BDT lnN "); for(int ic=kPlotData+1; ic<nPlotCategories; ic++) card<<"1.02 "; card<<std::endl;
+    }
+    // Statistical Uncertainties
+    for(int ic=kPlotData+1; ic<nPlotCategories; ic++) {
+      card<<Form("W%cn%s_%sStatBounding_13TeV2016_Bin%d lnN ",leptonChar,selectionNames[selection].Data(), plotBaseNames[ic].Data(), nb-1);
+      for(int jc=kPlotData+1; jc<nPlotCategories; jc++) 
+        card << (jc!=ic? "- ":Form("%7.5f ",histos[pMVAVar][ic]->GetBinContent(nb)>0? 1.+histos[pMVAVar][ic]->GetBinError(nb)/histos[pMVAVar][ic]->GetBinContent(nb):1));
+      card<<std::endl;
+    }
+    if(selection>=kWHLightFlavorCR && selection<=kWHFJSR) {
+      card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",plotBaseNames[kPlotTT ].Data(),plotBaseNames[kPlotTT ].Data()) << std::endl;
+      card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",plotBaseNames[kPlotWbb].Data(),plotBaseNames[kPlotWbb].Data()) << std::endl;
+      card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",plotBaseNames[kPlotWb ].Data(),plotBaseNames[kPlotWb ].Data()) << std::endl;
+      card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",plotBaseNames[kPlotWLF].Data(),plotBaseNames[kPlotWLF].Data()) << std::endl;
+    }
+ 
   }} 
+
 }
 
