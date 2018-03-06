@@ -392,6 +392,8 @@ bool vhbbPlotSkim(
     bLoad(b["lumiNumber"],ientry);
     bLoad(b["eventNumber"],ientry);
     // Analysis Preselection
+    int nLooseLep=0;
+    int iTightLep;
     if(selection>=kWHLightFlavorCR && selection<=kWHSR) { // WH Resolved Category
       {
         
@@ -452,11 +454,9 @@ bool vhbbPlotSkim(
         bLoad(b["muonPt"],ientry);
         bLoad(b["electronSelBit"],ientry);
         bLoad(b["electronPt"],ientry);
-        int nLooseLep=0;
-        int iTightLep;
         for(int i=0; i<gt.nLooseMuon; i++) {
           if(
-            typeLepSel<1 && 
+            typeLepSel==99 && 
             (sample!=kData || (gt.trigger & 1<<3)!=0) &&
             (gt.muonSelBit[i]& 1<<3)!=0 && gt.muonPt[i]>25
           ) {
@@ -467,8 +467,8 @@ bool vhbbPlotSkim(
         }
         for(int i=0; i<gt.nLooseElectron; i++) {
           if(
-            typeLepSel<1 &&
-            (sample!=kData || (gt.trigger & 1<<3)!=0) && 
+            typeLepSel==99 &&
+            (sample!=kData || (gt.trigger & 1<<1)!=0) && 
             (gt.electronSelBit[i]& 1<<6)!=0 && gt.electronPt[i]>30 /*kEleMvaWP80*/
           ) {
             typeLepSel=2;
@@ -642,29 +642,28 @@ bool vhbbPlotSkim(
         // Lepton ID and isolation
         bLoad(b["nLooseElectron"],ientry);
         bLoad(b["nTightElectron"],ientry);
+        bLoad(b["electronSelBit"],ientry);
+        bLoad(b["electronPt"],ientry);
         bLoad(b["nLooseMuon"],ientry);
         bLoad(b["nTightMuon"],ientry);
         bLoad(b["muonSelBit"],ientry);
         bLoad(b["muonPt"],ientry);
-        bLoad(b["electronSelBit"],ientry);
-        bLoad(b["electronPt"],ientry);
-        int nLooseLep=0;
-        int iTightLep;
         for(int i=0; i<gt.nLooseMuon; i++) {
           if(
-            typeLepSel<1 && 
+            typeLepSel==99 && 
             (sample!=kData || (gt.trigger & 1<<3)!=0) &&
-            (gt.muonSelBit[i]& 1<<3)!=0 && gt.muonPt[i]>25
+            (gt.muonSelBit[i]&1<<3)!=0 && gt.muonPt[i]>25
           ) {
             typeLepSel=1;
             iTightLep=i;
           }
           if((gt.muonSelBit[i]&1<<0)!=0 && gt.muonPt[i]>5) nLooseLep++;
+          //printf("muon tight=%d, loose=%d, pT=%.1f\n", (gt.muonSelBit[i]&1<<3)!=0, (gt.muonSelBit[i]&1<<0)!=0, gt.muonPt[i]);
         }
         for(int i=0; i<gt.nLooseElectron; i++) {
           if(
-            typeLepSel<1 &&
-            (sample!=kData || (gt.trigger & 1<<3)!=0) && 
+            typeLepSel==99 &&
+            (sample!=kData || (gt.trigger & 1<<1)!=0) && 
             (gt.electronSelBit[i]& 1<<6)!=0 && gt.electronPt[i]>30 /*kEleMvaWP80*/
           ) {
             typeLepSel=2;
@@ -861,7 +860,7 @@ bool vhbbPlotSkim(
     
     if(selection>=kWHLightFlavorCR && selection<=kWHSR) { // Begin WH Resolved Selection
 
-      cut["2ndLepVeto" ] = gt.nLooseLep==1;
+      cut["2ndLepVeto" ] = nLooseLep==1;
       cut["ultraLepIso"] = lepton1RelIso<0.06;
       cut["WpT"        ] = gt.topWBosonPt>100;
       cut["pTjj"       ] = hbbDijetPt>100; 
@@ -925,7 +924,7 @@ bool vhbbPlotSkim(
     } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
       // Begin WH Boosted Selection
       float MSDmin=90, MSDmax=150;
-      cut["2ndLepVeto" ] = gt.nLooseLep==1;
+      cut["2ndLepVeto" ] = nLooseLep==1;
       cut["ultraLepIso"] = lepton1RelIso<0.06;
       cut["WpT"        ] = gt.topWBosonPt>250;
       cut["pTfj"       ] = gt.fj1Pt>250; 
@@ -1029,9 +1028,11 @@ bool vhbbPlotSkim(
       } else if(typeLepSel==2) {
         bLoad(b["electronSfReco"],ientry);
         bLoad(b["electronSfTight"],ientry);
+        //bLoad(b["electronSfMvaWP80"],ientry);
         bLoad(b["electronSfUnc"],ientry);
         bLoad(b["sf_eleTrig"],ientry);
         weight *= gt.sf_eleTrig * gt.electronSfReco[0] * gt.electronSfTight[0];
+        //weight *= gt.sf_eleTrig * gt.electronSfReco[0] * gt.electronSfMvaWP80[0];
       }
       float recorrect_vhEWK=1, recorrect_vhEWKUp=1, recorrect_vhEWKDown=1;
       if(sample==kVZ) {
