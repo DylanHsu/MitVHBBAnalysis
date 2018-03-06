@@ -3,14 +3,19 @@ outputFileName=$2
 selection=$3
 sample=$4
 useBoosted=$5
+modSplitIndex=$6
 if [ "$useBoosted" = "" ] 
 then
     useBoosted=false
 fi
+if [ "$modSplitIndex" = "" ] 
+then
+    modSplitIndex=-1
+fi
 
 origDir=`pwd`
 cmsswDir=$CMSSW_BASE/src
-#tempOutput=$origDir/tempOutput.root
+tempOutput=$origDir/tempOutput.root
 #tempInput=$origDir/tempInput.root
 #cp -v $inputFileName $tempInput
 
@@ -22,10 +27,10 @@ eval `scramv1 runtime -sh`
 root -b -l <<EOF
 bool loadedMacro=(0==gSystem->Load("MitVHBBAnalysis/macros/vhbbPlotSkim_C.so"))
 if(!loadedMacro) throw std::runtime_error("Could not load macro shared object MitVHBBAnalysis/macros/vhbbPlotSkim_C.so, go compile it in ACLiC");
-printf("vhbbPlotSkim(\"$inputFileName\",\"$outputFileName\",$selection,$sample,false,0,$useBoosted)\n");
-vhbbPlotSkim("$inputFileName","$outputFileName",$selection,$sample,false,0,$useBoosted);
+printf("vhbbPlotSkim(\"$inputFileName\",\"$tempOutput\",$selection,$sample,false,0,$useBoosted,$modSplitIndex)\n");
+vhbbPlotSkim("$inputFileName","$tempOutput",$selection,$sample,false,0,$useBoosted,$modSplitIndex);
 .q
 EOF
 cd $origDir
-#cp -v $tempOutput $outputFileName
-#rm $tempOutput
+cp -v $tempOutput $outputFileName
+rm $tempOutput

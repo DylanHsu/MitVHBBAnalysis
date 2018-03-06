@@ -17,7 +17,7 @@
 #include <map>
 #include <vector>
 #include <TPaletteAxis.h>
-const unsigned nVarsMax=100;
+const unsigned nVarsMax=200;
 //const unsigned nVarsMax=2;
 const float ln2=0.3010;
 //https://arxiv.org/pdf/1408.3122.pdf

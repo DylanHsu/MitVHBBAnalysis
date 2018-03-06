@@ -33,10 +33,12 @@ bool vhbbPlotSkim(
   vhbbPlot::selectionType selection = kWHLightFlavorCR,
   bool debug=false,
   Long64_t maxEntries=0,
-  bool useBoostedCategory=false
+  bool useBoostedCategory=false,
+  int modSplitIndex=-1 // -1: no splitting. 0-9: split into 10 files
 ) {
   const double theLumi=35900.;
-  
+  bool useModSplit = (modSplitIndex>=0 && modSplitIndex<10);
+
   // Load Shared Objects for ACLIC
   bool loadPandaAnalysisFlat=(0==gSystem->Load("libPandaAnalysisFlat.so"));
   if(!loadPandaAnalysisFlat) { throw std::runtime_error("Error loading shared object libPandaAnalysisFlat.so"); return false; }
@@ -96,6 +98,7 @@ bool vhbbPlotSkim(
   unsigned char typeLepSel, theCategory;
   unsigned selectionBits, selectionBits_jesUp, selectionBits_jesDown, nMinusOneBits;
   float lepton1Pt, lepton1Eta, lepton1Phi, lepton1RelIso, lepton1D0, lepton1DZ;
+  int lepton1Flav, lepton1Charge;
   float lepton2Pt, lepton2Eta, lepton2Phi;
   float hbbJet1Pt, hbbJet1Eta, hbbJet1Phi;
   float hbbJet2Pt, hbbJet2Eta, hbbJet2Phi;
@@ -138,14 +141,22 @@ bool vhbbPlotSkim(
   float weight_cmvaJESUp     [5][3] , weight_cmvaJESDown     [5][3]; 
   float weight_VHCorrUp, weight_VHCorrDown; 
 
-  float weight_btag0BUp, weight_btag0BDown;
-  float weight_btag0MUp, weight_btag0MDown;
-  float *sf_btag0      = (float*)dummyTree->GetBranch("sf_btag0"     )->GetAddress();
-  float *sf_btag0BUp   = (float*)dummyTree->GetBranch("sf_btag0BUp"  )->GetAddress();
-  float *sf_btag0BDown = (float*)dummyTree->GetBranch("sf_btag0BDown")->GetAddress();
-  float *sf_btag0MUp   = (float*)dummyTree->GetBranch("sf_btag0MUp"  )->GetAddress();
-  float *sf_btag0MDown = (float*)dummyTree->GetBranch("sf_btag0MDown")->GetAddress();
+  float weight_btagBUp, weight_btagBDown;
+  float weight_btagMUp, weight_btagMDown;
+  float *sf_sjbtag0      = (float*)dummyTree->GetBranch("sf_sjbtag0"     )->GetAddress();
+  float *sf_sjbtag0BUp   = (float*)dummyTree->GetBranch("sf_sjbtag0BUp"  )->GetAddress();
+  float *sf_sjbtag0BDown = (float*)dummyTree->GetBranch("sf_sjbtag0BDown")->GetAddress();
+  float *sf_sjbtag0MUp   = (float*)dummyTree->GetBranch("sf_sjbtag0MUp"  )->GetAddress();
+  float *sf_sjbtag0MDown = (float*)dummyTree->GetBranch("sf_sjbtag0MDown")->GetAddress();
+  float *sf_sjbtag2      = (float*)dummyTree->GetBranch("sf_sjbtag2"     )->GetAddress();
+  float *sf_sjbtag2BUp   = (float*)dummyTree->GetBranch("sf_sjbtag2BUp"  )->GetAddress();
+  float *sf_sjbtag2BDown = (float*)dummyTree->GetBranch("sf_sjbtag2BDown")->GetAddress();
+  float *sf_sjbtag2MUp   = (float*)dummyTree->GetBranch("sf_sjbtag2MUp"  )->GetAddress();
+  float *sf_sjbtag2MDown = (float*)dummyTree->GetBranch("sf_sjbtag2MDown")->GetAddress();
   
+  plotTree->Branch("runNumber"       , &gt.runNumber    );
+  plotTree->Branch("lumiNumber"      , &gt.lumiNumber   );
+  plotTree->Branch("eventNumber"     , &gt.eventNumber  );
   plotTree->Branch("selectionBits"   , &selectionBits   );
   plotTree->Branch("selectionBits_jesUp"   , &selectionBits_jesUp   );
   plotTree->Branch("selectionBits_jesDown" , &selectionBits_jesDown );
@@ -157,7 +168,59 @@ bool vhbbPlotSkim(
   plotTree->Branch("pfmetsig"        , &gt.pfmetsig     );
   plotTree->Branch("puppimetsig"     , &gt.puppimetsig  );
   plotTree->Branch("pfmetphi"        , &gt.pfmetphi     );
+  plotTree->Branch("topWBosonPt"             , &gt.topWBosonPt           );
+  plotTree->Branch("topWBosonPt_jesUp"       , &topWBosonPt_jesUp        );
+  plotTree->Branch("topWBosonPt_jesDown"     , &topWBosonPt_jesDown      );
+  plotTree->Branch("topWBosonPhi"            , &gt.topWBosonPhi          );
+  plotTree->Branch("mT"                      , &gt.mT                    );
+  plotTree->Branch("mT_jesUp"                , &mT_jesUp                 );
+  plotTree->Branch("mT_jesDown"              , &mT_jesDown               );
+  plotTree->Branch("typeLepSel"              , &typeLepSel               );
+  plotTree->Branch("lepton1Pt"               , &lepton1Pt                );
+  plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
+  plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
+  plotTree->Branch("lepton1RelIso"           , &lepton1RelIso            );
+  plotTree->Branch("lepton1D0"               , &lepton1D0                );
+  plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
+  plotTree->Branch("lepton1Flav"             , &lepton1Flav              );
+  plotTree->Branch("lepton1Charge"           , &lepton1Charge            );
+  plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
+  plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
+  plotTree->Branch("nFatjet"                 , &gt.nFatjet               );
   plotTree->Branch("weight"          , &weight          );
+  plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
+  plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
+  plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
+  plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
+  plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
+  plotTree->Branch("weight_QCDr1f5"          , &weight_QCDr1f5           );
+  plotTree->Branch("weight_QCDr2f1"          , &weight_QCDr2f1           );
+  plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
+  plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
+  plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
+  plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
+  plotTree->Branch("weight_btagBUp"          , &weight_btagBUp           );
+  plotTree->Branch("weight_btagBDown"        , &weight_btagBDown         );
+  plotTree->Branch("weight_btagMUp"          , &weight_btagMUp           );
+  plotTree->Branch("weight_btagMDown"        , &weight_btagMDown         );
+  plotTree->Branch("weight_cmvaLFUp"         , weight_cmvaLFUp         , "weight_cmvaLFUp[5][3]/F"        );
+  plotTree->Branch("weight_cmvaHFUp"         , weight_cmvaHFUp         , "weight_cmvaHFUp[5][3]/F"        );
+  plotTree->Branch("weight_cmvaHFStats1Up"   , weight_cmvaHFStats1Up   , "weight_cmvaHFStats1Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaHFStats2Up"   , weight_cmvaHFStats2Up   , "weight_cmvaHFStats2Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaLFStats1Up"   , weight_cmvaLFStats1Up   , "weight_cmvaLFStats1Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaLFStats2Up"   , weight_cmvaLFStats2Up   , "weight_cmvaLFStats2Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaCErr1Up"      , weight_cmvaCErr1Up      , "weight_cmvaCErr1Up[5][3]/F"     );
+  plotTree->Branch("weight_cmvaCErr2Up"      , weight_cmvaCErr2Up      , "weight_cmvaCErr2Up[5][3]/F"     );
+  plotTree->Branch("weight_cmvaJESUp"        , weight_cmvaJESUp        , "weight_cmvaJESUp[5][3]/F"       );
+  plotTree->Branch("weight_cmvaLFDown"       , weight_cmvaLFDown       , "weight_cmvaLFDown[5][3]/F"      );
+  plotTree->Branch("weight_cmvaHFDown"       , weight_cmvaHFDown       , "weight_cmvaHFDown[5][3]/F"      );
+  plotTree->Branch("weight_cmvaHFStats1Down" , weight_cmvaHFStats1Down , "weight_cmvaHFStats1Down[5][3]/F");
+  plotTree->Branch("weight_cmvaHFStats2Down" , weight_cmvaHFStats2Down , "weight_cmvaHFStats2Down[5][3]/F");
+  plotTree->Branch("weight_cmvaLFStats1Down" , weight_cmvaLFStats1Down , "weight_cmvaLFStats1Down[5][3]/F");
+  plotTree->Branch("weight_cmvaLFStats2Down" , weight_cmvaLFStats2Down , "weight_cmvaLFStats2Down[5][3]/F");
+  plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
+  plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
+  plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
     plotTree->Branch("nJet"                    , &gt.nJet                  );
     plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
@@ -179,80 +242,22 @@ bool vhbbPlotSkim(
     plotTree->Branch("hbbJet1PtDown"           , &hbbJet1PtDown            );
     plotTree->Branch("hbbJet2PtUp"             , &hbbJet2PtUp              );
     plotTree->Branch("hbbJet2PtDown"           , &hbbJet2PtDown            );
-    plotTree->Branch("typeLepSel"              , &typeLepSel               );
-    plotTree->Branch("lepton1Pt"               , &lepton1Pt                );
-    plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
-    plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
-    plotTree->Branch("lepton1RelIso"           , &lepton1RelIso            );
-    plotTree->Branch("lepton1D0"               , &lepton1D0                );
-    plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
     plotTree->Branch("topMassLep1Met"          , &gt.topMassLep1Met        );
     plotTree->Branch("topMassLep1Met_jesUp"    , &gt.topMassLep1Met_jesUp  );
     plotTree->Branch("topMassLep1Met_jesDown"  , &gt.topMassLep1Met_jesDown);
-    plotTree->Branch("topWBosonPt"             , &gt.topWBosonPt           );
-    plotTree->Branch("topWBosonPt_jesUp"       , &topWBosonPt_jesUp        );
-    plotTree->Branch("topWBosonPt_jesDown"     , &topWBosonPt_jesDown      );
     plotTree->Branch("topWBosonEta"            , &gt.topWBosonEta          );
-    plotTree->Branch("topWBosonPhi"            , &gt.topWBosonPhi          );
-    plotTree->Branch("mT"                      , &gt.mT                    );
-    plotTree->Branch("mT_jesUp"                , &mT_jesUp                 );
-    plotTree->Branch("mT_jesDown"              , &mT_jesDown               );
+    plotTree->Branch("topWBosonCosThetaCS"     , &gt.topWBosonCosThetaCS   );
     plotTree->Branch("sumEtSoft1"              , &gt.sumEtSoft1            );
     plotTree->Branch("nSoft2"                  , &gt.nSoft2                );
     plotTree->Branch("nSoft5"                  , &gt.nSoft5                );
     plotTree->Branch("nSoft10"                 , &gt.nSoft10               );
-    plotTree->Branch("topWBosonCosThetaCS"     , &gt.topWBosonCosThetaCS   );
     plotTree->Branch("hbbCosThetaJJ"           , &gt.hbbCosThetaJJ         );
     plotTree->Branch("hbbCosThetaCSJ1"         , &gt.hbbCosThetaCSJ1       );
-    plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
-    plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
-    plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
-    plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
-    plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
-    plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
-    plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
-    plotTree->Branch("weight_QCDr1f5"          , &weight_QCDr1f5           );
-    plotTree->Branch("weight_QCDr2f1"          , &weight_QCDr2f1           );
-    plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
-    plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
-    plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
-    plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
-    plotTree->Branch("weight_cmvaLFUp"         , weight_cmvaLFUp         , "weight_cmvaLFUp[5][3]/F"        );
-    plotTree->Branch("weight_cmvaHFUp"         , weight_cmvaHFUp         , "weight_cmvaHFUp[5][3]/F"        );
-    plotTree->Branch("weight_cmvaHFStats1Up"   , weight_cmvaHFStats1Up   , "weight_cmvaHFStats1Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaHFStats2Up"   , weight_cmvaHFStats2Up   , "weight_cmvaHFStats2Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaLFStats1Up"   , weight_cmvaLFStats1Up   , "weight_cmvaLFStats1Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaLFStats2Up"   , weight_cmvaLFStats2Up   , "weight_cmvaLFStats2Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaCErr1Up"      , weight_cmvaCErr1Up      , "weight_cmvaCErr1Up[5][3]/F"     );
-    plotTree->Branch("weight_cmvaCErr2Up"      , weight_cmvaCErr2Up      , "weight_cmvaCErr2Up[5][3]/F"     );
-    plotTree->Branch("weight_cmvaJESUp"        , weight_cmvaJESUp        , "weight_cmvaJESUp[5][3]/F"       );
-    plotTree->Branch("weight_cmvaLFDown"       , weight_cmvaLFDown       , "weight_cmvaLFDown[5][3]/F"      );
-    plotTree->Branch("weight_cmvaHFDown"       , weight_cmvaHFDown       , "weight_cmvaHFDown[5][3]/F"      );
-    plotTree->Branch("weight_cmvaHFStats1Down" , weight_cmvaHFStats1Down , "weight_cmvaHFStats1Down[5][3]/F");
-    plotTree->Branch("weight_cmvaHFStats2Down" , weight_cmvaHFStats2Down , "weight_cmvaHFStats2Down[5][3]/F");
-    plotTree->Branch("weight_cmvaLFStats1Down" , weight_cmvaLFStats1Down , "weight_cmvaLFStats1Down[5][3]/F");
-    plotTree->Branch("weight_cmvaLFStats2Down" , weight_cmvaLFStats2Down , "weight_cmvaLFStats2Down[5][3]/F");
-    plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
-    plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
-    plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
-  } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
-    plotTree->Branch("topWBosonPt"           , &gt.topWBosonPt           );
-    plotTree->Branch("topWBosonPt_jesUp"     , &topWBosonPt_jesUp        );
-    plotTree->Branch("topWBosonPt_jesDown"   , &topWBosonPt_jesDown      );
-    plotTree->Branch("topWBosonPhi"          , &gt.topWBosonPhi          );
-    plotTree->Branch("deltaPhiLep1Met"       , &deltaPhiLep1Met          );
-    plotTree->Branch("deltaPhiVH"            , &deltaPhiVH               );
-    plotTree->Branch("typeLepSel"            , &typeLepSel               );
-    plotTree->Branch("lepton1Pt"             , &lepton1Pt                );
-    plotTree->Branch("lepton1Eta"            , &lepton1Eta               );
-    plotTree->Branch("lepton1Phi"            , &lepton1Phi               );
-    plotTree->Branch("lepton1RelIso"         , &lepton1RelIso            );
-    plotTree->Branch("lepton1D0"               , &lepton1D0                );
-    plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
+  }
+  // Save fatjet variables if we are in a boosted category, or if we aren't using a boosted category
+  if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJSR)) {
     plotTree->Branch("nIsojet"               , &nIsojet                  );
-    plotTree->Branch("mT"                    , &gt.mT                    );
-    plotTree->Branch("mT_jesUp"              , &mT_jesUp                 );
-    plotTree->Branch("mT_jesDown"            , &mT_jesDown               );
+    plotTree->Branch("isojetNBtags"          , &isojetNBtags             );
     plotTree->Branch("fj1Tau32"              , &gt.fj1Tau32              );
     plotTree->Branch("fj1Tau21"              , &gt.fj1Tau21              );
     plotTree->Branch("fj1Tau32SD"            , &gt.fj1Tau32SD            ); 
@@ -326,35 +331,6 @@ bool vhbbPlotSkim(
     plotTree->Branch("fj1ECFN_1_4_40", (float*)dummyTree->GetBranch("fj1ECFN_1_4_40")->GetAddress());
     plotTree->Branch("fj1ECFN_2_4_40", (float*)dummyTree->GetBranch("fj1ECFN_2_4_40")->GetAddress());
     plotTree->Branch("fj1ECFN_3_4_40", (float*)dummyTree->GetBranch("fj1ECFN_3_4_40")->GetAddress());
-    plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
-    plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
-    plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
-    plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
-    plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
-    plotTree->Branch("weight_QCDr1f5"          , &weight_QCDr1f5           );
-    plotTree->Branch("weight_QCDr2f1"          , &weight_QCDr2f1           );
-    plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
-    plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
-    plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
-    plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
-    plotTree->Branch("weight_cmvaLFUp"         , weight_cmvaLFUp         , "weight_cmvaLFUp[5][3]/F"        );
-    plotTree->Branch("weight_cmvaHFUp"         , weight_cmvaHFUp         , "weight_cmvaHFUp[5][3]/F"        );
-    plotTree->Branch("weight_cmvaHFStats1Up"   , weight_cmvaHFStats1Up   , "weight_cmvaHFStats1Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaHFStats2Up"   , weight_cmvaHFStats2Up   , "weight_cmvaHFStats2Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaLFStats1Up"   , weight_cmvaLFStats1Up   , "weight_cmvaLFStats1Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaLFStats2Up"   , weight_cmvaLFStats2Up   , "weight_cmvaLFStats2Up[5][3]/F"  );
-    plotTree->Branch("weight_cmvaCErr1Up"      , weight_cmvaCErr1Up      , "weight_cmvaCErr1Up[5][3]/F"     );
-    plotTree->Branch("weight_cmvaCErr2Up"      , weight_cmvaCErr2Up      , "weight_cmvaCErr2Up[5][3]/F"     );
-    plotTree->Branch("weight_cmvaJESUp"        , weight_cmvaJESUp        , "weight_cmvaJESUp[5][3]/F"       );
-    plotTree->Branch("weight_cmvaLFDown"       , weight_cmvaLFDown       , "weight_cmvaLFDown[5][3]/F"      );
-    plotTree->Branch("weight_cmvaHFDown"       , weight_cmvaHFDown       , "weight_cmvaHFDown[5][3]/F"      );
-    plotTree->Branch("weight_cmvaHFStats1Down" , weight_cmvaHFStats1Down , "weight_cmvaHFStats1Down[5][3]/F");
-    plotTree->Branch("weight_cmvaHFStats2Down" , weight_cmvaHFStats2Down , "weight_cmvaHFStats2Down[5][3]/F");
-    plotTree->Branch("weight_cmvaLFStats1Down" , weight_cmvaLFStats1Down , "weight_cmvaLFStats1Down[5][3]/F");
-    plotTree->Branch("weight_cmvaLFStats2Down" , weight_cmvaLFStats2Down , "weight_cmvaLFStats2Down[5][3]/F");
-    plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
-    plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
-    plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
   }
   
   // Parse the file name to determine the kfactor
@@ -394,6 +370,7 @@ bool vhbbPlotSkim(
   for (Long64_t ientry=0; ientry<nentries; ientry++) {
     if(debug) printf("######## Reading entry %lld/%lld ########################################################\n",ientry,nentries);
     else if(ientry%100000==0) printf("######## Reading entry %lld/%lld ########################################################\n",ientry,nentries);
+    if(useModSplit && ientry%10!=modSplitIndex) continue;
 
     int nBytesRead=0;
     theCategory=-1; // plot category 
@@ -411,49 +388,54 @@ bool vhbbPlotSkim(
     TVector2 vectorBosonV2;
     TLorentzVector hbbJet1P4, hbbJet2P4, hbbDijetP4;
     
+    bLoad(b["runNumber"],ientry);
+    bLoad(b["lumiNumber"],ientry);
+    bLoad(b["eventNumber"],ientry);
     // Analysis Preselection
     if(selection>=kWHLightFlavorCR && selection<=kWHSR) { // WH Resolved Category
       {
         
         // Lepton multiplicity
-        nBytesRead+=bLoad(b["nLooseLep"],ientry);
+        bLoad(b["nLooseLep"],ientry);
         if(gt.nLooseLep<1) continue; //N_al = 0
         if(debug) printf("Passed lepton multiplicity\n");
         
         // Trigger
         if(sample==kData) {
-          nBytesRead+=bLoad(b["trigger"],ientry);
+          bLoad(b["trigger"],ientry);
           if( (gt.trigger & (1<<3 | 1<<1))==0 ) continue;
         }
 
-        nBytesRead+=bLoad(b["metFilter"],ientry);
+        bLoad(b["metFilter"],ientry);
         if(gt.metFilter!=1) continue;
         if(debug) printf("Passed MET filters\n");
      
         // Jet multiplicity
-        nBytesRead+=bLoad(b["nJet"],ientry);
+        bLoad(b["nJet"],ientry);
         if     (gt.nJet<2) continue;
         if(useBoostedCategory) { 
-          nBytesRead+=bLoad(b["nFatjet"],ientry);
-          nBytesRead+=bLoad(b["fj1Pt"],ientry);
-          nBytesRead+=bLoad(b["fj1Eta"],ientry);
-          if(gt.nFatjet!=0 && gt.fj1Pt>=220 && fabs(gt.fj1Eta)<2.4) continue;
+          bLoad(b["nFatjet"],ientry);
+          bLoad(b["fj1Pt"],ientry);
+          bLoad(b["fj1Eta"],ientry);
+          if(gt.nFatjet!=0 && gt.fj1Pt>=250 && fabs(gt.fj1Eta)<2.4) continue;
         }
         // Jet kinematics
-        nBytesRead+=bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
-        nBytesRead+=bLoad(b["jetPt"],ientry);
-        nBytesRead+=bLoad(b["jetRegFac"],ientry);
-        nBytesRead+=bLoad(b["jetEta"],ientry);
-        nBytesRead+=bLoad(b["jetPhi"],ientry);
+        bLoad(b["nJot"],ientry);
+        bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
+        if(gt.hbbjtidx[0]>gt.nJot || gt.hbbjtidx[1]>gt.nJot) continue; // Bug fix
+        bLoad(b["jetPt"],ientry);
+        bLoad(b["jetRegFac"],ientry);
+        bLoad(b["jetEta"],ientry);
+        bLoad(b["jetPhi"],ientry);
         hbbJet1Pt=gt.jetRegFac[0]*gt.jetPt[gt.hbbjtidx[0]]; hbbJet1Eta=gt.jetEta[gt.hbbjtidx[0]]; hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[0]];
         hbbJet2Pt=gt.jetRegFac[1]*gt.jetPt[gt.hbbjtidx[1]]; hbbJet2Eta=gt.jetEta[gt.hbbjtidx[1]]; hbbJet2Phi=gt.jetPhi[gt.hbbjtidx[1]];
         if(debug) printf("hbb jet1 pt %.2f, jet2 pt %.2f\n", hbbJet1Pt, hbbJet2Pt);
         if(hbbJet1Pt<25 || hbbJet2Pt<25) continue;
         
-        nBytesRead+=bLoad(b["hbbpt_reg"],ientry);
-        nBytesRead+=bLoad(b["hbbeta"],ientry);
-        nBytesRead+=bLoad(b["hbbphi"],ientry);
-        nBytesRead+=bLoad(b["hbbm_reg"],ientry);
+        bLoad(b["hbbpt_reg"],ientry);
+        bLoad(b["hbbeta"],ientry);
+        bLoad(b["hbbphi"],ientry);
+        bLoad(b["hbbm_reg"],ientry);
         hbbDijetPt = gt.hbbpt_reg;
         hbbDijetMass = gt.hbbm_reg;
         if(debug) printf("hbbDijetPt %.2f, hbbDijetMass %.2f\n", hbbDijetPt, hbbDijetMass); 
@@ -462,70 +444,102 @@ bool vhbbPlotSkim(
         if(debug) printf("passed jet kinematics\n");
 
         // Lepton ID and isolation
-        nBytesRead+=bLoad(b["nTightMuon"],ientry);
-        if(gt.nTightMuon==1 && (gt.trigger & 1<<3)!=0) typeLepSel=1; else {
-          nBytesRead+=bLoad(b["nTightElectron"],ientry);
-          if(gt.nTightElectron==1 && (gt.trigger & 1<<1)!=0) typeLepSel=2;
-        } if(typeLepSel!=1 && typeLepSel!=2) continue;
+        bLoad(b["nLooseElectron"],ientry);
+        bLoad(b["nTightElectron"],ientry);
+        bLoad(b["nLooseMuon"],ientry);
+        bLoad(b["nTightMuon"],ientry);
+        bLoad(b["muonSelBit"],ientry);
+        bLoad(b["muonPt"],ientry);
+        bLoad(b["electronSelBit"],ientry);
+        bLoad(b["electronPt"],ientry);
+        int nLooseLep=0;
+        int iTightLep;
+        for(int i=0; i<gt.nLooseMuon; i++) {
+          if(
+            typeLepSel<1 && 
+            (sample!=kData || (gt.trigger & 1<<3)!=0) &&
+            (gt.muonSelBit[i]& 1<<3)!=0 && gt.muonPt[i]>25
+          ) {
+            typeLepSel=1;
+            iTightLep=i;
+          }
+          if((gt.muonSelBit[i]&1<<0)!=0 && gt.muonPt[i]>5) nLooseLep++;
+        }
+        for(int i=0; i<gt.nLooseElectron; i++) {
+          if(
+            typeLepSel<1 &&
+            (sample!=kData || (gt.trigger & 1<<3)!=0) && 
+            (gt.electronSelBit[i]& 1<<6)!=0 && gt.electronPt[i]>30 /*kEleMvaWP80*/
+          ) {
+            typeLepSel=2;
+            iTightLep=i;
+          }
+          if((gt.electronSelBit[i]&1<<5)!=0 && gt.electronPt[i]>15) nLooseLep++;
+        }
+        if(typeLepSel!=1 && typeLepSel!=2) continue;
         if(debug) printf("Passed lepton ID/iso multiplicity\n");
 
         // Lepton kinematics
         if     (typeLepSel==1) {
-          nBytesRead+=bLoad(b["muonPt"],ientry);
-          nBytesRead+=bLoad(b["muonEta"],ientry);
-          nBytesRead+=bLoad(b["muonPhi"],ientry);
-          nBytesRead+=bLoad(b["muonD0"],ientry);
-          nBytesRead+=bLoad(b["muonDZ"],ientry);
-          nBytesRead+=bLoad(b["muonCombIso"],ientry);
+          bLoad(b["muonEta"],ientry);
+          bLoad(b["muonPhi"],ientry);
+          bLoad(b["muonD0"],ientry);
+          bLoad(b["muonDZ"],ientry);
+          bLoad(b["muonCombIso"],ientry);
+          bLoad(b["muonPdgId"],ientry);
           lepton1Pt     = gt.muonPt[0];
           lepton1Eta    = gt.muonEta[0];
           lepton1Phi    = gt.muonPhi[0]; 
           lepton1D0     = gt.muonD0[0];
           lepton1DZ     = gt.muonDZ[0];
           lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
+          lepton1Flav   = 13;
+          lepton1Charge = gt.muonPdgId[0]>0? -1:1; 
         } else if(typeLepSel==2) {
-          nBytesRead+=bLoad(b["electronPt"],ientry);
-          nBytesRead+=bLoad(b["electronEta"],ientry);
-          nBytesRead+=bLoad(b["electronPhi"],ientry);
-          nBytesRead+=bLoad(b["electronD0"],ientry);
-          nBytesRead+=bLoad(b["electronDZ"],ientry);
-          nBytesRead+=bLoad(b["electronCombIso"],ientry);
+          bLoad(b["electronEta"],ientry);
+          bLoad(b["electronPhi"],ientry);
+          bLoad(b["electronD0"],ientry);
+          bLoad(b["electronDZ"],ientry);
+          bLoad(b["electronCombIso"],ientry);
+          bLoad(b["electronPdgId"],ientry);
           lepton1Pt     = gt.electronPt[0]; 
           lepton1Eta    = gt.electronEta[0];
           lepton1Phi    = gt.electronPhi[0];
           lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
           lepton1D0     = gt.electronD0[0];
           lepton1DZ     = gt.electronDZ[0];
+          lepton1Flav   = 11;
+          lepton1Charge = gt.electronPdgId[0]>0? -1:1;
         } else continue;
         if(debug) printf("Passed lepton kinematics\n");
         
         // W reconstruction
-        nBytesRead+=bLoad(b["topWBosonPt"],ientry);
+        bLoad(b["topWBosonPt"],ientry);
         if(gt.topWBosonPt<50.) continue;
         if(debug) printf("passed W reco\n");
       } // end preselection
       
       // Met
-      nBytesRead+=bLoad(b["pfmet"],ientry);
-      nBytesRead+=bLoad(b["pfmetUp"],ientry);
-      nBytesRead+=bLoad(b["pfmetDown"],ientry);
-      nBytesRead+=bLoad(b["pfmetphi"],ientry);
-      nBytesRead+=bLoad(b["pfmetsig"],ientry);
-      nBytesRead+=bLoad(b["puppimetsig"],ientry);
+      bLoad(b["pfmet"],ientry);
+      bLoad(b["pfmetUp"],ientry);
+      bLoad(b["pfmetDown"],ientry);
+      bLoad(b["pfmetphi"],ientry);
+      bLoad(b["pfmetsig"],ientry);
+      bLoad(b["puppimetsig"],ientry);
       
       // Jet B-tagging
-      nBytesRead+=bLoad(b["jetCMVA"],ientry);
+      bLoad(b["jetCMVA"],ientry);
       bDiscrMax=gt.jetCMVA[gt.hbbjtidx[0]];
       bDiscrMin=gt.jetCMVA[gt.hbbjtidx[1]];
       
       // Top reconstruction
-      nBytesRead+=bLoad(b["topMassLep1Met"],ientry);
-      nBytesRead+=bLoad(b["topMassLep1Met_jesUp"],ientry);
-      nBytesRead+=bLoad(b["topMassLep1Met_jesDown"],ientry);
-      nBytesRead+=bLoad(b["topWBosonPt"],ientry);
-      nBytesRead+=bLoad(b["topWBosonEta"],ientry);
-      nBytesRead+=bLoad(b["topWBosonPhi"],ientry);
-      nBytesRead+=bLoad(b["mT"],ientry);
+      bLoad(b["topMassLep1Met"],ientry);
+      bLoad(b["topMassLep1Met_jesUp"],ientry);
+      bLoad(b["topMassLep1Met_jesDown"],ientry);
+      bLoad(b["topWBosonPt"],ientry);
+      bLoad(b["topWBosonEta"],ientry);
+      bLoad(b["topWBosonPhi"],ientry);
+      bLoad(b["mT"],ientry);
       
       // mT, W pT up down -- temporary
       { 
@@ -540,40 +554,40 @@ bool vhbbPlotSkim(
         //if(debug) printf("topWBosonPt %.1f, topWBosonPt_jesUp %.1f, topWBosonPt_jesDown %.1f\n", topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown);
       }
       // Other stuff
-      nBytesRead+=bLoad(b["hbbphi"],ientry);
+      bLoad(b["hbbphi"],ientry);
       deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.hbbphi));
       deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi));
       
-      nBytesRead+=bLoad(b["hbbpt_reg_jesUp"],ientry);
-      nBytesRead+=bLoad(b["hbbpt_reg_jesDown"],ientry);
-      nBytesRead+=bLoad(b["hbbm_reg_jesUp"],ientry);
-      nBytesRead+=bLoad(b["hbbm_reg_jesDown"],ientry);
+      bLoad(b["hbbpt_reg_jesUp"],ientry);
+      bLoad(b["hbbpt_reg_jesDown"],ientry);
+      bLoad(b["hbbm_reg_jesUp"],ientry);
+      bLoad(b["hbbm_reg_jesDown"],ientry);
       hbbDijetPtUp = gt.hbbpt_reg_jesUp;
       hbbDijetPtDown = gt.hbbpt_reg_jesDown;
       hbbDijetMassUp = gt.hbbm_reg_jesUp;
       hbbDijetMassDown = gt.hbbm_reg_jesDown;
-      nBytesRead+=bLoad(b["jetPtUp"],ientry);
-      nBytesRead+=bLoad(b["jetPtDown"],ientry);
+      bLoad(b["jetPtUp"],ientry);
+      bLoad(b["jetPtDown"],ientry);
       hbbJet1PtUp = gt.jetRegFac[0]*gt.jetPtUp[gt.hbbjtidx[0]];
       hbbJet1PtDown = gt.jetRegFac[0]*gt.jetPtDown[gt.hbbjtidx[0]];
       hbbJet2PtUp = gt.jetRegFac[1]*gt.jetPtUp[gt.hbbjtidx[1]];
       hbbJet2PtDown = gt.jetRegFac[1]*gt.jetPtDown[gt.hbbjtidx[1]];
-      nBytesRead+=bLoad(b["topWBosonCosThetaCS"],ientry);
-      nBytesRead+=bLoad(b["hbbCosThetaJJ"],ientry);
-      nBytesRead+=bLoad(b["hbbCosThetaCSJ1"],ientry);
+      bLoad(b["topWBosonCosThetaCS"],ientry);
+      bLoad(b["hbbCosThetaJJ"],ientry);
+      bLoad(b["hbbCosThetaCSJ1"],ientry);
 
       // Jet multiplicity for JES
-      nBytesRead+=bLoad(b["nJet_jesUp"],ientry);
-      nBytesRead+=bLoad(b["nJet_jesDown"],ientry);
-      nBytesRead+=bLoad(b["sumEtSoft1"],ientry);
-      nBytesRead+=bLoad(b["nSoft2"],ientry);
-      nBytesRead+=bLoad(b["nSoft5"],ientry);
-      nBytesRead+=bLoad(b["nSoft10"],ientry);
+      bLoad(b["nJet_jesUp"],ientry);
+      bLoad(b["nJet_jesDown"],ientry);
+      bLoad(b["sumEtSoft1"],ientry);
+      bLoad(b["nSoft2"],ientry);
+      bLoad(b["nSoft5"],ientry);
+      bLoad(b["nSoft10"],ientry);
       
-      nBytesRead+=bLoad(b["jetGenFlavor"],ientry);
+      bLoad(b["jetGenFlavor"],ientry);
 
       // CMVA jet kinematic decorrelated weight nuisances
-      for(unsigned iJ=0; iJ<(unsigned)gt.nJet; iJ++) {
+      for(unsigned iJ=0; iJ<(unsigned)gt.nJot; iJ++) {
         unsigned iPt, iEta;
         double jetAbsEta=fabs(gt.jetEta[iJ]);
         if      (gt.jetPt[iJ] >= 19.99 && gt.jetPt[iJ] < 30 ) iPt = 0;
@@ -600,179 +614,119 @@ bool vhbbPlotSkim(
       // WH Boosted Category
       {
         // Lepton multiplicity
-        nBytesRead+=bLoad(b["nLooseLep"],ientry);
+        bLoad(b["nLooseLep"],ientry);
         if(gt.nLooseLep<1) continue; //N_al = 0
         if(debug) printf("Passed lepton multiplicity\n");
         
         // Trigger
         if(sample==kData) {
-          nBytesRead+=bLoad(b["trigger"],ientry);
+          bLoad(b["trigger"],ientry);
           if( (gt.trigger & (1<<3 | 1<<1))==0 ) continue;
         }
 
-        nBytesRead+=bLoad(b["metFilter"],ientry);
+        bLoad(b["metFilter"],ientry);
         if(gt.metFilter!=1) continue;
         if(debug) printf("Passed MET filters\n");
      
         // Jet multiplicity
-        nBytesRead+=bLoad(b["nJet"],ientry);
-        nBytesRead+=bLoad(b["nFatjet"],ientry);
+        bLoad(b["nJet"],ientry);
+        bLoad(b["nFatjet"],ientry);
         if     (gt.nFatjet==0) continue;
         // Jet kinematics
-        nBytesRead+=bLoad(b["fj1Eta"],ientry);
+        bLoad(b["fj1Eta"],ientry);
         if(fabs(gt.fj1Eta)>2.4) continue;
-        nBytesRead+=bLoad(b["fj1ECFN_2_4_20"],ientry);
+        bLoad(b["fj1ECFN_2_4_20"],ientry);
         if(*((float*)b["fj1ECFN_2_4_20"]->GetAddress()) <= 0) continue;
-        nBytesRead+=bLoad(b["fj1MSD"],ientry);
-        if(gt.fj1MSD < 50) continue; // Low fatjet mass veto
         if(debug) printf("passed jet kinematics\n");
 
         // Lepton ID and isolation
-        nBytesRead+=bLoad(b["nTightMuon"],ientry);
-        if(gt.nTightMuon==1 && (gt.trigger & 1<<3)!=0) typeLepSel=1; else {
-          nBytesRead+=bLoad(b["nTightElectron"],ientry);
-          if(gt.nTightElectron==1 && (gt.trigger & 1<<1)!=0) typeLepSel=2;
-        } if(typeLepSel!=1 && typeLepSel!=2) continue;
+        bLoad(b["nLooseElectron"],ientry);
+        bLoad(b["nTightElectron"],ientry);
+        bLoad(b["nLooseMuon"],ientry);
+        bLoad(b["nTightMuon"],ientry);
+        bLoad(b["muonSelBit"],ientry);
+        bLoad(b["muonPt"],ientry);
+        bLoad(b["electronSelBit"],ientry);
+        bLoad(b["electronPt"],ientry);
+        int nLooseLep=0;
+        int iTightLep;
+        for(int i=0; i<gt.nLooseMuon; i++) {
+          if(
+            typeLepSel<1 && 
+            (sample!=kData || (gt.trigger & 1<<3)!=0) &&
+            (gt.muonSelBit[i]& 1<<3)!=0 && gt.muonPt[i]>25
+          ) {
+            typeLepSel=1;
+            iTightLep=i;
+          }
+          if((gt.muonSelBit[i]&1<<0)!=0 && gt.muonPt[i]>5) nLooseLep++;
+        }
+        for(int i=0; i<gt.nLooseElectron; i++) {
+          if(
+            typeLepSel<1 &&
+            (sample!=kData || (gt.trigger & 1<<3)!=0) && 
+            (gt.electronSelBit[i]& 1<<6)!=0 && gt.electronPt[i]>30 /*kEleMvaWP80*/
+          ) {
+            typeLepSel=2;
+            iTightLep=i;
+          }
+          if((gt.electronSelBit[i]&1<<5)!=0 && gt.electronPt[i]>15) nLooseLep++;
+        }
+        if(typeLepSel!=1 && typeLepSel!=2) continue;
         if(debug) printf("Passed lepton ID/iso multiplicity\n");
 
         // Lepton kinematics
         if     (typeLepSel==1) {
-          nBytesRead+=bLoad(b["muonPt"],ientry);
-          nBytesRead+=bLoad(b["muonEta"],ientry);
-          nBytesRead+=bLoad(b["muonPhi"],ientry);
-          nBytesRead+=bLoad(b["muonCombIso"],ientry);
-          lepton1Pt = gt.muonPt[0]; lepton1Eta = gt.muonEta[0]; lepton1Phi = gt.muonPhi[0]; lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
+          bLoad(b["muonEta"],ientry);
+          bLoad(b["muonPhi"],ientry);
+          bLoad(b["muonD0"],ientry);
+          bLoad(b["muonDZ"],ientry);
+          bLoad(b["muonCombIso"],ientry);
+          bLoad(b["muonPdgId"],ientry);
+          lepton1Pt     = gt.muonPt[iTightLep];
+          lepton1Eta    = gt.muonEta[iTightLep];
+          lepton1Phi    = gt.muonPhi[iTightLep]; 
+          lepton1D0     = gt.muonD0[iTightLep];
+          lepton1DZ     = gt.muonDZ[iTightLep];
+          lepton1RelIso = gt.muonCombIso[iTightLep]/gt.muonPt[iTightLep];
+          lepton1Flav   = 13;
+          lepton1Charge = gt.muonPdgId[iTightLep]>0? -1:1; 
         } else if(typeLepSel==2) {
-          nBytesRead+=bLoad(b["electronPt"],ientry);
-          nBytesRead+=bLoad(b["electronEta"],ientry);
-          nBytesRead+=bLoad(b["electronPhi"],ientry);
-          nBytesRead+=bLoad(b["electronCombIso"],ientry);
-          lepton1Pt = gt.electronPt[0]; lepton1Eta = gt.electronEta[0]; lepton1Phi = gt.electronPhi[0]; lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
+          bLoad(b["electronEta"],ientry);
+          bLoad(b["electronPhi"],ientry);
+          bLoad(b["electronD0"],ientry);
+          bLoad(b["electronDZ"],ientry);
+          bLoad(b["electronCombIso"],ientry);
+          bLoad(b["electronPdgId"],ientry);
+          lepton1Pt     = gt.electronPt[iTightLep]; 
+          lepton1Eta    = gt.electronEta[iTightLep];
+          lepton1Phi    = gt.electronPhi[iTightLep];
+          lepton1RelIso = gt.electronCombIso[iTightLep]/gt.electronPt[iTightLep];
+          lepton1D0     = gt.electronD0[iTightLep];
+          lepton1DZ     = gt.electronDZ[iTightLep];
+          lepton1Flav   = 11;
+          lepton1Charge = gt.electronPdgId[iTightLep]>0? -1:1;
         } else continue;
         if(debug) printf("Passed lepton kinematics\n");
         
         // W reconstruction
-        nBytesRead+=bLoad(b["topWBosonPt"],ientry);
+        bLoad(b["topWBosonPt"],ientry);
         if(gt.topWBosonPt<50.) continue;
         if(debug) printf("passed W reco\n");
       } // end preselection
       
       // Met
-      nBytesRead+=bLoad(b["pfmet"],ientry);
-      nBytesRead+=bLoad(b["pfmetUp"],ientry);
-      nBytesRead+=bLoad(b["pfmetDown"],ientry);
-      nBytesRead+=bLoad(b["pfmetphi"],ientry);
-      nBytesRead+=bLoad(b["pfmetsig"],ientry);
-      nBytesRead+=bLoad(b["puppimetsig"],ientry);
+      bLoad(b["pfmet"],ientry);
+      bLoad(b["pfmetUp"],ientry);
+      bLoad(b["pfmetDown"],ientry);
+      bLoad(b["pfmetphi"],ientry);
+      bLoad(b["pfmetsig"],ientry);
+      bLoad(b["puppimetsig"],ientry);
       
-      // Fatjet Properties
-      nBytesRead+=bLoad(b["fj1Tau32"],ientry);
-      nBytesRead+=bLoad(b["fj1Tau21"],ientry);
-      nBytesRead+=bLoad(b["fj1Tau32SD"],ientry); 
-      nBytesRead+=bLoad(b["fj1Tau21SD"],ientry); 
-      nBytesRead+=bLoad(b["fj1MSDScaleUp"],ientry);    
-      nBytesRead+=bLoad(b["fj1MSDScaleDown"],ientry);      
-      nBytesRead+=bLoad(b["fj1MSDSmeared"],ientry);    
-      nBytesRead+=bLoad(b["fj1MSDSmearedUp"],ientry);      
-      nBytesRead+=bLoad(b["fj1MSDSmearedDown"],ientry);        
-      nBytesRead+=bLoad(b["fj1PtScaleUp"],ientry);   
-      nBytesRead+=bLoad(b["fj1PtScaleDown"],ientry);     
-      nBytesRead+=bLoad(b["fj1PtSmeared"],ientry);   
-      nBytesRead+=bLoad(b["fj1PtSmearedUp"],ientry);     
-      nBytesRead+=bLoad(b["fj1PtSmearedDown"],ientry);       
-      nBytesRead+=bLoad(b["fj1Pt"],ientry);
-      nBytesRead+=bLoad(b["fj1Phi"],ientry);
-      nBytesRead+=bLoad(b["fj1M"],ientry);
-      nBytesRead+=bLoad(b["fj1MaxCSV"],ientry);
-      nBytesRead+=bLoad(b["fj1MinCSV"],ientry);
-      nBytesRead+=bLoad(b["fj1DoubleCSV"],ientry);   
-      nBytesRead+=bLoad(b["fj1HTTMass"],ientry); 
-      nBytesRead+=bLoad(b["fj1HTTFRec"],ientry); 
-      nBytesRead+=bLoad(b["fj1SDEFrac100"],ientry);    
-       
-      // Ak4 jet properties
-      nBytesRead+=bLoad(b["jetPt"],ientry);
-      nBytesRead+=bLoad(b["jetEta"],ientry);
-      nBytesRead+=bLoad(b["jetPhi"],ientry);
-      nBytesRead+=bLoad(b["jetPtUp"],ientry);
-      nBytesRead+=bLoad(b["jetPtDown"],ientry);
-      nBytesRead+=bLoad(b["jetCMVA"],ientry);
-      //nBytesRead+=bLoad(b["jetIso"],ientry); // broken
-      //nBytesRead+=bLoad(b["isojetNBtags"],ientry); //broken
-
-      isojets.clear();
-      isojets_jesUp.clear();
-      isojets_jesDown.clear();
-      isojetNBtags=0;
-      for(unsigned char iJ=0; iJ<gt.nJet; iJ++) {
-        // Cannot use jetIso for counting central jets right now
-        //if(!gt.jetIso[iJ]) continue; 
-        if(fabs(gt.jetEta[iJ])>2.4) continue;
-        float dR2JetFatjet=pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2);
-        if(dR2JetFatjet<2.25) continue;
-        if(gt.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
-        if(gt.jetPt[iJ]>30) isojets.push_back(iJ);
-        if(gt.jetPtUp[iJ]>30) isojets_jesUp.push_back(iJ);
-        if(gt.jetPtDown[iJ]>30) isojets_jesDown.push_back(iJ);
-      }
-      nIsojet=isojets.size();
-      nIsojet_jesUp=isojets_jesUp.size();
-      nIsojet_jesDown=isojets_jesDown.size();
- 
-      // Energy Correlation Functions
-      nBytesRead+=bLoad(b["fj1ECFN_1_1_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_1_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_1_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_2_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_2_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_2_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_3_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_3_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_3_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_4_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_4_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_4_05"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_1_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_1_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_1_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_2_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_2_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_2_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_3_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_3_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_3_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_4_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_4_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_4_10"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_1_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_1_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_1_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_2_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_2_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_2_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_3_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_3_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_3_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_4_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_4_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_4_20"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_1_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_1_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_1_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_2_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_2_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_2_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_3_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_3_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_3_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_1_4_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_2_4_40"],ientry);
-      nBytesRead+=bLoad(b["fj1ECFN_3_4_40"],ientry);
-
       // W reconstruction
-      nBytesRead+=bLoad(b["topWBosonPt"],ientry);
-      nBytesRead+=bLoad(b["topWBosonPhi"],ientry);
-      nBytesRead+=bLoad(b["mT"],ientry);
+      bLoad(b["topWBosonPt"],ientry);
+      bLoad(b["topWBosonPhi"],ientry);
+      bLoad(b["mT"],ientry);
       
       // mT, W pT up down
       { 
@@ -788,11 +742,119 @@ bool vhbbPlotSkim(
       }
       
       // Other stuff
+      bLoad(b["fj1Phi"],ientry);
       deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.fj1Phi));
       deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi));
       // End WH Boosted Category
     }
+    if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJSR)) {
+      bLoad(b["nFatjet"],ientry);
+      bLoad(b["fj1Eta"],ientry);
+      bLoad(b["fj1MSD"],ientry);
+      // Fatjet Properties
+      bLoad(b["fj1Tau32"],ientry);
+      bLoad(b["fj1Tau21"],ientry);
+      bLoad(b["fj1Tau32SD"],ientry); 
+      bLoad(b["fj1Tau21SD"],ientry); 
+      bLoad(b["fj1MSDScaleUp"],ientry);    
+      bLoad(b["fj1MSDScaleDown"],ientry);      
+      bLoad(b["fj1MSDSmeared"],ientry);    
+      bLoad(b["fj1MSDSmearedUp"],ientry);      
+      bLoad(b["fj1MSDSmearedDown"],ientry);        
+      bLoad(b["fj1PtScaleUp"],ientry);   
+      bLoad(b["fj1PtScaleDown"],ientry);     
+      bLoad(b["fj1PtSmeared"],ientry);   
+      bLoad(b["fj1PtSmearedUp"],ientry);     
+      bLoad(b["fj1PtSmearedDown"],ientry);       
+      bLoad(b["fj1Pt"],ientry);
+      bLoad(b["fj1Phi"],ientry);
+      bLoad(b["fj1M"],ientry);
+      bLoad(b["fj1MaxCSV"],ientry);
+      bLoad(b["fj1MinCSV"],ientry);
+      bLoad(b["fj1DoubleCSV"],ientry);   
+      bLoad(b["fj1HTTMass"],ientry); 
+      bLoad(b["fj1HTTFRec"],ientry); 
+      bLoad(b["fj1SDEFrac100"],ientry);    
+       
+      // Ak4 jet properties
+      bLoad(b["jetPt"],ientry);
+      bLoad(b["jetEta"],ientry);
+      bLoad(b["jetPhi"],ientry);
+      bLoad(b["jetPtUp"],ientry);
+      bLoad(b["jetPtDown"],ientry);
+      bLoad(b["jetCMVA"],ientry);
+      bLoad(b["jetIso"],ientry); 
+      bLoad(b["isojetNBtags"],ientry);
+
+      isojets.clear();
+      isojets_jesUp.clear();
+      isojets_jesDown.clear();
+      isojetNBtags=0;
+      for(unsigned char iJ=0; iJ<gt.nJet; iJ++) {
+        if(!gt.jetIso[iJ]) continue; 
+        //if(fabs(gt.jetEta[iJ])>2.4) continue;
+        //float dR2JetFatjet=pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2);
+        //if(dR2JetFatjet<2.25) continue;
+        //if(gt.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
+        if(gt.jetPt[iJ]>30) isojets.push_back(iJ);
+        if(gt.jetPtUp[iJ]>30) isojets_jesUp.push_back(iJ);
+        if(gt.jetPtDown[iJ]>30) isojets_jesDown.push_back(iJ);
+      }
+      isojetNBtags=gt.isojetNBtags;
+      nIsojet=isojets.size();
+      nIsojet_jesUp=isojets_jesUp.size();
+      nIsojet_jesDown=isojets_jesDown.size();
  
+      // Energy Correlation Functions
+      bLoad(b["fj1ECFN_1_1_05"],ientry);
+      bLoad(b["fj1ECFN_2_1_05"],ientry);
+      bLoad(b["fj1ECFN_3_1_05"],ientry);
+      bLoad(b["fj1ECFN_1_2_05"],ientry);
+      bLoad(b["fj1ECFN_2_2_05"],ientry);
+      bLoad(b["fj1ECFN_3_2_05"],ientry);
+      bLoad(b["fj1ECFN_1_3_05"],ientry);
+      bLoad(b["fj1ECFN_2_3_05"],ientry);
+      bLoad(b["fj1ECFN_3_3_05"],ientry);
+      bLoad(b["fj1ECFN_1_4_05"],ientry);
+      bLoad(b["fj1ECFN_2_4_05"],ientry);
+      bLoad(b["fj1ECFN_3_4_05"],ientry);
+      bLoad(b["fj1ECFN_1_1_10"],ientry);
+      bLoad(b["fj1ECFN_2_1_10"],ientry);
+      bLoad(b["fj1ECFN_3_1_10"],ientry);
+      bLoad(b["fj1ECFN_1_2_10"],ientry);
+      bLoad(b["fj1ECFN_2_2_10"],ientry);
+      bLoad(b["fj1ECFN_3_2_10"],ientry);
+      bLoad(b["fj1ECFN_1_3_10"],ientry);
+      bLoad(b["fj1ECFN_2_3_10"],ientry);
+      bLoad(b["fj1ECFN_3_3_10"],ientry);
+      bLoad(b["fj1ECFN_1_4_10"],ientry);
+      bLoad(b["fj1ECFN_2_4_10"],ientry);
+      bLoad(b["fj1ECFN_3_4_10"],ientry);
+      bLoad(b["fj1ECFN_1_1_20"],ientry);
+      bLoad(b["fj1ECFN_2_1_20"],ientry);
+      bLoad(b["fj1ECFN_3_1_20"],ientry);
+      bLoad(b["fj1ECFN_1_2_20"],ientry);
+      bLoad(b["fj1ECFN_2_2_20"],ientry);
+      bLoad(b["fj1ECFN_3_2_20"],ientry);
+      bLoad(b["fj1ECFN_1_3_20"],ientry);
+      bLoad(b["fj1ECFN_2_3_20"],ientry);
+      bLoad(b["fj1ECFN_3_3_20"],ientry);
+      bLoad(b["fj1ECFN_1_4_20"],ientry);
+      bLoad(b["fj1ECFN_2_4_20"],ientry);
+      bLoad(b["fj1ECFN_3_4_20"],ientry);
+      bLoad(b["fj1ECFN_1_1_40"],ientry);
+      bLoad(b["fj1ECFN_2_1_40"],ientry);
+      bLoad(b["fj1ECFN_3_1_40"],ientry);
+      bLoad(b["fj1ECFN_1_2_40"],ientry);
+      bLoad(b["fj1ECFN_2_2_40"],ientry);
+      bLoad(b["fj1ECFN_3_2_40"],ientry);
+      bLoad(b["fj1ECFN_1_3_40"],ientry);
+      bLoad(b["fj1ECFN_2_3_40"],ientry);
+      bLoad(b["fj1ECFN_3_3_40"],ientry);
+      bLoad(b["fj1ECFN_1_4_40"],ientry);
+      bLoad(b["fj1ECFN_2_4_40"],ientry);
+      bLoad(b["fj1ECFN_3_4_40"],ientry);
+    }
     // Set Selection Bits
     selectionBits=0; nMinusOneBits=0; selectionBits_jesUp=0; selectionBits_jesDown=0;
     std::map<TString, bool> cut, cut_jesUp, cut_jesDown;
@@ -803,7 +865,6 @@ bool vhbbPlotSkim(
       cut["ultraLepIso"] = lepton1RelIso<0.06;
       cut["WpT"        ] = gt.topWBosonPt>100;
       cut["pTjj"       ] = hbbDijetPt>100; 
-      cut["lepton1Pt"  ] = ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30));
       cut["lepton1IP"  ] = (typeLepSel==1 && lepton1D0<0.20 && lepton1DZ<0.50) || (typeLepSel==2 && ((fabs(lepton1Eta)<1.479 && lepton1D0<0.05 && lepton1DZ<0.10) || (fabs(lepton1Eta)>=1.479 && lepton1D0<0.10 && lepton1DZ<0.20)));
       cut["dPhiVH"     ] = deltaPhiVH > 2.5;
       cut["dPhiLep1Met"] = deltaPhiLep1Met < 2;
@@ -811,7 +872,7 @@ bool vhbbPlotSkim(
       cut["mediumBVeto"] = (bDiscrMax < bDiscrMedium);
       cut["looseBTag"  ] = (bDiscrMax >= bDiscrLoose);
       cut["looseBTag2" ] = (bDiscrMin >= bDiscrLoose);
-      cut["metSig"     ] = gt.puppimetsig>3;//gt.pfmetsig>2;
+      cut["metSig"     ] = gt.pfmetsig>2;
       cut["nJet_WHTT"  ] = gt.nJet>=4;
       cut["nJet_WHHF"  ] = gt.nJet==2;
       cut["nJet_WHSR"  ] = gt.nJet<4;
@@ -819,10 +880,10 @@ bool vhbbPlotSkim(
       cut["mH_Flip"    ] = ((hbbDijetMass <  90) || (hbbDijetMass >= 150));
 
       vector<TString> cutsWHLightFlavorCR, cutsWHHeavyFlavorCR, cutsWH2TopCR, cutsWHSR;
-      cutsWHLightFlavorCR ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
-      cutsWHHeavyFlavorCR ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","nJet_WHHF","tightBTag","mH_Flip","metSig"};
-      cutsWH2TopCR        ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","nJet_WHTT","tightBTag"};
-      cutsWHSR            ={"lepton1Pt", "lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj","dPhiVH","dPhiLep1Met","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
+      cutsWHLightFlavorCR ={"lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
+      cutsWHHeavyFlavorCR ={"lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","nJet_WHHF","tightBTag","mH_Flip","metSig"};
+      cutsWH2TopCR        ={"lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj",         "dPhiLep1Met","nJet_WHTT","tightBTag"};
+      cutsWHSR            ={"lepton1IP", "ultraLepIso", "2ndLepVeto","WpT","pTjj","dPhiVH","dPhiLep1Met","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
 
       if(passAllCuts( cut, cutsWHLightFlavorCR))   selectionBits |= kWHLightFlavorCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorCR))   selectionBits |= kWHHeavyFlavorCR;
@@ -866,41 +927,48 @@ bool vhbbPlotSkim(
       float MSDmin=90, MSDmax=150;
       cut["2ndLepVeto" ] = gt.nLooseLep==1;
       cut["ultraLepIso"] = lepton1RelIso<0.06;
-      cut["WpT"        ] = gt.topWBosonPt>100;
-      cut["pTfj"       ] = gt.fj1Pt>220; 
+      cut["WpT"        ] = gt.topWBosonPt>250;
+      cut["pTfj"       ] = gt.fj1Pt>250; 
       cut["lepton1Pt"  ] = ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30));
       cut["lepton1IP"  ] = (typeLepSel==1 && lepton1D0<0.20 && lepton1DZ<0.50) || (typeLepSel==2 && ((fabs(lepton1Eta)<1.479 && lepton1D0<0.05 && lepton1DZ<0.10) || (fabs(lepton1Eta)>=1.479 && lepton1D0<0.10 && lepton1DZ<0.20)));
-      cut["dPhiVH"     ] = deltaPhiVH > 2.5;
-      cut["dPhiLep1Met"] = deltaPhiLep1Met < 2;
-      cut["nJet_WHFJTT"] = nIsojet>=2;
-      cut["nJet_WHFJHF"] = nIsojet==0;
-      cut["nJet_WHFJSR"] = nIsojet<2;
-      cut["mH_WHFJSR"  ] = ((gt.fj1MSD>=MSDmin && gt.fj1MSD<MSDmax));
-      //cut["mH_WHFJTT"  ] = (gt.fj1MSD>=150);
-      cut["mH_FJFlip"  ] = ((gt.fj1MSD<MSDmin || gt.fj1MSD>=MSDmax));
-      cut["DoubleB"    ] = gt.fj1DoubleCSV >= 0.8;
-      cut["DoubleBVeto"] = gt.fj1DoubleCSV < 0.8;
-      cut["isojet0Btag"] = isojetNBtags==0;
-      cut["metSig"     ] = gt.puppimetsig>3;//gt.pfmetsig>2;
-      
-      vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWH2TopFJCR, cutsWHFJSR;
-      cutsWHLightFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met",              "isojet0Btag","DoubleBVeto",               "metSig","ecfSanity"};
-      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJHF",              "DoubleB"    ,"mH_FJFlip"   ,"metSig","ecfSanity"};
-      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJTT",              "DoubleB"    ,                        "ecfSanity"};
-      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","dPhiLep1Met","nJet_WHFJSR","isojet0Btag","DoubleB"    ,"mH_WHFJSR"   ,         "ecfSanity"};
+      cut["dPhiVH"     ] = deltaPhiVH > 2.9;
+      cut["sjBTag"     ] = gt.fj1MinCSV>=0.8484;
+      cut["sjBVeto"    ] = gt.fj1MaxCSV<0.8484;
+      cut["twoProngs"  ] =  (gt.fj1Tau21<0.6 && gt.fj1Tau32>=0.5);
+      cut["threeProngs"] = !(                   gt.fj1Tau32>=0.5);
 
-      if(passAllCuts( cut, cutsWHLightFlavorFJCR))   selectionBits |= kWHLightFlavorFJCR;
-      if(passAllCuts( cut, cutsWHHeavyFlavorFJCR))   selectionBits |= kWHHeavyFlavorFJCR;
-      if(passAllCuts( cut, cutsWH2TopFJCR       ))   selectionBits |= kWH2TopFJCR;
-      if(passAllCuts( cut, cutsWHFJSR           ))   selectionBits |= kWHFJSR;
+      //cut["dPhiLep1Met"] = deltaPhiLep1Met < 2;
+      cut["nJet"       ] = nIsojet<=1;
+      cut["mH_WHFJSR"  ] = ((gt.fj1MSD>=MSDmin));
+      cut["mH_WHHFCR"  ] = gt.fj1MSD<MSDmin;
+      cut["minMSD"     ] = ((gt.fj1MSD>=50));
+      //cut["mH_WHFJTT"  ] = (gt.fj1MSD>=150);
+      //cut["DoubleB"    ] = gt.fj1DoubleCSV >= 0.8;
+      //cut["DoubleBVeto"] = gt.fj1DoubleCSV < 0.8;
+      cut["isojet0Btag"] = isojetNBtags==0;
+      cut["metSig"     ] = gt.pfmetsig>2;
+      
+      vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWH2TopFJCR, cutsWHFJSR, cutsWHFJPresel;
+      cutsWHLightFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBVeto","ecfSanity"};
+      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"ecfSanity"};
+      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"ecfSanity"};
+      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"ecfSanity"};
+      cutsWHFJPresel        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt",                   "ecfSanity"};
+
+      if(passAllCuts( cut, cutsWHLightFlavorFJCR, debug))   selectionBits |= kWHLightFlavorFJCR;
+      if(passAllCuts( cut, cutsWHHeavyFlavorFJCR, debug))   selectionBits |= kWHHeavyFlavorFJCR;
+      if(passAllCuts( cut, cutsWH2TopFJCR       , debug))   selectionBits |= kWH2TopFJCR;
+      if(passAllCuts( cut, cutsWHFJSR           , debug))   selectionBits |= kWHFJSR;
+      if(passAllCuts( cut, cutsWHFJPresel       , debug))   selectionBits |= kWHFJPresel;
       if(passNMinusOne( cut, cutsWHLightFlavorFJCR)) nMinusOneBits |= kWHLightFlavorFJCR;
       if(passNMinusOne( cut, cutsWHHeavyFlavorFJCR)) nMinusOneBits |= kWHHeavyFlavorFJCR;
       if(passNMinusOne( cut, cutsWH2TopFJCR       )) nMinusOneBits |= kWH2TopFJCR;
       if(passNMinusOne( cut, cutsWHFJSR           )) nMinusOneBits |= kWHFJSR;
+      if(passNMinusOne( cut, cutsWHFJPresel       )) nMinusOneBits |= kWHFJPresel;
 
       cut_jesUp=cut;
       cut_jesUp["WpT"        ] = topWBosonPt_jesUp>100;
-      cut_jesUp["pTfj"       ] = gt.fj1PtScaleUp>220; 
+      cut_jesUp["pTfj"       ] = gt.fj1PtScaleUp>250; 
       cut_jesUp["nJet_WHFJTT"] = nIsojet_jesUp>=2;
       cut_jesUp["nJet_WHFJHF"] = nIsojet_jesUp==0;
       cut_jesUp["nJet_WHFJSR"] = nIsojet_jesUp<2;
@@ -913,7 +981,7 @@ bool vhbbPlotSkim(
       
       cut_jesDown=cut;
       cut_jesDown["WpT"        ] = topWBosonPt_jesDown>100;
-      cut_jesDown["pTfj"       ] = gt.fj1PtScaleDown>220; 
+      cut_jesDown["pTfj"       ] = gt.fj1PtScaleDown>250; 
       cut_jesDown["nJet_WHFJTT"] = nIsojet_jesDown>=2;
       cut_jesDown["nJet_WHFJHF"] = nIsojet_jesDown==0;
       cut_jesDown["nJet_WHFJSR"] = nIsojet_jesDown<2;
@@ -930,66 +998,76 @@ bool vhbbPlotSkim(
     // Weighting
     if(sample==kData) weight=1;
     else {
-      nBytesRead+=bLoad(b["normalizedWeight"],ientry);
-      nBytesRead+=bLoad(b["sf_npv"],ientry);
+      bLoad(b["normalizedWeight"],ientry);
+      bLoad(b["sf_npv"],ientry);
       if(sample==kWjets || sample==kZjets) {
         if(useHtBinnedVJetsKFactor) {
-          nBytesRead+=bLoad(b["trueGenBosonPt"],ientry);
+          bLoad(b["trueGenBosonPt"],ientry);
           gt.sf_qcdV=theQCDKFactor;
           gt.sf_ewkV=theEWKCorrPars[0]+theEWKCorrPars[1]*(TMath::Power((gt.trueGenBosonPt+theEWKCorrPars[2]),theEWKCorrPars[3]));
         } else {
-          nBytesRead+=bLoad(b["sf_qcdV"],ientry);
-          nBytesRead+=bLoad(b["sf_ewkV"],ientry);
+          bLoad(b["sf_qcdV"],ientry);
+          bLoad(b["sf_ewkV"],ientry);
         }
       } else { 
         gt.sf_qcdV=1;
         gt.sf_ewkV=1;
       }
-      //nBytesRead+=bLoad(sf_btag1,ientry);
-      if(sample==kTT) nBytesRead+=bLoad(b["sf_tt"],ientry); else gt.sf_tt=1;
+      //bLoad(sf_btag1,ientry);
+      if(sample==kTT) bLoad(b["sf_tt"],ientry); else gt.sf_tt=1;
       weight = normalizedWeight * theLumi * gt.sf_npv * gt.sf_ewkV * gt.sf_qcdV * gt.sf_tt;
       if (typeLepSel==1) {
-        nBytesRead+=bLoad(b["muonSfReco"],ientry);
-        nBytesRead+=bLoad(b["muonSfTight"],ientry);
-        nBytesRead+=bLoad(b["muonSfUnc"],ientry);
-        nBytesRead+=bLoad(b["sf_muTrig"],ientry);
+        bLoad(b["muonSfReco"],ientry);
+        bLoad(b["muonSfTight"],ientry);
+        bLoad(b["muonSfUnc"],ientry);
+        bLoad(b["sf_muTrig"],ientry);
         weight *= gt.sf_muTrig * gt.muonSfReco[0] * gt.muonSfTight[0];
         //weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
         // need muon trigger efficiency
         //double theTrigEff = muTrigEff->GetBinContent( muTrigEff->FindBin( fabs(lepton1Eta), TMath::Max((float)26., TMath::Min((float)500., lepton1Pt)) ) );
         //weight *= theTrigEff;
       } else if(typeLepSel==2) {
-        nBytesRead+=bLoad(b["electronSfReco"],ientry);
-        nBytesRead+=bLoad(b["electronSfTight"],ientry);
-        nBytesRead+=bLoad(b["electronSfUnc"],ientry);
-        nBytesRead+=bLoad(b["sf_eleTrig"],ientry);
+        bLoad(b["electronSfReco"],ientry);
+        bLoad(b["electronSfTight"],ientry);
+        bLoad(b["electronSfUnc"],ientry);
+        bLoad(b["sf_eleTrig"],ientry);
         weight *= gt.sf_eleTrig * gt.electronSfReco[0] * gt.electronSfTight[0];
       }
-      float sf_vh=1, sf_vhUp=1, sf_vhDown=1;
+      float recorrect_vhEWK=1, recorrect_vhEWKUp=1, recorrect_vhEWKDown=1;
       if(sample==kVZ) {
-        nBytesRead+=bLoad(b["sf_wz"],ientry);
-        nBytesRead+=bLoad(b["sf_zz"],ientry);
-        nBytesRead+=bLoad(b["sf_zzUnc"],ientry);
+        bLoad(b["sf_wz"],ientry);
+        bLoad(b["sf_zz"],ientry);
+        bLoad(b["sf_zzUnc"],ientry);
         weight *= gt.sf_wz * gt.sf_zz;
       } else if(sample==kVH) {
-        nBytesRead+=bLoad(b["sf_vh"],ientry);
-        nBytesRead+=bLoad(b["sf_vhUp"],ientry);
-        nBytesRead+=bLoad(b["sf_vhDown"],ientry);
-        weight *= gt.sf_vh;
+        bLoad(b["sf_vh"],ientry);
+        bLoad(b["sf_vhUp"],ientry);
+        bLoad(b["sf_vhDown"],ientry);
+        TString vhChannel=lepton1Charge>0?"WplusH":"WminusH";
+        recorrect_vhEWK     = vhEWKCorr(vhChannel,gt.sf_vh    );
+        recorrect_vhEWKUp   = vhEWKCorr(vhChannel,gt.sf_vhUp  );
+        recorrect_vhEWKDown = vhEWKCorr(vhChannel,gt.sf_vhDown);
+        weight *= recorrect_vhEWK;
       }
-      //float weight_noCsvCent=weight;
-      nBytesRead+=bLoad(b["sf_cmvaWeight_Cent"],ientry);
-      weight *= gt.sf_csvWeights[GeneralTree::csvCent];
-      //for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-      //  double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-      //  double centralWeight = cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
-      //  weight *= centralWeight;
-      //}
+      
+      if(selection>=kWHLightFlavorCR && selection<=kWHPresel) {
+        bLoad(b["sf_cmvaWeight_Cent"],ientry);
+        weight *= gt.sf_csvWeights[GeneralTree::csvCent];
+      }
+      if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
+        bLoad(b["sf_sjbtag0"],ientry); bLoad(b["sf_sjbtag2"],ientry);
+        if(selection==kWHLightFlavorFJCR) weight *= (*sf_sjbtag0);
+        else                              weight *= (*sf_sjbtag2);
+      }
+      
+      // #############################
+      // # Variations of the Weights #
+      // #############################
       
       // PDF and QCD scale
-      nBytesRead+=bLoad(b["pdfUp"],ientry);
-      nBytesRead+=bLoad(b["pdfDown"],ientry);
-      nBytesRead+=bLoad(b["scale"],ientry);
+      bLoad(b["pdfUp"],ientry);
+      bLoad(b["pdfDown"],ientry);
+      bLoad(b["scale"],ientry);
       weight_pdfUp = weight * gt.pdfUp;
       weight_pdfDown = weight * gt.pdfDown;
       weight_QCDr1f2 = weight * gt.scale[0];
@@ -998,17 +1076,15 @@ bool vhbbPlotSkim(
       weight_QCDr2f2 = weight * gt.scale[3];
       weight_QCDr5f1 = weight * gt.scale[4];
       weight_QCDr5f5 = weight * gt.scale[5];
-      weight_VHCorrUp   = (sample==kVH)? weight * gt.sf_vhUp   / gt.sf_vh : weight;
-      weight_VHCorrDown = (sample==kVH)? weight * gt.sf_vhDown / gt.sf_vh : weight;
-
-      // #############################
-      // # Variations of the Weights #
-      // #############################
+      weight_VHCorrUp   = (sample==kVH)? weight * recorrect_vhEWKUp   / recorrect_vhEWK : weight;
+      weight_VHCorrDown = (sample==kVH)? weight * recorrect_vhEWKDown / recorrect_vhEWK : weight;
       
       if(selection>=kWHLightFlavorCR && selection<=kWHFJSR) { // WH weights
         // Lepton ID & ISO SF uncertainty
         if(typeLepSel==1) weight_lepSFUp = weight * (1.+gt.muonSfUnc[0]);
         else weight_lepSFUp = weight * (1.+gt.electronSfUnc[0]);
+      }
+      if(selection>=kWHLightFlavorCR && selection<=kWHPresel) {
         // CMVA weight uncertainty
         // https://cmssdt.cern.ch/lxr/source/PhysicsTools/Heppy/python/physicsutils/BTagWeightCalculator.py?v=CMSSW_8_0_20
         // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Data_MC_Scale_Factors
@@ -1035,16 +1111,30 @@ bool vhbbPlotSkim(
           weight_cmvaCErr2Down   [iPt][iEta] = weight*cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCErr2down   , cmvaWgtHF, cmvaWgtLF, cmvaWgtCF)/centralWeight; 
         }
       }
-      /*if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
+      if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
         // WH boosted weights
-        nBytesRead+=bLoad(b["sf_btag0"],ientry);
-        nBytesRead+=bLoad(b["sf_btag0BUp"],ientry);
-        nBytesRead+=bLoad(b["sf_btag0BDown"],ientry);
-        nBytesRead+=bLoad(b["sf_btag0MUp"],ientry);
-        nBytesRead+=bLoad(b["sf_btag0MDown"],ientry);
-        weight_btag0BUp = weight * (*sf_btag0BUp);
-        weight *= (*sf_btag0);
-      }*/
+        if(selection==kWHLightFlavorFJCR) {
+          bLoad(b["sf_sjbtag0"],ientry);
+          bLoad(b["sf_sjbtag0BUp"],ientry);
+          bLoad(b["sf_sjbtag0BDown"],ientry);
+          bLoad(b["sf_sjbtag0MUp"],ientry);
+          bLoad(b["sf_sjbtag0MDown"],ientry);
+          weight_btagBUp   = weight * (*sf_sjbtag0BUp  ) / (*sf_sjbtag0);
+          weight_btagBDown = weight * (*sf_sjbtag0BDown) / (*sf_sjbtag0);
+          weight_btagMUp   = weight * (*sf_sjbtag0MUp  ) / (*sf_sjbtag0);
+          weight_btagMDown = weight * (*sf_sjbtag0MDown) / (*sf_sjbtag0);
+        } else {
+          bLoad(b["sf_sjbtag2"],ientry);
+          bLoad(b["sf_sjbtag2BUp"],ientry);
+          bLoad(b["sf_sjbtag2BDown"],ientry);
+          bLoad(b["sf_sjbtag2MUp"],ientry);
+          bLoad(b["sf_sjbtag2MDown"],ientry);
+          weight_btagBUp   = weight * (*sf_sjbtag2BUp  ) / (*sf_sjbtag2);
+          weight_btagBDown = weight * (*sf_sjbtag2BDown) / (*sf_sjbtag2);
+          weight_btagMUp   = weight * (*sf_sjbtag2MUp  ) / (*sf_sjbtag2);
+          weight_btagMDown = weight * (*sf_sjbtag2MDown) / (*sf_sjbtag2);
+        }
+      }
 
     }
     // Category Assignment
@@ -1054,7 +1144,7 @@ bool vhbbPlotSkim(
       case kQCD:
         theCategory=kPlotQCD;  break;
       case kVZ:
-        nBytesRead+=bLoad(b["nB"],ientry);
+        bLoad(b["nB"],ientry);
         if(gt.nB>=2) theCategory=kPlotVZbb;
         else      theCategory=kPlotVVLF;
         break;
@@ -1065,13 +1155,13 @@ bool vhbbPlotSkim(
       case kTop:
         theCategory=kPlotTop; break;
       case kWjets:
-        nBytesRead+=bLoad(b["nB"],ientry);
+        bLoad(b["nB"],ientry);
         if(gt.nB>=2) theCategory=kPlotWbb;
         else if(gt.nB==1) theCategory=kPlotWb;
         else theCategory=kPlotWLF; // light flavor
         break;
       case kZjets:
-        nBytesRead+=bLoad(b["nB"],ientry);
+        bLoad(b["nB"],ientry);
         if(gt.nB>=2) theCategory=kPlotZbb;
         else if(gt.nB==1) theCategory=kPlotZb;
         else theCategory=kPlotZLF; // light flavor

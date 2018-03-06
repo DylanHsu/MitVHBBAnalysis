@@ -10,25 +10,64 @@ namespace vhbbPlot {
   //const float bDiscrLoose = 0.5426, bDiscrMedium = 0.8484, bDiscrTight  = 0.9535; //csv
   const float bDiscrLoose = -0.5884, bDiscrMedium = 0.4432, bDiscrTight  = 0.9432; //cmva
   const float doubleBCut = 0.8; // double b tagger
-
+  
+  TString trainTreeEventSplitStr="(eventNumber % 10)<3";
+  TString testTreeEventSplitStr="(eventNumber % 10)>=3";
+  
+  //std::map<TString, float> xs_DY, xs_gg, xs_tloop, xs_gamma, delta_EW;
+  // NNLO QCD DY W+H cross sections [fb]
+  std::map<TString, float> xs_DY = {
+    {"WplusH" , 97.18  },
+    {"WminusH", 61.51  },
+    {"ZllH"   , 26.66  },
+    {"ZnnH"   , 158.10 }
+  };
+  // Non-DY contributions to the XS which aren't susceptible to the EW corrections [fb]
+  std::map<TString, float> xs_gg = {
+    {"WplusH" , 0    },
+    {"WminusH", 0    },
+    {"ZllH"   , 4.14 },
+    {"ZnnH"   , 24.57}
+  };
+  std::map<TString, float> xs_tloop = {
+    {"WplusH" , 1.20},
+    {"WminusH", 0.78},
+    {"ZllH"   , 0.31},
+    {"ZnnH"   , 1.85}
+  };
+  std::map<TString, float> xs_gamma = {
+    {"WplusH" , 3.09},
+    {"WminusH", 2.00},
+    {"ZllH"   , 0.11},
+    {"ZnnH"   , 0.00}
+  };
+  // Fractional inclusive EW NLO corrections
+  std::map<TString, float> delta_EW = {
+    {"WplusH" , -0.074},
+    {"WminusH", -0.073},
+    {"ZllH"   , -0.053},
+    {"ZnnH"   , -0.044}
+  }; 
   enum selectionType { 
     kWHLightFlavorCR   = 0x1 <<  0,
     kWHHeavyFlavorCR   = 0x1 <<  1,
     kWH2TopCR          = 0x1 <<  2,
     kWHSR              = 0x1 <<  3,
-    kWHLightFlavorFJCR = 0x1 <<  4,
-    kWHHeavyFlavorFJCR = 0x1 <<  5,
-    kWH2TopFJCR        = 0x1 <<  6,
-    kWHFJSR            = 0x1 <<  7, 
-    kZnnHLightFlavorCR = 0x1 <<  8,
-    kZnnHHeavyFlavorCR = 0x1 <<  9,
-    kZnnH2TopCR        = 0x1 << 10,
-    kZnnHMultijetCR    = 0x1 << 11,
-    kZnnHSR            = 0x1 << 12,
-    kZllHLightFlavorCR = 0x1 << 13,
-    kZllHHeavyFlavorCR = 0x1 << 14,
-    kZllH2TopCR        = 0x1 << 15,
-    kZllHSR            = 0x1 << 16 
+    kWHPresel          = 0x1 <<  4,
+    kWHLightFlavorFJCR = 0x1 <<  5,
+    kWHHeavyFlavorFJCR = 0x1 <<  6,
+    kWH2TopFJCR        = 0x1 <<  7,
+    kWHFJSR            = 0x1 <<  8, 
+    kWHFJPresel        = 0x1 <<  9,
+    kZnnHLightFlavorCR = 0x1 << 10,
+    kZnnHHeavyFlavorCR = 0x1 << 11,
+    kZnnH2TopCR        = 0x1 << 12,
+    kZnnHMultijetCR    = 0x1 << 13,
+    kZnnHSR            = 0x1 << 14,
+    kZllHLightFlavorCR = 0x1 << 15,
+    kZllHHeavyFlavorCR = 0x1 << 16,
+    kZllH2TopCR        = 0x1 << 17,
+    kZllHSR            = 0x1 << 18 
   };
   enum sampleType {
     kData       , // 0 
@@ -133,11 +172,13 @@ namespace vhbbPlot {
     if(readEntry != ientry) bytesRead = branch->GetEntry(ientry);
     return bytesRead;
   }
-  bool passAllCuts( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
+  bool passAllCuts( std::map<TString, bool> cutMap, vector<TString> theCuts, bool debug=false ) {
     unsigned nCutsToPass=theCuts.size();
     for(unsigned i=0; i<nCutsToPass; i++)
-      if(cutMap.find(theCuts[i])!=cutMap.end()) if(!cutMap[theCuts[i]])
+      if(cutMap.find(theCuts[i])!=cutMap.end()) if(!cutMap[theCuts[i]]) {
+        if(debug) printf("\tvhbbPlot::passAllCuts: Failed cut \"%s\"\n", theCuts[i].Data());
         return false;
+      }
     return true;
   }
   bool passNMinusOne( std::map<TString, bool> cutMap, vector<TString> theCuts ) {
@@ -174,7 +215,13 @@ namespace vhbbPlot {
       theEWKCorrPars = {-0.1808051, 6.04146, 759.098, -0.242556};
     return theEWKCorrPars;
   }
-
+  
+  float vhEWKCorr( TString x, float diffPtCorr) {
+    if(x!="WplusH" && x!="WminusH" && x!="ZllH" && x!="ZnnH") return 1;
+    return 
+      (xs_DY[x]*diffPtCorr+xs_gg[x]+xs_tloop[x]+xs_gamma[x])/
+      (xs_DY[x]*(1.+delta_EW[x])+xs_gg[x]+xs_tloop[x]+xs_gamma[x]);
+  }
 
 }
 #endif

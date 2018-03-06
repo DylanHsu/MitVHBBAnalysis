@@ -51,7 +51,10 @@ TList *finalPlot2018(
         if(selType==kWHSR || selType==kWHFJSR) {
           if(normSignalToBkg) plotName="WH(125)x?";
           else                plotName="WH(125)x10"; 
-        } else if(selType>=kWHLightFlavorCR && selType<kWHFJSR) plotName="WH(125)x100";
+        } else if(selType>=kWHLightFlavorCR && selType<kWHFJPresel) {
+          if(normSignalToBkg) plotName="WH(125)x?";
+          else                plotName="WH(125)x100";
+        }
         else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)x10";
         else plotName="ZH(125)x100";
       } else plotName=plotNames[i]; 
@@ -66,7 +69,7 @@ TList *finalPlot2018(
       // Scaling
       //if(i!=kPlotData) histos[i]->Scale(theLumi);
       if(i==kPlotQCD) histos[i]->Scale(1.0);
-      if(i==kPlotVH && selType!=kWHSR && selType!=kWHFJSR && selType!=kZnnHSR && selType!=kZllHSR) histos[i]->Scale(100.);
+      if(i==kPlotVH && !normSignalToBkg && selType!=kWHSR && selType!=kWHFJSR && selType!=kZnnHSR && selType!=kZllHSR) histos[i]->Scale(100.);
       if(i==kPlotVH && !normSignalToBkg && (selType==kWHSR || selType==kWHFJSR || selType==kZnnHSR || selType==kZllHSR)) histos[i]->Scale(10.);
 
       // Colors
@@ -127,7 +130,7 @@ TList *finalPlot2018(
       histos[kPlotVH]->Scale(signalInflationFactor);
       TString plotName;
       // needs to be worked on
-      if(selType<=kWHFJSR) plotName = Form("WH(125)x%d", (int)round(signalInflationFactor));
+      if(selType<=kWHFJPresel) plotName = Form("WH(125)x%d", (int)round(signalInflationFactor));
       else                 plotName = Form("ZH(125)x%d", (int)round(signalInflationFactor));
       histos[kPlotVH]->SetName(plotName);
       histos[kPlotVH]->SetTitle(plotName);
