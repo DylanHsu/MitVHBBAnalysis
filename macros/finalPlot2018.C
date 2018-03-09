@@ -23,10 +23,10 @@ TList *finalPlot2018(
   TString plotTitle="",
   TString extraText="",
   bool isBlinded=false,
-  bool normSignalToBkg=false
+  bool normSignalToBkg=false,
+  TString plotDir="MitVHBBAnalysis/plots"
 ) {
   const bool plotQCD=true;
-  TString plotDir="MitVHBBAnalysis/plots";
   system(Form("mkdir -p %s",plotDir.Data()));
   TFile *inputFile = TFile::Open(inputFileName, "READ"); assert(inputFile);
   string rawName; {
@@ -39,8 +39,8 @@ TList *finalPlot2018(
   TList *listOfCanvases=new TList();
   for(unsigned iHisto=0; iHisto<=(unsigned)listOfHistoNames->LastIndex(); iHisto++) {
     TString theHistoName = listOfHistoNames->At(iHisto)->GetName();
-    TString outPdf = Form("MitVHBBAnalysis/plots/%s_%s.pdf", rawName.c_str(), theHistoName.Data()); 
-    TString outPng = Form("MitVHBBAnalysis/plots/%s_%s.png", rawName.c_str(), theHistoName.Data()); 
+    TString outPdf = Form("%s/%s_%s.pdf", plotDir.Data(), rawName.c_str(), theHistoName.Data()); 
+    TString outPng = Form("%s/%s_%s.png", plotDir.Data(), rawName.c_str(), theHistoName.Data()); 
     TString xlabel=""; TString plotName;
     TH1D *histos[nPlotCategories], *hTotalBkg=0;
     for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {

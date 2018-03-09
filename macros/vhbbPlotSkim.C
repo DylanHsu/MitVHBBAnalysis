@@ -588,25 +588,25 @@ bool vhbbPlotSkim(
 
       // CMVA jet kinematic decorrelated weight nuisances
       for(unsigned iJ=0; iJ<(unsigned)gt.nJot; iJ++) {
-        unsigned iPt, iEta;
+        int iPt=-1, iEta=-1;
         double jetAbsEta=fabs(gt.jetEta[iJ]);
         if      (gt.jetPt[iJ] >= 19.99 && gt.jetPt[iJ] < 30 ) iPt = 0;
         else if (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
         else if (gt.jetPt[iJ] >= 40    && gt.jetPt[iJ] < 60 ) iPt = 2;
         else if (gt.jetPt[iJ] >= 60    && gt.jetPt[iJ] < 100) iPt = 3;
         else if (gt.jetPt[iJ] >= 100                        ) iPt = 4;
-        else continue;
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
-        else continue;
-        jetPts    [iPt][iEta].push_back(gt.jetPt        [iJ]);
-        jetEtas   [iPt][iEta].push_back(gt.jetEta       [iJ]);
-        jetCMVAs  [iPt][iEta].push_back(gt.jetCMVA      [iJ]);
-        jetFlavors[iPt][iEta].push_back(gt.jetGenFlavor [iJ]);
         
-        if(gt.jetPtUp  [iJ]>=20.) jetPtsUp  [iPt][iEta].push_back(gt.jetPtUp      [iJ]); // Choose iPt based on the varied jet Pt? not sure
-        if(gt.jetPtDown[iJ]>=20.) jetPtsDown[iPt][iEta].push_back(gt.jetPtDown    [iJ]);
+        if(iPt>=0 && iEta>=0) {
+          jetPts    [iPt][iEta].push_back(gt.jetPt        [iJ]);
+          jetEtas   [iPt][iEta].push_back(gt.jetEta       [iJ]);
+          jetCMVAs  [iPt][iEta].push_back(gt.jetCMVA      [iJ]);
+          jetFlavors[iPt][iEta].push_back(gt.jetGenFlavor [iJ]);
+          if(gt.jetPtUp  [iJ]>=20.) jetPtsUp  [iPt][iEta].push_back(gt.jetPtUp      [iJ]); // Choose iPt based on the varied jet Pt? not sure
+          if(gt.jetPtDown[iJ]>=20.) jetPtsDown[iPt][iEta].push_back(gt.jetPtDown    [iJ]);
+        }
       }
       
       // End WH Resolved Category 
@@ -789,17 +789,40 @@ bool vhbbPlotSkim(
       isojets_jesUp.clear();
       isojets_jesDown.clear();
       isojetNBtags=0;
-      for(unsigned char iJ=0; iJ<gt.nJet; iJ++) {
-        if(!gt.jetIso[iJ]) continue; 
-        //if(fabs(gt.jetEta[iJ])>2.4) continue;
-        //float dR2JetFatjet=pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2);
-        //if(dR2JetFatjet<2.25) continue;
-        //if(gt.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
+      for(unsigned char iJ=0; iJ<gt.nJot; iJ++) {
+        //if(!gt.jetIso[iJ]) continue; 
+        if(fabs(gt.jetEta[iJ])>2.4) continue;
+        float dR2JetFatjet=pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2);
+        if(dR2JetFatjet<0.64) continue;
+
+        if(gt.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
         if(gt.jetPt[iJ]>30) isojets.push_back(iJ);
         if(gt.jetPtUp[iJ]>30) isojets_jesUp.push_back(iJ);
         if(gt.jetPtDown[iJ]>30) isojets_jesDown.push_back(iJ);
+        
+        // CMVA jet kinematic decorrelated weight nuisances for the isojets only
+        int iPt=-1, iEta=-1;
+        double jetAbsEta=fabs(gt.jetEta[iJ]);
+        //if      (gt.jetPt[iJ] >= 19.99 && gt.jetPt[iJ] < 30 ) iPt = 0;
+        //else if (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
+        if      (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
+        else if (gt.jetPt[iJ] >= 40    && gt.jetPt[iJ] < 60 ) iPt = 2;
+        else if (gt.jetPt[iJ] >= 60    && gt.jetPt[iJ] < 100) iPt = 3;
+        else if (gt.jetPt[iJ] >= 100                        ) iPt = 4;
+        if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
+        else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
+        else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
+        
+        if(iPt>=0 && iEta>=0) {
+          jetPts    [iPt][iEta].push_back(gt.jetPt        [iJ]);
+          jetEtas   [iPt][iEta].push_back(gt.jetEta       [iJ]);
+          jetCMVAs  [iPt][iEta].push_back(gt.jetCMVA      [iJ]);
+          jetFlavors[iPt][iEta].push_back(gt.jetGenFlavor [iJ]);
+          if(gt.jetPtUp  [iJ]>=30.) jetPtsUp  [iPt][iEta].push_back(gt.jetPtUp      [iJ]); // Choose iPt based on the varied jet Pt? not sure
+          if(gt.jetPtDown[iJ]>=30.) jetPtsDown[iPt][iEta].push_back(gt.jetPtDown    [iJ]);
+        }
       }
-      isojetNBtags=gt.isojetNBtags;
+      //isojetNBtags=gt.isojetNBtags;
       nIsojet=isojets.size();
       nIsojet_jesUp=isojets_jesUp.size();
       nIsojet_jesDown=isojets_jesDown.size();
@@ -923,7 +946,7 @@ bool vhbbPlotSkim(
 
     } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
       // Begin WH Boosted Selection
-      float MSDmin=90, MSDmax=150;
+      float MSDmin=80, MSDmax=150;
       cut["2ndLepVeto" ] = nLooseLep==1;
       cut["ultraLepIso"] = lepton1RelIso<0.06;
       cut["WpT"        ] = gt.topWBosonPt>250;
@@ -933,26 +956,20 @@ bool vhbbPlotSkim(
       cut["dPhiVH"     ] = deltaPhiVH > 2.9;
       cut["sjBTag"     ] = gt.fj1MinCSV>=0.8484;
       cut["sjBVeto"    ] = gt.fj1MaxCSV<0.8484;
-      cut["twoProngs"  ] =  (gt.fj1Tau21<0.6 && gt.fj1Tau32>=0.5);
-      cut["threeProngs"] = !(                   gt.fj1Tau32>=0.5);
-
-      //cut["dPhiLep1Met"] = deltaPhiLep1Met < 2;
-      cut["nJet"       ] = nIsojet<=1;
+      //cut["twoProngs"  ] =  (gt.fj1Tau21<0.6 && gt.fj1Tau32>=0.5);
+      //cut["threeProngs"] = !(                   gt.fj1Tau32>=0.5);
       cut["mH_WHFJSR"  ] = ((gt.fj1MSD>=MSDmin));
       cut["mH_WHHFCR"  ] = gt.fj1MSD<MSDmin;
-      cut["minMSD"     ] = ((gt.fj1MSD>=50));
-      //cut["mH_WHFJTT"  ] = (gt.fj1MSD>=150);
-      //cut["DoubleB"    ] = gt.fj1DoubleCSV >= 0.8;
-      //cut["DoubleBVeto"] = gt.fj1DoubleCSV < 0.8;
-      cut["isojet0Btag"] = isojetNBtags==0;
+      cut["isojetBtag" ] = isojetNBtags>0;
+      cut["isojetBVeto"] = isojetNBtags==0;
       cut["metSig"     ] = gt.pfmetsig>2;
       
       vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWH2TopFJCR, cutsWHFJSR, cutsWHFJPresel;
-      cutsWHLightFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBVeto","ecfSanity"};
-      cutsWHHeavyFlavorFJCR ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"ecfSanity"};
-      cutsWH2TopFJCR        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"ecfSanity"};
-      cutsWHFJSR            ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"ecfSanity"};
-      cutsWHFJPresel        ={"ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt",                   "ecfSanity"};
+      cutsWHLightFlavorFJCR ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBVeto","isojetBVeto"            };
+      cutsWHHeavyFlavorFJCR ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"isojetBVeto","mH_WHHFCR"};
+      cutsWH2TopFJCR        ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"isojetBtag"             };
+      cutsWHFJSR            ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"isojetBVeto","mH_WHFJSR"};
+      cutsWHFJPresel        ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt"                                             };
 
       if(passAllCuts( cut, cutsWHLightFlavorFJCR, debug))   selectionBits |= kWHLightFlavorFJCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorFJCR, debug))   selectionBits |= kWHHeavyFlavorFJCR;
@@ -971,8 +988,8 @@ bool vhbbPlotSkim(
       cut_jesUp["nJet_WHFJTT"] = nIsojet_jesUp>=2;
       cut_jesUp["nJet_WHFJHF"] = nIsojet_jesUp==0;
       cut_jesUp["nJet_WHFJSR"] = nIsojet_jesUp<2;
-      cut_jesUp["mH_WHFJSR"  ] = ((gt.fj1MSDScaleUp>=MSDmin && gt.fj1MSDScaleUp<MSDmax));
-      cut_jesUp["mH_FJFlip"  ] = ((gt.fj1MSDScaleUp<MSDmin || gt.fj1MSDScaleUp>=MSDmax));
+      cut_jesUp["mH_WHFJSR"  ] = ((gt.fj1MSDScaleUp>=MSDmin));
+      cut_jesUp["mH_WHHFCR"  ] = gt.fj1MSDScaleUp<MSDmin;
       if(passAllCuts( cut_jesUp, cutsWHLightFlavorFJCR)) selectionBits_jesUp |= kWHLightFlavorFJCR;
       if(passAllCuts( cut_jesUp, cutsWHHeavyFlavorFJCR)) selectionBits_jesUp |= kWHHeavyFlavorFJCR;
       if(passAllCuts( cut_jesUp, cutsWH2TopFJCR       )) selectionBits_jesUp |= kWH2TopFJCR;
@@ -984,8 +1001,8 @@ bool vhbbPlotSkim(
       cut_jesDown["nJet_WHFJTT"] = nIsojet_jesDown>=2;
       cut_jesDown["nJet_WHFJHF"] = nIsojet_jesDown==0;
       cut_jesDown["nJet_WHFJSR"] = nIsojet_jesDown<2;
-      cut_jesDown["mH_WHFJSR"  ] = ((gt.fj1MSDScaleDown>=MSDmin && gt.fj1MSDScaleDown<MSDmax));
-      cut_jesDown["mH_FJFlip"  ] = ((gt.fj1MSDScaleDown<MSDmin || gt.fj1MSDScaleDown>=MSDmax));
+      cut_jesDown["mH_WHFJSR"  ] = ((gt.fj1MSDScaleDown>=MSDmin));
+      cut_jesDown["mH_WHHFCR"  ] = gt.fj1MSDScaleDown<MSDmin;
       if(passAllCuts( cut_jesDown, cutsWHLightFlavorFJCR)) selectionBits_jesDown |= kWHLightFlavorFJCR;
       if(passAllCuts( cut_jesDown, cutsWHHeavyFlavorFJCR)) selectionBits_jesDown |= kWHHeavyFlavorFJCR;
       if(passAllCuts( cut_jesDown, cutsWH2TopFJCR       )) selectionBits_jesDown |= kWH2TopFJCR;
@@ -1059,6 +1076,10 @@ bool vhbbPlotSkim(
         bLoad(b["sf_sjbtag0"],ientry); bLoad(b["sf_sjbtag2"],ientry);
         if(selection==kWHLightFlavorFJCR) weight *= (*sf_sjbtag0);
         else                              weight *= (*sf_sjbtag2);
+        for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
+          weight *= cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+        }
       }
       
       // #############################
@@ -1085,7 +1106,7 @@ bool vhbbPlotSkim(
         if(typeLepSel==1) weight_lepSFUp = weight * (1.+gt.muonSfUnc[0]);
         else weight_lepSFUp = weight * (1.+gt.electronSfUnc[0]);
       }
-      if(selection>=kWHLightFlavorCR && selection<=kWHPresel) {
+      if(selection>=kWHLightFlavorCR && selection<=kWHFJPresel) {
         // CMVA weight uncertainty
         // https://cmssdt.cern.ch/lxr/source/PhysicsTools/Heppy/python/physicsutils/BTagWeightCalculator.py?v=CMSSW_8_0_20
         // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Data_MC_Scale_Factors
