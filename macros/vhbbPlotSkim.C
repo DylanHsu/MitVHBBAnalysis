@@ -419,7 +419,17 @@ bool vhbbPlotSkim(
           bLoad(b["nFatjet"],ientry);
           bLoad(b["fj1Pt"],ientry);
           bLoad(b["fj1Eta"],ientry);
-          if(gt.nFatjet!=0 && gt.fj1Pt>=250 && fabs(gt.fj1Eta)<2.4) continue;
+          bLoad(b["topWBosonPt"],ientry);
+          bLoad(b["topWBosonPhi"],ientry);
+          bLoad(b["fj1Phi"],ientry);
+          float temp_deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.fj1Phi));
+          if(
+            gt.nFatjet != 0 && 
+            gt.fj1Pt >= 250 && 
+            fabs(gt.fj1Eta) < 2.4 &&
+            gt.topWBosonPt >= 250 &&
+            temp_deltaPhiVH >= 2.9
+          ) continue;
         }
         // Jet kinematics
         bLoad(b["nJot"],ientry);

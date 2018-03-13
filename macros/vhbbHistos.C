@@ -89,7 +89,7 @@ void vhbbHistos(
       MVAVarName="Single class BDT";
       sprintf(shapeType,"singleClassBDTShape"); 
     } else if(selection<=kWHFJPresel) {
-      MVAbins={-1,-0.5,0, 0.20,0.40,0.60,0.65,0.7,0.75,0.8,1};
+      MVAbins={-1,0,0.4,0.7,1};
       MVAVarName="Single class BDT";
       sprintf(shapeType,"singleClassBDTShape"); 
       //MVAbins={0,20,40,60,80,100,120,140,160,180,200,220,240};
