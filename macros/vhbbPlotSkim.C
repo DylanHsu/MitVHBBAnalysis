@@ -106,8 +106,10 @@ bool vhbbPlotSkim(
   float hbbDijetPt, hbbDijetPtUp, hbbDijetPtDown;
   float hbbDijetMass, hbbDijetMassUp, hbbDijetMassDown;
   float bDiscrMin, bDiscrMax;
-  float deltaPhiLep1Met, deltaPhiVH;
-  float topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown, mT_jesUp, mT_jesDown; // need to be in PandaExpress ntuples
+  float deltaPhiLep1Met, deltaPhiLep1Met_jesUp, deltaPhiLep1Met_jesDown;
+  float deltaPhiVH, deltaPhiVH_jesUp, deltaPhiVH_jesDown;
+  float topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown, topWBosonPhi_jesUp, topWBosonPhi_jesDown;
+  float mT_jesUp, mT_jesDown; // need to be in PandaExpress ntuples
   
   // For boosted categories, the number of 30 GeV AK4 jets not in the fat jet
   int nIsojet=0, nIsojet_jesUp=0, nIsojet_jesDown=0; 
@@ -190,7 +192,11 @@ bool vhbbPlotSkim(
   plotTree->Branch("lepton1Flav"             , &lepton1Flav              );
   plotTree->Branch("lepton1Charge"           , &lepton1Charge            );
   plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
+  plotTree->Branch("deltaPhiLep1Met_jesUp"   , &deltaPhiLep1Met_jesUp    );
+  plotTree->Branch("deltaPhiLep1Met_jesDown" , &deltaPhiLep1Met_jesDown  );
   plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
+  plotTree->Branch("deltaPhiVH_jesUp"        , &deltaPhiVH_jesUp         );
+  plotTree->Branch("deltaPhiVH_jesDown"      , &deltaPhiVH_jesDown       );
   plotTree->Branch("nFatjet"                 , &gt.nFatjet               );
   plotTree->Branch("weight"          , &weight          );
   plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
@@ -228,6 +234,8 @@ bool vhbbPlotSkim(
   plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
     plotTree->Branch("nJet"                    , &gt.nJet                  );
+    plotTree->Branch("nJet_jesUp"              , &gt.nJet_jesUp            );
+    plotTree->Branch("nJet_jesDown"            , &gt.nJet_jesDown          );
     plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
     plotTree->Branch("hbbDijetPtUp"            , &hbbDijetPtUp             );
     plotTree->Branch("hbbDijetPtDown"          , &hbbDijetPtDown           );
@@ -558,20 +566,21 @@ bool vhbbPlotSkim(
       
       // mT, W pT up down -- temporary
       { 
-        TVector2 metV2Up, metV2Down, lepton1V2;
+        TVector2 metV2Up, metV2Down, lepton1V2, WBosonV2Up, WBosonV2Down;
         metV2Up.SetMagPhi(gt.pfmetUp, gt.pfmetphi);
         metV2Down.SetMagPhi(gt.pfmetDown, gt.pfmetphi);
         lepton1V2.SetMagPhi(lepton1Pt, lepton1Phi);
         mT_jesUp   = TMath::Sqrt(2.*gt.pfmetUp*lepton1Pt*(1.-TMath::Cos(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi))));
         mT_jesDown = TMath::Sqrt(2.*gt.pfmetDown*lepton1Pt*(1.-TMath::Cos(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi))));
-        topWBosonPt_jesUp   = (metV2Up+lepton1V2).Mod();
-        topWBosonPt_jesDown = (metV2Down+lepton1V2).Mod();
+        WBosonV2Up=metV2Up+lepton1V2;
+        WBosonV2Down=metV2Down+lepton1V2;
+        topWBosonPt_jesUp   = WBosonV2Up.Mod();
+        topWBosonPt_jesDown = WBosonV2Down.Mod();
+        topWBosonPhi_jesUp   = WBosonV2Up.Phi();
+        topWBosonPhi_jesDown = WBosonV2Down.Phi();
         //if(debug) printf("topWBosonPt %.1f, topWBosonPt_jesUp %.1f, topWBosonPt_jesDown %.1f\n", topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown);
       }
       // Other stuff
-      bLoad(b["hbbphi"],ientry);
-      deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.hbbphi));
-      deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi));
       
       bLoad(b["hbbpt_reg_jesUp"],ientry);
       bLoad(b["hbbpt_reg_jesDown"],ientry);
@@ -590,6 +599,14 @@ bool vhbbPlotSkim(
       bLoad(b["topWBosonCosThetaCS"],ientry);
       bLoad(b["hbbCosThetaJJ"],ientry);
       bLoad(b["hbbCosThetaCSJ1"],ientry);
+      
+      bLoad(b["hbbphi"],ientry);
+      bLoad(b["hbbphi_jesUp"],ientry);
+      bLoad(b["hbbphi_jesDown"],ientry);
+      deltaPhiVH         = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.hbbphi        ));
+      deltaPhiVH_jesUp   = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.hbbphi_jesUp  ));
+      deltaPhiVH_jesDown = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.hbbphi_jesDown));
+      deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi));
 
       // Jet multiplicity for JES
       bLoad(b["nJet_jesUp"],ientry);

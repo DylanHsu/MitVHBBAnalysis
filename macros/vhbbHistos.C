@@ -131,17 +131,20 @@ void vhbbHistos(
   int nJet, nSoft2, nSoft5, nSoft10, nIsojet, nFatjet;
   unsigned char isojetNBtags;
   float sumEtSoft1;
-  float pfmet, pfmetphi, pfmetsig;
+  float pfmet, pfmetphi, pfmetsig, pfmetUp, pfmetDown;
   float lepton1Pt, lepton1Eta, lepton1Phi, lepton1RelIso;
   int lepton1Flav, lepton1Charge;
   float lepton2Pt, lepton2Eta, lepton2Phi;
-  float hbbJet1Pt, hbbJet1Eta, hbbJet1Phi;
-  float hbbJet2Pt, hbbJet2Eta, hbbJet2Phi;
-  float topWBosonPt, topWBosonEta, topWBosonPhi, topWBosonCosThetaCS;
-  float hbbDijetPt, hbbDijetMass, hbbCosThetaJJ, hbbCosThetaCSJ1;
+  float hbbJet1Pt, hbbJet1Eta, hbbJet1Phi, hbbJet1PtUp, hbbJet1PtDown;
+  float hbbJet2Pt, hbbJet2Eta, hbbJet2Phi, hbbJet2PtUp, hbbJet2PtDown;
+  float topWBosonPt, topWBosonEta, topWBosonPhi, topWBosonCosThetaCS, topWBosonPt_jesUp, topWBosonPt_jesDown;
+  // need jesUp/down on the W phi
+  float hbbDijetPt, hbbDijetPtUp, hbbDijetPtDown;
+  float hbbDijetMass, hbbDijetMassUp, hbbDijetMassDown;
+  float hbbCosThetaJJ, hbbCosThetaCSJ1;
   float bDiscrMin, bDiscrMax;
-  float deltaPhiLep1Met, deltaPhiVH;
-  float topMassLep1Met;
+  float deltaPhiLep1Met, deltaPhiVH; //need jesUp/down on the V and H phi
+  float topMassLep1Met, topMassLep1Met_jesUp, topMassLep1Met_jesDown;
   float weight;
   float weight_VHCorrUp, weight_VHCorrDown;
   float weight_pdfUp, weight_pdfDown;
@@ -155,7 +158,7 @@ void vhbbHistos(
         weight_cmvaLFStats2Up[5][3] , weight_cmvaLFStats2Down[5][3] , 
         weight_cmvaCErr1Up   [5][3] , weight_cmvaCErr1Down   [5][3] , 
         weight_cmvaCErr2Up   [5][3] , weight_cmvaCErr2Down   [5][3] ; 
-  float mT;
+  float mT,mT_jesUp,mT_jesDown;
   float fj1Tau32;
   float fj1Tau21;
   float fj1Tau32SD;
@@ -291,6 +294,8 @@ void vhbbHistos(
   plotTree->SetBranchAddress("nMinusOneBits"   , &nMinusOneBits   );
   plotTree->SetBranchAddress("theCategory"     , &theCategory     );
   plotTree->SetBranchAddress("pfmet"           , &pfmet           );
+  plotTree->SetBranchAddress("pfmetUp"         , &pfmetUp         );
+  plotTree->SetBranchAddress("pfmetDown"       , &pfmetDown       );
   plotTree->SetBranchAddress("pfmetsig"        , &pfmetsig        );
   plotTree->SetBranchAddress("pfmetphi"        , &pfmetphi        );
   plotTree->SetBranchAddress("nFatjet"         , &nFatjet         );
@@ -325,37 +330,51 @@ void vhbbHistos(
   plotTree->SetBranchAddress("weight_cmvaCErr2Down"   , weight_cmvaCErr2Down   );
   plotTree->SetBranchAddress("weight_lepSFUp"     , &weight_lepSFUp      );
   if(selection>=kWHLightFlavorCR && selection<=kWHPresel) {
-    plotTree->SetBranchAddress("nJet"               , &nJet                );
-    plotTree->SetBranchAddress("typeLepSel"         , &typeLepSel          );
-    plotTree->SetBranchAddress("hbbDijetPt"         , &hbbDijetPt          );
-    plotTree->SetBranchAddress("hbbDijetMass"       , &hbbDijetMass        );
-    plotTree->SetBranchAddress("hbbCosThetaJJ"      , &hbbCosThetaJJ       );
-    plotTree->SetBranchAddress("hbbCosThetaCSJ1"    , &hbbCosThetaCSJ1     );
-    plotTree->SetBranchAddress("topMassLep1Met"     , &topMassLep1Met      );
-    plotTree->SetBranchAddress("bDiscrMin"          , &bDiscrMin           );
-    plotTree->SetBranchAddress("bDiscrMax"          , &bDiscrMax           );
-    plotTree->SetBranchAddress("hbbJet1Pt"          , &hbbJet1Pt           );
-    plotTree->SetBranchAddress("hbbJet1Eta"         , &hbbJet1Eta          );
-    plotTree->SetBranchAddress("hbbJet1Phi"         , &hbbJet1Phi          );
-    plotTree->SetBranchAddress("hbbJet2Pt"          , &hbbJet2Pt           );
-    plotTree->SetBranchAddress("hbbJet2Eta"         , &hbbJet2Eta          );
-    plotTree->SetBranchAddress("hbbJet2Phi"         , &hbbJet2Phi          );
-    plotTree->SetBranchAddress("lepton1Pt"          , &lepton1Pt           );
-    plotTree->SetBranchAddress("lepton1Eta"         , &lepton1Eta          );
-    plotTree->SetBranchAddress("lepton1Phi"         , &lepton1Phi          );
-    plotTree->SetBranchAddress("lepton1Flav"        , &lepton1Flav         );
-    plotTree->SetBranchAddress("lepton1Charge"      , &lepton1Charge       );
-    plotTree->SetBranchAddress("topWBosonCosThetaCS", &topWBosonCosThetaCS );
-    plotTree->SetBranchAddress("topWBosonPt"        , &topWBosonPt         );
-    plotTree->SetBranchAddress("topWBosonEta"       , &topWBosonEta        );
-    plotTree->SetBranchAddress("topWBosonPhi"       , &topWBosonPhi        );
-    plotTree->SetBranchAddress("mT"                 , &mT                  );
-    plotTree->SetBranchAddress("deltaPhiLep1Met"    , &deltaPhiLep1Met     );
-    plotTree->SetBranchAddress("deltaPhiVH"         , &deltaPhiVH          );
-    plotTree->SetBranchAddress("nSoft2"             , &nSoft2              );
-    plotTree->SetBranchAddress("nSoft5"             , &nSoft5              );
-    plotTree->SetBranchAddress("nSoft10"            , &nSoft10             );
-    plotTree->SetBranchAddress("sumEtSoft1"         , &sumEtSoft1          );
+    plotTree->SetBranchAddress("nJet"                  , &nJet                  );
+    plotTree->SetBranchAddress("typeLepSel"            , &typeLepSel            );
+    plotTree->SetBranchAddress("hbbDijetPt"            , &hbbDijetPt            );
+    plotTree->SetBranchAddress("hbbDijetPtUp"          , &hbbDijetPtUp          );
+    plotTree->SetBranchAddress("hbbDijetPtDown"        , &hbbDijetPtDown        );
+    plotTree->SetBranchAddress("hbbDijetMass"          , &hbbDijetMass          );
+    plotTree->SetBranchAddress("hbbDijetMassUp"        , &hbbDijetMassUp        );
+    plotTree->SetBranchAddress("hbbDijetMassDown"      , &hbbDijetMassDown      );
+    plotTree->SetBranchAddress("hbbCosThetaJJ"         , &hbbCosThetaJJ         );
+    plotTree->SetBranchAddress("hbbCosThetaCSJ1"       , &hbbCosThetaCSJ1       );
+    plotTree->SetBranchAddress("topMassLep1Met"        , &topMassLep1Met        );
+    plotTree->SetBranchAddress("topMassLep1Met_jesUp"  , &topMassLep1Met_jesUp  );
+    plotTree->SetBranchAddress("topMassLep1Met_jesDown", &topMassLep1Met_jesDown);
+    plotTree->SetBranchAddress("bDiscrMin"             , &bDiscrMin             );
+    plotTree->SetBranchAddress("bDiscrMax"             , &bDiscrMax             );
+    plotTree->SetBranchAddress("hbbJet1Pt"             , &hbbJet1Pt             );
+    plotTree->SetBranchAddress("hbbJet1PtUp"           , &hbbJet1PtUp           );
+    plotTree->SetBranchAddress("hbbJet1PtDown"         , &hbbJet1PtDown         );
+    plotTree->SetBranchAddress("hbbJet1Eta"            , &hbbJet1Eta            );
+    plotTree->SetBranchAddress("hbbJet1Phi"            , &hbbJet1Phi            );
+    plotTree->SetBranchAddress("hbbJet2Pt"             , &hbbJet2Pt             );
+    plotTree->SetBranchAddress("hbbJet2PtUp"           , &hbbJet2PtUp           );
+    plotTree->SetBranchAddress("hbbJet2PtDown"         , &hbbJet2PtDown         );
+    plotTree->SetBranchAddress("hbbJet2Eta"            , &hbbJet2Eta            );
+    plotTree->SetBranchAddress("hbbJet2Phi"            , &hbbJet2Phi            );
+    plotTree->SetBranchAddress("lepton1Pt"             , &lepton1Pt             );
+    plotTree->SetBranchAddress("lepton1Eta"            , &lepton1Eta            );
+    plotTree->SetBranchAddress("lepton1Phi"            , &lepton1Phi            );
+    plotTree->SetBranchAddress("lepton1Flav"           , &lepton1Flav           );
+    plotTree->SetBranchAddress("lepton1Charge"         , &lepton1Charge         );
+    plotTree->SetBranchAddress("topWBosonCosThetaCS"   , &topWBosonCosThetaCS   );
+    plotTree->SetBranchAddress("topWBosonPt"           , &topWBosonPt           );
+    plotTree->SetBranchAddress("topWBosonPt_jesUp"     , &topWBosonPt_jesUp     );
+    plotTree->SetBranchAddress("topWBosonPt_jesDown"   , &topWBosonPt_jesDown   );
+    plotTree->SetBranchAddress("topWBosonEta"          , &topWBosonEta          );
+    plotTree->SetBranchAddress("topWBosonPhi"          , &topWBosonPhi          );
+    plotTree->SetBranchAddress("mT"                    , &mT                    );
+    plotTree->SetBranchAddress("mT_jesUp"              , &mT_jesUp              );
+    plotTree->SetBranchAddress("mT_jesDown"            , &mT_jesDown            );
+    plotTree->SetBranchAddress("deltaPhiLep1Met"       , &deltaPhiLep1Met       );
+    plotTree->SetBranchAddress("deltaPhiVH"            , &deltaPhiVH            );
+    plotTree->SetBranchAddress("nSoft2"                , &nSoft2                );
+    plotTree->SetBranchAddress("nSoft5"                , &nSoft5                );
+    plotTree->SetBranchAddress("nSoft10"               , &nSoft10               );
+    plotTree->SetBranchAddress("sumEtSoft1"            , &sumEtSoft1            );
     plotTree->SetBranchAddress("nIsojet"               , &nIsojet               );
     plotTree->SetBranchAddress("fj1Tau32"              , &fj1Tau32              );
     plotTree->SetBranchAddress("fj1Tau21"              , &fj1Tau21              );
@@ -446,6 +465,8 @@ void vhbbHistos(
     plotTree->SetBranchAddress("nIsojet"               , &nIsojet               );
     plotTree->SetBranchAddress("isojetNBtags"          , &isojetNBtags          );
     plotTree->SetBranchAddress("mT"                    , &mT                    );
+    plotTree->SetBranchAddress("mT_jesUp"              , &mT_jesUp              );
+    plotTree->SetBranchAddress("mT_jesDown"            , &mT_jesDown            );
     plotTree->SetBranchAddress("fj1Tau32"              , &fj1Tau32              );
     plotTree->SetBranchAddress("fj1Tau21"              , &fj1Tau21              );
     plotTree->SetBranchAddress("fj1Tau32SD"            , &fj1Tau32SD            ); 
@@ -523,8 +544,8 @@ void vhbbHistos(
   float balanceVH=-3393;
   float dPhiHbbJet1MET=-3393;
   float dPhiHbbJet2MET=-3393;
-  float MVAVar=-3393;
-  float nAddJet;
+  float MVAVar=-3393, MVAVar_jesUp=-3393, MVAVar_jesDown=-3393;
+  float nAddJet,nAddJet_jesUp,nAddJet_jesDown;
   float mvaNSoft2, mvaNSoft5, mvaNSoft10;
   float dPhil1W, dPhil1b1, dPhil1b2, dPhiWb1, dPhiWb2, dPhib1b2, dEtal1W, dEtal1b1, dEtal1b2, dEtaWb1, dEtaWb2, dEtab1b2;
   float dPhil1fj1, dPhiWfj1, dEtal1fj1;
@@ -807,7 +828,7 @@ void vhbbHistos(
   // done constructing histograms
 
   // Initialize mva reader
-  std::map <string, float*> mvaInputRefs;
+  std::map <string, float*> mvaInputRefs, mvaInputRefs_jesUp, mvaInputRefs_jesDown;
   string str_maxSubjetCSV = "fj1MaxCSV!=fj1MaxCSV?0.:TMath::Min(1.,fj1MaxCSV)";
   string str_minSubjetCSV = "fj1MinCSV!=fj1MinCSV?0.:TMath::Min(1.,fj1MinCSV)";
   mvaInputRefs["hbbDijetMass"                                          ]=&hbbDijetMass          ;    
@@ -912,25 +933,62 @@ void vhbbHistos(
   mvaInputRefs["fj1ECFN_2_4_10/pow(TMath::Max(0.,fj1ECFN_2_3_10),1.00)"]=&mvaPsi["021004021003"]; 
   mvaInputRefs["fj1ECFN_1_3_20/pow(TMath::Max(0.,fj1ECFN_1_2_20),1.00)"]=&mvaPsi["012003012002"]; 
   mvaInputRefs["fj1ECFN_2_4_20/pow(TMath::Max(0.,fj1ECFN_2_3_20),1.00)"]=&mvaPsi["022004022003"]; 
-  TMVA::Reader *reader=0; TString theBDTWeights="";
+  
+  mvaInputRefs_jesUp = mvaInputRefs;
+  mvaInputRefs_jesUp["hbbDijetMass"                                          ]=&hbbDijetMassUp        ;    
+  mvaInputRefs_jesUp["hbbDijetPt"                                            ]=&hbbDijetPtUp          ;    
+  mvaInputRefs_jesUp["topWBosonPt"                                           ]=&topWBosonPt_jesUp     ;    
+  mvaInputRefs_jesUp["topMassLep1Met"                                        ]=&topMassLep1Met_jesUp  ;    
+  mvaInputRefs_jesUp["nJet-2"                                                ]=&nAddJet_jesUp         ;    
+  mvaInputRefs_jesUp["deltaPhiVH"                                            ]=&deltaPhiVH/*!*/       ;    
+  mvaInputRefs_jesUp["mT"                                                    ]=&mT_jesUp              ;    
+  mvaInputRefs_jesUp["pfmet"                                                 ]=&pfmetUp               ;    
+  mvaInputRefs_jesUp["hbbJet1Pt"                                             ]=&hbbJet1PtUp           ;    
+  mvaInputRefs_jesUp["hbbJet2Pt"                                             ]=&hbbJet2PtUp           ;    
+  mvaInputRefs_jesUp["fabs(TVector2::Phi_mpi_pi(lepton1Phi-topWBosonPhi))"   ]=&dPhil1W/*!*/          ;    
+  mvaInputRefs_jesUp["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))"   ]=&dPhiWb1/*!*/          ;    
+  mvaInputRefs_jesUp["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))"   ]=&dPhiWb2/*!*/          ;    
+  mvaInputRefs_jesUp["fj1Pt"                                                 ]=&fj1PtScaleUp          ;
+  mvaInputRefs_jesUp["fj1MSD"                                                ]=&fj1MSDScaleUp         ;
+
+  mvaInputRefs_jesDown = mvaInputRefs;
+  mvaInputRefs_jesDown["hbbDijetMass"                                          ]=&hbbDijetMassDown      ;    
+  mvaInputRefs_jesDown["hbbDijetPt"                                            ]=&hbbDijetPtDown        ;    
+  mvaInputRefs_jesDown["topWBosonPt"                                           ]=&topWBosonPt_jesDown   ;    
+  mvaInputRefs_jesDown["topMassLep1Met"                                        ]=&topMassLep1Met_jesDown;    
+  mvaInputRefs_jesDown["nJet-2"                                                ]=&nAddJet_jesDown       ;    
+  mvaInputRefs_jesDown["deltaPhiVH"                                            ]=&deltaPhiVH/*!*/       ;    
+  mvaInputRefs_jesDown["mT"                                                    ]=&mT_jesDown            ;    
+  mvaInputRefs_jesDown["pfmet"                                                 ]=&pfmetDown             ;    
+  mvaInputRefs_jesDown["hbbJet1Pt"                                             ]=&hbbJet1PtDown         ;    
+  mvaInputRefs_jesDown["hbbJet2Pt"                                             ]=&hbbJet2PtDown         ;    
+  mvaInputRefs_jesDown["fabs(TVector2::Phi_mpi_pi(lepton1Phi-topWBosonPhi))"   ]=&dPhil1W/*!*/          ;    
+  mvaInputRefs_jesDown["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))"   ]=&dPhiWb1/*!*/          ;    
+  mvaInputRefs_jesDown["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))"   ]=&dPhiWb2/*!*/          ;    
+  mvaInputRefs_jesDown["fj1Pt"                                                 ]=&fj1PtScaleDown        ;
+  mvaInputRefs_jesDown["fj1MSD"                                                ]=&fj1MSDScaleDown       ;
+  TMVA::Reader *reader=0, *reader_jesUp=0, *reader_jesDown=0;
+  TString theBDTWeights="";
   // to do - not hardcoded
-  if(MVAVarType==2) {
-    reader=new TMVA::Reader(); // =new TMVA::Reader();
-    if(selection<=kWHPresel)        theBDTWeights = bdtWeightsResolved; //"weights/bdt_BDT_multiClass_resolved_jan10_I_test2.weights.xml";
-    else if(selection<=kWHFJPresel) theBDTWeights = bdtWeightsBoosted; // "weights/bdt_BDT_multiClass_boosted_jan10_I_test2.weights.xml";
-  } else if(MVAVarType==3) {
-    reader=new TMVA::Reader(); // =new TMVA::Reader();
-    if(selection<=kWHPresel)        theBDTWeights = bdtWeightsResolved; //"weights/bdt_BDT_multiClass_resolved_whAll_jan11_singleClass.weights.xml";
-    else if(selection<=kWHFJPresel) theBDTWeights = bdtWeightsBoosted;  //"weights/bdt_BDT_multiClass_boosted_jan10_I_test2.weights.xml";
-  } 
+  if(MVAVarType==2 || MVAVarType==3) {
+    reader=new TMVA::Reader();
+    reader_jesUp=new TMVA::Reader("Silent");
+    reader_jesDown=new TMVA::Reader("Silent");
+    if(selection<=kWHPresel)        theBDTWeights = bdtWeightsResolved;
+    else if(selection<=kWHFJPresel) theBDTWeights = bdtWeightsBoosted; 
+  }
   if(theBDTWeights!="") {
     vector<pair<string, string> > varLabelExprs=parseTmvaXmlFile(string(theBDTWeights.Data()));
     for(unsigned iVar=0; iVar<(unsigned)varLabelExprs.size(); iVar++)
       if(mvaInputRefs.find( varLabelExprs[iVar].second ) != mvaInputRefs.end()) {
         printf("\tAdding variable #%d with label \"%s\"\n", iVar, varLabelExprs[iVar].first.c_str());
-        reader->AddVariable( varLabelExprs[iVar].second, mvaInputRefs[varLabelExprs[iVar].second]);
+        reader        ->AddVariable( varLabelExprs[iVar].second, mvaInputRefs        [varLabelExprs[iVar].second]);
+        reader_jesUp  ->AddVariable( varLabelExprs[iVar].second, mvaInputRefs_jesUp  [varLabelExprs[iVar].second]);
+        reader_jesDown->AddVariable( varLabelExprs[iVar].second, mvaInputRefs_jesDown[varLabelExprs[iVar].second]);
       }
-    reader->BookMVA("BDT", theBDTWeights.Data());
+    reader        ->BookMVA("BDT", theBDTWeights.Data());
+    reader_jesUp  ->BookMVA("BDT", theBDTWeights.Data());
+    reader_jesDown->BookMVA("BDT", theBDTWeights.Data());
   }
 
   // begin plot tree loop
@@ -956,6 +1014,8 @@ void vhbbHistos(
       dPhiHbbJet1MET = TMath::Abs(TVector2::Phi_mpi_pi( hbbJet1Phi - pfmetphi  ));
       dPhiHbbJet2MET = TMath::Abs(TVector2::Phi_mpi_pi( hbbJet2Phi - pfmetphi  ));
       nAddJet = nJet-2;
+      nAddJet_jesUp   = nJet-2; //FIX THIS
+      nAddJet_jesDown = nJet-2; //FIX THIS
       mvaNSoft2=nSoft2;
       mvaNSoft5=nSoft5;
       mvaNSoft10=nSoft10;
@@ -975,9 +1035,6 @@ void vhbbHistos(
       mva_lepton1Charge = lepton1Charge; 
 
       // Calculate Fatjet variables in the inclusive selection
-      //dPhil1fj1 = fabs(TVector2::Phi_mpi_pi(lepton1Phi   - fj1Phi  ));
-      //dPhiWfj1  = fabs(TVector2::Phi_mpi_pi(topWBosonPhi - fj1Phi  ));
-      //dEtal1fj1 = fabs(lepton1Eta   - fj1Eta );
       adjustedFatjetEta = (nFatjet==0)*(-5) + (nFatjet!=0)*(fj1Eta);
       dPhil1fj1 = (nFatjet==0)*(-1) + (nFatjet!=0)*fabs(TVector2::Phi_mpi_pi(lepton1Phi   - fj1Phi  ));
       dPhiWfj1  = (nFatjet==0)*(-1) + (nFatjet!=0)*fabs(TVector2::Phi_mpi_pi(topWBosonPhi - fj1Phi  ));
@@ -1114,47 +1171,59 @@ void vhbbHistos(
       if(lowMass  && hbbDijetMass>=90.) passMassSplit=false;
       if(!lowMass && hbbDijetMass<150.) passMassSplit=false;
     }
-    float bdtValue=0;
+    float bdtValue=-99,bdtValue_jesUp=-99,bdtValue_jesDown=-99;
     switch(MVAVarType) {
       case 1:
       default:
-        if(selection<=kWHLightFlavorCR && selection<=kWHPresel)
+        if(selection<=kWHLightFlavorCR && selection<=kWHPresel) {
           MVAVar=hbbDijetPt;
-        else if(selection<=kWHLightFlavorFJCR && selection<=kWHFJPresel)
+          MVAVar_jesUp=hbbDijetPtUp;
+          MVAVar_jesDown=hbbDijetPtDown;
+        } else if(selection<=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
           MVAVar=fj1Pt;
-        break;
+          MVAVar_jesUp=fj1PtScaleUp;
+          MVAVar_jesDown=fj1PtScaleDown;
+        } break;
       case 2:
-        if(passFullSel) {
-          if(selection==kWHLightFlavorCR || selection==kWHLightFlavorFJCR) 
-            bdtValue=(reader->EvaluateMulticlass("BDT")[1]);
-          else if(selection==kWHHeavyFlavorCR || selection==kWHHeavyFlavorFJCR) 
-            //bdtValue=(reader->EvaluateMulticlass("BDT")[1]);
-            bdtValue=(reader->EvaluateMulticlass("BDT")[2]);
-          else if(selection==kWH2TopCR || selection==kWH2TopFJCR) 
-            //bdtValue=(reader->EvaluateMulticlass("BDT")[2]);
-            bdtValue=(reader->EvaluateMulticlass("BDT")[3]);
-          else bdtValue=(reader->EvaluateMulticlass("BDT")[0]);
+        if(selection==kWHLightFlavorCR || selection==kWHLightFlavorFJCR) {
+          if(passFullSel        ) bdtValue        =(reader        ->EvaluateMulticlass("BDT")[1]);
+          if(passFullSel_jesUp  ) bdtValue_jesUp  =(reader_jesUp  ->EvaluateMulticlass("BDT")[1]);
+          if(passFullSel_jesDown) bdtValue_jesDown=(reader_jesDown->EvaluateMulticlass("BDT")[1]);
+        } else if(selection==kWHHeavyFlavorCR || selection==kWHHeavyFlavorFJCR) {
+          if(passFullSel        ) bdtValue        =(reader        ->EvaluateMulticlass("BDT")[2]);
+          if(passFullSel_jesUp  ) bdtValue_jesUp  =(reader_jesUp  ->EvaluateMulticlass("BDT")[2]);
+          if(passFullSel_jesDown) bdtValue_jesDown=(reader_jesDown->EvaluateMulticlass("BDT")[2]);
+        } else if(selection==kWH2TopCR || selection==kWH2TopFJCR) {
+          if(passFullSel        ) bdtValue        =(reader->EvaluateMulticlass("BDT")[3]);
+          if(passFullSel_jesUp  ) bdtValue_jesUp  =(reader->EvaluateMulticlass("BDT")[3]);
+          if(passFullSel_jesDown) bdtValue_jesDown=(reader->EvaluateMulticlass("BDT")[3]);
+        } else {
+          if(passFullSel        ) bdtValue        =(reader->EvaluateMulticlass("BDT")[0]);
+          if(passFullSel_jesUp  ) bdtValue_jesUp  =(reader->EvaluateMulticlass("BDT")[0]);
+          if(passFullSel_jesDown) bdtValue_jesDown=(reader->EvaluateMulticlass("BDT")[0]);
         }
-        if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) 
-          MVAVar=bDiscrMin;
-        else if(selection==kWHSR)
-          MVAVar=bdtValue;
-        else if(selection==kWHLightFlavorFJCR || selection==kWHHeavyFlavorFJCR || selection==kWH2TopFJCR) 
+        if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) {
+          MVAVar=bDiscrMin; MVAVar_jesUp=bDiscrMin; MVAVar_jesDown=bDiscrMin;
+        } else if(selection==kWHSR) {
+          MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
+        } else if(selection==kWHLightFlavorFJCR || selection==kWHHeavyFlavorFJCR || selection==kWH2TopFJCR) {
           MVAVar=fj1MSD;
-        else if(selection==kWHFJSR)
-          MVAVar=bdtValue;
-        break;
+          MVAVar_jesUp=fj1MSDScaleUp;
+          MVAVar_jesDown=fj1MSDScaleDown;
+        } else if(selection==kWHFJSR) {
+          MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
+        } break;
       case 3:
-        if(passFullSel) bdtValue=reader->EvaluateMVA("BDT");
-        if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) 
-          MVAVar=bDiscrMin;
-        else if(selection==kWHSR)
-          MVAVar=bdtValue;
-        //else if(selection==kWHLightFlavorFJCR || selection==kWHHeavyFlavorFJCR || selection==kWH2TopFJCR) 
-        else if(selection<=kWHFJPresel)
-          MVAVar=bdtValue;
-        //else if(selection==kWHFJSR)
-        //  MVAVar=bdtValue;
+        if(passFullSel        ) bdtValue        =reader        ->EvaluateMVA("BDT");
+        if(passFullSel_jesUp  ) bdtValue_jesUp  =reader_jesUp  ->EvaluateMVA("BDT");
+        if(passFullSel_jesDown) bdtValue_jesDown=reader_jesDown->EvaluateMVA("BDT");
+        if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR) {
+          MVAVar=bDiscrMin; MVAVar_jesUp=bDiscrMin; MVAVar_jesDown=bDiscrMin;
+        } else if(selection==kWHSR) {
+          MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
+        } else if(selection<=kWHFJPresel) {
+          MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
+        }
         break;
     }
     MVAVar=TMath::Min(MVAVar, (float)(MVAbins[MVAbins.size()-1]-0.001));
@@ -1394,9 +1463,9 @@ void vhbbHistos(
       }
     }
     if(passFullSel_jesUp && theCategory!=kPlotData)
-      histo_jesUp   [theCategory]->Fill(MVAVar, sf_training*weight); 
+      histo_jesUp   [theCategory]->Fill(MVAVar_jesUp, sf_training*weight); 
     if(passFullSel_jesDown && theCategory!=kPlotData)
-      histo_jesDown [theCategory]->Fill(MVAVar, sf_training*weight);
+      histo_jesDown [theCategory]->Fill(MVAVar_jesDown, sf_training*weight);
   }
   TFile *output_plots = new TFile(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
   for(int p=0; p<nPlots; p++) {
