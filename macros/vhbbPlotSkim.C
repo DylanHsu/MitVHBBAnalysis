@@ -148,11 +148,16 @@ bool vhbbPlotSkim(
   float *sf_sjbtag0BDown = (float*)dummyTree->GetBranch("sf_sjbtag0BDown")->GetAddress();
   float *sf_sjbtag0MUp   = (float*)dummyTree->GetBranch("sf_sjbtag0MUp"  )->GetAddress();
   float *sf_sjbtag0MDown = (float*)dummyTree->GetBranch("sf_sjbtag0MDown")->GetAddress();
-  float *sf_sjbtag2      = (float*)dummyTree->GetBranch("sf_sjbtag2"     )->GetAddress();
-  float *sf_sjbtag2BUp   = (float*)dummyTree->GetBranch("sf_sjbtag2BUp"  )->GetAddress();
-  float *sf_sjbtag2BDown = (float*)dummyTree->GetBranch("sf_sjbtag2BDown")->GetAddress();
-  float *sf_sjbtag2MUp   = (float*)dummyTree->GetBranch("sf_sjbtag2MUp"  )->GetAddress();
-  float *sf_sjbtag2MDown = (float*)dummyTree->GetBranch("sf_sjbtag2MDown")->GetAddress();
+  float *sf_sjbtagGT0      = (float*)dummyTree->GetBranch("sf_sjbtagGT0"     )->GetAddress();
+  float *sf_sjbtagGT0BUp   = (float*)dummyTree->GetBranch("sf_sjbtagGT0BUp"  )->GetAddress();
+  float *sf_sjbtagGT0BDown = (float*)dummyTree->GetBranch("sf_sjbtagGT0BDown")->GetAddress();
+  float *sf_sjbtagGT0MUp   = (float*)dummyTree->GetBranch("sf_sjbtagGT0MUp"  )->GetAddress();
+  float *sf_sjbtagGT0MDown = (float*)dummyTree->GetBranch("sf_sjbtagGT0MDown")->GetAddress();
+  //float *sf_sjbtag2      = (float*)dummyTree->GetBranch("sf_sjbtag2"     )->GetAddress();
+  //float *sf_sjbtag2BUp   = (float*)dummyTree->GetBranch("sf_sjbtag2BUp"  )->GetAddress();
+  //float *sf_sjbtag2BDown = (float*)dummyTree->GetBranch("sf_sjbtag2BDown")->GetAddress();
+  //float *sf_sjbtag2MUp   = (float*)dummyTree->GetBranch("sf_sjbtag2MUp"  )->GetAddress();
+  //float *sf_sjbtag2MDown = (float*)dummyTree->GetBranch("sf_sjbtag2MDown")->GetAddress();
   
   plotTree->Branch("runNumber"       , &gt.runNumber    );
   plotTree->Branch("lumiNumber"      , &gt.lumiNumber   );
@@ -964,7 +969,7 @@ bool vhbbPlotSkim(
       cut["lepton1Pt"  ] = ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30));
       cut["lepton1IP"  ] = (typeLepSel==1 && lepton1D0<0.20 && lepton1DZ<0.50) || (typeLepSel==2 && ((fabs(lepton1Eta)<1.479 && lepton1D0<0.05 && lepton1DZ<0.10) || (fabs(lepton1Eta)>=1.479 && lepton1D0<0.10 && lepton1DZ<0.20)));
       cut["dPhiVH"     ] = deltaPhiVH > 2.9;
-      cut["sjBTag"     ] = gt.fj1MinCSV>=0.8484;
+      cut["sjBTag"     ] = gt.fj1MaxCSV>=0.8484;
       cut["sjBVeto"    ] = gt.fj1MaxCSV<0.8484;
       //cut["twoProngs"  ] =  (gt.fj1Tau21<0.6 && gt.fj1Tau32>=0.5);
       //cut["threeProngs"] = !(                   gt.fj1Tau32>=0.5);
@@ -1083,9 +1088,11 @@ bool vhbbPlotSkim(
         weight *= gt.sf_csvWeights[GeneralTree::csvCent];
       }
       if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
-        bLoad(b["sf_sjbtag0"],ientry); bLoad(b["sf_sjbtag2"],ientry);
+        bLoad(b["sf_sjbtag0"],ientry);
+        bLoad(b["sf_sjbtagGT0"],ientry);
+        //bLoad(b["sf_sjbtag2"],ientry);
         if(selection==kWHLightFlavorFJCR) weight *= (*sf_sjbtag0);
-        else                              weight *= (*sf_sjbtag2);
+        else                              weight *= (*sf_sjbtagGT0);
         for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
           double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
           weight *= cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetCMVAs[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
@@ -1156,15 +1163,24 @@ bool vhbbPlotSkim(
           weight_btagMUp   = weight * (*sf_sjbtag0MUp  ) / (*sf_sjbtag0);
           weight_btagMDown = weight * (*sf_sjbtag0MDown) / (*sf_sjbtag0);
         } else {
-          bLoad(b["sf_sjbtag2"],ientry);
-          bLoad(b["sf_sjbtag2BUp"],ientry);
-          bLoad(b["sf_sjbtag2BDown"],ientry);
-          bLoad(b["sf_sjbtag2MUp"],ientry);
-          bLoad(b["sf_sjbtag2MDown"],ientry);
-          weight_btagBUp   = weight * (*sf_sjbtag2BUp  ) / (*sf_sjbtag2);
-          weight_btagBDown = weight * (*sf_sjbtag2BDown) / (*sf_sjbtag2);
-          weight_btagMUp   = weight * (*sf_sjbtag2MUp  ) / (*sf_sjbtag2);
-          weight_btagMDown = weight * (*sf_sjbtag2MDown) / (*sf_sjbtag2);
+          //bLoad(b["sf_sjbtag2"],ientry);
+          //bLoad(b["sf_sjbtag2BUp"],ientry);
+          //bLoad(b["sf_sjbtag2BDown"],ientry);
+          //bLoad(b["sf_sjbtag2MUp"],ientry);
+          //bLoad(b["sf_sjbtag2MDown"],ientry);
+          //weight_btagBUp   = weight * (*sf_sjbtag2BUp  ) / (*sf_sjbtag2);
+          //weight_btagBDown = weight * (*sf_sjbtag2BDown) / (*sf_sjbtag2);
+          //weight_btagMUp   = weight * (*sf_sjbtag2MUp  ) / (*sf_sjbtag2);
+          //weight_btagMDown = weight * (*sf_sjbtag2MDown) / (*sf_sjbtag2);
+          bLoad(b["sf_sjbtagGT0"],ientry);
+          bLoad(b["sf_sjbtagGT0BUp"],ientry);
+          bLoad(b["sf_sjbtagGT0BDown"],ientry);
+          bLoad(b["sf_sjbtagGT0MUp"],ientry);
+          bLoad(b["sf_sjbtagGT0MDown"],ientry);
+          weight_btagBUp   = weight * (*sf_sjbtagGT0BUp  ) / (*sf_sjbtagGT0);
+          weight_btagBDown = weight * (*sf_sjbtagGT0BDown) / (*sf_sjbtagGT0);
+          weight_btagMUp   = weight * (*sf_sjbtagGT0MUp  ) / (*sf_sjbtagGT0);
+          weight_btagMDown = weight * (*sf_sjbtagGT0MDown) / (*sf_sjbtagGT0);
         }
       }
 
