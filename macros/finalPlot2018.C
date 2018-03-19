@@ -257,7 +257,7 @@ TList *finalPlot2018(
     TLine *baseline = new TLine(xmin,1,xmax,1);
     baseline->SetLineStyle(kSolid); baseline->Draw("SAME");
     canvas->Print(outPdf);
-    system(Form("gs -sDEVICE=png16m -dTextAlphaBits=4 -g1800x1440 -dUseCropBox -dFIXEDMEDIA -dPDFFitPage -o %s %s >/dev/null 2>&1",outPng.Data(), outPdf.Data()));
+    system(Form("gs -sDEVICE=png16m -dTextAlphaBits=4 -g1800x1440 -dUseCropBox -dFIXEDMEDIA -dPDFFitPage -o %s %s >/dev/null 2>&1 &",outPng.Data(), outPdf.Data()));
     listOfCanvases->Add(canvas);
   }
   return listOfCanvases;
