@@ -56,18 +56,14 @@ namespace vhbbPlot {
     kWHPresel          = 0x1 <<  4,
     kWHLightFlavorFJCR = 0x1 <<  5,
     kWHHeavyFlavorFJCR = 0x1 <<  6,
-    kWH2TopFJCR        = 0x1 <<  7,
-    kWHFJSR            = 0x1 <<  8, 
-    kWHFJPresel        = 0x1 <<  9,
-    kZnnHLightFlavorCR = 0x1 << 10,
-    kZnnHHeavyFlavorCR = 0x1 << 11,
-    kZnnH2TopCR        = 0x1 << 12,
-    kZnnHMultijetCR    = 0x1 << 13,
-    kZnnHSR            = 0x1 << 14,
-    kZllHLightFlavorCR = 0x1 << 15,
-    kZllHHeavyFlavorCR = 0x1 << 16,
-    kZllH2TopCR        = 0x1 << 17,
-    kZllHSR            = 0x1 << 18 
+    kWHTT2bFJCR        = 0x1 <<  7,
+    kWHTT1bFJCR        = 0x1 <<  8,
+    kWHFJSR            = 0x1 <<  9, 
+    kWHFJPresel        = 0x1 <<  10
+    //kZllHLightFlavorCR = 0x1 << 15,
+    //kZllHHeavyFlavorCR = 0x1 << 16,
+    //kZllH2TopCR        = 0x1 << 17,
+    //kZllHSR            = 0x1 << 18 
   };
   enum sampleType {
     kData       , // 0 
@@ -152,17 +148,9 @@ namespace vhbbPlot {
     { kWHSR               , "WHSR"               },
     { kWHLightFlavorFJCR  , "WHLightFlavorFJCR"  },
     { kWHHeavyFlavorFJCR  , "WHHeavyFlavorFJCR"  },
-    { kWH2TopFJCR         , "WH2TopFJCR"         },
+    { kWHTT2bFJCR         , "WHTT2bFJCR"         },
+    { kWHTT1bFJCR         , "WHTT1bFJCR"         },
     { kWHFJSR             , "WHFJSR"             },
-    { kZnnHLightFlavorCR  , "ZnnHLightFlavorCR"  },
-    { kZnnHHeavyFlavorCR  , "ZnnHHeavyFlavorCR"  },
-    { kZnnH2TopCR         , "ZnnH2TopCR"         },
-    { kZnnHMultijetCR     , "ZnnHMultijetCR"     },
-    { kZnnHSR             , "ZnnHSR"             },
-    { kZllHLightFlavorCR  , "ZllHLightFlavorCR"  },
-    { kZllHHeavyFlavorCR  , "ZllHHeavyFlavorCR"  },
-    { kZllH2TopCR         , "ZllH2TopCR"         },
-    { kZllHSR             , "ZllHSR"             }
   };
   // This function loads the ith entry of the branch, only if it has not already been loaded
   int bLoad(TBranch *branch, Long64_t ientry) {

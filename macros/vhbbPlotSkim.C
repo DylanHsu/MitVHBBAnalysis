@@ -72,6 +72,7 @@ bool vhbbPlotSkim(
   for(unsigned iB=0; iB<(unsigned)listOfBranches->GetEntries(); iB++) {
     TBranch *branch = (TBranch*)listOfBranches->At(iB);
     TString branchName = branch->GetName();
+    if(branchName.Contains("fj1GenPt") || branchName.Contains("fj1GenSize")) continue;
     bool isExtraBranch=false;
     auto x = extraAddresses.find(branchName);
     isExtraBranch= (x!=extraAddresses.end());
@@ -106,7 +107,7 @@ bool vhbbPlotSkim(
   float hbbDijetPt, hbbDijetPtUp, hbbDijetPtDown;
   float hbbDijetMass, hbbDijetMassUp, hbbDijetMassDown;
   float bDiscrMin, bDiscrMax;
-  float deltaPhiLep1Met, deltaPhiLep1Met_jesUp, deltaPhiLep1Met_jesDown;
+  float deltaPhiLep1Met;
   float deltaPhiVH, deltaPhiVH_jesUp, deltaPhiVH_jesDown;
   float topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown, topWBosonPhi_jesUp, topWBosonPhi_jesDown;
   float mT_jesUp, mT_jesDown; // need to be in PandaExpress ntuples
@@ -114,7 +115,7 @@ bool vhbbPlotSkim(
   // For boosted categories, the number of 30 GeV AK4 jets not in the fat jet
   int nIsojet=0, nIsojet_jesUp=0, nIsojet_jesDown=0; 
   vector<unsigned char> isojets, isojets_jesUp, isojets_jesDown;
-  unsigned char isojetNBtags;   
+  unsigned char isojetNBtags, isojetNBtags_jesUp, isojetNBtags_jesDown;   
   
   // CMVA jet kinematic decorrelated weight nuisances
   vector<double> jetPts[5][3], jetPtsUp[5][3], jetPtsDown[5][3], jetEtas[5][3], jetCMVAs[5][3];
@@ -179,6 +180,8 @@ bool vhbbPlotSkim(
   plotTree->Branch("topWBosonPt_jesUp"       , &topWBosonPt_jesUp        );
   plotTree->Branch("topWBosonPt_jesDown"     , &topWBosonPt_jesDown      );
   plotTree->Branch("topWBosonPhi"            , &gt.topWBosonPhi          );
+  plotTree->Branch("topWBosonPhi_jesUp"      , &topWBosonPhi_jesUp       );
+  plotTree->Branch("topWBosonPhi_jesDown"    , &topWBosonPhi_jesDown     );
   plotTree->Branch("mT"                      , &gt.mT                    );
   plotTree->Branch("mT_jesUp"                , &mT_jesUp                 );
   plotTree->Branch("mT_jesDown"              , &mT_jesDown               );
@@ -192,13 +195,12 @@ bool vhbbPlotSkim(
   plotTree->Branch("lepton1Flav"             , &lepton1Flav              );
   plotTree->Branch("lepton1Charge"           , &lepton1Charge            );
   plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
-  plotTree->Branch("deltaPhiLep1Met_jesUp"   , &deltaPhiLep1Met_jesUp    );
-  plotTree->Branch("deltaPhiLep1Met_jesDown" , &deltaPhiLep1Met_jesDown  );
   plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
   plotTree->Branch("deltaPhiVH_jesUp"        , &deltaPhiVH_jesUp         );
   plotTree->Branch("deltaPhiVH_jesDown"      , &deltaPhiVH_jesDown       );
   plotTree->Branch("nFatjet"                 , &gt.nFatjet               );
-  plotTree->Branch("weight"          , &weight          );
+
+  plotTree->Branch("weight"                  , &weight                   );
   plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
   plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
   plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
@@ -232,7 +234,7 @@ bool vhbbPlotSkim(
   plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
   plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
   plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
-  if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) {
+  if(selection>=kWHLightFlavorCR && selection<=kWHPresel) {
     plotTree->Branch("nJet"                    , &gt.nJet                  );
     plotTree->Branch("nJet_jesUp"              , &gt.nJet_jesUp            );
     plotTree->Branch("nJet_jesDown"            , &gt.nJet_jesDown          );
@@ -268,7 +270,7 @@ bool vhbbPlotSkim(
     plotTree->Branch("hbbCosThetaCSJ1"         , &gt.hbbCosThetaCSJ1       );
   }
   // Save fatjet variables if we are in a boosted category, or if we aren't using a boosted category
-  if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJSR)) {
+  if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel)) {
     plotTree->Branch("nIsojet"               , &nIsojet                  );
     plotTree->Branch("isojetNBtags"          , &isojetNBtags             );
     plotTree->Branch("fj1Tau32"              , &gt.fj1Tau32              );
@@ -407,7 +409,7 @@ bool vhbbPlotSkim(
     // Analysis Preselection
     int nLooseLep=0;
     int iTightLep;
-    if(selection>=kWHLightFlavorCR && selection<=kWHSR) { // WH Resolved Category
+    if(selection>=kWHLightFlavorCR && selection<=kWHPresel) { // WH Resolved Category
       {
         
         // Lepton multiplicity
@@ -441,7 +443,7 @@ bool vhbbPlotSkim(
             gt.fj1Pt >= 250 && 
             fabs(gt.fj1Eta) < 2.4 &&
             gt.topWBosonPt >= 250 &&
-            temp_deltaPhiVH >= 2.9
+            temp_deltaPhiVH >= 2.5
           ) continue;
         }
         // Jet kinematics
@@ -642,7 +644,7 @@ bool vhbbPlotSkim(
       }
       
       // End WH Resolved Category 
-    } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) { 
+    } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) { 
       // WH Boosted Category
       {
         // Lepton multiplicity
@@ -761,24 +763,30 @@ bool vhbbPlotSkim(
       
       // mT, W pT up down
       { 
-        TVector2 metV2Up, metV2Down, lepton1V2;
+        TVector2 metV2Up, metV2Down, lepton1V2, WBosonV2Up, WBosonV2Down;
         metV2Up.SetMagPhi(gt.pfmetUp, gt.pfmetphi);
         metV2Down.SetMagPhi(gt.pfmetDown, gt.pfmetphi);
         lepton1V2.SetMagPhi(lepton1Pt, lepton1Phi);
         mT_jesUp   = TMath::Sqrt(2.*gt.pfmetUp*lepton1Pt*(1.-TMath::Cos(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi))));
         mT_jesDown = TMath::Sqrt(2.*gt.pfmetDown*lepton1Pt*(1.-TMath::Cos(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi))));
-        topWBosonPt_jesUp   = (metV2Up+lepton1V2).Mod();
-        topWBosonPt_jesDown = (metV2Down+lepton1V2).Mod();
+        WBosonV2Up=metV2Up+lepton1V2;
+        WBosonV2Down=metV2Down+lepton1V2;
+        topWBosonPt_jesUp   = WBosonV2Up.Mod();
+        topWBosonPt_jesDown = WBosonV2Down.Mod();
+        topWBosonPhi_jesUp   = WBosonV2Up.Phi();
+        topWBosonPhi_jesDown = WBosonV2Down.Phi();
         //if(debug) printf("topWBosonPt %.1f, topWBosonPt_jesUp %.1f, topWBosonPt_jesDown %.1f\n", topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown);
       }
       
       // Other stuff
       bLoad(b["fj1Phi"],ientry);
-      deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.fj1Phi));
+      deltaPhiVH         = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.fj1Phi));
+      deltaPhiVH_jesUp   = fabs(TVector2::Phi_mpi_pi(topWBosonPhi_jesUp  -gt.fj1Phi));
+      deltaPhiVH_jesDown = fabs(TVector2::Phi_mpi_pi(topWBosonPhi_jesDown-gt.fj1Phi));
       deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi));
       // End WH Boosted Category
     }
-    if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJSR)) {
+    if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel)) {
       bLoad(b["nFatjet"],ientry);
       bLoad(b["fj1Eta"],ientry);
       bLoad(b["fj1MSD"],ientry);
@@ -820,17 +828,23 @@ bool vhbbPlotSkim(
       isojets.clear();
       isojets_jesUp.clear();
       isojets_jesDown.clear();
-      isojetNBtags=0;
+      isojetNBtags=0, isojetNBtags_jesUp=0, isojetNBtags_jesDown=0;
       for(unsigned char iJ=0; iJ<gt.nJot; iJ++) {
         //if(!gt.jetIso[iJ]) continue; 
         if(fabs(gt.jetEta[iJ])>2.4) continue;
         float dR2JetFatjet=pow(gt.jetEta[iJ]-gt.fj1Eta,2)+pow(TVector2::Phi_mpi_pi(gt.jetPhi[iJ]-gt.fj1Phi),2);
         if(dR2JetFatjet<0.64) continue;
 
-        if(gt.jetPt[iJ]>30 && gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
-        if(gt.jetPt[iJ]>30) isojets.push_back(iJ);
-        if(gt.jetPtUp[iJ]>30) isojets_jesUp.push_back(iJ);
-        if(gt.jetPtDown[iJ]>30) isojets_jesDown.push_back(iJ);
+        if(gt.jetPt[iJ]>30) {
+          isojets.push_back(iJ);
+          if(gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags++;
+        } if(gt.jetPtUp[iJ]>30) {
+          isojets_jesUp.push_back(iJ);
+          if(gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags_jesUp++;
+        } if(gt.jetPtDown[iJ]>30) {
+          isojets_jesDown.push_back(iJ);
+          if(gt.jetCMVA[iJ]>bDiscrLoose) isojetNBtags_jesDown++;
+        }
         
         // CMVA jet kinematic decorrelated weight nuisances for the isojets only
         int iPt=-1, iEta=-1;
@@ -913,7 +927,7 @@ bool vhbbPlotSkim(
     selectionBits=0; nMinusOneBits=0; selectionBits_jesUp=0; selectionBits_jesDown=0;
     std::map<TString, bool> cut, cut_jesUp, cut_jesDown;
     
-    if(selection>=kWHLightFlavorCR && selection<=kWHSR) { // Begin WH Resolved Selection
+    if(selection>=kWHLightFlavorCR && selection<=kWHPresel) { // Begin WH Resolved Selection
 
       cut["2ndLepVeto" ] = nLooseLep==1;
       cut["ultraLepIso"] = lepton1RelIso<0.06;
@@ -952,31 +966,35 @@ bool vhbbPlotSkim(
       cut_jesUp=cut;
       cut_jesUp["WpT"        ] = topWBosonPt_jesUp>100;
       cut_jesUp["pTjj"       ] = hbbDijetPtUp>100; 
+      cut_jesUp["dPhiVH"     ] = deltaPhiVH_jesUp > 2.5;
+      cut_jesUp["dPhiLep1Met"] = deltaPhiLep1Met < 2;
       cut_jesUp["nJet_WHTT"  ] = gt.nJet_jesUp>=4;
       cut_jesUp["nJet_WHHF"  ] = gt.nJet_jesUp==2;
       cut_jesUp["nJet_WHSR"  ] = gt.nJet_jesUp<4;
       cut_jesUp["mH_WHSR"    ] = ((hbbDijetMassUp >= 90) && (hbbDijetMassUp <  150));
       cut_jesUp["mH_Flip"    ] = ((hbbDijetMassUp < 90) || (hbbDijetMassUp >= 150 && hbbDijetMassUp < 250));
-      if(passAllCuts( cut_jesUp, cutsWHLightFlavorCR)) selectionBits_jesUp |= kWHLightFlavorCR;
-      if(passAllCuts( cut_jesUp, cutsWHHeavyFlavorCR)) selectionBits_jesUp |= kWHHeavyFlavorCR;
-      if(passAllCuts( cut_jesUp, cutsWH2TopCR       )) selectionBits_jesUp |= kWH2TopCR;
-      if(passAllCuts( cut_jesUp, cutsWHSR           )) selectionBits_jesUp |= kWHSR;
+      if(passAllCuts( cut_jesUp, cutsWHLightFlavorCR, debug)) selectionBits_jesUp |= kWHLightFlavorCR;
+      if(passAllCuts( cut_jesUp, cutsWHHeavyFlavorCR, debug)) selectionBits_jesUp |= kWHHeavyFlavorCR;
+      if(passAllCuts( cut_jesUp, cutsWH2TopCR       , debug)) selectionBits_jesUp |= kWH2TopCR;
+      if(passAllCuts( cut_jesUp, cutsWHSR           , debug)) selectionBits_jesUp |= kWHSR;
       
       cut_jesDown=cut;
       cut_jesDown["WpT"        ] = topWBosonPt_jesDown>100;
       cut_jesDown["pTjj"       ] = hbbDijetPtDown>100; 
+      cut_jesDown["dPhiVH"     ] = deltaPhiVH_jesDown > 2.5;
+      cut_jesDown["dPhiLep1Met"] = deltaPhiLep1Met < 2;
       cut_jesDown["nJet_WHTT"  ] = gt.nJet_jesDown>=4;
       cut_jesDown["nJet_WHHF"  ] = gt.nJet_jesDown==2;
       cut_jesDown["nJet_WHSR"  ] = gt.nJet_jesDown<4;
       cut_jesDown["mH_WHSR"    ] = ((hbbDijetMassDown >= 90) && (hbbDijetMassDown <  150));
       cut_jesDown["mH_Flip"    ] = ((hbbDijetMassDown < 90) || (hbbDijetMassDown >= 150 && hbbDijetMassDown < 250));
-      if(passAllCuts( cut_jesDown, cutsWHLightFlavorCR)) selectionBits_jesDown |= kWHLightFlavorCR;
-      if(passAllCuts( cut_jesDown, cutsWHHeavyFlavorCR)) selectionBits_jesDown |= kWHHeavyFlavorCR;
-      if(passAllCuts( cut_jesDown, cutsWH2TopCR       )) selectionBits_jesDown |= kWH2TopCR;
-      if(passAllCuts( cut_jesDown, cutsWHSR           )) selectionBits_jesDown |= kWHSR;
+      if(passAllCuts( cut_jesDown, cutsWHLightFlavorCR, debug)) selectionBits_jesDown |= kWHLightFlavorCR;
+      if(passAllCuts( cut_jesDown, cutsWHHeavyFlavorCR, debug)) selectionBits_jesDown |= kWHHeavyFlavorCR;
+      if(passAllCuts( cut_jesDown, cutsWH2TopCR       , debug)) selectionBits_jesDown |= kWH2TopCR;
+      if(passAllCuts( cut_jesDown, cutsWHSR           , debug)) selectionBits_jesDown |= kWHSR;
       // End WH Resolved Selection
 
-    } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
+    } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
       // Begin WH Boosted Selection
       float MSDmin=80, MSDmax=150;
       cut["2ndLepVeto" ] = nLooseLep==1;
@@ -985,59 +1003,66 @@ bool vhbbPlotSkim(
       cut["pTfj"       ] = gt.fj1Pt>250; 
       cut["lepton1Pt"  ] = ((typeLepSel==1 && lepton1Pt>25) || (typeLepSel==2 && lepton1Pt>30));
       cut["lepton1IP"  ] = (typeLepSel==1 && lepton1D0<0.20 && lepton1DZ<0.50) || (typeLepSel==2 && ((fabs(lepton1Eta)<1.479 && lepton1D0<0.05 && lepton1DZ<0.10) || (fabs(lepton1Eta)>=1.479 && lepton1D0<0.10 && lepton1DZ<0.20)));
-      cut["dPhiVH"     ] = deltaPhiVH > 2.9;
-      cut["sjBTag"     ] = gt.fj1MaxCSV>=0.8484;
-      cut["sjBVeto"    ] = gt.fj1MaxCSV<0.8484;
-      //cut["twoProngs"  ] =  (gt.fj1Tau21<0.6 && gt.fj1Tau32>=0.5);
-      //cut["threeProngs"] = !(                   gt.fj1Tau32>=0.5);
-      cut["mH_WHFJSR"  ] = ((gt.fj1MSD>=MSDmin));
+      cut["dPhiVH"     ] = deltaPhiVH>2.5;
+      cut["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
+      cut["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
+      cut["mH_WHFJSR"  ] = (gt.fj1MSD>=MSDmin && gt.fj1MSD<MSDmax);
       cut["mH_WHHFCR"  ] = gt.fj1MSD<MSDmin;
       cut["isojetBtag" ] = isojetNBtags>0;
       cut["isojetBVeto"] = isojetNBtags==0;
-      cut["metSig"     ] = gt.pfmetsig>2;
+      //cut["metSig"     ] = gt.pfmetsig>2;
       
-      vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWH2TopFJCR, cutsWHFJSR, cutsWHFJPresel;
-      cutsWHLightFlavorFJCR ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBVeto","isojetBVeto"            };
-      cutsWHHeavyFlavorFJCR ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"isojetBVeto","mH_WHHFCR"};
-      cutsWH2TopFJCR        ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"isojetBtag"             };
-      cutsWHFJSR            ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","sjBTag" ,"isojetBVeto","mH_WHFJSR"};
-      cutsWHFJPresel        ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt"                                             };
+      vector<TString> cutsWHLightFlavorFJCR, cutsWHHeavyFlavorFJCR, cutsWHTT2bFJCR, cutsWHTT1bFJCR, cutsWHFJSR, cutsWHFJPresel;
+      cutsWHLightFlavorFJCR ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","DoubleBVeto","isojetBVeto"            };
+      cutsWHHeavyFlavorFJCR ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","DoubleBTag" ,"isojetBVeto","mH_WHHFCR"};
+      cutsWHTT2bFJCR        ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","DoubleBTag" ,"isojetBtag"             };
+      cutsWHTT1bFJCR        ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","DoubleBVeto","isojetBtag"             };
+      cutsWHFJSR            ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt","dPhiVH","DoubleBTag" ,"isojetBVeto","mH_WHFJSR"};
+      cutsWHFJPresel        ={"ecfSanity","ultraLepIso", "lepton1IP", "2ndLepVeto","WpT","pTfj","lepton1Pt"                                                 };
 
       if(passAllCuts( cut, cutsWHLightFlavorFJCR, debug))   selectionBits |= kWHLightFlavorFJCR;
       if(passAllCuts( cut, cutsWHHeavyFlavorFJCR, debug))   selectionBits |= kWHHeavyFlavorFJCR;
-      if(passAllCuts( cut, cutsWH2TopFJCR       , debug))   selectionBits |= kWH2TopFJCR;
+      if(passAllCuts( cut, cutsWHTT2bFJCR       , debug))   selectionBits |= kWHTT2bFJCR;
+      if(passAllCuts( cut, cutsWHTT1bFJCR       , debug))   selectionBits |= kWHTT1bFJCR;
       if(passAllCuts( cut, cutsWHFJSR           , debug))   selectionBits |= kWHFJSR;
       if(passAllCuts( cut, cutsWHFJPresel       , debug))   selectionBits |= kWHFJPresel;
       if(passNMinusOne( cut, cutsWHLightFlavorFJCR)) nMinusOneBits |= kWHLightFlavorFJCR;
       if(passNMinusOne( cut, cutsWHHeavyFlavorFJCR)) nMinusOneBits |= kWHHeavyFlavorFJCR;
-      if(passNMinusOne( cut, cutsWH2TopFJCR       )) nMinusOneBits |= kWH2TopFJCR;
+      if(passNMinusOne( cut, cutsWHTT2bFJCR       )) nMinusOneBits |= kWHTT2bFJCR;
+      if(passNMinusOne( cut, cutsWHTT1bFJCR       )) nMinusOneBits |= kWHTT1bFJCR;
       if(passNMinusOne( cut, cutsWHFJSR           )) nMinusOneBits |= kWHFJSR;
       if(passNMinusOne( cut, cutsWHFJPresel       )) nMinusOneBits |= kWHFJPresel;
 
       cut_jesUp=cut;
-      cut_jesUp["WpT"        ] = topWBosonPt_jesUp>100;
+      cut_jesUp["WpT"        ] = topWBosonPt_jesUp>250;
       cut_jesUp["pTfj"       ] = gt.fj1PtScaleUp>250; 
-      cut_jesUp["nJet_WHFJTT"] = nIsojet_jesUp>=2;
-      cut_jesUp["nJet_WHFJHF"] = nIsojet_jesUp==0;
-      cut_jesUp["nJet_WHFJSR"] = nIsojet_jesUp<2;
+      cut_jesUp["dPhiVH"     ] = deltaPhiVH_jesUp>2.5;
+      cut_jesUp["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
+      cut_jesUp["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
       cut_jesUp["mH_WHFJSR"  ] = ((gt.fj1MSDScaleUp>=MSDmin));
       cut_jesUp["mH_WHHFCR"  ] = gt.fj1MSDScaleUp<MSDmin;
+      cut_jesUp["isojetBtag" ] = isojetNBtags_jesUp>0;
+      cut_jesUp["isojetBVeto"] = isojetNBtags_jesUp==0;
       if(passAllCuts( cut_jesUp, cutsWHLightFlavorFJCR)) selectionBits_jesUp |= kWHLightFlavorFJCR;
       if(passAllCuts( cut_jesUp, cutsWHHeavyFlavorFJCR)) selectionBits_jesUp |= kWHHeavyFlavorFJCR;
-      if(passAllCuts( cut_jesUp, cutsWH2TopFJCR       )) selectionBits_jesUp |= kWH2TopFJCR;
+      if(passAllCuts( cut_jesUp, cutsWHTT2bFJCR       )) selectionBits_jesUp |= kWHTT2bFJCR;
+      if(passAllCuts( cut_jesUp, cutsWHTT1bFJCR       )) selectionBits_jesUp |= kWHTT1bFJCR;
       if(passAllCuts( cut_jesUp, cutsWHFJSR           )) selectionBits_jesUp |= kWHFJSR;
       
       cut_jesDown=cut;
-      cut_jesDown["WpT"        ] = topWBosonPt_jesDown>100;
+      cut_jesDown["WpT"        ] = topWBosonPt_jesDown>250;
       cut_jesDown["pTfj"       ] = gt.fj1PtScaleDown>250; 
-      cut_jesDown["nJet_WHFJTT"] = nIsojet_jesDown>=2;
-      cut_jesDown["nJet_WHFJHF"] = nIsojet_jesDown==0;
-      cut_jesDown["nJet_WHFJSR"] = nIsojet_jesDown<2;
+      cut_jesDown["dPhiVH"     ] = deltaPhiVH_jesDown>2.5;
+      cut_jesDown["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
+      cut_jesDown["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
       cut_jesDown["mH_WHFJSR"  ] = ((gt.fj1MSDScaleDown>=MSDmin));
       cut_jesDown["mH_WHHFCR"  ] = gt.fj1MSDScaleDown<MSDmin;
+      cut_jesDown["isojetBtag" ] = isojetNBtags_jesDown>0;
+      cut_jesDown["isojetBVeto"] = isojetNBtags_jesDown==0;
       if(passAllCuts( cut_jesDown, cutsWHLightFlavorFJCR)) selectionBits_jesDown |= kWHLightFlavorFJCR;
       if(passAllCuts( cut_jesDown, cutsWHHeavyFlavorFJCR)) selectionBits_jesDown |= kWHHeavyFlavorFJCR;
-      if(passAllCuts( cut_jesDown, cutsWH2TopFJCR       )) selectionBits_jesDown |= kWH2TopFJCR;
+      if(passAllCuts( cut_jesDown, cutsWHTT2bFJCR       )) selectionBits_jesDown |= kWHTT2bFJCR;
+      if(passAllCuts( cut_jesDown, cutsWHTT1bFJCR       )) selectionBits_jesDown |= kWHTT1bFJCR;
       if(passAllCuts( cut_jesDown, cutsWHFJSR           )) selectionBits_jesDown |= kWHFJSR;
       // End WH Boosted Selection 
     }

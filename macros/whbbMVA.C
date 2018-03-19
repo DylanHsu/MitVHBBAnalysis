@@ -135,53 +135,52 @@ void whbbMVA(
   TCut preselectionCut;
   if(isBoosted) {
     //preselectionCut = Form("(selectionBits & (%d|%d|%d|%d))!=0 && weight<500. && fj1ECFN_2_4_20>0", vhbbPlot::kWHLightFlavorFJCR, vhbbPlot::kWHHeavyFlavorFJCR, vhbbPlot::kWH2TopFJCR, vhbbPlot::kWHFJSR);
-    preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHFJPresel);
-    // Feb 26 2018
-    preselectionCut = preselectionCut && "topWBosonPt>250 && nIsojet<2 && deltaPhiVH>2.9";
+    //preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHFJPresel);
+    preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHFJSR);
     //factory->AddVariable( "isojetNBtags"                      , "Iso. loose b-jets"                 , ""           , 'I');
-    factory->AddVariable( "nIsojet"                           , "Isolated AK4 jets"                 , ""           , 'I');
-    factory->AddVariable( "fj1Pt"                             , "FJ p_{T}"                          , "GeV"        , 'F');
-    factory->AddVariable( adjustedFatjetEta                   , "FJ #eta"                           , ""           , 'F');
     //factory->AddVariable( maxSubjetCSV                        , "FJ max subjet B-tag"               , ""           , 'F');
     //factory->AddVariable( minSubjetCSV                        , "FJ min subjet B-tag"               , ""           , 'F');
     //factory->AddVariable( "fj1DoubleCSV"                      , "FJ double B-tag"                   , ""           , 'F');
     //factory->AddVariable( "fj1HTTMass"                        , "FJ HTT mass"                       , "GeV"        , 'F');
+    //factory->AddVariable( "fj1Tau32SD"                        , "FJ #tau_{32}^{SD}"                 , ""           , 'F');
+    //factory->AddVariable( "fj1Tau21SD"                        , "FJ #tau_{21}^{SD}"                 , ""           , 'F');
+    //factory->AddVariable( "lepton1Flav"                       , "Lepton flavor"                     , ""           , 'I');
+    //factory->AddVariable( "deltaPhiLep1Met"                   , "#Delta#phi(lepton,p_{T}^{miss})"   , "Rad"        , 'F');
+    //factory->AddVariable( "mT"                                , "W boson m_{T}"                     , "GeV"        , 'F');
+    //factory->AddVariable( "pfmetsig"                          , "E_{T}^{miss} sig."                 , "#sqrt{GeV}" , 'F');
+    //factory->AddVariable( dPhil1fj1                           , "#Delta#phi(lep,FJ)"                , "Rad"        , 'F');
+    //factory->AddVariable( dPhiWfj1                            , "#Delta#phi(W,FJ)"                  , "Rad"        , 'F');
+    factory->AddVariable( "nIsojet"                           , "Isolated AK4 jets"                 , ""           , 'I');
+    //factory->AddVariable( "fj1Pt"                             , "FJ p_{T}"                          , "GeV"        , 'F');
+    factory->AddVariable( adjustedFatjetEta                   , "FJ #eta"                           , ""           , 'F');
     factory->AddVariable( "fj1HTTFRec"                        , "FJ HTT f_{rec}"                    , ""           , 'F');
     factory->AddVariable( "fj1MSD"                            , "FJ soft drop mass"                 , "GeV"        , 'F');
     factory->AddVariable( "fj1Tau32"                          , "FJ #tau_{32}"                      , ""           , 'F');
-    //factory->AddVariable( "fj1Tau32SD"                        , "FJ #tau_{32}^{SD}"                 , ""           , 'F');
     factory->AddVariable( "fj1Tau21"                          , "FJ #tau_{21}"                      , ""           , 'F');
-    //factory->AddVariable( "fj1Tau21SD"                        , "FJ #tau_{21}^{SD}"                 , ""           , 'F');
     factory->AddVariable( "lepton1Pt"                         , "Lepton p_{T}"                      , "GeV"        , 'F');
-    //factory->AddVariable( "lepton1Flav"                       , "Lepton flavor"                     , ""           , 'I');
     factory->AddVariable( "lepton1Charge"                     , "Lepton charge"                     , ""           , 'I');
     factory->AddVariable( "deltaPhiVH"                        , "#Delta#phi(W,H)"                   , "Rad"        , 'F');
-    //factory->AddVariable( "deltaPhiLep1Met"                   , "#Delta#phi(lepton,p_{T}^{miss})"   , "Rad"        , 'F');
     factory->AddVariable( "topWBosonPt"                       , "W boson p_{T}"                     , "GeV"        , 'F');
-    //factory->AddVariable( "mT"                                , "W boson m_{T}"                     , "GeV"        , 'F');
-    //factory->AddVariable( "pfmetsig"                          , "E_{T}^{miss} sig."                 , "#sqrt{GeV}" , 'F');
     factory->AddVariable( "pfmet"                             , "p_{T}^{miss}"                      , "GeV"        , 'F');
     factory->AddVariable( dPhil1W                             , "#Delta#phi(lep,W)"                 , "Rad"        , 'F');
-    //factory->AddVariable( dPhil1fj1                           , "#Delta#phi(lep,FJ)"                , "Rad"        , 'F');
-    //factory->AddVariable( dPhiWfj1                            , "#Delta#phi(W,FJ)"                  , "Rad"        , 'F');
     factory->AddVariable( dEtal1fj1                           , "|#Delta#eta(lep,FJ)|"              , ""           , 'F');
     //factory->AddVariable( psi["021004010502"]                 , "#psi(2,1.0,4,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["012004010502"]                 , "#psi(1,2.0,4,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["021003011002"]                 , "#psi(2,1.0,3,1,1.0,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["022004011002"]                 , "#psi(2,2.0,4,1,1.0,2)"             , ""           , 'F'); 
-    //factory->AddVariable( psi["020503010502"]                 , "#psi(2,0.5,3,1,0.5,2)"             , ""           , 'F'); 
-    factory->AddVariable( psi["022003012002"]                 , "#psi(2,2.0,3,1,2.0,2)"             , ""           , 'F'); 
+    factory->AddVariable( psi["020503010502"]                 , "#psi(2,0.5,3,1,0.5,2)"             , ""           , 'F'); 
+    factory->AddVariable( psi["022003012002"]                 , "#psi(2,2.0,3,1,2.0,2)"             , ""           , 'F');
     //factory->AddVariable( psi["012004020503"]                 , "#psi(1,2.0,4,2,0.5,3)"             , ""           , 'F'); 
     //factory->AddVariable( psi["021004020503"]                 , "#psi(2,1.0,4,2,0.5,3)"             , ""           , 'F'); 
-    //factory->AddVariable( psi["032003012002"]                 , "#psi(3,2.0,3,1,2.0,2)"             , ""           , 'F'); 
+    factory->AddVariable( psi["032003012002"]                 , "#psi(3,2.0,3,1,2.0,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["012003011002"]                 , "#psi(1,2.0,3,1,1.0,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["011003010502"]                 , "#psi(1,1.0,3,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["031003011002"]                 , "#psi(3,1.0,3,1,1.0,2)"             , ""           , 'F'); 
-    factory->AddVariable( psi["031003012002"]                 , "#psi(3,1.0,3,1,2.0,2)"             , ""           , 'F'); 
+    factory->AddVariable( psi["031003012002"]                 , "#psi(3,1.0,3,1,2.0,2)"             , ""           , 'F');
     //factory->AddVariable( psi["030503011002"]                 , "#psi(3,0.5,3,1,1.0,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["022004012002"]                 , "#psi(2,2.0,4,1,2.0,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["021004011002"]                 , "#psi(2,1.0,4,1,1.0,2)"             , ""           , 'F'); 
-    factory->AddVariable( psi["012004011002"]                 , "#psi(1,2.0,4,1,1.0,2)"             , ""           , 'F'); 
+    //factory->AddVariable( psi["012004011002"]                 , "#psi(1,2.0,4,1,1.0,2)"             , ""           , 'F');
     //factory->AddVariable( psi["022004021003"]                 , "#psi(2,2.0,4,2,1.0,3)"             , ""           , 'F'); 
     //factory->AddVariable( psi["012003010502"]                 , "#psi(1,2.0,3,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["022003011002"]                 , "#psi(2,2.0,3,1,1.0,2)"             , ""           , 'F'); 
@@ -191,7 +190,7 @@ void whbbMVA(
     //factory->AddVariable( psi["020504010502"]                 , "#psi(2,0.5,4,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["022004030503"]                 , "#psi(2,2.0,4,3,0.5,3)"             , ""           , 'F'); 
     //factory->AddVariable( psi["011004010502"]                 , "#psi(1,1.0,4,1,0.5,2)"             , ""           , 'F'); 
-    //factory->AddVariable( psi["030503010502"]                 , "#psi(3,0.5,3,1,0.5,2)"             , ""           , 'F'); 
+    factory->AddVariable( psi["030503010502"]                 , "#psi(3,0.5,3,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["021003010502"]                 , "#psi(2,1.0,3,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["012004011003"]                 , "#psi(1,2.0,4,1,1.0,3)"             , ""           , 'F'); 
     //factory->AddVariable( psi["012004021004"]                 , "#psi(1,2.0,4,2,1.0,4)"             , ""           , 'F'); 
@@ -209,11 +208,11 @@ void whbbMVA(
     //factory->AddVariable( psi["020504020503"]                 , "#psi(2,0.5,4,2,0.5,3)"             , ""           , 'F'); 
     //factory->AddVariable( psi["011004011002"]                 , "#psi(1,1.0,4,1,1.0,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["021004012002"]                 , "#psi(2,1.0,4,1,2.0,2)"             , ""           , 'F'); 
-    factory->AddVariable( psi["021003012002"]                 , "#psi(2,1.0,3,1,2.0,2)"             , ""           , 'F'); 
+    //factory->AddVariable( psi["021003012002"]                 , "#psi(2,1.0,3,1,2.0,2)"             , ""           , 'F');
     //factory->AddVariable( psi["011004020503"]                 , "#psi(1,1.0,4,2,0.5,3)"             , ""           , 'F'); 
-    //factory->AddVariable( psi["010504010502"]                 , "#psi(1,0.5,4,1,0.5,2)"             , ""           , 'F'); 
+    factory->AddVariable( psi["010504010502"]                 , "#psi(1,0.5,4,1,0.5,2)"             , ""           , 'F'); 
     //factory->AddVariable( psi["021004021003"]                 , "#psi(2,1.0,4,2,1.0,3)"             , ""           , 'F'); 
-    factory->AddVariable( psi["012003012002"]                 , "#psi(1,2.0,3,1,2.0,2)"             , ""           , 'F'); 
+    //factory->AddVariable( psi["012003012002"]                 , "#psi(1,2.0,3,1,2.0,2)"             , ""           , 'F');
     //factory->AddVariable( psi["022004022003"]                 , "#psi(2,2.0,4,2,2.0,3)"             , ""           , 'F'); 
   } else {
     preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHSR);
@@ -332,7 +331,7 @@ void whbbMVA(
     prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
     prepareOptions+=":MixMode=Random";
   factory->PrepareTrainingAndTestTree(preselectionCut, prepareOptions);
-  TString hyperparameters="!H:!V:NTrees=1000:MinNodeSize=5%:MaxDepth=4:BoostType=Grad:Shrinkage=0.10:nCuts=100:PruneMethod=NoPruning";
+  TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
   if(useGaussDeco) hyperparameters += ":VarTransform=G,D";
   factory->BookMethod(
     TMVA::Types::kBDT,

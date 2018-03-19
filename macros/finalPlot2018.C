@@ -55,7 +55,7 @@ TList *finalPlot2018(
           if(normSignalToBkg) plotName="WH(125)x?";
           else                plotName="WH(125)x100";
         }
-        else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)x10";
+        //else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)x10";
         else plotName="ZH(125)x100";
       } else plotName=plotNames[i]; 
 
@@ -69,8 +69,8 @@ TList *finalPlot2018(
       // Scaling
       //if(i!=kPlotData) histos[i]->Scale(theLumi);
       if(i==kPlotQCD) histos[i]->Scale(1.0);
-      if(i==kPlotVH && !normSignalToBkg && selType!=kWHSR && selType!=kWHFJSR && selType!=kZnnHSR && selType!=kZllHSR) histos[i]->Scale(100.);
-      if(i==kPlotVH && !normSignalToBkg && (selType==kWHSR || selType==kWHFJSR || selType==kZnnHSR || selType==kZllHSR)) histos[i]->Scale(10.);
+      if(i==kPlotVH && !normSignalToBkg && selType!=kWHSR && selType!=kWHFJSR /*&& selType!=kZnnHSR && selType!=kZllHSR*/) histos[i]->Scale(100.);
+      if(i==kPlotVH && !normSignalToBkg && (selType==kWHSR || selType==kWHFJSR /*|| selType==kZnnHSR || selType==kZllHSR*/)) histos[i]->Scale(10.);
 
       // Colors
       if(i==kPlotData) {
