@@ -92,8 +92,29 @@ bool vhbbPlotSkim(
     if(debug) printf("Booking GeneralTree branch \"%s\"\n", branchName.Data());
   }
    
+  // Load corrections to apply offline
   CSVHelper *cmvaReweighter = new CSVHelper("PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root"   , "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root"   , 5);
+  
+  TFile *kfactorsFile = TFile::Open("PandaAnalysis/data/kfactors.root","read"); assert(kfactorsFile);
+  TH1F *hWjets_relErr_QCDfScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_up"  )->Clone("hWjets_relErr_QCDfScaleUp"  ); hWjets_relErr_QCDfScaleUp  ->SetDirectory(0);
+  TH1F *hWjets_relErr_QCDfScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_down")->Clone("hWjets_relErr_QCDfScaleDown"); hWjets_relErr_QCDfScaleDown->SetDirectory(0);
+  TH1F *hWjets_relErr_QCDrScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_up"   )->Clone("hWjets_relErr_QCDrScaleUp"  ); hWjets_relErr_QCDrScaleUp  ->SetDirectory(0);
+  TH1F *hWjets_relErr_QCDrScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_down" )->Clone("hWjets_relErr_QCDrScaleDown"); hWjets_relErr_QCDrScaleDown->SetDirectory(0);
+  TH1F *hZjets_relErr_QCDfScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_up"  )->Clone("hWjets_relErr_QCDfScaleUp"  ); hWjets_relErr_QCDfScaleUp  ->SetDirectory(0);
+  TH1F *hZjets_relErr_QCDfScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_down")->Clone("hWjets_relErr_QCDfScaleDown"); hWjets_relErr_QCDfScaleDown->SetDirectory(0);
+  TH1F *hZjets_relErr_QCDrScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_up"   )->Clone("hWjets_relErr_QCDrScaleUp"  ); hWjets_relErr_QCDrScaleUp  ->SetDirectory(0);
+  TH1F *hZjets_relErr_QCDrScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_down" )->Clone("hWjets_relErr_QCDrScaleDown"); hWjets_relErr_QCDrScaleDown->SetDirectory(0);
+  hWjets_relErr_QCDfScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  hWjets_relErr_QCDfScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  hWjets_relErr_QCDrScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  hWjets_relErr_QCDrScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  hZjets_relErr_QCDfScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  hZjets_relErr_QCDfScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  hZjets_relErr_QCDrScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  hZjets_relErr_QCDrScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  // Done loading corrections
 
+  // Define the output tree
   TFile *outputFile = TFile::Open(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
   TTree *plotTree = new TTree("plotTree","Tree for making plots");
   unsigned char typeLepSel, theCategory;
@@ -132,6 +153,7 @@ bool vhbbPlotSkim(
   float weight;
   float weight_pdfUp, weight_pdfDown;
   float weight_QCDr1f2, weight_QCDr1f5, weight_QCDr2f1, weight_QCDr2f2, weight_QCDr5f1, weight_QCDr5f5;
+  float weight_NLOQCDrUp, weight_NLOQCDrDown, weight_NLOQCDfUp, weight_NLOQCDfDown; // Renorm/factorization scales of the NLO QCD V+jets k-factors *deep breath*
   float weight_lepSFUp;
   float weight_cmvaLFUp      [5][3] , weight_cmvaLFDown      [5][3]; 
   float weight_cmvaHFUp      [5][3] , weight_cmvaHFDown      [5][3]; 
@@ -211,6 +233,10 @@ bool vhbbPlotSkim(
   plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
   plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
   plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
+  plotTree->Branch("weight_NLOQCDrUp"        , &weight_NLOQCDrUp         );
+  plotTree->Branch("weight_NLOQCDrDown"      , &weight_NLOQCDrDown       );
+  plotTree->Branch("weight_NLOQCDfUp"        , &weight_NLOQCDfUp         );
+  plotTree->Branch("weight_NLOQCDfDown"      , &weight_NLOQCDfDown       );
   plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
   plotTree->Branch("weight_btagBUp"          , &weight_btagBUp           );
   plotTree->Branch("weight_btagBDown"        , &weight_btagBDown         );
@@ -1157,6 +1183,20 @@ bool vhbbPlotSkim(
       weight_QCDr2f2 = weight * gt.scale[3];
       weight_QCDr5f1 = weight * gt.scale[4];
       weight_QCDr5f5 = weight * gt.scale[5];
+      if(sample==kWjets || sample==kZjets) {
+        bLoad(b["genBosonPt"],ientry);
+        if(sample==kWjets) {
+          weight_NLOQCDfUp   = weight * hWjets_relErr_QCDfScaleUp  ->GetBinContent(hWjets_relErr_QCDfScaleUp  ->FindBin(gt.genBosonPt));  
+          weight_NLOQCDfDown = weight * hWjets_relErr_QCDfScaleDown->GetBinContent(hWjets_relErr_QCDfScaleDown->FindBin(gt.genBosonPt));  
+          weight_NLOQCDrUp   = weight * hWjets_relErr_QCDrScaleUp  ->GetBinContent(hWjets_relErr_QCDrScaleUp  ->FindBin(gt.genBosonPt)); 
+          weight_NLOQCDrDown = weight * hWjets_relErr_QCDrScaleDown->GetBinContent(hWjets_relErr_QCDrScaleDown->FindBin(gt.genBosonPt));  
+        } else {
+          weight_NLOQCDfUp   = weight * hZjets_relErr_QCDfScaleUp  ->GetBinContent(hZjets_relErr_QCDfScaleUp  ->FindBin(gt.genBosonPt));  
+          weight_NLOQCDfDown = weight * hZjets_relErr_QCDfScaleDown->GetBinContent(hZjets_relErr_QCDfScaleDown->FindBin(gt.genBosonPt));  
+          weight_NLOQCDrUp   = weight * hZjets_relErr_QCDrScaleUp  ->GetBinContent(hZjets_relErr_QCDrScaleUp  ->FindBin(gt.genBosonPt)); 
+          weight_NLOQCDrDown = weight * hZjets_relErr_QCDrScaleDown->GetBinContent(hZjets_relErr_QCDrScaleDown->FindBin(gt.genBosonPt));  
+        }
+      }
       weight_VHCorrUp   = (sample==kVH)? weight * recorrect_vhEWKUp   / recorrect_vhEWK : weight;
       weight_VHCorrDown = (sample==kVH)? weight * recorrect_vhEWKDown / recorrect_vhEWK : weight;
       
@@ -1245,15 +1285,23 @@ bool vhbbPlotSkim(
       case kTop:
         theCategory=kPlotTop; break;
       case kWjets:
-        bLoad(b["nB"],ientry);
-        if(gt.nB>=2) theCategory=kPlotWbb;
-        else if(gt.nB==1) theCategory=kPlotWb;
+        //bLoad(b["nB"],ientry);
+        //if(gt.nB>=2) theCategory=kPlotWbb;
+        //else if(gt.nB==1) theCategory=kPlotWb;
+        //else theCategory=kPlotWLF; // light flavor
+        bLoad(b["nBGenJets"],ientry);
+        if(gt.nBGenJets>=2) theCategory=kPlotWbb;
+        else if(gt.nBGenJets==1) theCategory=kPlotWb;
         else theCategory=kPlotWLF; // light flavor
         break;
       case kZjets:
-        bLoad(b["nB"],ientry);
-        if(gt.nB>=2) theCategory=kPlotZbb;
-        else if(gt.nB==1) theCategory=kPlotZb;
+        //bLoad(b["nB"],ientry);
+        //if(gt.nB>=2) theCategory=kPlotZbb;
+        //else if(gt.nB==1) theCategory=kPlotZb;
+        //else theCategory=kPlotZLF; // light flavor
+        bLoad(b["nBGenJets"],ientry);
+        if(gt.nBGenJets>=2) theCategory=kPlotZbb;
+        else if(gt.nBGenJets==1) theCategory=kPlotZb;
         else theCategory=kPlotZLF; // light flavor
         break;
       case kVH:
