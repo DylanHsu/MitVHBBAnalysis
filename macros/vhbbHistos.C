@@ -185,6 +185,7 @@ void vhbbHistos(
   float weight_VHCorrUp, weight_VHCorrDown;
   float weight_pdfUp, weight_pdfDown;
   float weight_QCDr1f2, weight_QCDr1f5, weight_QCDr2f1, weight_QCDr2f2, weight_QCDr5f1, weight_QCDr5f5, weight_lepSFUp;
+  float weight_NLOQCDfUp,weight_NLOQCDfDown,weight_NLOQCDrUp,weight_NLOQCDrDown;
   float weight_cmvaJESUp     [5][3] , weight_cmvaJESDown     [5][3] , 
         weight_cmvaLFUp      [5][3] , weight_cmvaLFDown      [5][3] , 
         weight_cmvaHFUp      [5][3] , weight_cmvaHFDown      [5][3] , 
@@ -357,6 +358,10 @@ void vhbbHistos(
   plotTree->SetBranchAddress("weight_QCDr2f2"     , &weight_QCDr2f2      );
   plotTree->SetBranchAddress("weight_QCDr5f1"     , &weight_QCDr5f1      );
   plotTree->SetBranchAddress("weight_QCDr5f5"     , &weight_QCDr5f5      );
+  plotTree->SetBranchAddress("weight_NLOQCDfUp"   , &weight_NLOQCDfUp    );
+  plotTree->SetBranchAddress("weight_NLOQCDfDown" , &weight_NLOQCDfDown  );
+  plotTree->SetBranchAddress("weight_NLOQCDrUp"   , &weight_NLOQCDrUp    );
+  plotTree->SetBranchAddress("weight_NLOQCDrDown" , &weight_NLOQCDrDown  );
   plotTree->SetBranchAddress("weight_cmvaJESUp"       , weight_cmvaJESUp       );
   plotTree->SetBranchAddress("weight_cmvaLFUp"        , weight_cmvaLFUp        );
   plotTree->SetBranchAddress("weight_cmvaHFUp"        , weight_cmvaHFUp        );
@@ -844,6 +849,10 @@ void vhbbHistos(
   TH1D *histo_QCDr2f2  [nPlotCategories];
   TH1D *histo_QCDr5f1  [nPlotCategories];
   TH1D *histo_QCDr5f5  [nPlotCategories];
+  TH1D *histo_NLOQCDrUp   [nPlotCategories];
+  TH1D *histo_NLOQCDrDown [nPlotCategories];
+  TH1D *histo_NLOQCDfUp   [nPlotCategories];
+  TH1D *histo_NLOQCDfDown [nPlotCategories];
   TH1D *histo_QCDrScaleUp   [nPlotCategories];
   TH1D *histo_QCDrScaleDown [nPlotCategories];
   TH1D *histo_QCDfScaleUp   [nPlotCategories];
@@ -878,6 +887,10 @@ void vhbbHistos(
     histo_QCDrScaleDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDrScaleDown" , theCategory)); histo_QCDrScaleDown[theCategory]->SetDirectory(0);
     histo_QCDfScaleUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDfScaleUp"   , theCategory)); histo_QCDfScaleUp  [theCategory]->SetDirectory(0);
     histo_QCDfScaleDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDfScaleDown" , theCategory)); histo_QCDfScaleDown[theCategory]->SetDirectory(0);
+    histo_NLOQCDrUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDrUp"   , theCategory)); histo_NLOQCDrUp  [theCategory]->SetDirectory(0);
+    histo_NLOQCDrDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDrDown" , theCategory)); histo_NLOQCDrDown[theCategory]->SetDirectory(0);
+    histo_NLOQCDfUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDfUp"   , theCategory)); histo_NLOQCDfUp  [theCategory]->SetDirectory(0);
+    histo_NLOQCDfDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDfDown" , theCategory)); histo_NLOQCDfDown[theCategory]->SetDirectory(0);
     histo_eleSFUp    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFUp"  , theCategory)); histo_eleSFUp   [theCategory]->SetDirectory(0);
     histo_eleSFDown  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFDown", theCategory)); histo_eleSFDown [theCategory]->SetDirectory(0);
     histo_muSFUp     [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFUp"   , theCategory)); histo_muSFUp    [theCategory]->SetDirectory(0);
@@ -1566,6 +1579,10 @@ void vhbbHistos(
       histo_QCDr2f2     [theCategory]->Fill(MVAVar, sf_training*weight_QCDr2f2  ); 
       histo_QCDr5f1     [theCategory]->Fill(MVAVar, sf_training*weight_QCDr5f1  ); 
       histo_QCDr5f5     [theCategory]->Fill(MVAVar, sf_training*weight_QCDr5f5  ); 
+      histo_NLOQCDfUp   [theCategory]->Fill(MVAVar, sf_training*weight_NLOQCDfUp  ); 
+      histo_NLOQCDfDown [theCategory]->Fill(MVAVar, sf_training*weight_NLOQCDfDown); 
+      histo_NLOQCDrUp   [theCategory]->Fill(MVAVar, sf_training*weight_NLOQCDrUp  ); 
+      histo_NLOQCDrDown [theCategory]->Fill(MVAVar, sf_training*weight_NLOQCDrDown); 
       histo_muSFUp      [theCategory]->Fill(MVAVar, sf_training*(typeLepSel==1&&weight_lepSFUp>0?weight_lepSFUp : weight)); 
       histo_muSFDown    [theCategory]->Fill(MVAVar, sf_training*(typeLepSel==1&&weight_lepSFUp>0?weight*weight/weight_lepSFUp : weight)); 
       histo_eleSFUp     [theCategory]->Fill(MVAVar, sf_training*(typeLepSel==2&&weight_lepSFUp>0?weight_lepSFUp : weight)); 
@@ -1617,14 +1634,14 @@ void vhbbHistos(
       histo_QCDrScaleDown[ic]->SetBinContent(nb, nomYield);
       histo_QCDfScaleUp  [ic]->SetBinContent(nb, nomYield);
       histo_QCDfScaleDown[ic]->SetBinContent(nb, nomYield);
-      if(histo_QCDr1f2[ic]->GetBinContent(nb) > histo_QCDfScaleUp  [ic]->GetBinContent(nb)) histo_QCDfScaleUp  [ic]->SetBinContent(nb, histo_QCDr1f2[ic]->GetBinContent(nb));
-      if(histo_QCDr1f5[ic]->GetBinContent(nb) > histo_QCDfScaleUp  [ic]->GetBinContent(nb)) histo_QCDfScaleUp  [ic]->SetBinContent(nb, histo_QCDr1f5[ic]->GetBinContent(nb));
-      if(histo_QCDr2f1[ic]->GetBinContent(nb) > histo_QCDrScaleUp  [ic]->GetBinContent(nb)) histo_QCDrScaleUp  [ic]->SetBinContent(nb, histo_QCDr2f1[ic]->GetBinContent(nb));
-      if(histo_QCDr5f1[ic]->GetBinContent(nb) > histo_QCDrScaleUp  [ic]->GetBinContent(nb)) histo_QCDrScaleUp  [ic]->SetBinContent(nb, histo_QCDr5f1[ic]->GetBinContent(nb));
-      if(histo_QCDr1f2[ic]->GetBinContent(nb) < histo_QCDfScaleDown[ic]->GetBinContent(nb)) histo_QCDfScaleDown[ic]->SetBinContent(nb, histo_QCDr1f2[ic]->GetBinContent(nb));
-      if(histo_QCDr1f5[ic]->GetBinContent(nb) < histo_QCDfScaleDown[ic]->GetBinContent(nb)) histo_QCDfScaleDown[ic]->SetBinContent(nb, histo_QCDr1f5[ic]->GetBinContent(nb));
-      if(histo_QCDr2f1[ic]->GetBinContent(nb) < histo_QCDrScaleDown[ic]->GetBinContent(nb)) histo_QCDrScaleDown[ic]->SetBinContent(nb, histo_QCDr2f1[ic]->GetBinContent(nb));
-      if(histo_QCDr5f1[ic]->GetBinContent(nb) < histo_QCDrScaleDown[ic]->GetBinContent(nb)) histo_QCDrScaleDown[ic]->SetBinContent(nb, histo_QCDr5f1[ic]->GetBinContent(nb));
+      // Symmetrize this shape uncertainty
+      if(fabs(histo_QCDr1f2[ic]->GetBinContent(nb)) > histo_QCDfScaleUp  [ic]->GetBinContent(nb)) histo_QCDfScaleUp  [ic]->SetBinContent(nb, fabs(histo_QCDr1f2[ic]->GetBinContent(nb)));
+      if(fabs(histo_QCDr1f5[ic]->GetBinContent(nb)) > histo_QCDfScaleUp  [ic]->GetBinContent(nb)) histo_QCDfScaleUp  [ic]->SetBinContent(nb, fabs(histo_QCDr1f5[ic]->GetBinContent(nb)));
+      if(fabs(histo_QCDr2f1[ic]->GetBinContent(nb)) > histo_QCDrScaleUp  [ic]->GetBinContent(nb)) histo_QCDrScaleUp  [ic]->SetBinContent(nb, fabs(histo_QCDr2f1[ic]->GetBinContent(nb)));
+      if(fabs(histo_QCDr5f1[ic]->GetBinContent(nb)) > histo_QCDrScaleUp  [ic]->GetBinContent(nb)) histo_QCDrScaleUp  [ic]->SetBinContent(nb, fabs(histo_QCDr5f1[ic]->GetBinContent(nb)));
+      histo_QCDfScaleDown[ic]->SetBinContent(nb, nomYield*nomYield/histo_QCDfScaleUp[ic]->GetBinContent(nb));
+      histo_QCDrScaleDown[ic]->SetBinContent(nb, nomYield*nomYield/histo_QCDrScaleUp[ic]->GetBinContent(nb));
+      // Bound between [0.5,2.0] (essentially does nothing)
       histo_QCDrScaleUp  [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDrScaleUp  [ic]->GetBinContent(nb))));
       histo_QCDrScaleDown[ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDrScaleDown[ic]->GetBinContent(nb))));
       histo_QCDfScaleUp  [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDfScaleUp  [ic]->GetBinContent(nb))));
@@ -1639,7 +1656,6 @@ void vhbbHistos(
       histo_eleSFDown   [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_eleSFDown   [ic]->GetBinContent(nb))));
       histo_wptCorrUp   [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_wptCorrUp   [ic]->GetBinContent(nb))));
       histo_wptCorrDown [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_wptCorrDown [ic]->GetBinContent(nb))));
-      //printf("DEBUG\tnb=%d: QCD envelope {%.2f,%.2f,%.2f,%.2f,%.2f,%.2f}, up/down {%.2f,%.2f}\n",nb,histo_QCDr1f2[ic]->GetBinContent(nb),histo_QCDr1f5[ic]->GetBinContent(nb),histo_QCDr2f1[ic]->GetBinContent(nb),histo_QCDr2f2[ic]->GetBinContent(nb),histo_QCDr5f1[ic]->GetBinContent(nb),histo_QCDr5f5[ic]->GetBinContent(nb),histo_QCDScaleDown[ic]->GetBinContent(nb),histo_QCDScaleUp  [ic]->GetBinContent(nb));
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
         histo_cmvaJESUp       [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaJESUp       [iPt][iEta][ic]->GetBinContent(nb))));
         histo_cmvaLFUp        [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFUp        [iPt][iEta][ic]->GetBinContent(nb))));
@@ -1730,12 +1746,18 @@ void vhbbHistos(
     for(int ic=ic0; ic<nPlotCategories; ic++) {
       if(ic==kPlotTop) continue; // Bug in MiniAOD
       card<<Form("QCDrScale%s shape ",plotBaseNames[ic].Data());
-      card<<Form("QCDfScale%s shape ",plotBaseNames[ic].Data());
       for(int jc=ic0; jc<nPlotCategories; jc++) {
         if(jc==ic) {
           card<<"1.0 ";
           histo_QCDrScaleUp  [ic]->Write(shapeName[ic]+Form("_QCDrScale%sUp"  ,plotBaseNames[ic].Data()));
           histo_QCDrScaleDown[ic]->Write(shapeName[ic]+Form("_QCDrScale%sDown",plotBaseNames[ic].Data()));
+        } else card<<"- ";
+      }
+      card<<std::endl;
+      card<<Form("QCDfScale%s shape ",plotBaseNames[ic].Data());
+      for(int jc=ic0; jc<nPlotCategories; jc++) {
+        if(jc==ic) {
+          card<<"1.0 ";
           histo_QCDfScaleUp  [ic]->Write(shapeName[ic]+Form("_QCDfScale%sUp"  ,plotBaseNames[ic].Data()));
           histo_QCDfScaleDown[ic]->Write(shapeName[ic]+Form("_QCDfScale%sDown",plotBaseNames[ic].Data()));
         } else card<<"- ";

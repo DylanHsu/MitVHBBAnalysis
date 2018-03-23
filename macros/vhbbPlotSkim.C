@@ -52,7 +52,24 @@ bool vhbbPlotSkim(
     if(!inputFile) { throw std::runtime_error("Problem opening input file"); return false; }
   TTree *events = (TTree*)inputFile->Get("events");
   if(!events) { throw std::runtime_error("Problem loading tree"); return false; }
-  
+
+  TH1F *hDTotalMCWeight = events->Get("hDTotalMCWeight");
+  assert(hDTotalMCWeight); assert(hDTotalMCWeight->GetNbinsX()>=7);
+  hDTotalMCWeight->SetDirectory(0);
+  float sumLHEweights_nominal = hDTotalMCWeight->GetBinContent(1);
+  float sumLHEweights_QCDr1f2 = hDTotalMCWeight->GetBinContent(2);
+  float sumLHEweights_QCDr1f5 = hDTotalMCWeight->GetBinContent(3);
+  float sumLHEweights_QCDr2f1 = hDTotalMCWeight->GetBinContent(4);
+  float sumLHEweights_QCDr2f2 = hDTotalMCWeight->GetBinContent(5);
+  float sumLHEweights_QCDr5f1 = hDTotalMCWeight->GetBinContent(6);
+  float sumLHEweights_QCDr5f5 = hDTotalMCWeight->GetBinContent(7);
+  float sfLHEweights_QCDr1f2 = sumLHEweights_nominal / sumLHEweights_QCDr1f2; 
+  float sfLHEweights_QCDr1f5 = sumLHEweights_nominal / sumLHEweights_QCDr1f5; 
+  float sfLHEweights_QCDr2f1 = sumLHEweights_nominal / sumLHEweights_QCDr2f1; 
+  float sfLHEweights_QCDr2f2 = sumLHEweights_nominal / sumLHEweights_QCDr2f2; 
+  float sfLHEweights_QCDr5f1 = sumLHEweights_nominal / sumLHEweights_QCDr5f1; 
+  float sfLHEweights_QCDr5f5 = sumLHEweights_nominal / sumLHEweights_QCDr5f5; 
+ 
   GeneralTree gt;
   gt.monohiggs      = true;
   gt.vbf            = false;
@@ -95,23 +112,23 @@ bool vhbbPlotSkim(
   // Load corrections to apply offline
   CSVHelper *cmvaReweighter = new CSVHelper("PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root"   , "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root"   , 5);
   
-  TFile *kfactorsFile = TFile::Open("PandaAnalysis/data/kfactors.root","read"); assert(kfactorsFile);
-  TH1F *hWjets_relErr_QCDfScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_up"  )->Clone("hWjets_relErr_QCDfScaleUp"  ); hWjets_relErr_QCDfScaleUp  ->SetDirectory(0);
-  TH1F *hWjets_relErr_QCDfScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_down")->Clone("hWjets_relErr_QCDfScaleDown"); hWjets_relErr_QCDfScaleDown->SetDirectory(0);
-  TH1F *hWjets_relErr_QCDrScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_up"   )->Clone("hWjets_relErr_QCDrScaleUp"  ); hWjets_relErr_QCDrScaleUp  ->SetDirectory(0);
-  TH1F *hWjets_relErr_QCDrScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_down" )->Clone("hWjets_relErr_QCDrScaleDown"); hWjets_relErr_QCDrScaleDown->SetDirectory(0);
-  TH1F *hZjets_relErr_QCDfScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_up"  )->Clone("hWjets_relErr_QCDfScaleUp"  ); hWjets_relErr_QCDfScaleUp  ->SetDirectory(0);
-  TH1F *hZjets_relErr_QCDfScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_down")->Clone("hWjets_relErr_QCDfScaleDown"); hWjets_relErr_QCDfScaleDown->SetDirectory(0);
-  TH1F *hZjets_relErr_QCDrScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_up"   )->Clone("hWjets_relErr_QCDrScaleUp"  ); hWjets_relErr_QCDrScaleUp  ->SetDirectory(0);
-  TH1F *hZjets_relErr_QCDrScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_down" )->Clone("hWjets_relErr_QCDrScaleDown"); hWjets_relErr_QCDrScaleDown->SetDirectory(0);
-  hWjets_relErr_QCDfScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
-  hWjets_relErr_QCDfScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
-  hWjets_relErr_QCDrScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
-  hWjets_relErr_QCDrScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
-  hZjets_relErr_QCDfScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
-  hZjets_relErr_QCDfScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
-  hZjets_relErr_QCDrScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
-  hZjets_relErr_QCDrScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //TFile *kfactorsFile = TFile::Open("PandaAnalysis/data/kfactors.root","read"); assert(kfactorsFile);
+  //TH1F *hWjets_relErr_QCDfScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_up"  )->Clone("hWjets_relErr_QCDfScaleUp"  ); hWjets_relErr_QCDfScaleUp  ->SetDirectory(0);
+  //TH1F *hWjets_relErr_QCDfScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_down")->Clone("hWjets_relErr_QCDfScaleDown"); hWjets_relErr_QCDfScaleDown->SetDirectory(0);
+  //TH1F *hWjets_relErr_QCDrScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_up"   )->Clone("hWjets_relErr_QCDrScaleUp"  ); hWjets_relErr_QCDrScaleUp  ->SetDirectory(0);
+  //TH1F *hWjets_relErr_QCDrScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_down" )->Clone("hWjets_relErr_QCDrScaleDown"); hWjets_relErr_QCDrScaleDown->SetDirectory(0);
+  //TH1F *hZjets_relErr_QCDfScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_up"  )->Clone("hWjets_relErr_QCDfScaleUp"  ); hWjets_relErr_QCDfScaleUp  ->SetDirectory(0);
+  //TH1F *hZjets_relErr_QCDfScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/fact_down")->Clone("hWjets_relErr_QCDfScaleDown"); hWjets_relErr_QCDfScaleDown->SetDirectory(0);
+  //TH1F *hZjets_relErr_QCDrScaleUp   =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_up"   )->Clone("hWjets_relErr_QCDrScaleUp"  ); hWjets_relErr_QCDrScaleUp  ->SetDirectory(0);
+  //TH1F *hZjets_relErr_QCDrScaleDown =(TH1F*)kfactorsFile->Get("WJets_012j_NLO/ren_down" )->Clone("hWjets_relErr_QCDrScaleDown"); hWjets_relErr_QCDrScaleDown->SetDirectory(0);
+  //hWjets_relErr_QCDfScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //hWjets_relErr_QCDfScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //hWjets_relErr_QCDrScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //hWjets_relErr_QCDrScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //hZjets_relErr_QCDfScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //hZjets_relErr_QCDfScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //hZjets_relErr_QCDrScaleUp   ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
+  //hZjets_relErr_QCDrScaleDown ->Divide((TH1F*)kfactorsFile->Get("WJets_012j_NLO/nominal"));
   // Done loading corrections
 
   // Define the output tree
@@ -132,6 +149,7 @@ bool vhbbPlotSkim(
   float deltaPhiVH, deltaPhiVH_jesUp, deltaPhiVH_jesDown;
   float topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown, topWBosonPhi_jesUp, topWBosonPhi_jesDown;
   float mT_jesUp, mT_jesDown; // need to be in PandaExpress ntuples
+  float fj1MSD_corr,fj1MSD_corr_jesUp,fj1MSD_corr_jesDown; 
   
   // For boosted categories, the number of 30 GeV AK4 jets not in the fat jet
   int nIsojet=0, nIsojet_jesUp=0, nIsojet_jesDown=0; 
@@ -306,6 +324,9 @@ bool vhbbPlotSkim(
     plotTree->Branch("fj1MSD"                , &gt.fj1MSD                );
     plotTree->Branch("fj1MSDScaleUp"         , &gt.fj1MSDScaleUp         );    
     plotTree->Branch("fj1MSDScaleDown"       , &gt.fj1MSDScaleDown       );      
+    plotTree->Branch("fj1MSD_corr"           , &fj1MSD_corr              );      
+    plotTree->Branch("fj1MSD_corr_jesUp"     , &fj1MSD_corr_jesUp        );
+    plotTree->Branch("fj1MSD_corr_jesDown"   , &fj1MSD_corr_jesDown      );    
     plotTree->Branch("fj1MSDSmeared"         , &gt.fj1MSDSmeared         );    
     plotTree->Branch("fj1MSDSmearedUp"       , &gt.fj1MSDSmearedUp       );      
     plotTree->Branch("fj1MSDSmearedDown"     , &gt.fj1MSDSmearedDown     );        
@@ -458,6 +479,7 @@ bool vhbbPlotSkim(
         if     (gt.nJet<2) continue;
         if(useBoostedCategory) { 
           bLoad(b["nFatjet"],ientry);
+          bLoad(b["fj1MSD_corr"],ientry);
           bLoad(b["fj1Pt"],ientry);
           bLoad(b["fj1Eta"],ientry);
           bLoad(b["topWBosonPt"],ientry);
@@ -467,6 +489,7 @@ bool vhbbPlotSkim(
           if(
             gt.nFatjet != 0 && 
             gt.fj1Pt >= 250 && 
+            gt.fj1MSD_corr >= 40 &&
             fabs(gt.fj1Eta) < 2.4 &&
             gt.topWBosonPt >= 250 &&
             temp_deltaPhiVH >= 2.5
@@ -816,6 +839,7 @@ bool vhbbPlotSkim(
       bLoad(b["nFatjet"],ientry);
       bLoad(b["fj1Eta"],ientry);
       bLoad(b["fj1MSD"],ientry);
+      bLoad(b["fj1MSD_corr"],ientry);
       // Fatjet Properties
       bLoad(b["fj1Tau32"],ientry);
       bLoad(b["fj1Tau21"],ientry);
@@ -841,6 +865,9 @@ bool vhbbPlotSkim(
       bLoad(b["fj1HTTFRec"],ientry); 
       bLoad(b["fj1SDEFrac100"],ientry);    
        
+      fj1MSD_corr         = gt.fj1MSD_corr;
+      fj1MSD_corr_jesUp   = fj1MSD_corr * gt.fj1MSDScaleUp  /gt.fj1MSD_corr;
+      fj1MSD_corr_jesDown = fj1MSD_corr * gt.fj1MSDScaleDown/gt.fj1MSD_corr;
       // Ak4 jet properties
       bLoad(b["jetPt"],ientry);
       bLoad(b["jetEta"],ientry);
@@ -1032,8 +1059,8 @@ bool vhbbPlotSkim(
       cut["dPhiVH"     ] = deltaPhiVH>2.5;
       cut["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
       cut["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
-      cut["mH_WHFJSR"  ] = (gt.fj1MSD>=MSDmin && gt.fj1MSD<MSDmax);
-      cut["mH_WHHFCR"  ] = gt.fj1MSD<MSDmin;
+      cut["mH_WHFJSR"  ] = (fj1MSD_corr>=MSDmin && fj1MSD_corr<MSDmax);
+      cut["mH_WHHFCR"  ] = fj1MSD_corr<MSDmin;
       cut["isojetBtag" ] = isojetNBtags>0;
       cut["isojetBVeto"] = isojetNBtags==0;
       //cut["metSig"     ] = gt.pfmetsig>2;
@@ -1065,8 +1092,8 @@ bool vhbbPlotSkim(
       cut_jesUp["dPhiVH"     ] = deltaPhiVH_jesUp>2.5;
       cut_jesUp["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
       cut_jesUp["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
-      cut_jesUp["mH_WHFJSR"  ] = ((gt.fj1MSDScaleUp>=MSDmin));
-      cut_jesUp["mH_WHHFCR"  ] = gt.fj1MSDScaleUp<MSDmin;
+      cut_jesUp["mH_WHFJSR"  ] = ((fj1MSD_corr_jesUp>=MSDmin));
+      cut_jesUp["mH_WHHFCR"  ] = fj1MSD_corr_jesUp<MSDmin;
       cut_jesUp["isojetBtag" ] = isojetNBtags_jesUp>0;
       cut_jesUp["isojetBVeto"] = isojetNBtags_jesUp==0;
       if(passAllCuts( cut_jesUp, cutsWHLightFlavorFJCR)) selectionBits_jesUp |= kWHLightFlavorFJCR;
@@ -1081,8 +1108,8 @@ bool vhbbPlotSkim(
       cut_jesDown["dPhiVH"     ] = deltaPhiVH_jesDown>2.5;
       cut_jesDown["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
       cut_jesDown["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
-      cut_jesDown["mH_WHFJSR"  ] = ((gt.fj1MSDScaleDown>=MSDmin));
-      cut_jesDown["mH_WHHFCR"  ] = gt.fj1MSDScaleDown<MSDmin;
+      cut_jesDown["mH_WHFJSR"  ] = ((fj1MSD_corr_jesDown>=MSDmin));
+      cut_jesDown["mH_WHHFCR"  ] = fj1MSD_corr_jesDown<MSDmin;
       cut_jesDown["isojetBtag" ] = isojetNBtags_jesDown>0;
       cut_jesDown["isojetBVeto"] = isojetNBtags_jesDown==0;
       if(passAllCuts( cut_jesDown, cutsWHLightFlavorFJCR)) selectionBits_jesDown |= kWHLightFlavorFJCR;
@@ -1177,12 +1204,12 @@ bool vhbbPlotSkim(
       bLoad(b["scale"],ientry);
       weight_pdfUp = weight * gt.pdfUp;
       weight_pdfDown = weight * gt.pdfDown;
-      weight_QCDr1f2 = weight * gt.scale[0];
-      weight_QCDr1f5 = weight * gt.scale[1];
-      weight_QCDr2f1 = weight * gt.scale[2];
-      weight_QCDr2f2 = weight * gt.scale[3];
-      weight_QCDr5f1 = weight * gt.scale[4];
-      weight_QCDr5f5 = weight * gt.scale[5];
+      weight_QCDr1f2 = weight * gt.scale[0] * sfLHEweights_QCDr1f2;
+      weight_QCDr1f5 = weight * gt.scale[1] * sfLHEweights_QCDr1f5;
+      weight_QCDr2f1 = weight * gt.scale[2] * sfLHEweights_QCDr2f1;
+      weight_QCDr2f2 = weight * gt.scale[3] * sfLHEweights_QCDr2f2;
+      weight_QCDr5f1 = weight * gt.scale[4] * sfLHEweights_QCDr5f1;
+      weight_QCDr5f5 = weight * gt.scale[5] * sfLHEweights_QCDr5f5;
       if(sample==kWjets || sample==kZjets) {
         bLoad(b["genBosonPt"],ientry);
         if(sample==kWjets) {
