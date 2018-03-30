@@ -98,7 +98,7 @@ bool vhbbPlotSkim(
   for(unsigned iB=0; iB<(unsigned)listOfBranches->GetEntries(); iB++) {
     TBranch *branch = (TBranch*)listOfBranches->At(iB);
     TString branchName = branch->GetName();
-    if(branchName.Contains("fj1GenPt") || branchName.Contains("fj1GenSize")) continue;
+    if(branchName.Contains("fj1GenPt") || branchName.Contains("fj1Gen")) continue;
     if(branchName.Contains("genFj1")) continue;
     bool isExtraBranch=false;
     auto x = extraAddresses.find(branchName);
@@ -324,7 +324,7 @@ bool vhbbPlotSkim(
     plotTree->Branch("hbbCosThetaCSJ1"         , &gt.hbbCosThetaCSJ1       );
   }
   // Save fatjet variables if we are in a boosted category, or if we aren't using a boosted category
-  if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel)) {
+  if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
     plotTree->Branch("nIsojet"               , &nIsojet                  );
     plotTree->Branch("isojetNBtags"          , &isojetNBtags             );
     plotTree->Branch("fj1Tau32"              , &gt.fj1Tau32              );
@@ -346,6 +346,7 @@ bool vhbbPlotSkim(
     plotTree->Branch("fj1PtSmeared"          , &gt.fj1PtSmeared          );   
     plotTree->Branch("fj1PtSmearedUp"        , &gt.fj1PtSmearedUp        );     
     plotTree->Branch("fj1PtSmearedDown"      , &gt.fj1PtSmearedDown      );       
+    plotTree->Branch("fj1HighestPtGen"       , &gt.fj1HighestPtGen       );       
     plotTree->Branch("fj1Phi"                , &gt.fj1Phi                );
     plotTree->Branch("fj1Eta"                , &gt.fj1Eta                );
     plotTree->Branch("fj1M"                  , &gt.fj1M                  );
@@ -845,7 +846,7 @@ bool vhbbPlotSkim(
       deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi));
       // End WH Boosted Category
     }
-    if(!useBoostedCategory || (selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel)) {
+    if((selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel)) {
       bLoad(b["nFatjet"],ientry);
       bLoad(b["fj1Eta"],ientry);
       bLoad(b["fj1MSD"],ientry);
@@ -865,6 +866,7 @@ bool vhbbPlotSkim(
       bLoad(b["fj1PtSmeared"],ientry);   
       bLoad(b["fj1PtSmearedUp"],ientry);     
       bLoad(b["fj1PtSmearedDown"],ientry);       
+      bLoad(b["fj1HighestPtGen"],ientry);
       bLoad(b["fj1Pt"],ientry);
       bLoad(b["fj1Phi"],ientry);
       bLoad(b["fj1M"],ientry);
@@ -1336,10 +1338,6 @@ bool vhbbPlotSkim(
         else theCategory=kPlotWLF; // light flavor
         break;
       case kZjets:
-        //bLoad(b["nB"],ientry);
-        //if(gt.nB>=2) theCategory=kPlotZbb;
-        //else if(gt.nB==1) theCategory=kPlotZb;
-        //else theCategory=kPlotZLF; // light flavor
         bLoad(b["nBGenJets"],ientry);
         if(gt.nBGenJets>=2) theCategory=kPlotZbb;
         else if(gt.nBGenJets==1) theCategory=kPlotZb;

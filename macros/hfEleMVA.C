@@ -33,8 +33,8 @@ void hfEleMVA(
   //factory->SetWeightExpression("weight", "Background");
   
   TCut preselectionCut ="ele_conversionVeto && ele_ooEmooP<10 && ele_ooEmooP>=0 && ele_dxy<10 && ele_dz<10 && ele_r9>=0 && ele_r9<=1 ";
-  factory->AddVariable("dEta_eleFatjet"     , "#Delta#eta(e,fj)"           , ""     , 'F');
-  factory->AddVariable("dPhi_eleFatjet"     , "#Delta#phi(e,fj)"           , "Rad"  , 'F');
+  //factory->AddVariable("dEta_eleFatjet"     , "#Delta#eta(e,fj)"           , ""     , 'F');
+  //factory->AddVariable("dPhi_eleFatjet"     , "#Delta#phi(e,fj)"           , "Rad"  , 'F');
   factory->AddVariable("ele_eta"            , "eta"                        , ""     , 'F');
   factory->AddVariable("ele_ecalIso/ele_pt" , "Rel ECAL iso"               , ""     , 'F');
   factory->AddVariable("ele_hcalIso/ele_pt" , "Rel HCAL iso"               , ""     , 'F');
@@ -59,12 +59,12 @@ void hfEleMVA(
     prepareOptions+=":MixMode=Random";
   factory->PrepareTrainingAndTestTree(preselectionCut, prepareOptions);
   vector<TString> hyperparameters_ = {
-    "NTrees=500:MinNodeSize=2.5%:MaxDepth=4:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.1:nCuts=1000",
-    "NTrees=500:MinNodeSize=2.5%:MaxDepth=4:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.2:nCuts=1000",
-    "NTrees=500:MinNodeSize=2.5%:MaxDepth=4:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.3:nCuts=1000",
-    "NTrees=500:MinNodeSize=2.5%:MaxDepth=5:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.1:nCuts=1000",
-    "NTrees=500:MinNodeSize=2.5%:MaxDepth=5:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.2:nCuts=1000",
-    "NTrees=500:MinNodeSize=2.5%:MaxDepth=5:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.3:nCuts=1000"
+    //"NTrees=500:MinNodeSize=2.5%:MaxDepth=4:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.1:nCuts=1000",
+    //"NTrees=500:MinNodeSize=2.5%:MaxDepth=4:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.2:nCuts=1000",
+    //"NTrees=500:MinNodeSize=2.5%:MaxDepth=4:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.3:nCuts=1000",
+    "NTrees=500:MinNodeSize=2.5%:MaxDepth=5:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.1:nCuts=1000"
+    //"NTrees=500:MinNodeSize=2.5%:MaxDepth=5:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.2:nCuts=1000",
+    //"NTrees=500:MinNodeSize=2.5%:MaxDepth=5:SeparationType=CrossEntropy:BoostType=Grad:Shrinkage=0.3:nCuts=1000"
   };
   for(unsigned hp=0; hp<hyperparameters_.size();hp++) {
     TString hyperparameters = hyperparameters_[hp];

@@ -1,6 +1,7 @@
 #include <map>
 #include "PandaTree/Objects/interface/Event.h"
 #include "TFile.h"
+#include "TF1.h"
 #include "TH1F.h"
 #include "TLorentzVector.h"
 #include "TString.h"
@@ -14,7 +15,7 @@
 void fatjetRegTree(
   TString inputFileName,
   TString outputFileName,
-  vhbbPlot::sampleType = vhbbPlot::kVH,
+  vhbbPlot::sampleType sample = vhbbPlot::kVH,
   Long64_t maxEntries=-1
 ) {
   gSystem->Load("libPandaTreeObjects.so");
@@ -34,9 +35,15 @@ void fatjetRegTree(
   TH1D* all_tree=(TH1D*)inputFile->FindObjectAny("hSumW");
   sum_mc_weights = all_tree->GetBinContent(1);
   
+  TFile *MSDcorr = new TFile("PandaAnalysis/data/puppiCorr.root");
+  TF1 *puppisd_corrGEN = (TF1*)MSDcorr->Get("puppiJECcorr_gen");;
+  TF1 *puppisd_corrRECO_cen = (TF1*)MSDcorr->Get("puppiJECcorr_reco_0eta1v3");
+  TF1 *puppisd_corrRECO_for = (TF1*)MSDcorr->Get("puppiJECcorr_reco_1v3eta2v5");
+ 
 
   TFile *outputFile = new TFile(outputFileName, "recreate");
   TTree *regTree = new TTree("regTree","regTree");
+  float weight         ; regTree->Branch("weight"         , &weight         , "weight/F"        );
   float fatjet_pt      ; regTree->Branch("fatjet_pt"      , &fatjet_pt      , "fatjet_pt/F"     );
   float fatjet_eta     ; regTree->Branch("fatjet_eta"     , &fatjet_eta     , "fatjet_eta/F"    );
   float fatjet_phi     ; regTree->Branch("fatjet_phi"     , &fatjet_phi     , "fatjet_phi/F"    );
@@ -96,14 +103,14 @@ void fatjetRegTree(
   float          mu1_dxy                 ; regTree->Branch("mu1_dxy"                   , &mu1_dxy                 , "mu1_dxy/F"                 );
   float          mu1_dz                  ; regTree->Branch("mu1_dz"                    , &mu1_dz                  , "mu1_dz/F"                  );
   float          mu1_validFraction       ; regTree->Branch("mu1_validFraction"         , &mu1_validFraction       , "mu1_validFraction/F"       ); 
-  unsigned short mu1_nValidMuon          ; regTree->Branch("mu1_nValidMuon"            , &mu1_nValidMuon          , "mu1_nValidMuon/s"          ); 
-  unsigned short mu1_nValidPixel         ; regTree->Branch("mu1_nValidPixel"           , &mu1_nValidPixel         , "mu1_nValidPixel/s"         ); 
-  unsigned short mu1_trkLayersWithMmt    ; regTree->Branch("mu1_trkLayersWithMmt"      , &mu1_trkLayersWithMmt    , "mu1_trkLayersWithMmt/s"    ); 
-  unsigned short mu1_pixLayersWithMmt    ; regTree->Branch("mu1_pixLayersWithMmt"      , &mu1_pixLayersWithMmt    , "mu1_pixLayersWithMmt/s"    ); 
-  unsigned short mu1_nMatched            ; regTree->Branch("mu1_nMatched"              , &mu1_nMatched            , "mu1_nMatched/s"            ); 
+  int            mu1_nValidMuon          ; regTree->Branch("mu1_nValidMuon"            , &mu1_nValidMuon          , "mu1_nValidMuon/I"          ); 
+  int            mu1_nValidPixel         ; regTree->Branch("mu1_nValidPixel"           , &mu1_nValidPixel         , "mu1_nValidPixel/I"         ); 
+  int            mu1_trkLayersWithMmt    ; regTree->Branch("mu1_trkLayersWithMmt"      , &mu1_trkLayersWithMmt    , "mu1_trkLayersWithMmt/I"    ); 
+  int            mu1_pixLayersWithMmt    ; regTree->Branch("mu1_pixLayersWithMmt"      , &mu1_pixLayersWithMmt    , "mu1_pixLayersWithMmt/I"    ); 
+  int            mu1_nMatched            ; regTree->Branch("mu1_nMatched"              , &mu1_nMatched            , "mu1_nMatched/I"            ); 
   float          mu1_normChi2            ; regTree->Branch("mu1_normChi2"              , &mu1_normChi2            , "mu1_normChi2/F"            ); 
-  unsigned short mu1_chi2LocalPosition   ; regTree->Branch("mu1_chi2LocalPosition"     , &mu1_chi2LocalPosition   , "mu1_chi2LocalPosition/s"   ); 
-  unsigned short mu1_trkKink             ; regTree->Branch("mu1_trkKink"               , &mu1_trkKink             , "mu1_trkKink/s"             ); 
+  int            mu1_chi2LocalPosition   ; regTree->Branch("mu1_chi2LocalPosition"     , &mu1_chi2LocalPosition   , "mu1_chi2LocalPosition/I"   ); 
+  int            mu1_trkKink             ; regTree->Branch("mu1_trkKink"               , &mu1_trkKink             , "mu1_trkKink/I"             ); 
   float          mu1_segmentCompatibility; regTree->Branch("mu1_segmentCompatibility"  , &mu1_segmentCompatibility, "mu1_segmentCompatibility/F"); 
   float          mu2_pt                  ; regTree->Branch("mu2_pt"                    , &mu2_pt                  , "mu2_pt/F"                  );
   float          mu2_eta                 ; regTree->Branch("mu2_eta"                   , &mu2_eta                 , "mu2_eta/F"                 );
@@ -114,25 +121,25 @@ void fatjetRegTree(
   float          mu2_dxy                 ; regTree->Branch("mu2_dxy"                   , &mu2_dxy                 , "mu2_dxy/F"                 );
   float          mu2_dz                  ; regTree->Branch("mu2_dz"                    , &mu2_dz                  , "mu2_dz/F"                  );
   float          mu2_validFraction       ; regTree->Branch("mu2_validFraction"         , &mu2_validFraction       , "mu2_validFraction/F"       ); 
-  unsigned short mu2_nValidMuon          ; regTree->Branch("mu2_nValidMuon"            , &mu2_nValidMuon          , "mu2_nValidMuon/s"          ); 
-  unsigned short mu2_nValidPixel         ; regTree->Branch("mu2_nValidPixel"           , &mu2_nValidPixel         , "mu2_nValidPixel/s"         ); 
-  unsigned short mu2_trkLayersWithMmt    ; regTree->Branch("mu2_trkLayersWithMmt"      , &mu2_trkLayersWithMmt    , "mu2_trkLayersWithMmt/s"    ); 
-  unsigned short mu2_pixLayersWithMmt    ; regTree->Branch("mu2_pixLayersWithMmt"      , &mu2_pixLayersWithMmt    , "mu2_pixLayersWithMmt/s"    ); 
-  unsigned short mu2_nMatched            ; regTree->Branch("mu2_nMatched"              , &mu2_nMatched            , "mu2_nMatched/s"            ); 
+  int            mu2_nValidMuon          ; regTree->Branch("mu2_nValidMuon"            , &mu2_nValidMuon          , "mu2_nValidMuon/I"          ); 
+  int            mu2_nValidPixel         ; regTree->Branch("mu2_nValidPixel"           , &mu2_nValidPixel         , "mu2_nValidPixel/I"         ); 
+  int            mu2_trkLayersWithMmt    ; regTree->Branch("mu2_trkLayersWithMmt"      , &mu2_trkLayersWithMmt    , "mu2_trkLayersWithMmt/I"    ); 
+  int            mu2_pixLayersWithMmt    ; regTree->Branch("mu2_pixLayersWithMmt"      , &mu2_pixLayersWithMmt    , "mu2_pixLayersWithMmt/I"    ); 
+  int            mu2_nMatched            ; regTree->Branch("mu2_nMatched"              , &mu2_nMatched            , "mu2_nMatched/I"            ); 
   float          mu2_normChi2            ; regTree->Branch("mu2_normChi2"              , &mu2_normChi2            , "mu2_normChi2/F"            ); 
-  unsigned short mu2_chi2LocalPosition   ; regTree->Branch("mu2_chi2LocalPosition"     , &mu2_chi2LocalPosition   , "mu2_chi2LocalPosition/s"   ); 
-  unsigned short mu2_trkKink             ; regTree->Branch("mu2_trkKink"               , &mu2_trkKink             , "mu2_trkKink/s"             ); 
+  int            mu2_chi2LocalPosition   ; regTree->Branch("mu2_chi2LocalPosition"     , &mu2_chi2LocalPosition   , "mu2_chi2LocalPosition/I"   ); 
+  int            mu2_trkKink             ; regTree->Branch("mu2_trkKink"               , &mu2_trkKink             , "mu2_trkKink/I"             ); 
   float          mu2_segmentCompatibility; regTree->Branch("mu2_segmentCompatibility"  , &mu2_segmentCompatibility, "mu2_segmentCompatibility/F"); 
   float          sv1_pt                  ; regTree->Branch("sv1_pt"                    , &sv1_pt                  , "sv1_pt/F"                  ); 
   float          sv1_m                   ; regTree->Branch("sv1_m"                     , &sv1_m                   , "sv1_m/F"                   ); 
   float          sv1_3Dval               ; regTree->Branch("sv1_3Dval"                 , &sv1_3Dval               , "sv1_3Dval/F"               ); 
   float          sv1_3Derr               ; regTree->Branch("sv1_3Derr"                 , &sv1_3Derr               , "sv1_3Derr/F"               ); 
-  unsigned short sv1_ntrk                ; regTree->Branch("sv1_ntrk"                  , &sv1_ntrk                , "sv1_ntrk/s"                ); 
+  int            sv1_ntrk                ; regTree->Branch("sv1_ntrk"                  , &sv1_ntrk                , "sv1_ntrk/I"                ); 
   float          sv2_pt                  ; regTree->Branch("sv2_pt"                    , &sv2_pt                  , "sv2_pt/F"                  ); 
   float          sv2_m                   ; regTree->Branch("sv2_m"                     , &sv2_m                   , "sv2_m/F"                   ); 
   float          sv2_3Dval               ; regTree->Branch("sv2_3Dval"                 , &sv2_3Dval               , "sv2_3Dval/F"               ); 
   float          sv2_3Derr               ; regTree->Branch("sv2_3Derr"                 , &sv2_3Derr               , "sv2_3Derr/F"               ); 
-  unsigned short sv2_ntrk                ; regTree->Branch("sv2_ntrk"                  , &sv2_ntrk                , "sv2_ntrk/s"                ); 
+  int            sv2_ntrk                ; regTree->Branch("sv2_ntrk"                  , &sv2_ntrk                , "sv2_ntrk/I"                ); 
   unsigned char nEle, nMu;
   TLorentzVector sumNuV4, fatjetV4, nuV4, fatjetNuV4;
   Long64_t nEntries = tree->GetEntries();
@@ -144,13 +151,17 @@ void fatjetRegTree(
     
     for (unsigned nJ = 0; nJ<event.puppiAK8Jets.size(); nJ++){
       auto& fatjet = event.puppiAK8Jets[nJ];
-      // Fatfatjet preselection
+      // Fatjet preselection
       if(fatjet.pt()<200) continue;
+      if(fabs(fatjet.eta())>2.4) continue;
+      //if(fatjet.double_sub<0.6) continue; // HACK
       // End preselection (That was short!)
 
       // Reset output tree branches
       nEle=0; nMu=0;
       sumNuV4.SetPtEtaPhiM(0,0,0,0);
+
+      weight                  =   0;
       fatjet_pt               =  -1; 
       fatjet_eta              = -99; 
       fatjet_phi              =  -1; 
@@ -249,11 +260,20 @@ void fatjetRegTree(
       sv2_3Derr = -1;
       sv2_ntrk  = -1;
       
+      // MSD correction 
+      float genCorr  = 1.; 
+      float recoCorr = 1.; 
+      float totalCorr = 1.; 
+      genCorr = puppisd_corrGEN->Eval( fatjet.pt() );
+      if ( fabs(fatjet.eta()) <= 1.3 ) recoCorr = puppisd_corrRECO_cen->Eval( fatjet.pt() );
+      else recoCorr = puppisd_corrRECO_for->Eval( fatjet.pt() );
+      totalCorr = genCorr * recoCorr;
+      
       // Populate output tree info
       fatjet_pt               = fatjet.pt(); 
       fatjet_eta              = fatjet.eta();
       fatjet_phi              = fatjet.phi();
-      fatjet_MSD              = fatjet.mSD;
+      fatjet_MSD              = fatjet.mSD * totalCorr;
       fatjet_nhf              = fatjet.nhf;
       fatjet_chf              = fatjet.chf; 
       fatjet_nef              = fatjet.nef; 
@@ -261,12 +281,13 @@ void fatjetRegTree(
 
       // Final state neutrinos inside the fatjet
       // No parentage calculation for now
+      unsigned char nB=0,nC=0;
       std::vector<const panda::GenParticle*> validGenP;
       for (unsigned iG = 0; iG<event.genParticles.size(); iG++) {
         auto& genParticle = event.genParticles[iG];
         if (genParticle.finalState != 1) continue;
         unsigned absid = abs(genParticle.pdgid);
-        if (absid!=12 && absid!=14 && absid!=16) continue;
+        if (absid!=12 && absid!=14 && absid!=16 && absid!=5) continue;
         if (fatjet.dR2(genParticle)>0.64) continue;
         
         bool isDuplicate=false;
@@ -276,13 +297,28 @@ void fatjetRegTree(
             sqrt(pow(genParticle.eta()-vgp->eta(),2)+pow(TVector2::Phi_mpi_pi(genParticle.phi()-vgp->phi()),2)) < 0.00001
           ) { isDuplicate=true; break; }
         if(isDuplicate) continue;
-        else validGenP.push_back(&genParticle);
-        nuV4.SetPtEtaPhiM(genParticle.pt(), genParticle.eta(), genParticle.phi(), 0);
-        sumNuV4+=nuV4;
+        validGenP.push_back(&genParticle);
+        
+        if(absid==12 || absid==14 || absid==16) {
+          bool foundW=false;
+          panda::GenParticle *familyMember = &genParticle, *ancestor=0;
+          while(!foundW) {
+            if(!familyMember->parent.isValid()) break;
+            ancestor = (panda::GenParticle*)familyMember->parent.get();
+            if(abs(ancestor->pdgid)==24) { foundW=true; break; }
+            else familyMember=ancestor;
+          } if(foundW) continue;
+          nuV4.SetPtEtaPhiM(genParticle.pt(), genParticle.eta(), genParticle.phi(), 0);
+          sumNuV4+=nuV4;
+        } else if(absid==5) {
+          if(genParticle.parent.isValid() && genParticle.parent->pdgid==genParticle.pdgid) continue;
+          nB++; 
+        }
       }
+      //if(sample==vhbbPlot::kVH && nB<2) continue;
       fatjetV4.SetPtEtaPhiM(fatjet_pt, fatjet_eta, fatjet_phi, fatjet_MSD);
       fatjetNuV4 = sumNuV4 + fatjetV4;
-      fatjet_Mnu =  sumNuV4.M(); 
+      fatjet_Mnu = fatjetNuV4.M();
       
       sumNu_pt                = sumNuV4.Pt() ;
       sumNu_eta               = sumNuV4.Eta();
@@ -383,7 +419,7 @@ void fatjetRegTree(
       }
 
       // AK8 -> AK4 jets within -> Their secondary vertices
-      vector<panda::SecondaryVertex*> sv_;
+      vector<panda::SecondaryVertex*> sv_; sv_.reserve(8);
       for (unsigned nJ2 = 0; nJ<event.chsAK4Jets.size(); nJ2++){
         auto& jet = event.chsAK4Jets[nJ2];
         if(jet.pt()<20) break;
@@ -412,11 +448,15 @@ void fatjetRegTree(
         sv2_ntrk  = sv_[1]->ntrk;
       }
       // Fill output tree
+      weight = event.weight;
       regTree->Fill();
     }
 
   }
   regTree->Write("regTree",TObject::kOverwrite);
+  TH1D *sum_MCW=new TH1D("sum_weights","sum_weights", 1, 0, 2);
+  sum_MCW->SetBinContent(1,sum_mc_weights);
+  sum_MCW->Write("sum_weights");
   outputFile->Close();
   inputFile->Close();
  

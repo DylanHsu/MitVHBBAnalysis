@@ -96,8 +96,8 @@ void vhbbHistos(
       MVAVarName="Subleading H(bb) CMVA";
       sprintf(shapeType,"lesserCMVAShape");
     } else if(selection==kWHSR) {
-      //MVAbins={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.85,0.9,0.95,1.00};
-      MVAbins={-1,-0.5,0,0.30,0.5,0.70,0.85,1.00};
+      MVAbins={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.85,0.9,0.94,1.00};
+      //MVAbins={-1,-0.5,0,0.30,0.5,0.70,0.85,1.00};
       MVAVarName="BDT Output";
       sprintf(shapeType,"singleClassBDTShape"); 
     } else if(selection>=kWHLightFlavorFJCR && selection<kWHFJSR) {
@@ -107,7 +107,7 @@ void vhbbHistos(
       sprintf(shapeType,"softDropMassShape");
     } else if(selection==kWHFJSR) {
       //MVAbins={-1,-.5,0,0.40,0.75,1.00};
-      MVAbins={-1,-.5,0,0.40,0.65,1.00};
+      MVAbins={-1,0,.2,.4,0.6,0.7,1};
       MVAVarName="BDT Output";
       sprintf(shapeType,"singleClassBDTShape"); 
     }
@@ -200,7 +200,7 @@ void vhbbHistos(
   float fj1Tau21;
   float fj1Tau32SD;
   float fj1Tau21SD;
-  float fj1MSD;
+  float fj1MSD, fj1MSD_corr,fj1MSD_corr_jesUp,fj1MSD_corr_jesDown;
   float fj1MSDScaleUp;
   float fj1MSDScaleDown;
   float fj1MSDSmeared;
@@ -535,6 +535,9 @@ void vhbbHistos(
     plotTree->SetBranchAddress("fj1Tau32SD"            , &fj1Tau32SD            ); 
     plotTree->SetBranchAddress("fj1Tau21SD"            , &fj1Tau21SD            ); 
     plotTree->SetBranchAddress("fj1MSD"                , &fj1MSD                );
+    plotTree->SetBranchAddress("fj1MSD_corr"           , &fj1MSD_corr           );
+    plotTree->SetBranchAddress("fj1MSD_corr_jesUp"     , &fj1MSD_corr_jesUp     );
+    plotTree->SetBranchAddress("fj1MSD_corr_jesDown"   , &fj1MSD_corr_jesDown   );
     plotTree->SetBranchAddress("fj1MSDScaleUp"         , &fj1MSDScaleUp         );    
     plotTree->SetBranchAddress("fj1MSDScaleDown"       , &fj1MSDScaleDown       );      
     plotTree->SetBranchAddress("fj1MSDSmeared"         , &fj1MSDSmeared         );    
@@ -672,7 +675,7 @@ void vhbbHistos(
     histoNames[p]="fj1DoubleCSV"           ; histoTitles[p]="FJ double B-tag"                            ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++;
     histoNames[p]="fj1HTTMass"             ; histoTitles[p]="FJ HTT mass [GeV]"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  200.; p++;
     histoNames[p]="fj1HTTFRec"             ; histoTitles[p]="FJ HTT f_{rec}"                             ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=   0.4; p++;
-    histoNames[p]="fj1MSD"                 ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++;
+    histoNames[p]="fj1MSD_corr"            ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++;
     histoNames[p]="fj1Tau32"               ; histoTitles[p]="FJ #tau_{32}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau32SD"             ; histoTitles[p]="FJ #tau_{32}^{SD}"                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau21"               ; histoTitles[p]="FJ #tau_{21}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
@@ -742,7 +745,7 @@ void vhbbHistos(
     histoNames[p]="fj1DoubleCSV"           ; histoTitles[p]="FJ double B-tag"                            ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++;
     histoNames[p]="fj1HTTMass"             ; histoTitles[p]="FJ HTT mass [GeV]"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  200.; p++;
     histoNames[p]="fj1HTTFRec"             ; histoTitles[p]="FJ HTT f_{rec}"                             ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=   0.4; p++;
-    histoNames[p]="fj1MSD"                 ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++;
+    histoNames[p]="fj1MSD_corr"            ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++;
     histoNames[p]="fj1Tau32"               ; histoTitles[p]="FJ #tau_{32}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau32SD"             ; histoTitles[p]="FJ #tau_{32}^{SD}"                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau21"               ; histoTitles[p]="FJ #tau_{21}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
@@ -970,7 +973,7 @@ void vhbbHistos(
   mvaInputRefs["fj1DoubleCSV"                                          ]=&fj1DoubleCSV          ;
   mvaInputRefs["fj1HTTMass"                                            ]=&fj1HTTMass            ;
   mvaInputRefs["fj1HTTFRec"                                            ]=&fj1HTTFRec            ;
-  mvaInputRefs["fj1MSD"                                                ]=&fj1MSD                ;
+  mvaInputRefs["fj1MSD_corr"                                           ]=&fj1MSD_corr           ;
   mvaInputRefs["fj1Tau32"                                              ]=&fj1Tau32              ;
   mvaInputRefs["fj1Tau32SD"                                            ]=&fj1Tau32SD            ;
   mvaInputRefs["fj1Tau21"                                              ]=&fj1Tau21              ;
@@ -1055,7 +1058,7 @@ void vhbbHistos(
   mvaInputRefs_jesUp["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))"   ]=&dPhiWb1_jesUp         ;    
   mvaInputRefs_jesUp["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))"   ]=&dPhiWb2_jesUp         ;    
   mvaInputRefs_jesUp["fj1Pt"                                                 ]=&fj1PtScaleUp          ;
-  mvaInputRefs_jesUp["fj1MSD"                                                ]=&fj1MSDScaleUp         ;
+  mvaInputRefs_jesUp["fj1MSD_corr"                                           ]=&fj1MSD_corr_jesUp     ;
 
   mvaInputRefs_jesDown = mvaInputRefs;
   mvaInputRefs_jesDown["hbbDijetMass"                                          ]=&hbbDijetMassDown      ;    
@@ -1072,7 +1075,7 @@ void vhbbHistos(
   mvaInputRefs_jesDown["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))"   ]=&dPhiWb1_jesDown       ;    
   mvaInputRefs_jesDown["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))"   ]=&dPhiWb2_jesDown       ;    
   mvaInputRefs_jesDown["fj1Pt"                                                 ]=&fj1PtScaleDown        ;
-  mvaInputRefs_jesDown["fj1MSD"                                                ]=&fj1MSDScaleDown       ;
+  mvaInputRefs_jesDown["fj1MSD_corr"                                           ]=&fj1MSD_corr_jesDown   ;
   TMVA::Reader *reader=0, *reader_jesUp=0, *reader_jesDown=0;
   TString theBDTWeights="";
   // to do - not hardcoded
@@ -1108,6 +1111,7 @@ void vhbbHistos(
     if(isBlinded && theCategory==kPlotData && (selection==kWHSR)) continue;
     plotTree->GetEntry(ientry);
     if(weight>500.) continue;
+    if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR && fj1MSD_corr<40) continue;
     float sf_training=1;
     if(theCategory!=kPlotData && theCategory!=kPlotQCD && (MVAVarType==2 || MVAVarType==3)) { // veto on training events
       if((selection==kWHSR || selection==kWHFJSR)) {
@@ -1335,9 +1339,9 @@ void vhbbHistos(
         } else if(selection==kWHSR) {
           MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
         } else if(selection>=kWHLightFlavorFJCR && selection<=kWHTT1bFJCR) {
-          MVAVar=fj1MSD;
-          MVAVar_jesUp=fj1MSDScaleUp;
-          MVAVar_jesDown=fj1MSDScaleDown;
+          MVAVar=fj1MSD_corr;
+          MVAVar_jesUp=fj1MSD_corr_jesUp;
+          MVAVar_jesDown=fj1MSD_corr_jesDown;
         } else if(selection==kWHFJSR) {
           MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
         } break;
@@ -1350,9 +1354,9 @@ void vhbbHistos(
         } else if(selection==kWHSR) {
           MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
         } else if(selection>=kWHLightFlavorFJCR && selection<=kWHTT1bFJCR) {
-          MVAVar=fj1MSD;
-          MVAVar_jesUp=fj1MSDScaleUp;
-          MVAVar_jesDown=fj1MSDScaleDown;
+          MVAVar=fj1MSD_corr;
+          MVAVar_jesUp=fj1MSD_corr_jesUp;
+          MVAVar_jesDown=fj1MSD_corr_jesDown;
         } else if(selection==kWHFJSR) {
           MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
         }
@@ -1410,7 +1414,7 @@ void vhbbHistos(
       else if (histoNames[p]=="fj1DoubleCSV"        ) { theVar = TMath::Min(fj1DoubleCSV          , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1HTTMass"          ) { theVar = TMath::Min(fj1HTTMass            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1HTTFRec"          ) { theVar = TMath::Min(fj1HTTFRec            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
-      else if (histoNames[p]=="fj1MSD"              ) { theVar = TMath::Min(fj1MSD                , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1MSD_corr"         ) { theVar = TMath::Min(fj1MSD_corr           , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau32"            ) { theVar = TMath::Min(fj1Tau32              , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau32SD"          ) { theVar = TMath::Min(fj1Tau32SD            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau21"            ) { theVar = TMath::Min(fj1Tau21              , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
@@ -1494,7 +1498,7 @@ void vhbbHistos(
       else if (histoNames[p]=="fj1DoubleCSV"        ) { theVar = TMath::Min(fj1DoubleCSV          , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1HTTMass"          ) { theVar = TMath::Min(fj1HTTMass            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1HTTFRec"          ) { theVar = TMath::Min(fj1HTTFRec            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
-      else if (histoNames[p]=="fj1MSD"              ) { theVar = TMath::Min(fj1MSD                , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1MSD_corr"         ) { theVar = TMath::Min(fj1MSD_corr           , float(xmax[p]- 1e-6)); makePlot = passFullSel != ((nMinusOneBits&selection)!=0 && theVar<40); }
       else if (histoNames[p]=="fj1Tau32"            ) { theVar = TMath::Min(fj1Tau32              , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau32SD"          ) { theVar = TMath::Min(fj1Tau32SD            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau21"            ) { theVar = TMath::Min(fj1Tau21              , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
@@ -1639,8 +1643,8 @@ void vhbbHistos(
       if(fabs(histo_QCDr1f5[ic]->GetBinContent(nb)) > histo_QCDfScaleUp  [ic]->GetBinContent(nb)) histo_QCDfScaleUp  [ic]->SetBinContent(nb, fabs(histo_QCDr1f5[ic]->GetBinContent(nb)));
       if(fabs(histo_QCDr2f1[ic]->GetBinContent(nb)) > histo_QCDrScaleUp  [ic]->GetBinContent(nb)) histo_QCDrScaleUp  [ic]->SetBinContent(nb, fabs(histo_QCDr2f1[ic]->GetBinContent(nb)));
       if(fabs(histo_QCDr5f1[ic]->GetBinContent(nb)) > histo_QCDrScaleUp  [ic]->GetBinContent(nb)) histo_QCDrScaleUp  [ic]->SetBinContent(nb, fabs(histo_QCDr5f1[ic]->GetBinContent(nb)));
-      histo_QCDfScaleDown[ic]->SetBinContent(nb, nomYield*nomYield/histo_QCDfScaleUp[ic]->GetBinContent(nb));
-      histo_QCDrScaleDown[ic]->SetBinContent(nb, nomYield*nomYield/histo_QCDrScaleUp[ic]->GetBinContent(nb));
+      if(histo_QCDfScaleUp[ic]->GetBinContent(nb)>0) histo_QCDfScaleDown[ic]->SetBinContent(nb, nomYield*nomYield/histo_QCDfScaleUp[ic]->GetBinContent(nb));
+      if(histo_QCDrScaleUp[ic]->GetBinContent(nb)>0) histo_QCDrScaleDown[ic]->SetBinContent(nb, nomYield*nomYield/histo_QCDrScaleUp[ic]->GetBinContent(nb));
       // Bound between [0.5,2.0] (essentially does nothing)
       histo_QCDrScaleUp  [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDrScaleUp  [ic]->GetBinContent(nb))));
       histo_QCDrScaleDown[ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDrScaleDown[ic]->GetBinContent(nb))));
@@ -1814,27 +1818,35 @@ void vhbbHistos(
     card<<Form("CMS_VH_TopNorm lnN "); for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotTop? "1.15 ":"- "); card<<std::endl;
     // Diboson Cross Section
     card<<Form("CMS_VH_VVNorm lnN "); for(int ic=ic0; ic<nPlotCategories; ic++) card<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- "); card<<std::endl;
-    if(selection>=kWHLightFlavorCR && selection<=kWHFJSR) {
+    if(selection>=kWHLightFlavorCR && selection<=kWHSR) {
       card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",ttbar,ttbar) << std::endl;
       card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",Wbb  ,Wbb  ) << std::endl;
       card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",Wb   ,Wb   ) << std::endl;
       card << Form("SF_%s_Wln rateParam  * %s 1 [0.2,5]",WLF  ,WLF  ) << std::endl;
-    }
-    if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
-    // Mar 22 2018
-    //   Process      Eff.(0ijB)     Eff.(1+ijB)
-    // -----------------------------------------
-    //     ttbar           0.128           0.114
-    //      W+bb           0.394           0.178
-    //       W+b           0.229           0.104
-    //   W+udcsg           0.021           0.026
+    } else if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
+      // Additional uncertainty on W+LF to pass the MSD cut
+      /*
+        passMSD_WLF_Wln rateParam * WLF (@0*1.0) SF_passMSD_WLF
+        SF_passMSD_WLF param 1.15 0.25
+      */
+      card << Form("passMSD_%s_Wln rateParam * %s (@0*1.0) SF_passMSD_WLF", WLF,WLF) << std::endl;
+      card << Form("SF_passMSD_WLF param 0.87 0.25") << std::endl;
 
       // Double B-tag scale factor extraction in situ
       // A priori MC efficiencies for the double B cut
+      
+      // Mar 22 2018 (before switching to corrected MSD)
+      //   Process      Eff.(0ijB)     Eff.(1+ijB)
+      // -----------------------------------------
+      //     ttbar           0.128           0.114
+      //      W+bb           0.394           0.178
+      //       W+b           0.229           0.104
+      //   W+udcsg           0.021           0.026
+
       card << "effDoubleB_TT   param 0.13  0.013" << std::endl; 
-      card << "effDoubleB_Wbb  param 0.39  0.20"  << std::endl; 
-      card << "effDoubleB_Wb   param 0.23  0.12"  << std::endl; 
-      card << "effDoubleB_WLF  param 0.024 0.012" << std::endl; 
+      card << "effDoubleB_Wbb  param 0.39  0.039"  << std::endl; 
+      card << "effDoubleB_Wb   param 0.23  0.023"  << std::endl; 
+      card << "effDoubleB_WLF  param 0.024 0.0024" << std::endl; 
       // Efficiency scale factors for the double B cut
       card << "effSFDoubleB_TT  extArg 1.0 [0.1,10]" << std::endl;
       card << "effSFDoubleB_Wbb extArg 1.0 [0.1,10]" << std::endl;

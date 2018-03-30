@@ -177,8 +177,7 @@ void hfEleTree(
         panda::GenParticle *genHFEle = (panda::GenParticle*)genHFElectrons[iGHFE];
         ptBalance_GHFE = fabs(trackPt/genHFEle->pt() - 1.);
         dR_GHFE = genHFEle->dR(electron);
-        //if(ptBalance_GHFE < 0.5 && dR_GHFE < 0.01)  matchedToHFHadron=true;
-        if(dR_GHFE < 0.1)  matchedToHFHadron=true;
+        if(ptBalance_GHFE < 0.5 && dR_GHFE < 0.01)  matchedToHFHadron=true;
         if(debug>=3) printf("    Gen HF electron %d has pt balance %.2f, dR %.2f => matched=%d\n",iGHFE,ptBalance_GHFE,dR_GHFE,matchedToHFHadron);
         if(matchedToHFHadron) {
           genElectronRecoMatch[iGHFE] = &electron;
@@ -227,7 +226,7 @@ void hfEleTree(
       foundRecoEle = 0;
       foundPFCand = 0;
       if(genElectronRecoMatch[iGHFE]!=nullptr) foundRecoEle = 1;
-      if(debug>=3) printf("  Looking for charged PF candidate to match to gen HF electron (pt,eta,phi)=(%.2f,%.2f,%.2f)\n",
+      /*if(debug>=3) printf("  Looking for charged PF candidate to match to gen HF electron (pt,eta,phi)=(%.2f,%.2f,%.2f)\n",
         genHFElectrons[iGHFE]->pt(),genHFElectrons[iGHFE]->eta(),genHFElectrons[iGHFE]->phi());
       for (auto& pfCand : event.pfCandidates) {
         bool isRightType=false;
@@ -261,7 +260,7 @@ void hfEleTree(
 
 
           }
-      }
+      }*/
       genEle_pt   = genHFElectrons[iGHFE]->pt();
       genEle_eta  = genHFElectrons[iGHFE]->eta();
       genEle_phi  = genHFElectrons[iGHFE]->phi();
