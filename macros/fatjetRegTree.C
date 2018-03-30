@@ -9,448 +9,484 @@
 #include "TTree.h"
 #include "vhbbPlot.h"
 #include <sstream>
-//#include "RoccoR.cc"
-//#include <TRandom3.h>
+#include "PandaCore/Tools/interface/JERReader.h"
+#include "TMVA/Reader.h"
+#include "TMath.h"
+
+using namespace panda;
 
 void fatjetRegTree(
   TString inputFileName,
   TString outputFileName,
-  vhbbPlot::sampleType sample = vhbbPlot::kVH,
-  Long64_t maxEntries=-1
+  Long64_t maxEntries=-1,
+  int debug=0
 ) {
+  //vhbbPlot::sampleType sample = vhbbPlot::kVH,
   gSystem->Load("libPandaTreeObjects.so");
+  gSystem->Load("libPandaCoreTools.so");
   TFile *inputFile = TFile::Open(inputFileName,"read");
   TTree* tree = (TTree*)inputFile->Get("events"); // get the tree object from the file
-  panda::Event event; // create an Event object
+  Event event; // create an Event object
   event.setStatus(*tree, {"!*"});
   event.setAddress(*tree, {
-    "runNumber", "lumiNumber", "eventNumber",
+    "runNumber", "lumiNumber", "eventNumber", "rho", "weight",
     "muons", "electrons", "taus",
     "genParticles",
-    "puppiAK8Jets", "chsAK4Jets",
-    "pfCandidates","vertices","weight","tracks","secondaryVertices"
+    "puppiAK8Jets", "chsAK4Jets", "ak8GenJets", 
+    "pfCandidates","vertices","tracks","secondaryVertices"
   }); 
 
   Long64_t sum_mc_weights=0;  
   TH1D* all_tree=(TH1D*)inputFile->FindObjectAny("hSumW");
   sum_mc_weights = all_tree->GetBinContent(1);
   
+  // Apply MSD correction after the smearing
   TFile *MSDcorr = new TFile("PandaAnalysis/data/puppiCorr.root");
   TF1 *puppisd_corrGEN = (TF1*)MSDcorr->Get("puppiJECcorr_gen");;
   TF1 *puppisd_corrRECO_cen = (TF1*)MSDcorr->Get("puppiJECcorr_reco_0eta1v3");
   TF1 *puppisd_corrRECO_for = (TF1*)MSDcorr->Get("puppiJECcorr_reco_1v3eta2v5");
+  JERReader *ak8JERReader = new JERReader("PandaAnalysis/data/jec/25nsV10/Spring16_25nsV10_MC_SF_AK8PFPuppi.txt","PandaAnalysis/data/jec/25nsV10/Spring16_25nsV10_MC_PtResolution_AK8PFPuppi.txt");
  
-
   TFile *outputFile = new TFile(outputFileName, "recreate");
   TTree *regTree = new TTree("regTree","regTree");
-  float weight         ; regTree->Branch("weight"         , &weight         , "weight/F"        );
-  float fatjet_pt      ; regTree->Branch("fatjet_pt"      , &fatjet_pt      , "fatjet_pt/F"     );
-  float fatjet_eta     ; regTree->Branch("fatjet_eta"     , &fatjet_eta     , "fatjet_eta/F"    );
-  float fatjet_phi     ; regTree->Branch("fatjet_phi"     , &fatjet_phi     , "fatjet_phi/F"    );
-  float fatjet_MSD     ; regTree->Branch("fatjet_MSD"     , &fatjet_MSD     , "fatjet_MSD/F"    );
-  float fatjet_Mnu     ; regTree->Branch("fatjet_Mnu"     , &fatjet_Mnu     , "fatjet_Mnu/F"    );
-  float fatjet_nhf     ; regTree->Branch("fatjet_nhf"     , &fatjet_nhf     , "fatjet_nhf/F"    );
-  float fatjet_chf     ; regTree->Branch("fatjet_chf"     , &fatjet_chf     , "fatjet_chf/F"    );
-  float fatjet_nef     ; regTree->Branch("fatjet_nef"     , &fatjet_nef     , "fatjet_nef/F"    );
-  float fatjet_cef     ; regTree->Branch("fatjet_cef"     , &fatjet_cef     , "fatjet_cef/F"    );
-  
-  float sumNu_pt       ; regTree->Branch("sumNu_pt"       , &sumNu_pt       , "sumNu_pt/F"     );
-  float sumNu_eta      ; regTree->Branch("sumNu_eta"      , &sumNu_eta      , "sumNu_eta/F"    );
-  float sumNu_phi      ; regTree->Branch("sumNu_phi"      , &sumNu_phi      , "sumNu_phi/F"    );
-  float sumNu_E        ; regTree->Branch("sumNu_E"        , &sumNu_E        , "sumNu_E/F"      );
-  
-  float          ele1_pt                 ; regTree->Branch("ele1_pt"        , &ele1_pt        , "ele1_pt/F"      );
-  float          ele1_eta                ; regTree->Branch("ele1_eta"       , &ele1_eta       , "ele1_eta/F"     );
-  float          ele1_phi                ; regTree->Branch("ele1_phi"       , &ele1_phi       , "ele1_phi/F"     );
-  float          ele1_chIso              ; regTree->Branch("ele1_chIso"     , &ele1_chIso     , "ele1_chIso/F"   ); 
-  float          ele1_nhIso              ; regTree->Branch("ele1_nhIso"     , &ele1_nhIso     , "ele1_nhIso/F"   );
-  float          ele1_phIso              ; regTree->Branch("ele1_phIso"     , &ele1_phIso     , "ele1_phIso/F"   );
-  float          ele1_dxy                ; regTree->Branch("ele1_dxy"       , &ele1_dxy       , "ele1_dxy/F"     );
-  float          ele1_dz                 ; regTree->Branch("ele1_dz"        , &ele1_dz        , "ele1_dz/F"      );
-  float          ele1_sieie              ; regTree->Branch("ele1_sieie"     , &ele1_sieie     , "ele1_sieie"     ); 
-  float          ele1_sipip              ; regTree->Branch("ele1_sipip"     , &ele1_sipip     , "ele1_sipip"     ); 
-  float          ele1_r9                 ; regTree->Branch("ele1_r9"        , &ele1_r9        , "ele1_r9"        );
-  float          ele1_dEtaInSeed         ; regTree->Branch("ele1_dEtaInSeed", &ele1_dEtaInSeed, "ele1_dEtaInSeed");
-  float          ele1_dPhiIn             ; regTree->Branch("ele1_dPhiIn"    , &ele1_dPhiIn    , "ele1_dPhiIn"    );
-  float          ele1_eseed              ; regTree->Branch("ele1_eseed"     , &ele1_eseed     , "ele1_eseed"     );
-  float          ele1_hOverE             ; regTree->Branch("ele1_hOverE"    , &ele1_hOverE    , "ele1_hOverE"    );
-  float          ele1_ecalE              ; regTree->Branch("ele1_ecalE"     , &ele1_ecalE     , "ele1_ecalE"     );
-  float          ele1_trackP             ; regTree->Branch("ele1_trackP"    , &ele1_trackP    , "ele1_trackP"    );
-  float          ele2_pt                 ; regTree->Branch("ele2_pt"        , &ele2_pt        , "ele2_pt/F"      );
-  float          ele2_eta                ; regTree->Branch("ele2_eta"       , &ele2_eta       , "ele2_eta/F"     );
-  float          ele2_phi                ; regTree->Branch("ele2_phi"       , &ele2_phi       , "ele2_phi/F"     );
-  float          ele2_chIso              ; regTree->Branch("ele2_chIso"     , &ele2_chIso     , "ele2_chIso/F"   ); 
-  float          ele2_nhIso              ; regTree->Branch("ele2_nhIso"     , &ele2_nhIso     , "ele2_nhIso/F"   );
-  float          ele2_phIso              ; regTree->Branch("ele2_phIso"     , &ele2_phIso     , "ele2_phIso/F"   );
-  float          ele2_dxy                ; regTree->Branch("ele2_dxy"       , &ele2_dxy       , "ele2_dxy/F"     );
-  float          ele2_dz                 ; regTree->Branch("ele2_dz"        , &ele2_dz        , "ele2_dz/F"      );
-  float          ele2_sieie              ; regTree->Branch("ele2_sieie"     , &ele2_sieie     , "ele2_sieie"     ); 
-  float          ele2_sipip              ; regTree->Branch("ele2_sipip"     , &ele2_sipip     , "ele2_sipip"     ); 
-  float          ele2_r9                 ; regTree->Branch("ele2_r9"        , &ele2_r9        , "ele2_r9"        );
-  float          ele2_dEtaInSeed         ; regTree->Branch("ele2_dEtaInSeed", &ele2_dEtaInSeed, "ele2_dEtaInSeed");
-  float          ele2_dPhiIn             ; regTree->Branch("ele2_dPhiIn"    , &ele2_dPhiIn    , "ele2_dPhiIn"    );
-  float          ele2_eseed              ; regTree->Branch("ele2_eseed"     , &ele2_eseed     , "ele2_eseed"     );
-  float          ele2_hOverE             ; regTree->Branch("ele2_hOverE"    , &ele2_hOverE    , "ele2_hOverE"    );
-  float          ele2_ecalE              ; regTree->Branch("ele2_ecalE"     , &ele2_ecalE     , "ele2_ecalE"     );
-  float          ele2_trackP             ; regTree->Branch("ele2_trackP"    , &ele2_trackP    , "ele2_trackP"    );
-  
-  float          mu1_pt                  ; regTree->Branch("mu1_pt"                    , &mu1_pt                  , "mu1_pt/F"                  );
-  float          mu1_eta                 ; regTree->Branch("mu1_eta"                   , &mu1_eta                 , "mu1_eta/F"                 );
-  float          mu1_phi                 ; regTree->Branch("mu1_phi"                   , &mu1_phi                 , "mu1_phi/F"                 );
-  float          mu1_chIso               ; regTree->Branch("mu1_chIso"                 , &mu1_chIso               , "mu1_chIso/F"               ); 
-  float          mu1_nhIso               ; regTree->Branch("mu1_nhIso"                 , &mu1_nhIso               , "mu1_nhIso/F"               );
-  float          mu1_phIso               ; regTree->Branch("mu1_phIso"                 , &mu1_phIso               , "mu1_phIso/F"               );
-  float          mu1_dxy                 ; regTree->Branch("mu1_dxy"                   , &mu1_dxy                 , "mu1_dxy/F"                 );
-  float          mu1_dz                  ; regTree->Branch("mu1_dz"                    , &mu1_dz                  , "mu1_dz/F"                  );
-  float          mu1_validFraction       ; regTree->Branch("mu1_validFraction"         , &mu1_validFraction       , "mu1_validFraction/F"       ); 
-  int            mu1_nValidMuon          ; regTree->Branch("mu1_nValidMuon"            , &mu1_nValidMuon          , "mu1_nValidMuon/I"          ); 
-  int            mu1_nValidPixel         ; regTree->Branch("mu1_nValidPixel"           , &mu1_nValidPixel         , "mu1_nValidPixel/I"         ); 
-  int            mu1_trkLayersWithMmt    ; regTree->Branch("mu1_trkLayersWithMmt"      , &mu1_trkLayersWithMmt    , "mu1_trkLayersWithMmt/I"    ); 
-  int            mu1_pixLayersWithMmt    ; regTree->Branch("mu1_pixLayersWithMmt"      , &mu1_pixLayersWithMmt    , "mu1_pixLayersWithMmt/I"    ); 
-  int            mu1_nMatched            ; regTree->Branch("mu1_nMatched"              , &mu1_nMatched            , "mu1_nMatched/I"            ); 
-  float          mu1_normChi2            ; regTree->Branch("mu1_normChi2"              , &mu1_normChi2            , "mu1_normChi2/F"            ); 
-  int            mu1_chi2LocalPosition   ; regTree->Branch("mu1_chi2LocalPosition"     , &mu1_chi2LocalPosition   , "mu1_chi2LocalPosition/I"   ); 
-  int            mu1_trkKink             ; regTree->Branch("mu1_trkKink"               , &mu1_trkKink             , "mu1_trkKink/I"             ); 
-  float          mu1_segmentCompatibility; regTree->Branch("mu1_segmentCompatibility"  , &mu1_segmentCompatibility, "mu1_segmentCompatibility/F"); 
-  float          mu2_pt                  ; regTree->Branch("mu2_pt"                    , &mu2_pt                  , "mu2_pt/F"                  );
-  float          mu2_eta                 ; regTree->Branch("mu2_eta"                   , &mu2_eta                 , "mu2_eta/F"                 );
-  float          mu2_phi                 ; regTree->Branch("mu2_phi"                   , &mu2_phi                 , "mu2_phi/F"                 );
-  float          mu2_chIso               ; regTree->Branch("mu2_chIso"                 , &mu2_chIso               , "mu2_chIso/F"               ); 
-  float          mu2_nhIso               ; regTree->Branch("mu2_nhIso"                 , &mu2_nhIso               , "mu2_nhIso/F"               );
-  float          mu2_phIso               ; regTree->Branch("mu2_phIso"                 , &mu2_phIso               , "mu2_phIso/F"               );
-  float          mu2_dxy                 ; regTree->Branch("mu2_dxy"                   , &mu2_dxy                 , "mu2_dxy/F"                 );
-  float          mu2_dz                  ; regTree->Branch("mu2_dz"                    , &mu2_dz                  , "mu2_dz/F"                  );
-  float          mu2_validFraction       ; regTree->Branch("mu2_validFraction"         , &mu2_validFraction       , "mu2_validFraction/F"       ); 
-  int            mu2_nValidMuon          ; regTree->Branch("mu2_nValidMuon"            , &mu2_nValidMuon          , "mu2_nValidMuon/I"          ); 
-  int            mu2_nValidPixel         ; regTree->Branch("mu2_nValidPixel"           , &mu2_nValidPixel         , "mu2_nValidPixel/I"         ); 
-  int            mu2_trkLayersWithMmt    ; regTree->Branch("mu2_trkLayersWithMmt"      , &mu2_trkLayersWithMmt    , "mu2_trkLayersWithMmt/I"    ); 
-  int            mu2_pixLayersWithMmt    ; regTree->Branch("mu2_pixLayersWithMmt"      , &mu2_pixLayersWithMmt    , "mu2_pixLayersWithMmt/I"    ); 
-  int            mu2_nMatched            ; regTree->Branch("mu2_nMatched"              , &mu2_nMatched            , "mu2_nMatched/I"            ); 
-  float          mu2_normChi2            ; regTree->Branch("mu2_normChi2"              , &mu2_normChi2            , "mu2_normChi2/F"            ); 
-  int            mu2_chi2LocalPosition   ; regTree->Branch("mu2_chi2LocalPosition"     , &mu2_chi2LocalPosition   , "mu2_chi2LocalPosition/I"   ); 
-  int            mu2_trkKink             ; regTree->Branch("mu2_trkKink"               , &mu2_trkKink             , "mu2_trkKink/I"             ); 
-  float          mu2_segmentCompatibility; regTree->Branch("mu2_segmentCompatibility"  , &mu2_segmentCompatibility, "mu2_segmentCompatibility/F"); 
-  float          sv1_pt                  ; regTree->Branch("sv1_pt"                    , &sv1_pt                  , "sv1_pt/F"                  ); 
-  float          sv1_m                   ; regTree->Branch("sv1_m"                     , &sv1_m                   , "sv1_m/F"                   ); 
-  float          sv1_3Dval               ; regTree->Branch("sv1_3Dval"                 , &sv1_3Dval               , "sv1_3Dval/F"               ); 
-  float          sv1_3Derr               ; regTree->Branch("sv1_3Derr"                 , &sv1_3Derr               , "sv1_3Derr/F"               ); 
-  int            sv1_ntrk                ; regTree->Branch("sv1_ntrk"                  , &sv1_ntrk                , "sv1_ntrk/I"                ); 
-  float          sv2_pt                  ; regTree->Branch("sv2_pt"                    , &sv2_pt                  , "sv2_pt/F"                  ); 
-  float          sv2_m                   ; regTree->Branch("sv2_m"                     , &sv2_m                   , "sv2_m/F"                   ); 
-  float          sv2_3Dval               ; regTree->Branch("sv2_3Dval"                 , &sv2_3Dval               , "sv2_3Dval/F"               ); 
-  float          sv2_3Derr               ; regTree->Branch("sv2_3Derr"                 , &sv2_3Derr               , "sv2_3Derr/F"               ); 
-  int            sv2_ntrk                ; regTree->Branch("sv2_ntrk"                  , &sv2_ntrk                , "sv2_ntrk/I"                ); 
-  unsigned char nEle, nMu;
-  TLorentzVector sumNuV4, fatjetV4, nuV4, fatjetNuV4;
+  float weight                  ; regTree->Branch("weight"                , &weight                  , "weight/F"                  );
+  float fj1_pt                  ; regTree->Branch("fj1_pt"                , &fj1_pt                  , "fj1_pt/F"                  );
+  float fj1_eta                 ; regTree->Branch("fj1_eta"               , &fj1_eta                 , "fj1_eta/F"                 );
+  float fj1_phi                 ; regTree->Branch("fj1_phi"               , &fj1_phi                 , "fj1_phi/F"                 );
+  float fj1_MSD                 ; regTree->Branch("fj1_MSD"               , &fj1_MSD                 , "fj1_MSD/F"                 );
+  float fj1_Mnu                 ; regTree->Branch("fj1_Mnu"               , &fj1_Mnu                 , "fj1_Mnu/F"                 );
+  float fj1_genM                ; regTree->Branch("fj1_genM"              , &fj1_genM                , "fj1_genM/F"                );
+  float fj1_genMnu              ; regTree->Branch("fj1_genMnu"            , &fj1_genMnu              , "fj1_genMnu/F"              );
+  float fj1_nhf                 ; regTree->Branch("fj1_nhf"               , &fj1_nhf                 , "fj1_nhf/F"                 );
+  float fj1_chf                 ; regTree->Branch("fj1_chf"               , &fj1_chf                 , "fj1_chf/F"                 );
+  float fj1_nef                 ; regTree->Branch("fj1_nef"               , &fj1_nef                 , "fj1_nef/F"                 );
+  float fj1_cef                 ; regTree->Branch("fj1_cef"               , &fj1_cef                 , "fj1_cef/F"                 );
+  float sumNu_pt                ; regTree->Branch("sumNu_pt"              , &sumNu_pt                , "sumNu_pt/F"                );
+  float sumNu_dEtaFj1           ; regTree->Branch("sumNu_dEtaFj1"         , &sumNu_dEtaFj1           , "sumNu_dEtaFj1/F"           );
+  float sumNu_dPhiFj1           ; regTree->Branch("sumNu_dPhiFj1"         , &sumNu_dPhiFj1           , "sumNu_dPhiFj1/F"           );
+  float sumNu_E                 ; regTree->Branch("sumNu_E"               , &sumNu_E                 , "sumNu_E/F"                 );
+  float ele1_pt                 ; regTree->Branch("ele1_pt"               , &ele1_pt                 , "ele1_pt/F"                 );
+  float ele1_dEtaFj1            ; regTree->Branch("ele1_dEtaFj1"          , &ele1_dEtaFj1            , "ele1_dEtaFj1/F"            );
+  float ele1_dPhiFj1            ; regTree->Branch("ele1_dPhiFj1"          , &ele1_dPhiFj1            , "ele1_dPhiFj1/F"            );
+  float ele1_dxy                ; regTree->Branch("ele1_dxy"              , &ele1_dxy                , "ele1_dxy/F"                );
+  float ele1_dz                 ; regTree->Branch("ele1_dz"               , &ele1_dz                 , "ele1_dz/F"                 );
+  float ele1_hfMva              ; regTree->Branch("ele1_hfMva"            , &ele1_hfMva              , "ele1_hfMva/F"              );
+  float ele1_sv1_pt             ; regTree->Branch("ele1_sv1_pt"           , &ele1_sv1_pt             , "ele1_sv1_pt/F"             ); 
+  float ele1_sv1_dEta           ; regTree->Branch("ele1_sv1_dEta"         , &ele1_sv1_dEta           , "ele1_sv1_dEta/F"           );  
+  float ele1_sv1_dPhi           ; regTree->Branch("ele1_sv1_dPhi"         , &ele1_sv1_dPhi           , "ele1_sv1_dPhi/F"           );  
+  float ele1_sv1_m              ; regTree->Branch("ele1_sv1_m"            , &ele1_sv1_m              , "ele1_sv1_m/F"              ); 
+  float ele1_sv1_vtx3DVal       ; regTree->Branch("ele1_sv1_vtx3DVal"     , &ele1_sv1_vtx3DVal       , "ele1_sv1_vtx3DVal/F"       ); 
+  float ele1_sv1_vtx3DeVal      ; regTree->Branch("ele1_sv1_vtx3DeVal"    , &ele1_sv1_vtx3DeVal      , "ele1_sv1_vtx3DeVal/F"      ); 
+  int   ele1_sv1_ntrk           ; regTree->Branch("ele1_sv1_ntrk"         , &ele1_sv1_ntrk           , "ele1_sv1_ntrk/I"           ); 
+  float ele1_sv1_ndof           ; regTree->Branch("ele1_sv1_ndof"         , &ele1_sv1_ndof           , "ele1_sv1_ndof/F"           );  
+  float ele1_sv1_chi2           ; regTree->Branch("ele1_sv1_chi2"         , &ele1_sv1_chi2           , "ele1_sv1_chi2/F"           );  
+  float ele1_sv1_significance   ; regTree->Branch("ele1_sv1_significance" , &ele1_sv1_significance   , "ele1_sv1_significance/F"   );  
+  float mu1_pt                  ; regTree->Branch("mu1_pt"                , &mu1_pt                  , "mu1_pt/F"                  );
+  float mu1_dEtaFj1             ; regTree->Branch("mu1_dEtaFj1"           , &mu1_dEtaFj1             , "mu1_dEtaFj1/F"             );
+  float mu1_dPhiFj1             ; regTree->Branch("mu1_dPhiFj1"           , &mu1_dPhiFj1             , "mu1_dPhiFj1/F"             );
+  float mu1_dxy                 ; regTree->Branch("mu1_dxy"               , &mu1_dxy                 , "mu1_dxy/F"                 );
+  float mu1_dz                  ; regTree->Branch("mu1_dz"                , &mu1_dz                  , "mu1_dz/F"                  );
+  float mu1_sv1_pt              ; regTree->Branch("mu1_sv1_pt"            , &mu1_sv1_pt              , "mu1_sv1_pt/F"              ); 
+  float mu1_sv1_dEta            ; regTree->Branch("mu1_sv1_dEta"          , &mu1_sv1_dEta            , "mu1_sv1_dEta/F"            );  
+  float mu1_sv1_dPhi            ; regTree->Branch("mu1_sv1_dPhi"          , &mu1_sv1_dPhi            , "mu1_sv1_dPhi/F"            );  
+  float mu1_sv1_m               ; regTree->Branch("mu1_sv1_m"             , &mu1_sv1_m               , "mu1_sv1_m/F"               ); 
+  float mu1_sv1_vtx3DVal        ; regTree->Branch("mu1_sv1_vtx3DVal"      , &mu1_sv1_vtx3DVal        , "mu1_sv1_vtx3DVal/F"        ); 
+  float mu1_sv1_vtx3DeVal       ; regTree->Branch("mu1_sv1_vtx3DeVal"     , &mu1_sv1_vtx3DeVal       , "mu1_sv1_vtx3DeVal/F"       ); 
+  int   mu1_sv1_ntrk            ; regTree->Branch("mu1_sv1_ntrk"          , &mu1_sv1_ntrk            , "mu1_sv1_ntrk/I"            ); 
+  float mu1_sv1_ndof            ; regTree->Branch("mu1_sv1_ndof"          , &mu1_sv1_ndof            , "mu1_sv1_ndof/F"            );  
+  float mu1_sv1_chi2            ; regTree->Branch("mu1_sv1_chi2"          , &mu1_sv1_chi2            , "mu1_sv1_chi2/F"            );  
+  float mu1_sv1_significance    ; regTree->Branch("mu1_sv1_significance"  , &mu1_sv1_significance    , "mu1_sv1_significance/F"    );  
+  float fj1_sv1_pt              ; regTree->Branch("fj1_sv1_pt"            , &fj1_sv1_pt              , "fj1_sv1_pt/F"              ); 
+  float fj1_sv1_dEta            ; regTree->Branch("fj1_sv1_dEta"          , &fj1_sv1_dEta            , "fj1_sv1_dEta/F"            );  
+  float fj1_sv1_dPhi            ; regTree->Branch("fj1_sv1_dPhi"          , &fj1_sv1_dPhi            , "fj1_sv1_dPhi/F"            );  
+  float fj1_sv1_m               ; regTree->Branch("fj1_sv1_m"             , &fj1_sv1_m               , "fj1_sv1_m/F"               ); 
+  float fj1_sv1_vtx3DVal        ; regTree->Branch("fj1_sv1_vtx3DVal"      , &fj1_sv1_vtx3DVal        , "fj1_sv1_vtx3DVal/F"        ); 
+  float fj1_sv1_vtx3DeVal       ; regTree->Branch("fj1_sv1_vtx3DeVal"     , &fj1_sv1_vtx3DeVal       , "fj1_sv1_vtx3DeVal/F"       ); 
+  int   fj1_sv1_ntrk            ; regTree->Branch("fj1_sv1_ntrk"          , &fj1_sv1_ntrk            , "fj1_sv1_ntrk/I"            ); 
+  float fj1_sv1_ndof            ; regTree->Branch("fj1_sv1_ndof"          , &fj1_sv1_ndof            , "fj1_sv1_ndof/F"            );  
+  float fj1_sv1_chi2            ; regTree->Branch("fj1_sv1_chi2"          , &fj1_sv1_chi2            , "fj1_sv1_chi2/F"            );  
+  float fj1_sv1_significance    ; regTree->Branch("fj1_sv1_significance"  , &fj1_sv1_significance    , "fj1_sv1_significance/F"    );  
+  float fj1_sv2_pt              ; regTree->Branch("fj1_sv2_pt"            , &fj1_sv2_pt              , "fj1_sv2_pt/F"              ); 
+  float fj1_sv2_dEta            ; regTree->Branch("fj1_sv2_dEta"          , &fj1_sv2_dEta            , "fj1_sv2_dEta/F"            );  
+  float fj1_sv2_dPhi            ; regTree->Branch("fj1_sv2_dPhi"          , &fj1_sv2_dPhi            , "fj1_sv2_dPhi/F"            );  
+  float fj1_sv2_m               ; regTree->Branch("fj1_sv2_m"             , &fj1_sv2_m               , "fj1_sv2_m/F"               ); 
+  float fj1_sv2_vtx3DVal        ; regTree->Branch("fj1_sv2_vtx3DVal"      , &fj1_sv2_vtx3DVal        , "fj1_sv2_vtx3DVal/F"        ); 
+  float fj1_sv2_vtx3DeVal       ; regTree->Branch("fj1_sv2_vtx3DeVal"     , &fj1_sv2_vtx3DeVal       , "fj1_sv2_vtx3DeVal/F"       ); 
+  int   fj1_sv2_ntrk            ; regTree->Branch("fj1_sv2_ntrk"          , &fj1_sv2_ntrk            , "fj1_sv2_ntrk/I"            ); 
+  float fj1_sv2_ndof            ; regTree->Branch("fj1_sv2_ndof"          , &fj1_sv2_ndof            , "fj1_sv2_ndof/F"            );  
+  float fj1_sv2_chi2            ; regTree->Branch("fj1_sv2_chi2"          , &fj1_sv2_chi2            , "fj1_sv2_chi2/F"            );  
+  float fj1_sv2_significance    ; regTree->Branch("fj1_sv2_significance"  , &fj1_sv2_significance    , "fj1_sv2_significance/F"    );  
+ 
+  // Objects we don't want to reallocate over and over
+  TLorentzVector sumNuV4, fatjetV4, nuV4, fatjetNuV4, genFatjetV4, genFatjetNuV4;
+  FatJet *fj1=0;
+  // Instantiate the HF Electron MVA Reader
+  TMVA::Reader *hfEleMvaReader=new TMVA::Reader();
+  float hfEleMvaInputs[18];
+  hfEleMvaReader->AddVariable("ele_eta"            , &hfEleMvaInputs[ 0]);
+  hfEleMvaReader->AddVariable("ele_ecalIso/ele_pt" , &hfEleMvaInputs[ 1]);
+  hfEleMvaReader->AddVariable("ele_hcalIso/ele_pt" , &hfEleMvaInputs[ 2]);
+  hfEleMvaReader->AddVariable("ele_trackIso/ele_pt", &hfEleMvaInputs[ 3]);
+  hfEleMvaReader->AddVariable("ele_chIso/ele_pt"   , &hfEleMvaInputs[ 4]);
+  hfEleMvaReader->AddVariable("ele_nhIso/ele_pt"   , &hfEleMvaInputs[ 5]);
+  hfEleMvaReader->AddVariable("ele_phIso/ele_pt"   , &hfEleMvaInputs[ 6]);
+  hfEleMvaReader->AddVariable("ele_dxy"            , &hfEleMvaInputs[ 7]);
+  hfEleMvaReader->AddVariable("ele_dz"             , &hfEleMvaInputs[ 8]);
+  hfEleMvaReader->AddVariable("ele_sieie"          , &hfEleMvaInputs[ 9]);
+  hfEleMvaReader->AddVariable("ele_sipip"          , &hfEleMvaInputs[10]);
+  hfEleMvaReader->AddVariable("ele_r9"             , &hfEleMvaInputs[11]);
+  hfEleMvaReader->AddVariable("ele_dEtaInSeed"     , &hfEleMvaInputs[12]);
+  hfEleMvaReader->AddVariable("ele_dPhiIn"         , &hfEleMvaInputs[13]);
+  hfEleMvaReader->AddVariable("ele_hOverE"         , &hfEleMvaInputs[14]);
+  hfEleMvaReader->AddVariable("ele_ooEmooP"        , &hfEleMvaInputs[15]);
+  hfEleMvaReader->AddVariable("ele_nMissingHits"   , &hfEleMvaInputs[16]);
+  hfEleMvaReader->AddVariable("ele_tripleCharge"   , &hfEleMvaInputs[17]);
+  hfEleMvaReader->BookMVA("BDT","weights/hfEleMva_hfEleMva_hp0_test4.weights.xml");
+
   Long64_t nEntries = tree->GetEntries();
   if(maxEntries>0) nEntries=TMath::Min(maxEntries,nEntries);
   Long64_t oneTenth = nEntries/10;
   for (Long64_t iEntry = 0; iEntry<nEntries; ++iEntry) {
-    if(iEntry%oneTenth==0) printf("######## Reading entry %lld/%lld ########################################################\n",iEntry,nEntries); 
+    if(debug || iEntry%oneTenth==0) printf("######## Reading entry %lld/%lld ########################################################\n",iEntry,nEntries); 
     event.getEntry(*tree, iEntry);
-    
+    // Reset output tree branches
+    sumNuV4.SetPtEtaPhiM(0,0,0,0);
+    fj1=0;
+    weight                =    0;
+    fj1_pt                =   -1;
+    fj1_eta               =   -9;
+    fj1_phi               =   -9;
+    fj1_MSD               =   -1;
+    fj1_Mnu               =   -1;
+    fj1_genM              =   -1;
+    fj1_genMnu            =   -1;
+    fj1_nhf               =   -1;
+    fj1_chf               =   -1;
+    fj1_nef               =   -1;
+    fj1_cef               =   -1;
+    sumNu_pt              =   -1;
+    sumNu_dEtaFj1         =   -9;
+    sumNu_dPhiFj1         =   -9;
+    sumNu_E               =   -1;
+    ele1_pt               =   -1;
+    ele1_dEtaFj1          =   -9;
+    ele1_dPhiFj1          =   -9;
+    ele1_dxy              =  -99;
+    ele1_dz               =  -99;
+    ele1_hfMva            =   -1;
+    ele1_sv1_pt           =   -1;
+    ele1_sv1_dEta         =   -9;
+    ele1_sv1_dPhi         =   -9;
+    ele1_sv1_m            =   -1;
+    ele1_sv1_vtx3DVal     =   -1;
+    ele1_sv1_vtx3DeVal    =   -1;
+    ele1_sv1_ntrk         =   -1;
+    ele1_sv1_ndof         =   -1;
+    ele1_sv1_chi2         =   -1;
+    ele1_sv1_significance =   -1;
+    mu1_pt                =   -1;
+    mu1_dEtaFj1           =   -9;
+    mu1_dPhiFj1           =   -9;
+    mu1_dxy               =  -99;
+    mu1_dz                =  -99;
+    mu1_sv1_pt            =   -1;
+    mu1_sv1_dEta          =   -9;
+    mu1_sv1_dPhi          =   -9;
+    mu1_sv1_m             =   -1;
+    mu1_sv1_vtx3DVal      =   -1;
+    mu1_sv1_vtx3DeVal     =   -1;
+    mu1_sv1_ntrk          =   -1;
+    mu1_sv1_ndof          =   -1;
+    mu1_sv1_chi2          =   -1;
+    mu1_sv1_significance  =   -1;
+    fj1_sv1_pt            =   -1;
+    fj1_sv1_dEta          =   -9;
+    fj1_sv1_dPhi          =   -9;
+    fj1_sv1_m             =   -1;
+    fj1_sv1_vtx3DVal      =   -1;
+    fj1_sv1_vtx3DeVal     =   -1;
+    fj1_sv1_ntrk          =   -1;
+    fj1_sv1_ndof          =   -1;
+    fj1_sv1_chi2          =   -1;
+    fj1_sv1_significance  =   -1;
+    fj1_sv2_pt            =   -1;
+    fj1_sv2_dEta          =   -9;
+    fj1_sv2_dPhi          =   -9;
+    fj1_sv2_m             =   -1;
+    fj1_sv2_vtx3DVal      =   -1;
+    fj1_sv2_vtx3DeVal     =   -1;
+    fj1_sv2_ntrk          =   -1;
+    fj1_sv1_ndof          =   -1;
+    fj1_sv1_chi2          =   -1;
+    fj1_sv1_significance  =   -1;
     for (unsigned nJ = 0; nJ<event.puppiAK8Jets.size(); nJ++){
-      auto& fatjet = event.puppiAK8Jets[nJ];
+      panda::FatJet* fatjet = &event.puppiAK8Jets[nJ];
       // Fatjet preselection
-      if(fatjet.pt()<200) continue;
-      if(fabs(fatjet.eta())>2.4) continue;
-      //if(fatjet.double_sub<0.6) continue; // HACK
-      // End preselection (That was short!)
+      if(fatjet->pt()<200) continue;
+      if(fabs(fatjet->eta())>2.4) continue;
+      if(!fatjet->loose) continue;
 
-      // Reset output tree branches
-      nEle=0; nMu=0;
-      sumNuV4.SetPtEtaPhiM(0,0,0,0);
-
-      weight                  =   0;
-      fatjet_pt               =  -1; 
-      fatjet_eta              = -99; 
-      fatjet_phi              =  -1; 
-      fatjet_MSD              =  -1; 
-      fatjet_Mnu              =  -1; 
-      fatjet_nhf              =  -1;
-      fatjet_chf              =  -1;
-      fatjet_nef              =  -1;
-      fatjet_cef              =  -1;
-    
-      sumNu_pt                =  -1;
-      sumNu_eta               = -99;
-      sumNu_phi               =  -1;
-      sumNu_E                 =  -1;
-      
-      ele1_pt                 =  -1; 
-      ele1_eta                = -99; 
-      ele1_phi                =  -1; 
-      ele1_chIso              =  -1; 
-      ele1_nhIso              =  -1; 
-      ele1_phIso              =  -1; 
-      ele1_dxy                =  -7; 
-      ele1_dz                 =  -7; 
-      ele1_sieie              =  -1; 
-      ele1_sipip              =  -1; 
-      ele1_r9                 =  -1; 
-      ele1_dEtaInSeed         =  -1; 
-      ele1_dPhiIn             =  -1; 
-      ele1_eseed              =  -1; 
-      ele1_hOverE             =  -1; 
-      ele1_ecalE              =  -1; 
-      ele1_trackP             =  -1; 
-      ele2_pt                 =  -1; 
-      ele2_eta                = -99; 
-      ele2_phi                =  -1; 
-      ele2_chIso              =  -1; 
-      ele2_nhIso              =  -1; 
-      ele2_phIso              =  -1; 
-      ele2_dxy                =  -7; 
-      ele2_dz                 =  -7; 
-      ele2_sieie              =  -1; 
-      ele2_sipip              =  -1; 
-      ele2_r9                 =  -1; 
-      ele2_dEtaInSeed         =  -1; 
-      ele2_dPhiIn             =  -1; 
-      ele2_eseed              =  -1; 
-      ele2_hOverE             =  -1; 
-      ele2_ecalE              =  -1; 
-      ele2_trackP             =  -1; 
-      
-      mu1_pt                  =  -1;
-      mu1_eta                 = -99;
-      mu1_phi                 =  -1;
-      mu1_chIso               =  -1;
-      mu1_nhIso               =  -1;
-      mu1_phIso               =  -1;
-      mu1_dxy                 =  -7;
-      mu1_dz                  =  -7;
-      mu1_validFraction       =  -1;
-      mu1_nValidMuon          =  -1;
-      mu1_nValidPixel         =  -1;
-      mu1_trkLayersWithMmt    =  -1;
-      mu1_pixLayersWithMmt    =  -1;
-      mu1_nMatched            =  -1;
-      mu1_normChi2            =  -1;
-      mu1_chi2LocalPosition   =  -1;
-      mu1_trkKink             =  -1;
-      mu1_segmentCompatibility=  -1;
-      mu2_pt                  =  -1;
-      mu2_eta                 = -99;
-      mu2_phi                 =  -1;
-      mu2_chIso               =  -1;
-      mu2_nhIso               =  -1;
-      mu2_phIso               =  -1;
-      mu2_dxy                 =  -7;
-      mu2_dz                  =  -7;
-      mu2_validFraction       =  -1;
-      mu2_nValidMuon          =  -1;
-      mu2_nValidPixel         =  -1;
-      mu2_trkLayersWithMmt    =  -1;
-      mu2_pixLayersWithMmt    =  -1;
-      mu2_nMatched            =  -1;
-      mu2_normChi2            =  -1;
-      mu2_chi2LocalPosition   =  -1;
-      mu2_trkKink             =  -1;
-      mu2_segmentCompatibility=  -1;
-
-      sv1_pt    = -1;
-      sv1_m     = -1;
-      sv1_3Dval = -1;
-      sv1_3Derr = -1;
-      sv1_ntrk  = -1;
-      sv2_pt    = -1;
-      sv2_m     = -1;
-      sv2_3Dval = -1;
-      sv2_3Derr = -1;
-      sv2_ntrk  = -1;
-      
       // MSD correction 
       float genCorr  = 1.; 
       float recoCorr = 1.; 
       float totalCorr = 1.; 
-      genCorr = puppisd_corrGEN->Eval( fatjet.pt() );
-      if ( fabs(fatjet.eta()) <= 1.3 ) recoCorr = puppisd_corrRECO_cen->Eval( fatjet.pt() );
-      else recoCorr = puppisd_corrRECO_for->Eval( fatjet.pt() );
+      genCorr = puppisd_corrGEN->Eval( fatjet->pt() );
+      if ( fabs(fatjet->eta()) <= 1.3 ) recoCorr = puppisd_corrRECO_cen->Eval( fatjet->pt() );
+      else recoCorr = puppisd_corrRECO_for->Eval( fatjet->pt() );
       totalCorr = genCorr * recoCorr;
-      
+      float fj1_MSD_unsmeared = fatjet->mSD * totalCorr;
+      // Smearing
+      double smear=1, smearUp=1, smearDown=1;
+      ak8JERReader->getStochasticSmear(fatjet->pt(),fatjet->eta(),event.rho,smear,smearUp,smearDown);
+
       // Populate output tree info
-      fatjet_pt               = fatjet.pt(); 
-      fatjet_eta              = fatjet.eta();
-      fatjet_phi              = fatjet.phi();
-      fatjet_MSD              = fatjet.mSD * totalCorr;
-      fatjet_nhf              = fatjet.nhf;
-      fatjet_chf              = fatjet.chf; 
-      fatjet_nef              = fatjet.nef; 
-      fatjet_cef              = fatjet.cef; 
-
-      // Final state neutrinos inside the fatjet
-      // No parentage calculation for now
-      unsigned char nB=0,nC=0;
-      std::vector<const panda::GenParticle*> validGenP;
-      for (unsigned iG = 0; iG<event.genParticles.size(); iG++) {
-        auto& genParticle = event.genParticles[iG];
-        if (genParticle.finalState != 1) continue;
-        unsigned absid = abs(genParticle.pdgid);
-        if (absid!=12 && absid!=14 && absid!=16 && absid!=5) continue;
-        if (fatjet.dR2(genParticle)>0.64) continue;
-        
-        bool isDuplicate=false;
-        for (auto* vgp : validGenP)
-          if(genParticle.pdgid==vgp->pdgid &&
-            fabs(genParticle.pt()/vgp->pt()-1)<0.10 &&
-            sqrt(pow(genParticle.eta()-vgp->eta(),2)+pow(TVector2::Phi_mpi_pi(genParticle.phi()-vgp->phi()),2)) < 0.00001
-          ) { isDuplicate=true; break; }
-        if(isDuplicate) continue;
-        validGenP.push_back(&genParticle);
-        
-        if(absid==12 || absid==14 || absid==16) {
-          bool foundW=false;
-          panda::GenParticle *familyMember = &genParticle, *ancestor=0;
-          while(!foundW) {
-            if(!familyMember->parent.isValid()) break;
-            ancestor = (panda::GenParticle*)familyMember->parent.get();
-            if(abs(ancestor->pdgid)==24) { foundW=true; break; }
-            else familyMember=ancestor;
-          } if(foundW) continue;
-          nuV4.SetPtEtaPhiM(genParticle.pt(), genParticle.eta(), genParticle.phi(), 0);
-          sumNuV4+=nuV4;
-        } else if(absid==5) {
-          if(genParticle.parent.isValid() && genParticle.parent->pdgid==genParticle.pdgid) continue;
-          nB++; 
-        }
-      }
-      //if(sample==vhbbPlot::kVH && nB<2) continue;
-      fatjetV4.SetPtEtaPhiM(fatjet_pt, fatjet_eta, fatjet_phi, fatjet_MSD);
-      fatjetNuV4 = sumNuV4 + fatjetV4;
-      fatjet_Mnu = fatjetNuV4.M();
-      
-      sumNu_pt                = sumNuV4.Pt() ;
-      sumNu_eta               = sumNuV4.Eta();
-      sumNu_phi               = sumNuV4.Phi();
-      sumNu_E                 = sumNuV4.E()  ;
-
-      // Properties of the leading electrons
-      for(unsigned iE = 0; iE<event.electrons.size(); iE++) {
-        auto& electron  = event.electrons[iE];
-        if(nEle>=2 || electron.pt()<10) break;
-        if(fabs(electron.eta()) > 2.5) continue;
-        if(fatjet.dR2(electron)>0.64) continue;
-        if(nEle==0) {
-          ele1_pt        =electron.pt()      ;
-          ele1_eta       =electron.eta()     ;
-          ele1_phi       =electron.phi()     ;
-          ele1_chIso     =electron.chIso     ;
-          ele1_nhIso     =electron.nhIso     ;
-          ele1_phIso     =electron.phIso     ;
-          ele1_dxy       =electron.dxy       ;
-          ele1_dz        =electron.dz        ;
-          ele1_sieie     =electron.sieie     ;
-          ele1_sipip     =electron.sipip     ;
-          ele1_r9        =electron.r9        ;
-          ele1_dEtaInSeed=electron.dEtaInSeed;
-          ele1_dPhiIn    =electron.dPhiIn    ;
-          ele1_eseed     =electron.eseed     ;
-          ele1_hOverE    =electron.hOverE    ;
-          ele1_ecalE     =electron.ecalE     ;
-          ele1_trackP    =electron.trackP    ;
-        } else if(nEle==1) {
-          ele2_pt        =electron.pt()      ;
-          ele2_eta       =electron.eta()     ;
-          ele2_phi       =electron.phi()     ;
-          ele2_chIso     =electron.chIso     ;
-          ele2_nhIso     =electron.nhIso     ;
-          ele2_phIso     =electron.phIso     ;
-          ele2_dxy       =electron.dxy       ;
-          ele2_dz        =electron.dz        ;
-          ele2_sieie     =electron.sieie     ;
-          ele2_sipip     =electron.sipip     ;
-          ele2_r9        =electron.r9        ;
-          ele2_dEtaInSeed=electron.dEtaInSeed;
-          ele2_dPhiIn    =electron.dPhiIn    ;
-          ele2_eseed     =electron.eseed     ;
-          ele2_hOverE    =electron.hOverE    ;
-          ele2_ecalE     =electron.ecalE     ;
-          ele2_trackP    =electron.trackP    ;
-        }
-        nEle++;
-      }
-      // Properties of the leading muons 
-      for(unsigned iM = 0; iM<event.muons.size(); iM++){
-        auto& muon  = event.muons[iM];
-        if(nMu>=2 || muon.pt()<5) break;
-        if(!muon.global || fabs(muon.eta())>2.4) continue;
-        if(fatjet.dR2(muon)>0.64) continue;
-        if(nMu==0) {
-          mu1_pt                  =muon.pt()                ;
-          mu1_eta                 =muon.eta()               ;
-          mu1_phi                 =muon.phi()               ;
-          mu1_chIso               =muon.chIso               ;
-          mu1_nhIso               =muon.nhIso               ;
-          mu1_phIso               =muon.phIso               ;
-          mu1_dxy                 =muon.dxy                 ;
-          mu1_dz                  =muon.dz                  ;
-          mu1_validFraction       =muon.validFraction       ;
-          mu1_nValidMuon          =muon.nValidMuon          ;
-          mu1_nValidPixel         =muon.nValidPixel         ;
-          mu1_trkLayersWithMmt    =muon.trkLayersWithMmt    ;
-          mu1_pixLayersWithMmt    =muon.pixLayersWithMmt    ;
-          mu1_nMatched            =muon.nMatched            ;
-          mu1_normChi2            =muon.normChi2            ;
-          mu1_chi2LocalPosition   =muon.chi2LocalPosition   ;
-          mu1_trkKink             =muon.trkKink             ;
-          mu1_segmentCompatibility=muon.segmentCompatibility;
-        } else if(nMu==1) {
-          mu2_pt                  =muon.pt()                ;
-          mu2_eta                 =muon.eta()               ;
-          mu2_phi                 =muon.phi()               ;
-          mu2_chIso               =muon.chIso               ;
-          mu2_nhIso               =muon.nhIso               ;
-          mu2_phIso               =muon.phIso               ;
-          mu2_dxy                 =muon.dxy                 ;
-          mu2_dz                  =muon.dz                  ;
-          mu2_validFraction       =muon.validFraction       ;
-          mu2_nValidMuon          =muon.nValidMuon          ;
-          mu2_nValidPixel         =muon.nValidPixel         ;
-          mu2_trkLayersWithMmt    =muon.trkLayersWithMmt    ;
-          mu2_pixLayersWithMmt    =muon.pixLayersWithMmt    ;
-          mu2_nMatched            =muon.nMatched            ;
-          mu2_normChi2            =muon.normChi2            ;
-          mu2_chi2LocalPosition   =muon.chi2LocalPosition   ;
-          mu2_trkKink             =muon.trkKink             ;
-          mu2_segmentCompatibility=muon.segmentCompatibility;
-        }
-        nMu++;
-      }
-
-      // AK8 -> AK4 jets within -> Their secondary vertices
-      vector<panda::SecondaryVertex*> sv_; sv_.reserve(8);
-      for (unsigned nJ2 = 0; nJ<event.chsAK4Jets.size(); nJ2++){
-        auto& jet = event.chsAK4Jets[nJ2];
-        if(jet.pt()<20) break;
-        if(fabs(jet.eta())>2.4) continue;
-        if(jet.dR2(fatjet)>0.64) continue;
-        if(!jet.secondaryVertex.isValid()) continue;
-        panda::SecondaryVertex* sv = (panda::SecondaryVertex*)jet.secondaryVertex.get();
-        sv_.push_back(sv);
-      }
-      sort(
-        sv_.begin(),
-        sv_.end(),
-          [](panda::SecondaryVertex *x, panda::SecondaryVertex *y) -> bool { return x->pt()  > y->pt() ; }
-      );
-      if(sv_.size()>0) {
-        sv1_pt    = sv_[0]->pt();
-        sv1_m     = sv_[0]->m();
-        sv1_3Dval = sv_[0]->vtx3DVal;
-        sv1_3Derr = sv_[0]->vtx3DeVal;
-        sv1_ntrk  = sv_[0]->ntrk;
-      } if(sv_.size()>1) {
-        sv2_pt    = sv_[1]->pt();
-        sv2_m     = sv_[1]->m();
-        sv2_3Dval = sv_[1]->vtx3DVal;
-        sv2_3Derr = sv_[1]->vtx3DeVal;
-        sv2_ntrk  = sv_[1]->ntrk;
-      }
-      // Fill output tree
-      weight = event.weight;
-      regTree->Fill();
+      fj1_pt  = fatjet->pt() * smear; 
+      fj1_eta = fatjet->eta();
+      fj1_phi = fatjet->phi();
+      fj1_MSD = fj1_MSD_unsmeared * smear;
+      fj1_nhf = fatjet->nhf;
+      fj1_chf = fatjet->chf; 
+      fj1_nef = fatjet->nef; 
+      fj1_cef = fatjet->cef; 
+      fj1=fatjet;
     }
+    if(!fj1) continue;
+
+    // Final state neutrinos inside the fatjet
+    // No parentage calculation for now
+    unsigned char nB=0,nC=0;
+    std::vector<const GenParticle*> validGenP;
+    for (unsigned iG = 0; iG<event.genParticles.size(); iG++) {
+      auto& genParticle = event.genParticles[iG];
+      if (genParticle.finalState != 1) continue;
+      unsigned absid = abs(genParticle.pdgid);
+      if (absid!=12 && absid!=14 && absid!=16 && absid!=5) continue;
+      if (fj1->dR2((GenParticle)genParticle)>0.64) continue;
+      
+      bool isDuplicate=false;
+      for (auto* vgp : validGenP)
+        if(genParticle.pdgid==vgp->pdgid &&
+          fabs(genParticle.pt()/vgp->pt()-1)<0.10 &&
+          sqrt(pow(genParticle.eta()-vgp->eta(),2)+pow(TVector2::Phi_mpi_pi(genParticle.phi()-vgp->phi()),2)) < 0.00001
+        ) { isDuplicate=true; break; }
+      if(isDuplicate) continue;
+      validGenP.push_back(&genParticle);
+      
+      short parentId=0; if(genParticle.parent.isValid()) parentId = int(genParticle.parent.get()->pdgid);
+      if(absid==12 || absid==14 || absid==16) {
+        // Make sure neutrino is from a HF hadron
+        // Allowed codes: 400-499 (charmed meson), 500-599 (B meson),
+        // above 4000-5999 (Lambda_C^+ or something), and some weird D/B mesons over 10000
+        unsigned short absParentIdMod10k = unsigned(abs(parentId))%10000;
+        bool nuFromHFHadron = (absParentIdMod10k>=400 && absParentIdMod10k<600) || (absParentIdMod10k>=4000 && absParentIdMod10k<6000);
+        if(absParentIdMod10k==15) { // go up the chain for taus
+          bool tauFromHFHadron=false;
+          GenParticle *familyMember = (GenParticle*)genParticle.parent.get();
+          GenParticle *ancestor=0;
+          while(!tauFromHFHadron) {
+            if(!familyMember->parent.isValid()) break;
+            ancestor = (GenParticle*) familyMember->parent.get();
+            unsigned short absAncestorIdMod10k = abs(ancestor->pdgid)%10000;
+            if(
+              (absAncestorIdMod10k>=400 && absAncestorIdMod10k<600) || 
+              (absAncestorIdMod10k>=4000 && absAncestorIdMod10k<6000)
+            ) {  tauFromHFHadron=true; break;  }
+            else familyMember=ancestor;
+          }
+          if(tauFromHFHadron) nuFromHFHadron = true; 
+        }
+        if(!nuFromHFHadron) continue;
+        nuV4.SetPtEtaPhiM(genParticle.pt(), genParticle.eta(), genParticle.phi(), 0);
+        sumNuV4+=nuV4;
+      } else if(absid==5) { // B quark counting, this is useless right now
+        if(genParticle.parent.isValid() && genParticle.parent->pdgid==genParticle.pdgid) continue;
+        nB++; 
+      }
+    }
+    fatjetV4.SetPtEtaPhiM(fj1_pt, fj1_eta, fj1_phi, fj1_MSD);
+    fatjetNuV4 = sumNuV4 + fatjetV4;
+    fj1_Mnu = fatjetNuV4.M();
+    if(fj1->matchedGenJet.isValid()) {
+      GenJet *theGenJet = (GenJet*)fj1->matchedGenJet.get();
+      genFatjetV4.SetPtEtaPhiM(theGenJet->pt(), theGenJet->eta(), theGenJet->phi(), theGenJet->m());
+      genFatjetNuV4 = genFatjetV4 + sumNuV4;
+      fj1_genM = theGenJet->m();
+      fj1_genMnu = genFatjetNuV4.M();
+    } 
+    sumNu_pt                = sumNuV4.Pt() ;
+    sumNu_dEtaFj1           = fabs(fj1->eta()-sumNuV4.Eta());
+    sumNu_dPhiFj1           = fabs(TVector2::Phi_mpi_pi(fj1->phi()-sumNuV4.Phi()));
+    sumNu_E                 = sumNuV4.E()  ;
+
+    // Properties of the leading electrons in the fatjet
+    std::vector<Electron*> hfElectrons;
+    std::vector<float> hfEleMvaScores;
+    for(unsigned iE = 0; iE<event.electrons.size(); iE++) {
+      auto& electron  = event.electrons[iE];
+      if(electron.pt()<5) break;
+      if(fabs(electron.eta()) > 2.5) continue;
+      if(!electron.conversionVeto) continue;
+      if(fj1->dR2(electron)>0.64) continue;
+      
+      // Check MVA score
+      float trackPt = electron.trackP/TMath::CosH(electron.eta());
+      float ooEmooP=fabs(1.-electron.eseed/max(.0001f,electron.trackP))/electron.ecalE;
+      hfEleMvaInputs[ 0] =electron.eta()           ;
+      hfEleMvaInputs[ 1] =electron.ecalIso/trackPt ;
+      hfEleMvaInputs[ 2] =electron.hcalIso/trackPt ;
+      hfEleMvaInputs[ 3] =electron.trackIso/trackPt;
+      hfEleMvaInputs[ 4] =electron.chIso/trackPt   ;
+      hfEleMvaInputs[ 5] =electron.nhIso/trackPt   ;
+      hfEleMvaInputs[ 6] =electron.phIso/trackPt   ;
+      hfEleMvaInputs[ 7] =electron.dxy             ;
+      hfEleMvaInputs[ 8] =electron.dz              ;
+      hfEleMvaInputs[ 9] =electron.sieie           ;
+      hfEleMvaInputs[10] =electron.sipip           ;
+      hfEleMvaInputs[11] =electron.r9              ;
+      hfEleMvaInputs[12] =electron.dEtaInSeed      ;
+      hfEleMvaInputs[13] =electron.dPhiIn          ;
+      hfEleMvaInputs[14] =electron.hOverE          ;
+      hfEleMvaInputs[15] =ooEmooP                  ;
+      hfEleMvaInputs[16] =(float)electron.nMissingHits;
+      hfEleMvaInputs[17] =(float)electron.tripleCharge;
+      float hfEleMvaScore = hfEleMvaReader->EvaluateMVA("BDT");
+      if(debug>=3) { printf("  Electron %d, HF MVA score = %.3f\n",iE,hfEleMvaScore);
+        printf("  hfEleMvaInputs[ 0] = electron.eta()            = %.2e\n",electron.eta()           );
+        printf("  hfEleMvaInputs[ 1] = electron.ecalIso/trackPt  = %.2e\n",electron.ecalIso/trackPt );
+        printf("  hfEleMvaInputs[ 2] = electron.hcalIso/trackPt  = %.2e\n",electron.hcalIso/trackPt );
+        printf("  hfEleMvaInputs[ 3] = electron.trackIso/trackPt = %.2e\n",electron.trackIso/trackPt);
+        printf("  hfEleMvaInputs[ 4] = electron.chIso/trackPt    = %.2e\n",electron.chIso/trackPt   );
+        printf("  hfEleMvaInputs[ 5] = electron.nhIso/trackPt    = %.2e\n",electron.nhIso/trackPt   );
+        printf("  hfEleMvaInputs[ 6] = electron.phIso/trackPt    = %.2e\n",electron.phIso/trackPt   );
+        printf("  hfEleMvaInputs[ 7] = electron.dxy              = %.2e\n",electron.dxy             );
+        printf("  hfEleMvaInputs[ 8] = electron.dz               = %.2e\n",electron.dz              );
+        printf("  hfEleMvaInputs[ 9] = electron.sieie            = %.2e\n",electron.sieie           );
+        printf("  hfEleMvaInputs[10] = electron.sipip            = %.2e\n",electron.sipip           );
+        printf("  hfEleMvaInputs[11] = electron.r9               = %.2e\n",electron.r9              );
+        printf("  hfEleMvaInputs[12] = electron.dEtaInSeed       = %.2e\n",electron.dEtaInSeed      );
+        printf("  hfEleMvaInputs[13] = electron.dPhiIn           = %.2e\n",electron.dPhiIn          );
+        printf("  hfEleMvaInputs[14] = electron.hOverE           = %.2e\n",electron.hOverE          );
+        printf("  hfEleMvaInputs[15] = ooEmooP                   = %.2e\n",ooEmooP                  );
+        printf("  hfEleMvaInputs[16] = electron.nMissingHits     = %.2e\n",(float)electron.nMissingHits    );
+        printf("  hfEleMvaInputs[17] = electron.tripleCharge     = %.2e\n",(float)electron.tripleCharge    );
+      }
+
+      if(hfEleMvaScore<0) continue;
+      hfElectrons.push_back(&electron);
+      hfEleMvaScores.push_back(hfEleMvaScore);
+
+    }
+
+    // Properties of the leading muons in the fatjet
+    std::vector<Muon*> hfMuons;
+    for(unsigned iM = 0; iM<event.muons.size(); iM++){
+      auto& muon  = event.muons[iM];
+      if(muon.pt()<5) break;
+      if(!muon.soft) continue;
+      if(fabs(muon.eta())>2.4) continue;
+      if(fj1->dR2(muon)>0.64) continue;
+      hfMuons.push_back(&muon);
+    }
+    // See if there are secondary vertices who are the matriarch of these leptons, and take the hardest matriarch of each one
+    // Initialize vectors of pointers to SVs with null pointers
+    std::vector<SecondaryVertex*> hfMuonSVs(hfMuons.size());
+    std::vector<SecondaryVertex*> hfElectronSVs(hfElectrons.size());
+    // Looping over all secondary vertices
+    std::vector<SecondaryVertex *> fj1_SVs;
+    for(unsigned iSV=0; iSV<event.secondaryVertices.size(); iSV++) {
+      auto& sv = event.secondaryVertices[iSV];
+      // Loop over this SV's daughters
+      for (UShort_t iD=0; iD<sv.daughters.size(); iD++) {
+        if(!sv.daughters.at(iD).isValid()) continue;
+        // See if this SV is the matriarch of any of our HF muons
+        for(unsigned iHFM=0; iHFM<hfMuons.size(); iHFM++) {
+          if(!hfMuons[iHFM]->matchedPF.isValid()) continue;
+          if(sv.daughters.at(iD).get()!=hfMuons[iHFM]->matchedPF.get()) continue;
+          // Save this SV for this muon if we don't already have it, or replace the existing one
+          // if the significance is better.
+          float bestSig = hfMuonSVs[iHFM]? hfMuonSVs[iHFM]->significance:0;
+          if(sv.significance > bestSig) hfMuonSVs[iHFM] = &sv;
+        }
+        // Same calculation for the electrons
+        for(unsigned iHFE=0; iHFE<hfElectrons.size(); iHFE++) {
+          if(!hfElectrons[iHFE]->matchedPF.isValid()) continue;
+          if(sv.daughters.at(iD).get()!=hfElectrons[iHFE]->matchedPF.get()) continue;
+          float bestSig = hfElectronSVs[iHFE]? hfElectronSVs[iHFE]->significance:0;
+          if(sv.significance > bestSig) hfElectronSVs[iHFE] = &sv;
+        }
+        // Save all the secondary vertices for the fatjet and sort by significance later
+        for(UShort_t iFJC=0; iFJC<fj1->constituents.size(); iFJC++) {
+          if(!fj1->constituents.at(iFJC).isValid()) continue;
+          if(sv.daughters.at(iD).get()!=fj1->constituents.at(iFJC).get()) continue;
+          if(std::find(fj1_SVs.begin(), fj1_SVs.end(), &sv) == fj1_SVs.end()) fj1_SVs.push_back(&sv);
+        }
+      }
+    }
+    std::sort(fj1_SVs.begin(), fj1_SVs.end(), [](const SecondaryVertex *sv1, const SecondaryVertex *sv2) -> bool { return sv1->significance > sv2->significance; });
+    if(hfElectrons.size()>0) {
+      ele1_pt        =hfElectrons[0]->pt() ;
+      ele1_dEtaFj1   =fabs(fj1->eta()-hfElectrons[0]->eta());
+      ele1_dPhiFj1   =fabs(TVector2::Phi_mpi_pi(fj1->phi()-hfElectrons[0]->phi()));
+      ele1_dxy       =hfElectrons[0]->dxy  ;
+      ele1_dz        =hfElectrons[0]->dz   ;
+      ele1_hfMva     =hfEleMvaScores[0]    ;
+      if(hfElectronSVs[0]) {
+        ele1_sv1_pt           = hfElectronSVs[0]->pt()         ;
+        ele1_sv1_dEta         = fabs(hfElectrons[0]->eta()-hfElectronSVs[0]->eta());
+        ele1_sv1_dPhi         = fabs(TVector2::Phi_mpi_pi(hfElectrons[0]->phi()-hfElectronSVs[0]->phi()));
+        ele1_sv1_m            = hfElectronSVs[0]->m()          ;
+        ele1_sv1_vtx3DVal     = hfElectronSVs[0]->vtx3DVal     ;
+        ele1_sv1_vtx3DeVal    = hfElectronSVs[0]->vtx3DeVal    ;
+        ele1_sv1_ntrk         = hfElectronSVs[0]->ntrk         ;
+        ele1_sv1_ndof         = hfElectronSVs[0]->ndof         ;
+        ele1_sv1_chi2         = hfElectronSVs[0]->chi2         ;
+        ele1_sv1_significance = hfElectronSVs[0]->significance ;
+      }
+    } if(hfMuons.size()>0) {
+      mu1_pt                  =hfMuons[0]->pt()                ;
+      mu1_dEtaFj1             =fabs(fj1->eta()-hfMuons[0]->eta());
+      mu1_dPhiFj1             =fabs(TVector2::Phi_mpi_pi(fj1->phi()-hfMuons[0]->phi()));
+      mu1_dxy                 =hfMuons[0]->dxy                 ;
+      mu1_dz                  =hfMuons[0]->dz                  ;
+      if(hfMuonSVs[0]) {
+        mu1_sv1_pt           = hfMuonSVs[0]->pt()         ;
+        mu1_sv1_dEta         = fabs(hfMuons[0]->eta()-hfMuonSVs[0]->eta());
+        mu1_sv1_dPhi         = fabs(TVector2::Phi_mpi_pi(hfMuons[0]->phi()-hfMuonSVs[0]->phi()));
+        mu1_sv1_m            = hfMuonSVs[0]->m()          ;
+        mu1_sv1_vtx3DVal     = hfMuonSVs[0]->vtx3DVal     ;
+        mu1_sv1_vtx3DeVal    = hfMuonSVs[0]->vtx3DeVal    ;
+        mu1_sv1_ntrk         = hfMuonSVs[0]->ntrk         ;
+        mu1_sv1_ndof         = hfMuonSVs[0]->ndof         ;
+        mu1_sv1_chi2         = hfMuonSVs[0]->chi2         ;
+        mu1_sv1_significance = hfMuonSVs[0]->significance ;
+      }
+    }
+    if(fj1_SVs.size()>0) {
+      fj1_sv1_pt            = fj1_SVs[0]->pt()         ;
+      fj1_sv1_dEta          = fabs(fj1->eta()-fj1_SVs[0]->eta());
+      fj1_sv1_dPhi          = fabs(TVector2::Phi_mpi_pi(fj1->phi()-fj1_SVs[0]->phi()));
+      fj1_sv1_m             = fj1_SVs[0]->m()          ;
+      fj1_sv1_vtx3DVal      = fj1_SVs[0]->vtx3DVal     ;
+      fj1_sv1_vtx3DeVal     = fj1_SVs[0]->vtx3DeVal    ;
+      fj1_sv1_ntrk          = fj1_SVs[0]->ntrk         ;
+      fj1_sv1_ndof          = fj1_SVs[0]->ndof         ;
+      fj1_sv1_chi2          = fj1_SVs[0]->chi2         ;
+      fj1_sv1_significance  = fj1_SVs[0]->significance ;
+    } if(fj1_SVs.size()>1) {
+      fj1_sv2_pt            = fj1_SVs[1]->pt()         ;
+      fj1_sv2_dEta          = fabs(fj1->eta()-fj1_SVs[1]->eta());
+      fj1_sv2_dPhi          = fabs(TVector2::Phi_mpi_pi(fj1->phi()-fj1_SVs[1]->phi()));
+      fj1_sv2_m             = fj1_SVs[1]->m()          ;
+      fj1_sv2_vtx3DVal      = fj1_SVs[1]->vtx3DVal     ;
+      fj1_sv2_vtx3DeVal     = fj1_SVs[1]->vtx3DeVal    ;
+      fj1_sv2_ntrk          = fj1_SVs[1]->ntrk         ;
+      fj1_sv2_ndof          = fj1_SVs[1]->ndof         ;
+      fj1_sv2_chi2          = fj1_SVs[1]->chi2         ;
+      fj1_sv2_significance  = fj1_SVs[1]->significance ;
+    }
+    weight = event.weight;
+    regTree->Fill();
+    
 
   }
   regTree->Write("regTree",TObject::kOverwrite);
