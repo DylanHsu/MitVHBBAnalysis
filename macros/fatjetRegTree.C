@@ -24,7 +24,14 @@ void fatjetRegTree(
   //vhbbPlot::sampleType sample = vhbbPlot::kVH,
   gSystem->Load("libPandaTreeObjects.so");
   gSystem->Load("libPandaCoreTools.so");
-  TFile *inputFile = TFile::Open(inputFileName,"read");
+  TFile *inputFile=0;
+  int retries=0;
+  while(true) {
+    inputFile = TFile::Open(inputFileName,"read");
+    if(inputFile && inputFile->IsOpen()) break;
+    retries++;
+    if(retries>100) { throw std::runtime_error("Error opening input file"); return; }
+  }
   TTree* tree = (TTree*)inputFile->Get("events"); // get the tree object from the file
   Event event; // create an Event object
   event.setStatus(*tree, {"!*"});
