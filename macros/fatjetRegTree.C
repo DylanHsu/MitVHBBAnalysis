@@ -17,6 +17,11 @@ using namespace panda;
 
 const bool onlyNonPromptLeptons=true;
 
+// To do list:
+// Flatten the fj1_genMnu spectrum
+// Use multiple processes
+// Store gen num B?
+
 void fatjetRegTree(
   TString inputFileName,
   TString outputFileName,
@@ -33,6 +38,7 @@ void fatjetRegTree(
   TF1 *puppisd_corrRECO_cen = (TF1*)MSDcorr->Get("puppiJECcorr_reco_0eta1v3");
   TF1 *puppisd_corrRECO_for = (TF1*)MSDcorr->Get("puppiJECcorr_reco_1v3eta2v5");
   JERReader *ak8JERReader = new JERReader("PandaAnalysis/data/jec/25nsV10/Spring16_25nsV10_MC_SF_AK8PFPuppi.txt","PandaAnalysis/data/jec/25nsV10/Spring16_25nsV10_MC_PtResolution_AK8PFPuppi.txt");
+  std::vector<unsigned> chargedParticleCodes = {11,13,15,211,213,321,323,2212,3112,3114,3222,3224,3312,3314};
   
   TFile *inputFile=0;
   int retries=0;
@@ -60,9 +66,6 @@ void fatjetRegTree(
  
   TFile *outputFile = new TFile(outputFileName, "recreate");
   TTree *regTree = new TTree("regTree","regTree");
-  // Notes for myself:
-  // fj1_emFraction, 
-  
   float weight                  ; regTree->Branch("weight"                , &weight                  , "weight/F"                  );
   float fj1_pt                  ; regTree->Branch("fj1_pt"                , &fj1_pt                  , "fj1_pt/F"                  );
   float fj1_eta                 ; regTree->Branch("fj1_eta"               , &fj1_eta                 , "fj1_eta/F"                 );
@@ -77,6 +80,7 @@ void fatjetRegTree(
   float fj1_nef                 ; regTree->Branch("fj1_nef"               , &fj1_nef                 , "fj1_nef/F"                 );
   float fj1_cef                 ; regTree->Branch("fj1_cef"               , &fj1_cef                 , "fj1_cef/F"                 );
   float fj1_emFraction          ; regTree->Branch("fj1_emFraction"        , &fj1_emFraction          , "fj1_emFraction/F"          );
+  int   fj1_genNumB             ; regTree->Branch("fj1_genNumB"           , &fj1_genNumB             , "fj1_genNumB/I"             );
   int   fj1_nLep                ; regTree->Branch("fj1_nLep"              , &fj1_nLep                , "fj1_nLep/I"                );
   float sumNu_pt                ; regTree->Branch("sumNu_pt"              , &sumNu_pt                , "sumNu_pt/F"                );
   float sumNu_dEtaFj1           ; regTree->Branch("sumNu_dEtaFj1"         , &sumNu_dEtaFj1           , "sumNu_dEtaFj1/F"           );
@@ -90,18 +94,6 @@ void fatjetRegTree(
   float ele1_dxy                ; regTree->Branch("ele1_dxy"              , &ele1_dxy                , "ele1_dxy/F"                );
   float ele1_dz                 ; regTree->Branch("ele1_dz"               , &ele1_dz                 , "ele1_dz/F"                 );
   float ele1_hfMva              ; regTree->Branch("ele1_hfMva"            , &ele1_hfMva              , "ele1_hfMva/F"              );
-  float ele1_sv1_pt             ; regTree->Branch("ele1_sv1_pt"           , &ele1_sv1_pt             , "ele1_sv1_pt/F"             ); 
-  float ele1_sv1_ptRelFj1       ; regTree->Branch("ele1_sv1_ptRelFj1"     , &ele1_sv1_ptRelFj1       , "ele1_sv1_ptRelFj1/F"       ); 
-  float ele1_sv1_eta            ; regTree->Branch("ele1_sv1_eta"          , &ele1_sv1_eta            , "ele1_sv1_eta/F"            );  
-  float ele1_sv1_phi            ; regTree->Branch("ele1_sv1_phi"          , &ele1_sv1_phi            , "ele1_sv1_phi/F"            );  
-  float ele1_sv1_dRFj1          ; regTree->Branch("ele1_sv1_dRFj1"        , &ele1_sv1_dRFj1          , "ele1_sv1_dRFj1/F"          );  
-  float ele1_sv1_m              ; regTree->Branch("ele1_sv1_m"            , &ele1_sv1_m              , "ele1_sv1_m/F"              ); 
-  float ele1_sv1_logMRel        ; regTree->Branch("ele1_sv1_logMRel"      , &ele1_sv1_logMRel        , "ele1_sv1_logMRel/F"        ); 
-  float ele1_sv1_vtx3DVal       ; regTree->Branch("ele1_sv1_vtx3DVal"     , &ele1_sv1_vtx3DVal       , "ele1_sv1_vtx3DVal/F"       ); 
-  float ele1_sv1_vtx3DeVal      ; regTree->Branch("ele1_sv1_vtx3DeVal"    , &ele1_sv1_vtx3DeVal      , "ele1_sv1_vtx3DeVal/F"      ); 
-  int   ele1_sv1_ntrk           ; regTree->Branch("ele1_sv1_ntrk"         , &ele1_sv1_ntrk           , "ele1_sv1_ntrk/I"           ); 
-  float ele1_sv1_chi2           ; regTree->Branch("ele1_sv1_chi2"         , &ele1_sv1_chi2           , "ele1_sv1_chi2/F"           );  
-  float ele1_sv1_significance   ; regTree->Branch("ele1_sv1_significance" , &ele1_sv1_significance   , "ele1_sv1_significance/F"   );  
   float mu1_pt                  ; regTree->Branch("mu1_pt"                , &mu1_pt                  , "mu1_pt/F"                  );
   float mu1_ptRelFj1            ; regTree->Branch("mu1_ptRelFj1"          , &mu1_ptRelFj1            , "mu1_ptRelFj1/F"            );
   float mu1_dRFj1               ; regTree->Branch("mu1_dRFj1"             , &mu1_dRFj1               , "mu1_dRFj1/F"               );
@@ -109,23 +101,11 @@ void fatjetRegTree(
   float mu1_phi                 ; regTree->Branch("mu1_phi"               , &mu1_phi                 , "mu1_phi/F"                 );
   float mu1_dxy                 ; regTree->Branch("mu1_dxy"               , &mu1_dxy                 , "mu1_dxy/F"                 );
   float mu1_dz                  ; regTree->Branch("mu1_dz"                , &mu1_dz                  , "mu1_dz/F"                  );
-  float mu1_sv1_pt              ; regTree->Branch("mu1_sv1_pt"            , &mu1_sv1_pt              , "mu1_sv1_pt/F"              ); 
-  float mu1_sv1_ptRelFj1        ; regTree->Branch("mu1_sv1_ptRelFj1"      , &mu1_sv1_ptRelFj1        , "mu1_sv1_ptRelFj1/F"        ); 
-  float mu1_sv1_dRFj1           ; regTree->Branch("mu1_sv1_dRFj1"         , &mu1_sv1_dRFj1           , "mu1_sv1_dRFj1/F"           ); 
-  float mu1_sv1_eta             ; regTree->Branch("mu1_sv1_eta"           , &mu1_sv1_eta             , "mu1_sv1_eta/F"             );  
-  float mu1_sv1_phi             ; regTree->Branch("mu1_sv1_phi"           , &mu1_sv1_phi             , "mu1_sv1_phi/F"             );  
-  float mu1_sv1_m               ; regTree->Branch("mu1_sv1_m"             , &mu1_sv1_m               , "mu1_sv1_m/F"               ); 
-  float mu1_sv1_logMRel         ; regTree->Branch("mu1_sv1_logMRel"       , &mu1_sv1_logMRel         , "mu1_sv1_logMRel/F"         ); 
-  float mu1_sv1_vtx3DVal        ; regTree->Branch("mu1_sv1_vtx3DVal"      , &mu1_sv1_vtx3DVal        , "mu1_sv1_vtx3DVal/F"        ); 
-  float mu1_sv1_vtx3DeVal       ; regTree->Branch("mu1_sv1_vtx3DeVal"     , &mu1_sv1_vtx3DeVal       , "mu1_sv1_vtx3DeVal/F"       ); 
-  int   mu1_sv1_ntrk            ; regTree->Branch("mu1_sv1_ntrk"          , &mu1_sv1_ntrk            , "mu1_sv1_ntrk/I"            ); 
-  float mu1_sv1_chi2            ; regTree->Branch("mu1_sv1_chi2"          , &mu1_sv1_chi2            , "mu1_sv1_chi2/F"            );  
-  float mu1_sv1_significance    ; regTree->Branch("mu1_sv1_significance"  , &mu1_sv1_significance    , "mu1_sv1_significance/F"    );  
   float fj1_sv1_pt              ; regTree->Branch("fj1_sv1_pt"            , &fj1_sv1_pt              , "fj1_sv1_pt/F"              ); 
   float fj1_sv1_ptRelFj1        ; regTree->Branch("fj1_sv1_ptRelFj1"      , &fj1_sv1_ptRelFj1        , "fj1_sv1_ptRelFj1/F"        ); 
   float fj1_sv1_dRFj1           ; regTree->Branch("fj1_sv1_dRFj1"         , &fj1_sv1_dRFj1           , "fj1_sv1_dRFj1/F"           ); 
-  float fj1_sv1_eta             ; regTree->Branch("fj1_sv1_eta"           , &fj1_sv1_eta             , "fj1_sv1_eta/F"            );  
-  float fj1_sv1_phi             ; regTree->Branch("fj1_sv1_phi"           , &fj1_sv1_phi             , "fj1_sv1_phi/F"            );  
+  float fj1_sv1_eta             ; regTree->Branch("fj1_sv1_eta"           , &fj1_sv1_eta             , "fj1_sv1_eta/F"             );  
+  float fj1_sv1_phi             ; regTree->Branch("fj1_sv1_phi"           , &fj1_sv1_phi             , "fj1_sv1_phi/F"             );  
   float fj1_sv1_m               ; regTree->Branch("fj1_sv1_m"             , &fj1_sv1_m               , "fj1_sv1_m/F"               ); 
   float fj1_sv1_logMRel         ; regTree->Branch("fj1_sv1_logMRel"       , &fj1_sv1_logMRel         , "fj1_sv1_logMRel/F"         ); 
   float fj1_sv1_vtx3DVal        ; regTree->Branch("fj1_sv1_vtx3DVal"      , &fj1_sv1_vtx3DVal        , "fj1_sv1_vtx3DVal/F"        ); 
@@ -133,11 +113,14 @@ void fatjetRegTree(
   int   fj1_sv1_ntrk            ; regTree->Branch("fj1_sv1_ntrk"          , &fj1_sv1_ntrk            , "fj1_sv1_ntrk/I"            ); 
   float fj1_sv1_chi2            ; regTree->Branch("fj1_sv1_chi2"          , &fj1_sv1_chi2            , "fj1_sv1_chi2/F"            );  
   float fj1_sv1_significance    ; regTree->Branch("fj1_sv1_significance"  , &fj1_sv1_significance    , "fj1_sv1_significance/F"    );  
+  float fj1_sv1_genENu          ; regTree->Branch("fj1_sv1_genENu"        , &fj1_sv1_genENu          , "fj1_sv1_genENu"            );  
+  float fj1_sv1_ptWithNu        ; regTree->Branch("fj1_sv1_ptWithNu"      , &fj1_sv1_ptWithNu        , "fj1_sv1_ptWithNu"          );  
+  float fj1_sv1_mWithNu         ; regTree->Branch("fj1_sv1_mWithNu"       , &fj1_sv1_mWithNu         , "fj1_sv1_mWithNu"           );  
   float fj1_sv2_pt              ; regTree->Branch("fj1_sv2_pt"            , &fj1_sv2_pt              , "fj1_sv2_pt/F"              ); 
   float fj1_sv2_ptRelFj1        ; regTree->Branch("fj1_sv2_ptRelFj1"      , &fj1_sv2_ptRelFj1        , "fj1_sv2_ptRelFj1/F"        ); 
   float fj1_sv2_dRFj1           ; regTree->Branch("fj1_sv2_dRFj1"         , &fj1_sv2_dRFj1           , "fj1_sv2_dRFj1/F"           ); 
-  float fj1_sv2_eta             ; regTree->Branch("fj1_sv2_eta"           , &fj1_sv2_eta             , "fj1_sv2_eta/F"            );  
-  float fj1_sv2_phi             ; regTree->Branch("fj1_sv2_phi"           , &fj1_sv2_phi             , "fj1_sv2_phi/F"            );  
+  float fj1_sv2_eta             ; regTree->Branch("fj1_sv2_eta"           , &fj1_sv2_eta             , "fj1_sv2_eta/F"             );  
+  float fj1_sv2_phi             ; regTree->Branch("fj1_sv2_phi"           , &fj1_sv2_phi             , "fj1_sv2_phi/F"             );  
   float fj1_sv2_m               ; regTree->Branch("fj1_sv2_m"             , &fj1_sv2_m               , "fj1_sv2_m/F"               ); 
   float fj1_sv2_logMRel         ; regTree->Branch("fj1_sv2_logMRel"       , &fj1_sv2_logMRel         , "fj1_sv2_logMRel/F"         ); 
   float fj1_sv2_vtx3DVal        ; regTree->Branch("fj1_sv2_vtx3DVal"      , &fj1_sv2_vtx3DVal        , "fj1_sv2_vtx3DVal/F"        ); 
@@ -145,9 +128,16 @@ void fatjetRegTree(
   int   fj1_sv2_ntrk            ; regTree->Branch("fj1_sv2_ntrk"          , &fj1_sv2_ntrk            , "fj1_sv2_ntrk/I"            ); 
   float fj1_sv2_chi2            ; regTree->Branch("fj1_sv2_chi2"          , &fj1_sv2_chi2            , "fj1_sv2_chi2/F"            );  
   float fj1_sv2_significance    ; regTree->Branch("fj1_sv2_significance"  , &fj1_sv2_significance    , "fj1_sv2_significance/F"    );  
- 
+  float fj1_sv2_genENu          ; regTree->Branch("fj1_sv2_genENu"        , &fj1_sv2_genENu          , "fj1_sv2_genENu"            );  
+  float fj1_sv2_ptWithNu        ; regTree->Branch("fj1_sv2_ptWithNu"      , &fj1_sv2_ptWithNu        , "fj1_sv2_ptWithNu"          );  
+  float fj1_sv2_mWithNu         ; regTree->Branch("fj1_sv2_mWithNu"       , &fj1_sv2_mWithNu         , "fj1_sv2_mWithNu"           );  
+  float fj1_pvFragment_pt       ; regTree->Branch("fj1_pvFragment_pt"     , &fj1_pvFragment_pt       , "fj1_pvFragment_pt"         );  
+  float fj1_pvFragment_eta      ; regTree->Branch("fj1_pvFragment_eta"    , &fj1_pvFragment_eta      , "fj1_pvFragment_eta"        );  
+  float fj1_pvFragment_phi      ; regTree->Branch("fj1_pvFragment_phi"    , &fj1_pvFragment_phi      , "fj1_pvFragment_phi"        );  
+  float fj1_pvFragment_m        ; regTree->Branch("fj1_pvFragment_m"      , &fj1_pvFragment_m        , "fj1_pvFragment_m"          );  
+  
   // Objects we don't want to reallocate over and over
-  TLorentzVector sumNuV4, fatjetV4, nuV4, fatjetNuV4, genFatjetV4, genFatjetNuV4;
+  TLorentzVector sumNuV4, fatjetV4, fatjetNuV4, genFatjetV4, genFatjetNuV4;
   FatJet *fj1=0;
   // Instantiate the HF Electron MVA Reader
   TMVA::Reader *hfEleMvaReader=new TMVA::Reader();
@@ -176,7 +166,7 @@ void fatjetRegTree(
   if(maxEntries>0) nEntries=TMath::Min(maxEntries,nEntries);
   Long64_t oneTenth = nEntries/10;
   for (Long64_t iEntry = 0; iEntry<nEntries; ++iEntry) {
-    if(debug || iEntry%oneTenth==0) printf("######## Reading entry %lld/%lld ########################################################\n",iEntry,nEntries); 
+    if(!debug && iEntry%oneTenth==0) printf("######## Reading entry %lld/%lld ########################################################\n",iEntry,nEntries); 
     //printf("hello %d\n",__LINE__);
     event.getEntry(*tree, iEntry);
     // Reset output tree branches
@@ -195,6 +185,7 @@ void fatjetRegTree(
     fj1_chf               =   -1;
     fj1_nef               =   -1;
     fj1_cef               =   -1;
+    fj1_genNumB           =   -1;
     sumNu_pt              =   -1;
     sumNu_dEtaFj1         =   -9;
     sumNu_dPhiFj1         =   -9;
@@ -207,18 +198,6 @@ void fatjetRegTree(
     ele1_dxy              =  -99;
     ele1_dz               =  -99;
     ele1_hfMva            =   -1;
-    ele1_sv1_pt           =   -1;
-    ele1_sv1_ptRelFj1     =   -1;
-    ele1_sv1_eta          =   -9;
-    ele1_sv1_phi          =   -9;
-    ele1_sv1_dRFj1        =   -1;
-    ele1_sv1_m            =   -1;
-    ele1_sv1_logMRel      =   -9;
-    ele1_sv1_vtx3DVal     =   -1;
-    ele1_sv1_vtx3DeVal    =   -1;
-    ele1_sv1_ntrk         =   -1;
-    ele1_sv1_chi2         =   -1;
-    ele1_sv1_significance =   -1;
     mu1_pt                =   -1;
     mu1_ptRelFj1          =   -1;
     mu1_dRFj1             =   -1;
@@ -226,18 +205,6 @@ void fatjetRegTree(
     mu1_phi               =   -9;
     mu1_dxy               =  -99;
     mu1_dz                =  -99;
-    mu1_sv1_pt            =   -1;
-    mu1_sv1_ptRelFj1      =   -1;
-    mu1_sv1_dRFj1         =   -1;
-    mu1_sv1_eta           =   -9;
-    mu1_sv1_phi           =   -9;
-    mu1_sv1_m             =   -1;
-    mu1_sv1_logMRel       =  -99;
-    mu1_sv1_vtx3DVal      =   -1;
-    mu1_sv1_vtx3DeVal     =   -1;
-    mu1_sv1_ntrk          =   -1;
-    mu1_sv1_chi2          =   -1;
-    mu1_sv1_significance  =   -1;
     fj1_sv1_pt            =   -1;
     fj1_sv1_ptRelFj1      =   -1;
     fj1_sv1_dRFj1         =   -1;
@@ -250,6 +217,9 @@ void fatjetRegTree(
     fj1_sv1_ntrk          =   -1;
     fj1_sv1_chi2          =   -1;
     fj1_sv1_significance  =   -1;
+    fj1_sv1_genENu        =   -1;
+    fj1_sv1_ptWithNu      =   -1;
+    fj1_sv1_mWithNu       =   -1;
     fj1_sv2_pt            =   -1;
     fj1_sv2_ptRelFj1      =   -1;
     fj1_sv2_dRFj1         =   -1;
@@ -262,6 +232,13 @@ void fatjetRegTree(
     fj1_sv2_ntrk          =   -1;
     fj1_sv2_chi2          =   -1;
     fj1_sv2_significance  =   -1;
+    fj1_sv2_genENu        =   -1;
+    fj1_sv2_ptWithNu      =   -1;
+    fj1_sv2_mWithNu       =   -1;
+    fj1_pvFragment_pt     =   -1;
+    fj1_pvFragment_eta    =   -1;
+    fj1_pvFragment_phi    =   -1;
+    fj1_pvFragment_m      =   -1;
     
     for (unsigned nJ = 0; nJ<event.puppiAK8Jets.size(); nJ++){
       panda::FatJet* fatjet = &event.puppiAK8Jets[nJ];
@@ -295,23 +272,29 @@ void fatjetRegTree(
         fj1_nef     = fatjet->nef; 
         fj1_cef     = fatjet->cef; 
         fj1_emFraction = fatjet->nef + fatjet->cef;
+        fj1_genNumB = (fatjet->matchedGenJet.isValid())? fatjet->matchedGenJet.get()->numB :-1;
         fj1=fatjet; // keep the pointer "fj1" in scope
         break;
       }
     }
     if(!fj1) continue;
+    if(debug) printf("######## Reading entry %lld/%lld ########################################################\n",iEntry,nEntries); 
+    
 
-    // Final state neutrinos near the fatjet
-    // No parentage calculation for now
+    // BEGIN GEN STUDY COMPONENT
+
     unsigned char nB=0,nC=0;
     std::vector<const GenParticle*> validGenP;
+    // Here, Matriarchs will refer to HF hadrons whose daughters are hadrons, neutrinos, and leptons
+    // Stillbirths refer to the sum of neutrinos originating from each matriarch
+    std::vector<GenParticle*> matriarchs;
+    std::vector<TLorentzVector> stillbirths;
+    
+    if(debug) printf("  Finding HF hadron matriarchs...\n");
     for (unsigned iG = 0; iG<event.genParticles.size(); iG++) {
       auto& genParticle = event.genParticles[iG];
       if (genParticle.finalState != 1) continue;
       unsigned absid = abs(genParticle.pdgid);
-      if (absid!=12 && absid!=14 && absid!=16 && absid!=5) continue;
-      if (fj1->dR2((GenParticle)genParticle)>0.64) continue;
-      
       bool isDuplicate=false;
       for (auto* vgp : validGenP)
         if(genParticle.pdgid==vgp->pdgid &&
@@ -321,6 +304,11 @@ void fatjetRegTree(
       if(isDuplicate) continue;
       validGenP.push_back(&genParticle);
       
+      if (absid!=12 && absid!=14 && absid!=16 && absid!=5) continue;
+      if (fj1->dR2((GenParticle)genParticle)>0.64) continue;
+      
+      GenParticle* theMatriarch=0; // The HF hadron that this neutrino came from, hopefully
+      TLorentzVector theStillborn; // The neutrino coming from this HF hadron
       short parentId=0; if(genParticle.parent.isValid()) parentId = int(genParticle.parent.get()->pdgid);
       if(absid==12 || absid==14 || absid==16) {
         // Make sure neutrino is from a HF hadron
@@ -328,6 +316,7 @@ void fatjetRegTree(
         // above 4000-5999 (Lambda_C^+ or something), and some weird D/B mesons over 10000
         unsigned short absParentIdMod10k = unsigned(abs(parentId))%10000;
         bool nuFromHFHadron = (absParentIdMod10k>=400 && absParentIdMod10k<600) || (absParentIdMod10k>=4000 && absParentIdMod10k<6000);
+        if(nuFromHFHadron) theMatriarch = (GenParticle*)genParticle.parent.get();
         if(absParentIdMod10k==15) { // go up the chain for taus
           bool tauFromHFHadron=false;
           GenParticle *familyMember = (GenParticle*)genParticle.parent.get();
@@ -339,19 +328,89 @@ void fatjetRegTree(
             if(
               (absAncestorIdMod10k>=400 && absAncestorIdMod10k<600) || 
               (absAncestorIdMod10k>=4000 && absAncestorIdMod10k<6000)
-            ) {  tauFromHFHadron=true; break;  }
-            else familyMember=ancestor;
+            ) {   
+              tauFromHFHadron=true;
+              break;
+            } else {
+              familyMember=ancestor;
+            }
           }
-          if(tauFromHFHadron) nuFromHFHadron = true; 
+          if(tauFromHFHadron) {
+            nuFromHFHadron = true;
+            theMatriarch = ancestor;
+            theStillborn = genParticle.p4();
+          }
         }
-        if(!nuFromHFHadron) continue;
-        nuV4.SetPtEtaPhiM(genParticle.pt(), genParticle.eta(), genParticle.phi(), 0);
-        sumNuV4+=nuV4;
+        if(!nuFromHFHadron || !theMatriarch) continue;
+        sumNuV4 += theStillborn;
+        bool existingMatriarch = false; unsigned iMtrch=0;
+        for(iMtrch=0; iMtrch<matriarchs.size(); iMtrch++) {
+          if(theMatriarch == matriarchs[iMtrch]) {
+            existingMatriarch=true;
+            break;
+          }
+        }
+        if(existingMatriarch) { // Already have this matriarch, add this neutrino into her stillbirths
+          stillbirths[iMtrch] += theStillborn;
+        } else { // Do not already have this matriarch, push back the matriarch and stillborn child #1
+          matriarchs.push_back(theMatriarch);
+          stillbirths.push_back(theStillborn);
+          if(debug>=2) printf("    New HF matriarch with code=%d, pt=%.1f (%.1f%% of reco fatjet pt)\n",parentId,theMatriarch->pt(),100.*theMatriarch->pt()/fj1->pt());
+        }
       } else if(absid==5) { // B quark counting, this is useless right now
         if(genParticle.parent.isValid() && genParticle.parent->pdgid==genParticle.pdgid) continue;
         nB++; 
       }
     }
+    if(debug) printf("  Done finding HF hadron matriarchs (found %zu)\n",matriarchs.size());
+    // Now, we need to find all of the charged particles which descend from each matriarch
+    std::vector<TLorentzVector> chargedProgenies(matriarchs.size());
+    if(debug>=2 && matriarchs.size()>0) printf("  Finding charged progeny of the HF matriarchs...\n");
+    validGenP.clear();
+    if(matriarchs.size()>0) for (unsigned iG = 0; iG<event.genParticles.size(); iG++) {
+      auto& genParticle = event.genParticles[iG];
+      if (genParticle.finalState != 1) continue;
+      unsigned absid = abs(genParticle.pdgid);
+      // Make sure it is a charged particle
+      if(std::find(chargedParticleCodes.begin(),chargedParticleCodes.end(),absid) == chargedParticleCodes.end()) continue;
+      bool isDuplicate=false;
+      // Check for dupes (panda009 problem)
+      for (auto* vgp : validGenP)
+        if(genParticle.pdgid==vgp->pdgid &&
+          fabs(genParticle.pt()/vgp->pt()-1)<0.10 &&
+          sqrt(pow(genParticle.eta()-vgp->eta(),2)+pow(TVector2::Phi_mpi_pi(genParticle.phi()-vgp->phi()),2)) < 0.00001
+        ) { isDuplicate=true; break; }
+      if(isDuplicate) continue;
+      validGenP.push_back(&genParticle);
+      
+      if(debug>=4) printf("    Checking charged particle (code %d) to see if it is a progeny\n",genParticle.pdgid);
+      // Go up the parentage of this charged particle and see if
+      // any of our HF hadron matriarchs are there.
+      // If so, add the 4vector to the progeny 4vector
+      bool isMatriarchProgeny=false; unsigned progenitorIdx;
+      GenParticle *familyMember=&genParticle, *ancestor=0;
+      while(!isMatriarchProgeny) {
+        if(!familyMember->parent.isValid()) break;
+        ancestor = (GenParticle*) familyMember->parent.get();
+        for(unsigned iMtrch=0; iMtrch<matriarchs.size(); iMtrch++) {
+          if(matriarchs[iMtrch]==ancestor) {
+            isMatriarchProgeny=true;
+            progenitorIdx=iMtrch;
+            break;
+          }
+        }
+        familyMember=ancestor;
+      }
+      if(isMatriarchProgeny) chargedProgenies[progenitorIdx] += genParticle.p4();
+    }
+    if(debug>=2 && matriarchs.size()>0) {
+      printf("  Done. Listing charged progenies of the HF matriarchs:\n");
+      for(unsigned iProgeny=0; iProgeny<chargedProgenies.size(); iProgeny++)
+        printf("    Matriarch %d: progeny (pt,eta,phi)=(%.1f,%.2f,%.2f)\n",iProgeny,chargedProgenies[iProgeny].Pt(),chargedProgenies[iProgeny].Eta(),chargedProgenies[iProgeny].Phi());
+    }
+
+    // END GEN STUDY COMPONENT
+    
     fatjetV4.SetPtEtaPhiM(fj1_pt, fj1_eta, fj1_phi, fj1_MSD);
     fatjetNuV4 = sumNuV4 + fatjetV4;
     fj1_Mnu = fatjetNuV4.M();
@@ -414,7 +473,7 @@ void fatjetRegTree(
       hfEleMvaInputs[16] =(float)electron.nMissingHits;
       hfEleMvaInputs[17] =(float)electron.tripleCharge;
       float hfEleMvaScore = hfEleMvaReader->EvaluateMVA("BDT");
-      if(debug>=3) { printf("  Electron %d, HF MVA score = %.3f\n",iE,hfEleMvaScore);
+      if(debug>=4) { printf("  Electron %d, HF MVA score = %.3f\n",iE,hfEleMvaScore);
         printf("  hfEleMvaInputs[ 0] = electron.eta()            = %.2e\n",electron.eta()           );
         printf("  hfEleMvaInputs[ 1] = electron.ecalIso/trackPt  = %.2e\n",electron.ecalIso/trackPt );
         printf("  hfEleMvaInputs[ 2] = electron.hcalIso/trackPt  = %.2e\n",electron.hcalIso/trackPt );
@@ -465,7 +524,7 @@ void fatjetRegTree(
       if(onlyNonPromptLeptons && isPrompt) continue;
       hfMuons.push_back(&muon);
     }
-    // See if there are secondary vertices who are the matriarch of these leptons, and take the hardest matriarch of each one
+    // See if there are secondary vertices associated with these leptons, and take the hardest
     // Initialize vectors of pointers to SVs with null pointers
     std::vector<SecondaryVertex*> hfMuonSVs(hfMuons.size());
     std::vector<SecondaryVertex*> hfElectronSVs(hfElectrons.size());
@@ -477,7 +536,7 @@ void fatjetRegTree(
       // Loop over this SV's daughters
       for (UShort_t iD=0; iD<sv.daughters.size(); iD++) {
         if(!sv.daughters.at(iD).isValid()) continue;
-        // See if this SV is the matriarch of any of our HF muons
+        // See if this SV is associated with any of our HF muons
         for(unsigned iHFM=0; iHFM<hfMuons.size(); iHFM++) {
           if(!hfMuons[iHFM]->matchedPF.isValid()) continue;
           if(sv.daughters.at(iD).get()!=hfMuons[iHFM]->matchedPF.get()) continue;
@@ -485,6 +544,7 @@ void fatjetRegTree(
           // if it's harder.
           float bestPt = hfMuonSVs[iHFM]? hfMuonSVs[iHFM]->pt():0;
           if(sv.pt() > bestPt) hfMuonSVs[iHFM] = &sv;
+          if(std::find(fj1_SVs.begin(), fj1_SVs.end(), &sv) == fj1_SVs.end()) fj1_SVs.push_back(&sv);
         }
         // Same calculation for the electrons
         for(unsigned iHFE=0; iHFE<hfElectrons.size(); iHFE++) {
@@ -492,8 +552,9 @@ void fatjetRegTree(
           if(sv.daughters.at(iD).get()!=hfElectrons[iHFE]->matchedPF.get()) continue;
           float bestPt = hfElectronSVs[iHFE]? hfElectronSVs[iHFE]->pt():0;
           if(sv.pt() > bestPt) hfElectronSVs[iHFE] = &sv;
+          if(std::find(fj1_SVs.begin(), fj1_SVs.end(), &sv) == fj1_SVs.end()) fj1_SVs.push_back(&sv);
         }
-        // Save all the secondary vertices for the fatjet and sort by significance later
+        // Save all the secondary vertices for the fatjet and sort later
         for(UShort_t iFJC=0; iFJC<fj1->constituents.size(); iFJC++) {
           if(!fj1->constituents.at(iFJC).isValid()) continue;
           if(sv.daughters.at(iD).get()!=fj1->constituents.at(iFJC).get()) continue;
@@ -508,6 +569,39 @@ void fatjetRegTree(
 
     fj1_nLep = hfElectrons.size() + hfMuons.size();
 
+    // Now we perform a delta-R matching of the fatjet reconstructed SV's to the charged
+    // progenies of the gen-level HF hadron matriarchs to know what neutrinos to add back
+    // TO DO: Handle case with more than 1 progeny, but 1 SV 
+    // need to map progeny -> SV
+    std::vector<int> progenyMatchedSVs(chargedProgenies.size());
+    std::vector<TLorentzVector> fj1_SVs_p4WithNu(2);
+    std::vector<float> fj1_SVs_genENu(2);
+    for(unsigned iSV=0; iSV < min((unsigned long)2,fj1_SVs.size()); iSV++) { 
+      // set neutrino p4 and scalar E to 0
+      fj1_SVs_p4WithNu[iSV] = fj1_SVs[iSV]->p4();
+      fj1_SVs_genENu[iSV] = 0;
+    }
+    for(unsigned iProgeny=0; iProgeny<chargedProgenies.size(); iProgeny++) {
+      if(debug>=3) printf("  Finding the closest SV for charged progeny #%d...\n",iProgeny);
+      int closestRecoSVIdx=-1; float bestDRMatch=0.3;
+      for(unsigned iSV=0; iSV < min((unsigned long)2,fj1_SVs.size()); iSV++) {
+        float dR = fj1_SVs[iSV]->p4().DeltaR( chargedProgenies[iProgeny]);
+        if(debug>=3) printf("    Reco SV #%d has deltaR = %.2f\n",iSV,dR);
+        if(dR < bestDRMatch) { // implicitly require a better value than the initial value of bestDRmatch
+          closestRecoSVIdx = iSV;
+          bestDRMatch = dR;
+        }
+      }
+      if(closestRecoSVIdx<0) {
+        if(debug>=3) printf("    Match to nothing, throw out this progeny\n");
+        continue;
+      }
+      if(debug>=3) printf("    Match to Reco SV #%d\n",closestRecoSVIdx);
+      progenyMatchedSVs[iProgeny]=closestRecoSVIdx;
+      fj1_SVs_p4WithNu[closestRecoSVIdx] += stillbirths[iProgeny];
+      fj1_SVs_genENu[closestRecoSVIdx] += stillbirths[iProgeny].E();
+    }
+
     if(hfElectrons.size()>0) {
       ele1_pt        =hfElectrons[0]->pt() ;
       ele1_ptRelFj1  =hfElectrons[0]->pt()/fj1->pt();
@@ -517,20 +611,6 @@ void fatjetRegTree(
       ele1_dxy       =hfElectrons[0]->dxy  ;
       ele1_dz        =hfElectrons[0]->dz   ;
       ele1_hfMva     =hfEleMvaScores[0]    ;
-      if(hfElectronSVs[0]) {
-        ele1_sv1_pt           = hfElectronSVs[0]->pt()         ;
-        ele1_sv1_ptRelFj1     = hfElectronSVs[0]->pt()/fj1->pt();
-        ele1_sv1_dRFj1        = hfElectronSVs[0]->dR(*fj1)     ;
-        ele1_sv1_eta          = hfElectronSVs[0]->eta()          ;
-        ele1_sv1_phi          = hfElectronSVs[0]->phi()          ;
-        ele1_sv1_m            = hfElectronSVs[0]->m()          ;
-        ele1_sv1_logMRel      = (hfElectronSVs[0]->m()>0 && fj1_MSD>0) ? TMath::Log10(hfElectronSVs[0]->m()/fj1_MSD) : -99;
-        ele1_sv1_vtx3DVal     = hfElectronSVs[0]->vtx3DVal     ;
-        ele1_sv1_vtx3DeVal    = hfElectronSVs[0]->vtx3DeVal    ;
-        ele1_sv1_ntrk         = hfElectronSVs[0]->ntrk         ;
-        ele1_sv1_chi2         = hfElectronSVs[0]->chi2         ;
-        ele1_sv1_significance = hfElectronSVs[0]->significance ;
-      }
     } if(hfMuons.size()>0) {
       mu1_pt        =hfMuons[0]->pt() ;
       mu1_ptRelFj1  =hfMuons[0]->pt()/fj1->pt();
@@ -539,21 +619,8 @@ void fatjetRegTree(
       mu1_phi       =hfMuons[0]->phi();
       mu1_dxy       =hfMuons[0]->dxy  ;
       mu1_dz        =hfMuons[0]->dz   ;
-      if(hfMuonSVs[0]) {
-        mu1_sv1_pt           = hfMuonSVs[0]->pt()         ;
-        mu1_sv1_ptRelFj1     = hfMuonSVs[0]->pt()/fj1->pt();
-        mu1_sv1_dRFj1        = hfMuonSVs[0]->dR(*fj1)     ;
-        mu1_sv1_eta          = hfMuonSVs[0]->eta()          ;
-        mu1_sv1_phi          = hfMuonSVs[0]->phi()          ;
-        mu1_sv1_m            = hfMuonSVs[0]->m()          ;
-        mu1_sv1_logMRel      = (hfMuonSVs[0]->m()>0 && fj1_MSD>0) ? TMath::Log10(hfMuonSVs[0]->m()/fj1_MSD) : -99;
-        mu1_sv1_vtx3DVal     = hfMuonSVs[0]->vtx3DVal     ;
-        mu1_sv1_vtx3DeVal    = hfMuonSVs[0]->vtx3DeVal    ;
-        mu1_sv1_ntrk         = hfMuonSVs[0]->ntrk         ;
-        mu1_sv1_chi2         = hfMuonSVs[0]->chi2         ;
-        mu1_sv1_significance = hfMuonSVs[0]->significance ;
-      }
     }
+    TLorentzVector fatjetPVFragment = fatjetV4; // Start with the soft dropped fatjet, subtract out the vertices
     if(fj1_SVs.size()>0) {
       fj1_sv1_pt           = fj1_SVs[0]->pt()         ;
       fj1_sv1_ptRelFj1     = fj1_SVs[0]->pt()/fj1->pt();
@@ -567,6 +634,10 @@ void fatjetRegTree(
       fj1_sv1_ntrk         = fj1_SVs[0]->ntrk         ;
       fj1_sv1_chi2         = fj1_SVs[0]->chi2         ;
       fj1_sv1_significance = fj1_SVs[0]->significance ;
+      fj1_sv1_genENu       = fj1_SVs_genENu[0];
+      fj1_sv1_ptWithNu     = fj1_SVs_p4WithNu[0].Pt();
+      fj1_sv1_mWithNu      = fj1_SVs_p4WithNu[0].M();
+      fatjetPVFragment -= fj1_SVs[0]->p4();
     } if(fj1_SVs.size()>1) {
       fj1_sv2_pt           = fj1_SVs[1]->pt()         ;
       fj1_sv2_ptRelFj1     = fj1_SVs[1]->pt()/fj1->pt();
@@ -580,8 +651,16 @@ void fatjetRegTree(
       fj1_sv2_ntrk         = fj1_SVs[1]->ntrk         ;
       fj1_sv2_chi2         = fj1_SVs[1]->chi2         ;
       fj1_sv2_significance = fj1_SVs[1]->significance ;
+      fj1_sv2_genENu       = fj1_SVs_genENu[1];
+      fj1_sv2_ptWithNu     = fj1_SVs_p4WithNu[1].Pt();
+      fj1_sv2_mWithNu      = fj1_SVs_p4WithNu[1].M();
+      fatjetPVFragment -= fj1_SVs[1]->p4();
     }
     weight = event.weight;
+    fj1_pvFragment_pt  = fatjetPVFragment.Pt();  
+    fj1_pvFragment_eta = fatjetPVFragment.Eta();  
+    fj1_pvFragment_phi = fatjetPVFragment.Phi();  
+    fj1_pvFragment_m   = fatjetPVFragment.M();  
     regTree->Fill();
   }
   regTree->Write("regTree",TObject::kOverwrite);
