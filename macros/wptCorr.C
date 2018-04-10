@@ -34,10 +34,11 @@ using namespace RooFit;
 
 //const float sf_TT=0.9,sf_WLF=1.2,sf_Wb=1.5,sf_Wbb=1.5;
 const float sf_TT=0.91,sf_WLF=1.14,sf_Wb=1.66,sf_Wbb=1.49;
+//const float sf_TT=1,sf_WLF=1,sf_Wb=1,sf_Wbb=1;
 const int nCat=5;// 0=data, 1=ttbar, 2=W+LF, 3=W+HF and singletop, 4=other
 const int nRegion=3; // 0=W+LF,1=ttbar,2=W+HF
 vector<TString> regionName = {selectionNames[kWHLightFlavorCR], selectionNames[kWH2TopCR], selectionNames[kWHHeavyFlavorCR]};
-const int nBinsPt=30;
+const int nBinsPt=60;
 const float ptMin=100, ptMax=400;
 
 void wptCorr(
@@ -143,8 +144,8 @@ void wptCorr(
       case kPlotZbb  :
       case kPlotZb   :
       case kPlotZLF  :
-        iCat=4; break; 
       case kPlotQCD  :
+        iCat=4; break; 
       default:
         iCat=-1; break;
     }
@@ -319,13 +320,13 @@ void fitWptCorr(TString outputFileName) {
   p0[0] = new RooRealVar("p0_ttbar" ,"p0_ttbar" ,1);//,-10,10,"");
   p0[1] = new RooRealVar("p0_WLF"   ,"p0_WLF"   ,1);//,-10,10,"");
   p0[2] = new RooRealVar("p0_WHFtop","p0_WHFtop",1);//,-10,10,"");
-  p1[0] = new RooRealVar("p1_ttbar" ,"p1_ttbar" ,0,-.1,.1,"GeV^{-1}");
-  p1[1] = new RooRealVar("p1_WLF"   ,"p1_WLF"   ,0,-.1,.1,"GeV^{-1}");
-  p1[2] = new RooRealVar("p1_WHFtop","p1_WHFtop",0,-.1,.1,"GeV^{-1}");
+  p1[0] = new RooRealVar("p1_ttbar" ,"p1_ttbar" ,0,0,.000001,"GeV^{-1}");
+  p1[1] = new RooRealVar("p1_WLF"   ,"p1_WLF"   ,0,0,.000001,"GeV^{-1}");
+  p1[2] = new RooRealVar("p1_WHFtop","p1_WHFtop",0,0,.000001,"GeV^{-1}");
   // Linear correction PDFs
-  RooGenericPdf *pol1_ttbar  = new RooGenericPdf("pol1_ttbar" ,"pol1_ttbar" ,"p0_ttbar  + p1_ttbar  * (WpT - 100)",RooArgList(WpT,*p0[0],*p1[0]));
-  RooGenericPdf *pol1_WLF    = new RooGenericPdf("pol1_WLF"   ,"pol1_WLF"   ,"p0_WLF    + p1_WLF    * (WpT - 100)",RooArgList(WpT,*p0[1],*p1[1]));
-  RooGenericPdf *pol1_WHFtop = new RooGenericPdf("pol1_WHFtop","pol1_WHFtop","p0_WHFtop + p1_WHFtop * (WpT - 100)",RooArgList(WpT,*p0[2],*p1[2]));
+  RooGenericPdf *pol1_ttbar  = new RooGenericPdf("pol1_ttbar" ,"pol1_ttbar" ,"p0_ttbar  + p1_ttbar  * WpT",RooArgList(WpT,*p0[0],*p1[0]));
+  RooGenericPdf *pol1_WLF    = new RooGenericPdf("pol1_WLF"   ,"pol1_WLF"   ,"p0_WLF    + p1_WLF    * WpT",RooArgList(WpT,*p0[1],*p1[1]));
+  RooGenericPdf *pol1_WHFtop = new RooGenericPdf("pol1_WHFtop","pol1_WHFtop","p0_WHFtop + p1_WHFtop * WpT",RooArgList(WpT,*p0[2],*p1[2]));
       
   RooDataHist * data_RDHs[nRegion], *ttbar_RDHs[nRegion], *WLF_RDHs[nRegion], *WHFtop_RDHs[nRegion], *other_RDHs[nRegion];
   RooHistPdf *ttbar_RHPs[nRegion], *WLF_RHPs[nRegion], *WHFtop_RHPs[nRegion], *other_RHPs[nRegion];
@@ -350,7 +351,7 @@ void fitWptCorr(TString outputFileName) {
     other_RHPs[i]  = new RooHistPdf(Form("other_%s" ,regionName[i].Data()),Form("other_%s" ,regionName[i].Data()),WpT,*other_RDHs[i] ,1);
     sumBkgs[i]=0;
     for(int j=1;j<nCat;j++)
-      sumBkgs[i]+=histo_nominal[i][j]->Integral();
+      sumBkgs[i]+=histo_nominal[i][j]->Integral(1,nBinsPt);
     frac[i][0] = new RooRealVar(Form("frac_ttbar_%s" ,regionName[i].Data()),Form("frac_ttbar_%s" ,regionName[i].Data()),histo_nominal[i][1]->Integral(1,nBinsPt)/sumBkgs[i]);//,.8*histo_nominal[i][1]->Integral()/sumBkgs[i],1.2*histo_nominal[i][1]->Integral()/sumBkgs[i]);
     frac[i][1] = new RooRealVar(Form("frac_WLF_%s"   ,regionName[i].Data()),Form("frac_WLF_%s"   ,regionName[i].Data()),histo_nominal[i][2]->Integral(1,nBinsPt)/sumBkgs[i]);//,.8*histo_nominal[i][2]->Integral()/sumBkgs[i],1.2*histo_nominal[i][2]->Integral()/sumBkgs[i]);
     frac[i][2] = new RooRealVar(Form("frac_WHFtop_%s",regionName[i].Data()),Form("frac_WHFtop_%s",regionName[i].Data()),histo_nominal[i][3]->Integral(1,nBinsPt)/sumBkgs[i]);//,.8*histo_nominal[i][3]->Integral()/sumBkgs[i],1.2*histo_nominal[i][3]->Integral()/sumBkgs[i]);
@@ -393,7 +394,7 @@ void fitWptCorr(TString outputFileName) {
     modelBkg[i]->plotOn(WpTframe[i],Components(Form("corr_ttbar_%s" ,regionName[i].Data())),LineStyle(kSolid),LineColor(plotColors[kPlotTT]));
     modelBkg[i]->plotOn(WpTframe[i],Components(Form("corr_WLF_%s" ,regionName[i].Data())),LineStyle(kSolid),LineColor(plotColors[kPlotWLF]));
     modelBkg[i]->plotOn(WpTframe[i],Components(Form("corr_WHFtop_%s" ,regionName[i].Data())),LineStyle(kSolid),LineColor(plotColors[kPlotWbb]));
-    canvas[i]=new TCanvas;
+    canvas[i]=new TCanvas(Form("canvas_%s",regionName[i].Data()),Form("canvas_%s",regionName[i].Data()),500,1000);
     WpTframe[i]->Draw();
   }
   /*

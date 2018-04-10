@@ -353,12 +353,13 @@ void whbbMVA(
     prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
     prepareOptions+=":MixMode=Random";
   factory->PrepareTrainingAndTestTree(preselectionCut, prepareOptions);
+  TString hyperparameters="!H:!V:BoostType=AdaBoost:MinNodeSize=2.5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12::nCuts=100";
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
   //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=Pray:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
   //TString hyperparameters="!H:!V:NTrees=2000:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.05:nCuts=100";
   //if(useGaussDeco) hyperparameters += ":VarTransform=G,D";
-  //factory->BookMethod(TMVA::Types::kBDT, trainName, hyperparameters);
-  vector<int> NTrees = {200,500};
+  factory->BookMethod(TMVA::Types::kBDT, trainName, hyperparameters);
+  /*vector<int> NTrees = {200,500};
   vector<int> MaxDepth = {2,3};
   vector<float> Shrinkage = {0.1,0.3};
   vector<float> AdaBoostBeta = {0.1,0.12,0.15};
@@ -368,7 +369,7 @@ void whbbMVA(
       Form("BDT_%s_NTrees%d_MaxDepth%d_AdaBoostBeta%.2f_nCuts%d",extraString.Data(),NTrees[i],MaxDepth[j],AdaBoostBeta[k],nCuts[l]),
       Form("!H:!V:BoostType=AdaBoost:MinNodeSize=2.5%%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=%d:MaxDepth=%d:AdaBoostBeta=%.2f::nCuts=%d",NTrees[i],MaxDepth[j],AdaBoostBeta[k],nCuts[l])
     );
-  /*for(unsigned i=0;i<NTrees.size();i++) for(unsigned j=0;j<MaxDepth.size();j++) for(unsigned k=0;k<Shrinkage.size();k++) for(unsigned l=0;l<nCuts.size();l++)
+  for(unsigned i=0;i<NTrees.size();i++) for(unsigned j=0;j<MaxDepth.size();j++) for(unsigned k=0;k<Shrinkage.size();k++) for(unsigned l=0;l<nCuts.size();l++)
     factory->BookMethod(TMVA::Types::kBDT,
       Form("BDT_NTrees%d_MaxDepth%d_Shrinkage%.2f_nCuts%d",NTrees[i],MaxDepth[j],Shrinkage[k],nCuts[l]),
       //Form("!H:!V:BoostType=Grad:MinNodeSize=2.5%%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=%d:MaxDepth=%d:Shrinkage=%.2f:nCuts=%d",NTrees[i],MaxDepth[j],Shrinkage[k],nCuts[l])

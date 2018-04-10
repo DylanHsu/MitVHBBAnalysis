@@ -42,6 +42,7 @@ TList *finalPlot2018(
   TList *listOfCanvases=new TList();
   for(unsigned iHisto=0; iHisto<=(unsigned)listOfHistoNames->LastIndex(); iHisto++) {
     TString theHistoName = listOfHistoNames->At(iHisto)->GetName();
+    if(theHistoName.Contains("psi")) continue;
     bool stackSignal = theHistoName.Contains("MVAVar");
     TString outPdf = Form("%s/%s_%s.pdf", plotDir.Data(), rawName.c_str(), theHistoName.Data()); 
     TString outPng = Form("%s/%s_%s.png", plotDir.Data(), rawName.c_str(), theHistoName.Data()); 
@@ -71,7 +72,10 @@ TList *finalPlot2018(
       if(xlabel=="") xlabel=histos[i]->GetTitle();
       histos[i]->SetName(plotName);
       histos[i]->SetTitle(plotTitle);
-      
+      if     (i==kPlotTT  ) histos[i]->Scale(0.91);
+      else if(i==kPlotWLF ) histos[i]->Scale(1.14);
+      else if(i==kPlotWb  ) histos[i]->Scale(1.66);
+      else if(i==kPlotWbb ) histos[i]->Scale(1.49);
 
       // Colors
       if(i==kPlotData) {

@@ -29,6 +29,7 @@ const vector<TString> wptCorrFilenames = {
   "MitVHBBAnalysis/wptCorrections_Resolved_Linear.root",
   "MitVHBBAnalysis/wptCorrections_Boosted_Linear.root",
 };
+const bool useIgnorantVHFSFs=true;
 
 using namespace vhbbPlot;
 void vhbbHistos(
@@ -47,7 +48,8 @@ void vhbbHistos(
   if(dataCardDir!="") system(Form("mkdir -p MitVHBBAnalysis/datacards/%s",dataCardDir.Data()));
   bool useWptCorr=(wptCorrType>=0 && wptCorrType<(int)wptCorrFilenames.size());
   TString wptCorrFilename;
-  if(useWptCorr) wptCorrFilename = wptCorrFilenames[wptCorrType];
+  //if(useWptCorr) wptCorrFilename = wptCorrFilenames[wptCorrType];
+  if(useWptCorr) wptCorrFilename = "MitVHBBAnalysis/wptCorrections_InclusiveResolved_Linear.root";
     
   char shapeType[64]; TString bdtOutputName="BDT output";
   vector<float> MVAbins; TString MVAVarName;
@@ -148,7 +150,7 @@ void vhbbHistos(
   //JetCorrectionUncertainty *jcuTotal = new JetCorrectionUncertainty(*(new JetCorrectorParameters(theJecUncertainties, "Total")));
   CSVHelper *cmvaReweighter = new CSVHelper("PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root"   , "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root"   , 5);
   TFile *wptCorrFile=0; TF1 *theWptCorr=0; TH1F *theWptCorrHist=0;
-  if(useWptCorr) {
+  if(useWptCorr && wptCorrType==0) {
     wptCorrFile = TFile::Open(wptCorrFilename, "READ");
     assert(wptCorrFile && wptCorrFile->IsOpen());
     theWptCorr = (TF1*)wptCorrFile->Get("wptCorr_nominal");
@@ -221,6 +223,7 @@ void vhbbHistos(
   float fj1HTTMass;
   float fj1HTTFRec;
   float fj1SDEFrac100;
+  int fj1HighestPtGen;
   std::map<TString, float> fj1ECFN, mvaPsi;
   fj1ECFN["1_1_05"]=-3393; 
   fj1ECFN["2_1_05"]=-3393; 
@@ -558,6 +561,7 @@ void vhbbHistos(
     plotTree->SetBranchAddress("fj1HTTMass"            , &fj1HTTMass            ); 
     plotTree->SetBranchAddress("fj1HTTFRec"            , &fj1HTTFRec            ); 
     plotTree->SetBranchAddress("fj1SDEFrac100"         , &fj1SDEFrac100         );    
+    plotTree->SetBranchAddress("fj1HighestPtGen"       , &fj1HighestPtGen       );    
     plotTree->SetBranchAddress("fj1ECFN_1_1_05", &fj1ECFN["1_1_05"]);
     plotTree->SetBranchAddress("fj1ECFN_2_1_05", &fj1ECFN["2_1_05"]);
     plotTree->SetBranchAddress("fj1ECFN_3_1_05", &fj1ECFN["3_1_05"]);
@@ -871,8 +875,11 @@ void vhbbHistos(
   TH1D *histo_cmvaLFStats2Up[5][3][nPlotCategories], *histo_cmvaLFStats2Down[5][3][nPlotCategories]; 
   TH1D *histo_cmvaCErr1Up   [5][3][nPlotCategories], *histo_cmvaCErr1Down   [5][3][nPlotCategories]; 
   TH1D *histo_cmvaCErr2Up   [5][3][nPlotCategories], *histo_cmvaCErr2Down   [5][3][nPlotCategories]; 
+  TH1D *histo_VGluUp   [nPlotCategories];
+  TH1D *histo_VGluDown [nPlotCategories];
   TH1D *histo_wptCorrUp   [nPlotCategories];
-  TH1D *histo_wptCorrDown   [nPlotCategories];
+  TH1D *histo_wptCorrDown [nPlotCategories];
+  TH1D *histo_wptCorrNone [nPlotCategories];
   TH1D *histo_jesUp   [nPlotCategories];
   TH1D *histo_jesDown [nPlotCategories];
   for(theCategory=0; theCategory<nPlotCategories; theCategory++) {
@@ -918,8 +925,11 @@ void vhbbHistos(
       histo_cmvaCErr1Down   [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr1Down_pt%d_eta%d"   , theCategory, iPt, iEta)); histo_cmvaCErr1Down    [iPt][iEta][theCategory]->SetDirectory(0);
       histo_cmvaCErr2Down   [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr2Down_pt%d_eta%d"   , theCategory, iPt, iEta)); histo_cmvaCErr2Down    [iPt][iEta][theCategory]->SetDirectory(0);
     }
+    histo_VGluUp      [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VGluUp"      , theCategory)); histo_VGluUp      [theCategory]->SetDirectory(0);
+    histo_VGluDown    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VGluDown"    , theCategory)); histo_VGluDown    [theCategory]->SetDirectory(0);
     histo_wptCorrUp   [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrUp"   , theCategory)); histo_wptCorrUp   [theCategory]->SetDirectory(0);
     histo_wptCorrDown [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrDown" , theCategory)); histo_wptCorrDown [theCategory]->SetDirectory(0);
+    histo_wptCorrNone [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrNone" , theCategory)); histo_wptCorrNone [theCategory]->SetDirectory(0);
     histo_jesUp   [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_jesUp"   , theCategory)); histo_jesUp   [theCategory]->SetDirectory(0);
     histo_jesDown [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_jesDown" , theCategory)); histo_jesDown [theCategory]->SetDirectory(0);
   }
@@ -1282,17 +1292,41 @@ void vhbbHistos(
     }
 
     // Wpt correction
-    float wptCorrFactor=1, wptCorrError=1;
-    if(useWptCorr) {
-      if(theCategory==kPlotWbb || theCategory==kPlotWb || theCategory==kPlotWLF) {
+    float weight_wptCorrUp   = weight;
+    float weight_wptCorrDown = weight;
+    float weight_wptCorrNone = weight;
+    if(useWptCorr && (theCategory==kPlotWbb || theCategory==kPlotWb || theCategory==kPlotWLF || theCategory==kPlotTop || theCategory==kPlotTT)) {
+      if(wptCorrType==0) {
+       float wptCorrFactor=1, wptCorrError=1;
         wptCorrFactor=theWptCorr->Eval(TMath::Min(topWBosonPt,(float)499.99));
         wptCorrError=1.+(theWptCorrHist->GetBinError( theWptCorrHist->FindBin(TMath::Min(topWBosonPt,(float)499.99)) ) / wptCorrFactor);
         weight *= wptCorrFactor;
+        weight_wptCorrUp   = weight * wptCorrError;
+        weight_wptCorrDown = weight / wptCorrError;
+      } else if(wptCorrType==1) {
+        if(theCategory==kPlotWLF) {
+          weight_wptCorrUp   = (weight_wptCorrNone) * (1 - 5.29e-4 * topWBosonPt); 
+          weight             = (weight_wptCorrNone) * (1 - 5.75e-4 * topWBosonPt); 
+          weight_wptCorrDown = (weight_wptCorrNone) * (1 - 6.21e-4 * topWBosonPt); 
+        } else if(theCategory==kPlotTT) {
+          weight_wptCorrUp   = (weight_wptCorrNone) * (1 -       0 * topWBosonPt); 
+          weight             = (weight_wptCorrNone) * (1 -       0 * topWBosonPt); 
+          weight_wptCorrDown = (weight_wptCorrNone) * (1 -       0 * topWBosonPt); 
+        } else {
+          weight_wptCorrUp   = (weight_wptCorrNone) * (1 - 1.54e-3 * topWBosonPt); 
+          weight             = (weight_wptCorrNone) * (1 - 1.67e-3 * topWBosonPt); 
+          weight_wptCorrDown = (weight_wptCorrNone) * (1 - 1.80e-3 * topWBosonPt); 
+        }
       }
     }
-    float weight_wptCorrUp   = weight * wptCorrError;
-    float weight_wptCorrDown = weight / wptCorrError;
     float weight_jesUp=weight, weight_jesDown=weight;
+
+    float weight_VGluUp   = weight;
+    float weight_VGluDown = weight;
+    if(fj1HighestPtGen==21 && (
+      theCategory==kPlotWbb || theCategory==kPlotWb || theCategory==kPlotWLF ||
+      theCategory==kPlotZbb || theCategory==kPlotZb || theCategory==kPlotZLF)
+    ) { weight_VGluUp *= 1.2; weight_VGluDown *= 0.8; }
 
     float theVar; 
     bool passFullSel         = (selectionBits & selection)!=0; 
@@ -1591,8 +1625,11 @@ void vhbbHistos(
       histo_muSFDown    [theCategory]->Fill(MVAVar, sf_training*(typeLepSel==1&&weight_lepSFUp>0?weight*weight/weight_lepSFUp : weight)); 
       histo_eleSFUp     [theCategory]->Fill(MVAVar, sf_training*(typeLepSel==2&&weight_lepSFUp>0?weight_lepSFUp : weight)); 
       histo_eleSFDown   [theCategory]->Fill(MVAVar, sf_training*(typeLepSel==2&&weight_lepSFUp>0?weight*weight/weight_lepSFUp : weight)); 
+      histo_VGluUp      [theCategory]->Fill(MVAVar, sf_training*weight_VGluUp     );
+      histo_VGluDown    [theCategory]->Fill(MVAVar, sf_training*weight_VGluDown   );
       histo_wptCorrUp   [theCategory]->Fill(MVAVar, sf_training*weight_wptCorrUp  );
       histo_wptCorrDown [theCategory]->Fill(MVAVar, sf_training*weight_wptCorrDown);
+      histo_wptCorrNone [theCategory]->Fill(MVAVar, sf_training*weight_wptCorrNone);
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
         histo_cmvaJESUp       [iPt][iEta][theCategory]->Fill(MVAVar, sf_training*weight_cmvaLFUp        [iPt][iEta]);
         histo_cmvaLFUp        [iPt][iEta][theCategory]->Fill(MVAVar, sf_training*weight_cmvaLFUp        [iPt][iEta]);
@@ -1658,8 +1695,6 @@ void vhbbHistos(
       histo_muSFDown    [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_muSFDown    [ic]->GetBinContent(nb))));
       histo_eleSFUp     [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_eleSFUp     [ic]->GetBinContent(nb))));
       histo_eleSFDown   [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_eleSFDown   [ic]->GetBinContent(nb))));
-      histo_wptCorrUp   [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_wptCorrUp   [ic]->GetBinContent(nb))));
-      histo_wptCorrDown [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_wptCorrDown [ic]->GetBinContent(nb))));
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
         histo_cmvaJESUp       [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaJESUp       [iPt][iEta][ic]->GetBinContent(nb))));
         histo_cmvaLFUp        [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFUp        [iPt][iEta][ic]->GetBinContent(nb))));
@@ -1679,6 +1714,59 @@ void vhbbHistos(
         histo_cmvaLFStats2Down[iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFStats2Down[iPt][iEta][ic]->GetBinContent(nb))));
         histo_cmvaCErr1Down   [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaCErr1Down   [iPt][iEta][ic]->GetBinContent(nb))));
         histo_cmvaCErr2Down   [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaCErr2Down   [iPt][iEta][ic]->GetBinContent(nb))));
+      }
+    }
+  }
+  // Renormalize the W+glu and WPT shape uncertainties to the nominal shape
+  for(int ic=kPlotData+1; ic<nPlotCategories; ic++) {
+    if(ic==kPlotWbb || ic==kPlotWb || ic==kPlotWLF ||
+       ic==kPlotZbb || ic==kPlotZb || ic==kPlotZLF) {
+      histo_VGluUp      [ic]->Scale(histos[pMVAVar][ic]->Integral()/histo_VGluUp  [ic]->Integral());
+      histo_VGluDown    [ic]->Scale(histos[pMVAVar][ic]->Integral()/histo_VGluDown[ic]->Integral());
+    }
+    if(useWptCorr && (theCategory==kPlotWbb || theCategory==kPlotWb || theCategory==kPlotWLF || theCategory==kPlotTop || theCategory==kPlotTT)) {
+      histo_wptCorrUp   [ic]->Scale(histo_wptCorrNone[ic]->Integral()/histo_wptCorrUp   [ic]->Integral());
+      histo_wptCorrDown [ic]->Scale(histo_wptCorrNone[ic]->Integral()/histo_wptCorrDown [ic]->Integral());
+      float maintainNormAfterWptCorr = histo_wptCorrNone[ic]->Integral()/histos[pMVAVar][ic]->Integral();
+      histo_VHCorrUp    [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_VHCorrDown  [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_pdfUp       [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_pdfDown     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_QCDr1f2     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_QCDr1f5     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_QCDr2f1     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_QCDr2f2     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_QCDr5f1     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_QCDr5f5     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_NLOQCDfUp   [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_NLOQCDfDown [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_NLOQCDrUp   [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_NLOQCDrDown [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_muSFUp      [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_muSFDown    [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_eleSFUp     [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_eleSFDown   [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_VGluUp      [theCategory]->Scale(maintainNormAfterWptCorr);
+      histo_VGluDown    [theCategory]->Scale(maintainNormAfterWptCorr);
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        histo_cmvaJESUp       [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaLFUp        [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaHFUp        [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaHFStats1Up  [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaHFStats2Up  [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaLFStats1Up  [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaLFStats2Up  [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaCErr1Up     [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaCErr2Up     [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaJESDown     [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaLFDown      [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaHFDown      [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaHFStats1Down[iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaHFStats2Down[iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaLFStats1Down[iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaLFStats2Down[iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaCErr1Down   [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
+        histo_cmvaCErr2Down   [iPt][iEta][theCategory]->Scale(maintainNormAfterWptCorr);
       }
     }
   }
@@ -1829,8 +1917,8 @@ void vhbbHistos(
         passMSD_WLF_Wln rateParam * WLF (@0*1.0) SF_passMSD_WLF
         SF_passMSD_WLF param 1.15 0.25
       */
-      card << Form("passMSD_%s_Wln rateParam * %s (@0*1.0) SF_passMSD_WLF", WLF,WLF) << std::endl;
-      card << Form("SF_passMSD_WLF param 0.87 0.25") << std::endl;
+      //card << Form("passMSD_%s_Wln rateParam * %s (@0*1.0) SF_passMSD_WLF", WLF,WLF) << std::endl;
+      //card << Form("SF_passMSD_WLF param 0.87 0.25") << std::endl;
 
       // Double B-tag scale factor extraction in situ
       // A priori MC efficiencies for the double B cut
@@ -1843,28 +1931,54 @@ void vhbbHistos(
       //       W+b           0.229           0.104
       //   W+udcsg           0.021           0.026
 
-      card << "effDoubleB_TT   param 0.13  0.013" << std::endl; 
-      card << "effDoubleB_Wbb  param 0.39  0.039"  << std::endl; 
-      card << "effDoubleB_Wb   param 0.23  0.023"  << std::endl; 
-      card << "effDoubleB_WLF  param 0.024 0.0024" << std::endl; 
-      // Efficiency scale factors for the double B cut
-      card << "effSFDoubleB_TT  extArg 1.0 [0.1,10]" << std::endl;
-      card << "effSFDoubleB_Wbb extArg 1.0 [0.1,10]" << std::endl;
-      card << "effSFDoubleB_Wb  extArg 1.0 [0.1,10]" << std::endl;
-      card << "effSFDoubleB_WLF extArg 1.0 [0.1,10]" << std::endl;
-      // Passing B-tag scale factor rateparam
-      if(selection==kWHHeavyFlavorFJCR || selection==kWHTT2bFJCR || selection==kWHFJSR) {
-        card << Form("passBB_TT  rateParam * %s (@0*1.0) effSFDoubleB_TT"  ,ttbar) << std::endl;
-        if(selection!=kWHTT2bFJCR) {
+      if(!useIgnorantVHFSFs) {
+        card << "effDoubleB_TT   param 0.13  0.013" << std::endl; 
+        card << "effDoubleB_Wbb  param 0.39  0.039"  << std::endl; 
+        card << "effDoubleB_Wb   param 0.23  0.023"  << std::endl; 
+        card << "effDoubleB_WLF  param 0.024 0.0024" << std::endl; 
+        // Efficiency scale factors for the double B cut
+        card << "effSFDoubleB_TT  extArg 1.0 [0.1,10]" << std::endl;
+        card << "effSFDoubleB_Wbb extArg 1.0 [0.1,10]" << std::endl;
+        card << "effSFDoubleB_Wb  extArg 1.0 [0.1,10]" << std::endl;
+        card << "effSFDoubleB_WLF extArg 1.0 [0.1,10]" << std::endl;
+        // Passing B-tag scale factor rateparam
+        if(selection==kWHHeavyFlavorFJCR || selection==kWHTT2bFJCR || selection==kWHFJSR) {
+          card << Form("passBB_TT  rateParam * %s (@0*1.0) effSFDoubleB_TT"  ,ttbar) << std::endl;
           card << Form("passBB_Wbb rateParam * %s (@0*1.0) effSFDoubleB_Wbb" ,Wbb  ) << std::endl;
           card << Form("passBB_Wb  rateParam * %s (@0*1.0) effSFDoubleB_Wb " ,Wb   ) << std::endl;
           card << Form("passBB_WLF rateParam * %s (@0*1.0) effSFDoubleB_WLF" ,WLF  ) << std::endl;
-        }
-      } else if(selection==kWHLightFlavorFJCR || selection==kWHTT1bFJCR) {
-        card << Form("failBB_TT  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_TT,effDoubleB_TT",ttbar) << std::endl;
-        if(selection!=kWHTT2bFJCR) {
+          
+        } else if(selection==kWHLightFlavorFJCR || selection==kWHTT1bFJCR) {
+          card << Form("failBB_TT  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_TT,effDoubleB_TT",ttbar) << std::endl;
           card << Form("failBB_Wbb rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Wbb,effDoubleB_Wbb",Wbb  ) << std::endl;
           card << Form("failBB_Wb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Wb,effDoubleB_Wb"  ,Wb   ) << std::endl;
+          card << Form("failBB_WLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_WLF,effDoubleB_WLF",WLF  ) << std::endl;
+        }
+      } else { // Ignorant scale factor method for W+HF.
+        // 25% uncertainty on the passing, scale by efficiency for the failing
+        if(selection==kWHHeavyFlavorFJCR || selection==kWHFJSR) {
+          card << "ignorant_passBB_0ijb_Wbb lnN "; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWbb? "1.25/0.75 ":"- "); card<<std::endl;
+          card << "ignorant_passBB_0ijb_Wb lnN " ; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWb ? "1.25/0.75 ":"- "); card<<std::endl;
+        } else if(selection==kWHTT2bFJCR) {
+          card << "ignorant_passBB_1ijb_Wbb lnN "; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWbb? "1.25/0.75 ":"- "); card<<std::endl;
+          card << "ignorant_passBB_1ijb_Wb lnN " ; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWb ? "1.25/0.75 ":"- "); card<<std::endl;
+        } else if(selection==kWHLightFlavorFJCR) {
+          card << "ignorant_passBB_0ijb_Wbb lnN "; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWbb? "0.84/1.16 ":"- "); card<<std::endl;
+          card << "ignorant_passBB_0ijb_Wb lnN " ; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWb ? "0.93/1.07 ":"- "); card<<std::endl;
+        } else if(selection==kWHTT1bFJCR) {
+          card << "ignorant_passBB_1ijb_Wbb lnN "; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWbb? "0.95/1.05 ":"- "); card<<std::endl;
+          card << "ignorant_passBB_1ijb_Wb lnN " ; for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWb ? "0.97/1.03 ":"- "); card<<std::endl;
+        }
+        // Intelligent scale factors for tt, W+LF
+        card << "effDoubleB_TT   param 0.13  0.013" << std::endl; 
+        card << "effDoubleB_WLF  param 0.024 0.0024" << std::endl; 
+        card << "effSFDoubleB_TT  extArg 1.0 [0.1,10]" << std::endl;
+        card << "effSFDoubleB_WLF extArg 1.0 [0.1,10]" << std::endl;
+        if(selection==kWHHeavyFlavorFJCR || selection==kWHTT2bFJCR || selection==kWHFJSR) {
+          card << Form("passBB_TT  rateParam * %s (@0*1.0) effSFDoubleB_TT"  ,ttbar) << std::endl;
+          card << Form("passBB_WLF rateParam * %s (@0*1.0) effSFDoubleB_WLF" ,WLF  ) << std::endl;
+        } else if(selection==kWHLightFlavorFJCR || selection==kWHTT1bFJCR) {
+          card << Form("failBB_TT  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_TT,effDoubleB_TT",ttbar) << std::endl;
           card << Form("failBB_WLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_WLF,effDoubleB_WLF",WLF  ) << std::endl;
         }
       }

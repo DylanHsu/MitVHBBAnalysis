@@ -98,8 +98,8 @@ bool vhbbPlotSkim(
   for(unsigned iB=0; iB<(unsigned)listOfBranches->GetEntries(); iB++) {
     TBranch *branch = (TBranch*)listOfBranches->At(iB);
     TString branchName = branch->GetName();
-    if(branchName.Contains("fj1GenPt") || branchName.Contains("fj1Gen")) continue;
-    if(branchName.Contains("genFj1")) continue;
+    //if(branchName.Contains("fj1GenPt") || branchName.Contains("fj1Gen")) continue;
+    //if(branchName.Contains("genFj1")) continue;
     bool isExtraBranch=false;
     auto x = extraAddresses.find(branchName);
     isExtraBranch= (x!=extraAddresses.end());
@@ -487,7 +487,9 @@ bool vhbbPlotSkim(
      
         // Jet multiplicity
         bLoad(b["nJet"],ientry);
+        if(debug) printf("hello from line %d (njet=%d)\n",__LINE__,gt.nJet);
         if     (gt.nJet<2) continue;
+        if(debug) printf("hello from line %d\n",__LINE__);
         if(useBoostedCategory) { 
           bLoad(b["nFatjet"],ientry);
           bLoad(b["fj1MSD_corr"],ientry);
@@ -509,7 +511,9 @@ bool vhbbPlotSkim(
         // Jet kinematics
         bLoad(b["nJot"],ientry);
         bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
+        if(debug) printf("hello from line %d\n",__LINE__);
         if(gt.hbbjtidx[0]>gt.nJot || gt.hbbjtidx[1]>gt.nJot) continue; // Bug fix
+        if(debug) printf("hello from line %d\n",__LINE__);
         bLoad(b["jetPt"],ientry);
         bLoad(b["jetRegFac"],ientry);
         bLoad(b["jetEta"],ientry);
@@ -1317,9 +1321,12 @@ bool vhbbPlotSkim(
       case kQCD:
         theCategory=kPlotQCD;  break;
       case kVZ:
-        bLoad(b["nB"],ientry);
-        if(gt.nB>=2) theCategory=kPlotVZbb;
-        else      theCategory=kPlotVVLF;
+        //bLoad(b["nB"],ientry);
+        //if(gt.nB>=2) theCategory=kPlotVZbb;
+        //else      theCategory=kPlotVVLF;
+        bLoad(b["nBGenJets"],ientry);
+        if(gt.nBGenJets>=2) theCategory=kPlotVZbb;
+        else theCategory=kPlotVVLF;
         break;
       case kWW:
         theCategory=kPlotVVLF; break;
@@ -1332,17 +1339,23 @@ bool vhbbPlotSkim(
         //if(gt.nB>=2) theCategory=kPlotWbb;
         //else if(gt.nB==1) theCategory=kPlotWb;
         //else theCategory=kPlotWLF; // light flavor
-        bLoad(b["nBGenJets"],ientry);
-        if(gt.nBGenJets>=2) theCategory=kPlotWbb;
-        else if(gt.nBGenJets==1) theCategory=kPlotWb;
-        else theCategory=kPlotWLF; // light flavor
-        break;
+        //if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
+        //} else {
+          bLoad(b["nBGenJets"],ientry);
+          if(gt.nBGenJets>=2) theCategory=kPlotWbb;
+          else if(gt.nBGenJets==1) theCategory=kPlotWb;
+          else theCategory=kPlotWLF; // light flavor
+          break;
+        //}
       case kZjets:
-        bLoad(b["nBGenJets"],ientry);
-        if(gt.nBGenJets>=2) theCategory=kPlotZbb;
-        else if(gt.nBGenJets==1) theCategory=kPlotZb;
-        else theCategory=kPlotZLF; // light flavor
-        break;
+        //if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
+        //} else {
+          bLoad(b["nBGenJets"],ientry);
+          if(gt.nBGenJets>=2) theCategory=kPlotZbb;
+          else if(gt.nBGenJets==1) theCategory=kPlotZb;
+          else theCategory=kPlotZLF; // light flavor
+          break;
+        //}
       case kVH:
         theCategory=kPlotVH; break;
       default:
