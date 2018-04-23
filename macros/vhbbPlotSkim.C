@@ -406,35 +406,33 @@ bool vhbbPlotSkim(
     plotTree->Branch("fj1ECFN_3_4_40", (float*)dummyTree->GetBranch("fj1ECFN_3_4_40")->GetAddress());
   }
   
-  // Parse the file name to determine the kfactor
-  double theQCDKFactor=1.; vector<double> theEWKCorrPars; 
+  vector<double> theEWKCorrPars; 
   if(useHtBinnedVJetsKFactor) {
     unsigned htLow=0, htHigh=0;
     if(sample==kWjets || sample==kZjets) {
       // Determine the HT bin
       // Assume the sample names are of the form "/path/to/WJets_ht100to200.root"
-      string inputFileNameStr(inputFileName);
-      size_t htWord    = inputFileNameStr.find("ht");
-      size_t toWord    = inputFileNameStr.find("to");
-      size_t lastDot   = inputFileNameStr.find_last_of(".");
-      string htLowStr   = inputFileNameStr.substr(htWord+2, toWord-htWord-2);
-      string htHighStr  = inputFileNameStr.substr(toWord+2, lastDot-toWord-2);
-      htLow   = atoi(htLowStr.c_str());
-      if(htHighStr=="inf"||htHighStr=="Inf")
-        htHigh=99999;
-      else
-        htHigh  = atoi(htHighStr.c_str());
-      if(htLow==0 || htHigh==0) {
-        throw std::runtime_error(Form("Warning: Error parsing the filename \"%s\", probably it is not of the form \"/path/to/WJets_ht100to200.root\" (go fix that)", inputFileName.Data()));
-        return false;
-      }
-      theQCDKFactor = qcdKFactor(sample, htLow, htHigh);
+      //string inputFileNameStr(inputFileName);
+      //size_t htWord    = inputFileNameStr.find("ht");
+      //size_t toWord    = inputFileNameStr.find("to");
+      //size_t lastDot   = inputFileNameStr.find_last_of(".");
+      //string htLowStr   = inputFileNameStr.substr(htWord+2, toWord-htWord-2);
+      //string htHighStr  = inputFileNameStr.substr(toWord+2, lastDot-toWord-2);
+      //htLow   = atoi(htLowStr.c_str());
+      //if(htHighStr=="inf"||htHighStr=="Inf")
+      //  htHigh=99999;
+      //else
+      //  htHigh  = atoi(htHighStr.c_str());
+      //if(htLow==0 || htHigh==0) {
+      //  throw std::runtime_error(Form("Warning: Error parsing the filename \"%s\", probably it is not of the form \"/path/to/WJets_ht100to200.root\" (go fix that)", inputFileName.Data()));
+      //  return false;
+      //}
       theEWKCorrPars = EWKCorrPars(sample);
       if(theEWKCorrPars.size()<4) {
         throw std::runtime_error("Warning: theEWKCorrPars does not have 4 array elements, make sure function EWKCorrPars is being called correctly!");
         return false;
       }
-    }
+    } 
   }
 
   delete dummyTree; // no longer needed
@@ -1149,7 +1147,8 @@ bool vhbbPlotSkim(
       if(sample==kWjets || sample==kZjets) {
         if(useHtBinnedVJetsKFactor) {
           bLoad(b["trueGenBosonPt"],ientry);
-          gt.sf_qcdV=theQCDKFactor;
+          bLoad(b["lhe_HT"],ientry);
+          gt.sf_qcdV=qcdKFactor(sample, gt.lhe_HT);
           gt.sf_ewkV=theEWKCorrPars[0]+theEWKCorrPars[1]*(TMath::Power((gt.trueGenBosonPt+theEWKCorrPars[2]),theEWKCorrPars[3]));
         } else {
           bLoad(b["sf_qcdV"],ientry);
@@ -1159,9 +1158,33 @@ bool vhbbPlotSkim(
         gt.sf_qcdV=1;
         gt.sf_ewkV=1;
       }
-      //bLoad(sf_btag1,ientry);
-      if(sample==kTT) bLoad(b["sf_tt"],ientry); else gt.sf_tt=1;
-      weight = normalizedWeight * theLumi * gt.sf_npv * gt.sf_ewkV * gt.sf_qcdV * gt.sf_tt;
+      
+      // Compute Stitching weight for W+jets b quark and hadron enriched samples
+      //if(sample==kTT) bLoad(b["sf_tt"],ientry); else gt.sf_tt=1;
+      //weight = normalizedWeight * theLumi * gt.sf_npv * gt.sf_ewkV * gt.sf_qcdV * gt.sf_tt;
+      weight = normalizedWeight * theLumi * gt.sf_npv * gt.sf_ewkV * gt.sf_qcdV;
+      if(sample==kWjets) {
+        float stitchWeight=1.;
+        bLoad(b["trueGenBosonPt"],ientry);
+        bLoad(b["nB"],ientry);
+        bLoad(b["nBGenJets"],ientry);
+        bool bQuarkEnriched  = gt.nB > 0;
+        bool bHadronEnriched = gt.nBGenJets>0 && gt.nB==0;
+        if((!bQuarkEnriched && !bHadronEnriched) || gt.trueGenBosonPt<100) {
+          stitchWeight=1;
+        } else if(bQuarkEnriched) {
+          if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<200) 
+            stitchWeight = vhbbPlot::BenrichedVPT100;
+          else if(gt.trueGenBosonPt>=200)
+            stitchWeight = vhbbPlot::BenrichedVPT200;
+        } else if(bHadronEnriched) {
+          if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<200) 
+            stitchWeight = vhbbPlot::BfilterVPT100;
+          else if(gt.trueGenBosonPt>=200)
+            stitchWeight = vhbbPlot::BfilterVPT200;
+        }
+        weight *= stitchWeight;
+      }
       if (typeLepSel==1) {
         bLoad(b["muonSfReco"],ientry);
         bLoad(b["muonSfTight"],ientry);

@@ -7,49 +7,57 @@
 #include "TStyle.h"
 #include <vector>
 
-void plotSystShape(TString process="WLF", TString syst="QCDscaleWLF",TString histDir="", TString region="")
+void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString histDir="", TString region="")
 {
-  vector<TString>filenames,regions;
-  if(histDir=="" || region=="") {
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WenWH2TopCR.root"               ); regions.push_back("WenWH2TopCR"               );
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WenWHHeavyFlavorCRHighMass.root"); regions.push_back("WenWHHeavyFlavorCRHighMass");
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WenWHHeavyFlavorCRLowMass.root" ); regions.push_back("WenWHHeavyFlavorCRLowMass" );
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WenWHLightFlavorCR.root"        ); regions.push_back("WenWHLightFlavorCR"        );
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WenWHSR.root"                   ); regions.push_back("WenWHSR"                   );
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WmnWH2TopCR.root"               ); regions.push_back("WmnWH2TopCR"               );
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WmnWHHeavyFlavorCRHighMass.root"); regions.push_back("WmnWHHeavyFlavorCRHighMass");
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WmnWHHeavyFlavorCRLowMass.root" ); regions.push_back("WmnWHHeavyFlavorCRLowMass" );
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WmnWHLightFlavorCR.root"        ); regions.push_back("WmnWHLightFlavorCR"        );
-    filenames.push_back("MitVHBBAnalysis/datacards/all_orthodox11vars_singleClass/oldHistos/hists_WmnWHSR.root"                   ); regions.push_back("WmnWHSR"                   );
-  } else {
-    filenames.push_back(Form("%s/hists_%s.root",histDir.Data(), region.Data())); regions.push_back(region);
-  }
-  TCanvas *c[99];
-  for(unsigned i=0; i<filenames.size(); i++) {
-    TFile *file=TFile::Open(filenames[i],"READ");
-    TString shapeType;
-    if(regions[i].Contains("WHSR")) shapeType="singleClassBDTShape";
-    else if(regions[i].Contains("FJCR")) shapeType="softDropMassShape";
-    else shapeType = "lesserCMVAShape";
-    TString histoNomName  = Form("%s_%s_%s"       , shapeType.Data(), regions[i].Data(), process.Data()             );
-    TString histoUpName   = Form("%s_%s_%s_%sUp"  , shapeType.Data(), regions[i].Data(), process.Data(), syst.Data());
-    TString histoDownName = Form("%s_%s_%s_%sDown", shapeType.Data(), regions[i].Data(), process.Data(), syst.Data());
+  TString filename = Form("%s/hists_%s.root",histDir.Data(), region.Data());
+  TFile *file=TFile::Open(filename,"READ");
+  vector<TString> systNames;
+  TString shapeType;
+  if(region.Contains("WHSR")) shapeType="singleClassBDTShape";
+  else if(region.Contains("FJCR")) shapeType="softDropMassShape";
+  else shapeType = "lesserCMVAShape";
+
+  if(syst=="") {
+    TList *listOfHistoNames=file->GetListOfKeys();
+    for(unsigned iHisto=0; iHisto<=(unsigned)listOfHistoNames->LastIndex(); iHisto++) {
+      TString theHistoName = listOfHistoNames->At(iHisto)->GetName();
+      TString token = Form("%s_%s_%s_", shapeType.Data(), region.Data(), process.Data());
+      if(!theHistoName.BeginsWith(token) ||
+         !theHistoName.EndsWith("Up")) continue;
+      
+      systNames.push_back(theHistoName(token.Length(), theHistoName.Length()-2-token.Length()));
+      printf("Found syst named \"%s\" from histo \"%s\"\n", systNames[systNames.size()-1].Data(), theHistoName.Data());
+    }
+  } else systNames.push_back(syst);
+  for(unsigned iSyst=0; iSyst<systNames.size(); iSyst++) {
+    TString theSyst = systNames[iSyst];
+    TString histoNomName  = Form("%s_%s_%s"       , shapeType.Data(), region.Data(), process.Data()             );
+    TString histoUpName   = Form("%s_%s_%s_%sUp"  , shapeType.Data(), region.Data(), process.Data(), theSyst.Data());
+    TString histoDownName = Form("%s_%s_%s_%sDown", shapeType.Data(), region.Data(), process.Data(), theSyst.Data());
     TH1F *histoNom=0, *histoUp=0,*histoDown=0;
     histoNom  = (TH1F*)file->Get(histoNomName ); assert(histoNom ); histoNom ->SetDirectory(0); 
     histoUp   = (TH1F*)file->Get(histoUpName  ); assert(histoUp  ); histoUp  ->SetDirectory(0); 
     histoDown = (TH1F*)file->Get(histoDownName); assert(histoDown); histoDown->SetDirectory(0); 
-    c[i]=new TCanvas(Form("c_%s",regions[i].Data()),regions[i]);
+    TCanvas *c=new TCanvas(Form("c_%s",region.Data()),region);
     gStyle->SetOptStat(0);
     histoUp->Divide(histoNom);
     histoDown->Divide(histoNom);
     histoUp->SetMinimum(0.8); histoUp->SetMaximum(1.2);
-    histoUp->SetTitle(Form("Syst. %s for process %s in region %s", syst.Data(), process.Data(), regions[i].Data()));
+    histoUp->SetTitle(Form("Syst. %s for process %s in region %s", theSyst.Data(), process.Data(), region.Data()));
     histoUp->SetLineColor(kViolet); histoDown->SetLineColor(kBlue);
     histoUp->SetLineWidth(2); histoDown->SetLineWidth(2);
     histoUp->Draw("HIST"); 
+    TLine *oneline = new TLine(histoDown->GetBinLowEdge(1),1,histoDown->GetBinLowEdge(histoDown->GetNbinsX()+1),1);
+    oneline->SetLineWidth(2);
+    oneline->SetLineColor(kBlack);
+    oneline->SetLineStyle(kDashed);
+    oneline->Draw("same");
+    histoUp->Draw("HIST same"); 
     histoUp->GetXaxis()->SetTitle(shapeType);
     histoUp->GetYaxis()->SetTitle("Relative shape uncertainty");
     histoDown->Draw("HIST SAME");
-    c[i]->Print(Form("MitVHBBAnalysis/plots/syst_%s_%s_%s.pdf",regions[i].Data(),process.Data(),syst.Data()));
+  
+    c->Print(Form("MitVHBBAnalysis/plots/syst_%s_%s_%s.pdf",region.Data(),process.Data(),theSyst.Data()));
+    c->Print(Form("MitVHBBAnalysis/plots/syst_%s_%s_%s.png",region.Data(),process.Data(),theSyst.Data()));
   }
 }

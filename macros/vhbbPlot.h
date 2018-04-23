@@ -152,6 +152,18 @@ namespace vhbbPlot {
     { kWHTT1bFJCR         , "WHTT1bFJCR"         },
     { kWHFJSR             , "WHFJSR"             },
   };
+  std::map<int, float> pdfAcceptUncs={
+    { kPlotVZbb , 1.02  },
+    { kPlotVVLF , 1.03  },
+    { kPlotTT   , 1.005 },
+    { kPlotWbb  , 1.02  },
+    { kPlotWb   , 1.03  },
+    { kPlotWLF  , 1.05  },
+    { kPlotZbb  , 1.02  },
+    { kPlotZb   , 1.03  },
+    { kPlotZLF  , 1.05  },
+    { kPlotVH   , 1.01  }
+  };
   // This function loads the ith entry of the branch, only if it has not already been loaded
   int bLoad(TBranch *branch, Long64_t ientry) {
     if(!branch) return 0;
@@ -179,18 +191,18 @@ namespace vhbbPlot {
     return(nCutsPassed >= nCutsToPass-1);
   }
 
-  double qcdKFactor(vhbbPlot::sampleType sample, unsigned htLow, unsigned htHigh) {
+  double qcdKFactor(vhbbPlot::sampleType sample, float lhe_HT) {
     double theQCDKFactor=1;
     if(sample==kWjets) {
-      if     (htLow>=100 && htHigh<= 200) theQCDKFactor = 1.459;
-      else if(htLow>=200 && htHigh<= 400) theQCDKFactor = 1.434;
-      else if(htLow>=400 && htHigh<= 600) theQCDKFactor = 1.532;
-      else if(htLow>=600                ) theQCDKFactor = 1.004;
+      if     (lhe_HT>=100 && lhe_HT<200) theQCDKFactor = 1.459;
+      else if(lhe_HT>=200 && lhe_HT<400) theQCDKFactor = 1.434;
+      else if(lhe_HT>=400 && lhe_HT<600) theQCDKFactor = 1.532;
+      else if(lhe_HT>=600              ) theQCDKFactor = 1.004;
     } else if(sample==kZjets) {
-      if     (htLow>=100 && htHigh<= 200) theQCDKFactor = 1.588;
-      else if(htLow>=200 && htHigh<= 400) theQCDKFactor = 1.438;
-      else if(htLow>=400 && htHigh<= 600) theQCDKFactor = 1.494;
-      else if(htLow>=600                ) theQCDKFactor = 1.139;
+      if     (lhe_HT>=100 && lhe_HT<200) theQCDKFactor = 1.588;
+      else if(lhe_HT>=200 && lhe_HT<400) theQCDKFactor = 1.438;
+      else if(lhe_HT>=400 && lhe_HT<600) theQCDKFactor = 1.494;
+      else if(lhe_HT>=600              ) theQCDKFactor = 1.139;
     }
     return theQCDKFactor;
   }
@@ -210,6 +222,10 @@ namespace vhbbPlot {
       (xs_DY[x]*diffPtCorr+xs_gg[x]+xs_tloop[x]+xs_gamma[x])/
       (xs_DY[x]*(1.+delta_EW[x])+xs_gg[x]+xs_tloop[x]+xs_gamma[x]);
   }
+  float BenrichedVPT100   = 0.108880411891;
+  float BenrichedVPT200   = 0.0679764068637;
+  float BfilterVPT100     = 0.206608510333;
+  float BfilterVPT200     = 0.16396633746;
 
 }
 #endif

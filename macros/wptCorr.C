@@ -320,9 +320,9 @@ void fitWptCorr(TString outputFileName) {
   p0[0] = new RooRealVar("p0_ttbar" ,"p0_ttbar" ,1);//,-10,10,"");
   p0[1] = new RooRealVar("p0_WLF"   ,"p0_WLF"   ,1);//,-10,10,"");
   p0[2] = new RooRealVar("p0_WHFtop","p0_WHFtop",1);//,-10,10,"");
-  p1[0] = new RooRealVar("p1_ttbar" ,"p1_ttbar" ,0,0,.000001,"GeV^{-1}");
-  p1[1] = new RooRealVar("p1_WLF"   ,"p1_WLF"   ,0,0,.000001,"GeV^{-1}");
-  p1[2] = new RooRealVar("p1_WHFtop","p1_WHFtop",0,0,.000001,"GeV^{-1}");
+  p1[0] = new RooRealVar("p1_ttbar" ,"p1_ttbar" ,0,-.003,.003,"GeV^{-1}");
+  p1[1] = new RooRealVar("p1_WLF"   ,"p1_WLF"   ,0,-.003,.003,"GeV^{-1}");
+  p1[2] = new RooRealVar("p1_WHFtop","p1_WHFtop",0,-.003,.003,"GeV^{-1}");
   // Linear correction PDFs
   RooGenericPdf *pol1_ttbar  = new RooGenericPdf("pol1_ttbar" ,"pol1_ttbar" ,"p0_ttbar  + p1_ttbar  * WpT",RooArgList(WpT,*p0[0],*p1[0]));
   RooGenericPdf *pol1_WLF    = new RooGenericPdf("pol1_WLF"   ,"pol1_WLF"   ,"p0_WLF    + p1_WLF    * WpT",RooArgList(WpT,*p0[1],*p1[1]));

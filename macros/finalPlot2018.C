@@ -1,6 +1,6 @@
 #include <TCanvas.h>
 #include <TFile.h>
-#include <TH1D.h>
+#include <TH1F.h>
 #include <THStack.h>
 #include <TLegend.h>
 #include <TMath.h>
@@ -10,13 +10,20 @@
 #include <TSystem.h>
 #include <TTree.h>
 #include <TList.h>
-
 #include <cassert>
+#include "RooArgSet.h"
 
 #include "vhbbPlot.h"
 
 using namespace vhbbPlot;
 
+// Bkg only SF
+float SF_TT_Wln         = 8.4434e-01;
+float SF_WLF_Wln        = 1.2409e+00;
+float SF_Wb_Wln         = 1.5665e+00;
+float SF_Wbb_Wln        = 1.7018e+00;
+
+float SF_Top_Wln        = 1;
 //TCanvas* finalPlot2018(
 TList *finalPlot2018(
   vhbbPlot::selectionType selType, 
@@ -25,29 +32,56 @@ TList *finalPlot2018(
   TString extraText="",
   bool isBlinded=false,
   bool normSignalToBkg=false,
-  TString plotDir="MitVHBBAnalysis/plots"
+  TString plotDir="MitVHBBAnalysis/plots",
+  TString mlfitResult=""
 ) {
   bool plotQCD=true;
   if(selType==kWHSR || selType==kWHFJSR) plotQCD=false;
 
   system(Form("mkdir -p %s",plotDir.Data()));
+
   TFile *inputFile = TFile::Open(inputFileName, "READ"); assert(inputFile);
-  string rawName; {
+  TFile *mlfit=0;
+  string regionName; {
     size_t lastDot = string(inputFileName).find_last_of(".");
     size_t lastSlash = string(inputFileName).find_last_of("/");
-    rawName = string(inputFileName).substr(lastSlash+1, lastDot-lastSlash-1);
+    regionName = string(inputFileName).substr(lastSlash+7, lastDot-lastSlash-7);
   }
-  
+  if(mlfitResult!="") {
+    mlfit=TFile::Open(mlfitResult); assert(mlfit);
+    RooArgSet *norm_prefit   = (RooArgSet*)mlfit->Get("norm_prefit");
+    RooArgSet *norm_postfit  = (RooArgSet*)mlfit->Get("norm_fit_s" );
+    inputFile->cd();
+    //RooArgSet *norm_postfit  = (RooArgSet*)mlfit->Get("norm_fit_s" );
+    //SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()));
+    //SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()));
+    //SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()));
+    //SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()));
+    //SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()));
+    SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTT )))->Integral();
+    SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWLF)))->Integral();
+    SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWb )))->Integral();
+    SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWbb)))->Integral();
+    SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTop)))->Integral();
+    printf("Renorm. from mlfit:\n");
+    printf("k_TT_Wln  = %.3f\n", SF_TT_Wln  );
+    printf("k_WLF_Wln = %.3f\n", SF_WLF_Wln );
+    printf("k_Wb_Wln  = %.3f\n", SF_Wb_Wln  );
+    printf("k_Wbb_Wln = %.3f\n", SF_Wbb_Wln );
+    printf("k_Top_Wln = %.3f\n", SF_Top_Wln );
+  }
+
   TList *listOfHistoNames=inputFile->GetListOfKeys();
   TList *listOfCanvases=new TList();
   for(unsigned iHisto=0; iHisto<=(unsigned)listOfHistoNames->LastIndex(); iHisto++) {
     TString theHistoName = listOfHistoNames->At(iHisto)->GetName();
     if(theHistoName.Contains("psi")) continue;
-    bool stackSignal = theHistoName.Contains("MVAVar");
-    TString outPdf = Form("%s/%s_%s.pdf", plotDir.Data(), rawName.c_str(), theHistoName.Data()); 
-    TString outPng = Form("%s/%s_%s.png", plotDir.Data(), rawName.c_str(), theHistoName.Data()); 
+    bool isFitShape = theHistoName.Contains("MVAVar");
+    bool stackSignal = isFitShape;
+    TString outPdf = Form("%s/%s_%s.pdf", plotDir.Data(), regionName.c_str(), theHistoName.Data()); 
+    TString outPng = Form("%s/%s_%s.png", plotDir.Data(), regionName.c_str(), theHistoName.Data()); 
     TString xlabel=""; TString plotName;
-    TH1D *histos[nPlotCategories], *hTotalBkg=0;
+    TH1F *histos[nPlotCategories], *hTotalBkg=0;
     for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {
       plotCategory i = static_cast<plotCategory>(iCat);
       if(!plotQCD && i==kPlotQCD) continue;
@@ -67,15 +101,23 @@ TList *finalPlot2018(
       } else plotName=plotNames[i]; 
 
       // Fill histograms
-      histos[i]=(TH1D*)gDirectory->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
-      histos[i]->SetDirectory(0);
+      if(iCat==kPlotData || !isFitShape || !mlfit) {
+        histos[i]=(TH1F*)inputFile->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
+        histos[i]->SetDirectory(0);
+        if     (i==kPlotTT  ) histos[i]->Scale( SF_TT_Wln);
+        else if(i==kPlotWLF ) histos[i]->Scale(SF_WLF_Wln);
+        else if(i==kPlotWb  ) histos[i]->Scale( SF_Wb_Wln);
+        else if(i==kPlotWbb ) histos[i]->Scale(SF_Wbb_Wln);
+        else if(i==kPlotTop ) histos[i]->Scale(SF_Top_Wln);
+      } else {
+        // If we have a MLF result, and this is the shape variable,
+        // use the shape from background only postfit
+        histos[i]=(TH1F*)mlfit->Get(Form("shapes_fit_b/%s/%s",regionName.c_str(), plotBaseNames[iCat].Data()));
+        histos[i]->SetDirectory(0);
+      }
       if(xlabel=="") xlabel=histos[i]->GetTitle();
       histos[i]->SetName(plotName);
       histos[i]->SetTitle(plotTitle);
-      if     (i==kPlotTT  ) histos[i]->Scale(0.91);
-      else if(i==kPlotWLF ) histos[i]->Scale(1.14);
-      else if(i==kPlotWb  ) histos[i]->Scale(1.66);
-      else if(i==kPlotWbb ) histos[i]->Scale(1.49);
 
       // Colors
       if(i==kPlotData) {
@@ -128,7 +170,7 @@ TList *finalPlot2018(
       }
       // Summing Up
       if(!hTotalBkg) {
-        hTotalBkg=(TH1D*)histos[i]->Clone("hTotal");
+        hTotalBkg=(TH1F*)histos[i]->Clone("hTotal");
         hTotalBkg->Reset(); hTotalBkg->Clear();
         hTotalBkg->SetDirectory(0);
         hTotalBkg->SetTitle("hTotal");
@@ -158,8 +200,8 @@ TList *finalPlot2018(
     if(isBlinded) for(int nb=1; nb<=histos[kPlotData]->GetNbinsX(); nb++) {
       if(!stackSignal || histos[kPlotData]->GetBinLowEdge(nb)>=0) { histos[kPlotData]->SetBinContent(nb,-9999); histos[kPlotData]->SetBinError(nb,0); }
     }
-    //TH1D *hRatio = (TH1D*) (isBlinded? hTotalBkg->Clone("hRatio") : histos[kPlotData]->Clone("hRatio"));
-    TH1D *hRatio = (TH1D*) histos[kPlotData]->Clone("hRatio");
+    //TH1F *hRatio = (TH1F*) (isBlinded? hTotalBkg->Clone("hRatio") : histos[kPlotData]->Clone("hRatio"));
+    TH1F *hRatio = (TH1F*) histos[kPlotData]->Clone("hRatio");
     hRatio->SetDirectory(0);
     for(int nb=1; nb<=hRatio->GetNbinsX(); nb++) {
       if(hTotalBkg->GetBinContent(nb)>0 && hRatio->GetBinContent(nb)>0) {
@@ -173,11 +215,11 @@ TList *finalPlot2018(
       }
     } 
  
-    TH1D *hErrorBand = (TH1D*)hTotalBkg->Clone("hErrorBand");
+    TH1F *hErrorBand = (TH1F*)hTotalBkg->Clone("hErrorBand");
     hErrorBand->SetFillColor(kBlack); hErrorBand->SetFillStyle(3254);
     hErrorBand->SetMarkerColor(kBlack); hErrorBand->SetMarkerSize(0);
 
-    TH1D *hRatioBand = (TH1D*)hErrorBand->Clone("hRatioBand");
+    TH1F *hRatioBand = (TH1F*)hErrorBand->Clone("hRatioBand");
     for(int nb=1; nb<=hRatio->GetNbinsX(); nb++) {
       hRatioBand->SetBinContent(nb,1);
       hRatioBand->SetBinError(nb, hTotalBkg->GetBinError(nb) / hTotalBkg->GetBinContent(nb) / hRatio->GetBinContent(nb));
