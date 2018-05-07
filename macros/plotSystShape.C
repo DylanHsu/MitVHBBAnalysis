@@ -7,13 +7,14 @@
 #include "TStyle.h"
 #include <vector>
 
-void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString histDir="", TString region="")
+void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString histDir="", TString region="", float ymin=.8,float ymax=1.2)
 {
   TString filename = Form("%s/hists_%s.root",histDir.Data(), region.Data());
+  system(Form("mkdir -p %s/systs", histDir.Data()));
   TFile *file=TFile::Open(filename,"READ");
   vector<TString> systNames;
   TString shapeType;
-  if(region.Contains("WHSR")) shapeType="singleClassBDTShape";
+  if(region.Contains("WHSR")||region.Contains("WHFJSR")) shapeType="singleClassBDTShape";
   else if(region.Contains("FJCR")) shapeType="softDropMassShape";
   else shapeType = "lesserCMVAShape";
 
@@ -40,11 +41,19 @@ void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString hi
     histoDown = (TH1F*)file->Get(histoDownName); assert(histoDown); histoDown->SetDirectory(0); 
     TCanvas *c=new TCanvas(Form("c_%s",region.Data()),region);
     gStyle->SetOptStat(0);
+    histoUp->SetLineColor(kViolet); histoDown->SetLineColor(kBlue); histoNom->SetLineColor(kBlack);
+    histoUp->SetMaximum(1.2*TMath::Max(histoNom->GetMaximum(),TMath::Max(histoUp->GetMaximum(),histoDown->GetMaximum())));
+    histoUp->Draw("hist");
+    histoNom->Draw("hist same");
+    histoDown->Draw("hist same");
+    histoUp->SetTitle(Form("Abs. syst. %s for process %s in region %s", theSyst.Data(), process.Data(), region.Data()));
+    c->Print(Form("%s/systs/systAbs_%s_%s_%s.pdf",histDir.Data(),region.Data(),process.Data(),theSyst.Data()));
+    c->Print(Form("%s/systs/systAbs_%s_%s_%s.png",histDir.Data(),region.Data(),process.Data(),theSyst.Data()));
+
     histoUp->Divide(histoNom);
     histoDown->Divide(histoNom);
-    histoUp->SetMinimum(0.8); histoUp->SetMaximum(1.2);
-    histoUp->SetTitle(Form("Syst. %s for process %s in region %s", theSyst.Data(), process.Data(), region.Data()));
-    histoUp->SetLineColor(kViolet); histoDown->SetLineColor(kBlue);
+    histoUp->SetMinimum(ymin); histoUp->SetMaximum(ymax);
+    histoUp->SetTitle(Form("Rel syst. %s for process %s in region %s", theSyst.Data(), process.Data(), region.Data()));
     histoUp->SetLineWidth(2); histoDown->SetLineWidth(2);
     histoUp->Draw("HIST"); 
     TLine *oneline = new TLine(histoDown->GetBinLowEdge(1),1,histoDown->GetBinLowEdge(histoDown->GetNbinsX()+1),1);
@@ -57,7 +66,7 @@ void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString hi
     histoUp->GetYaxis()->SetTitle("Relative shape uncertainty");
     histoDown->Draw("HIST SAME");
   
-    c->Print(Form("MitVHBBAnalysis/plots/syst_%s_%s_%s.pdf",region.Data(),process.Data(),theSyst.Data()));
-    c->Print(Form("MitVHBBAnalysis/plots/syst_%s_%s_%s.png",region.Data(),process.Data(),theSyst.Data()));
+    c->Print(Form("%s/systs/syst_%s_%s_%s.pdf",histDir.Data(),region.Data(),process.Data(),theSyst.Data()));
+    c->Print(Form("%s/systs/syst_%s_%s_%s.png",histDir.Data(),region.Data(),process.Data(),theSyst.Data()));
   }
 }

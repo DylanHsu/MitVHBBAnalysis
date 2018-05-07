@@ -17,15 +17,8 @@
 
 using namespace vhbbPlot;
 
-// Bkg only SF
-float SF_TT_Wln         = 8.4434e-01;
-float SF_WLF_Wln        = 1.2409e+00;
-float SF_Wb_Wln         = 1.5665e+00;
-float SF_Wbb_Wln        = 1.7018e+00;
-
-float SF_Top_Wln        = 1;
-//TCanvas* finalPlot2018(
-TList *finalPlot2018(
+//TList *finalPlot2018(
+void finalPlot2018(
   vhbbPlot::selectionType selType, 
   TString inputFileName,
   TString plotTitle="",
@@ -35,34 +28,44 @@ TList *finalPlot2018(
   TString plotDir="MitVHBBAnalysis/plots",
   TString mlfitResult=""
 ) {
-  bool plotQCD=true;
-  if(selType==kWHSR || selType==kWHFJSR) plotQCD=false;
+  // Bkg only SF
+  float SF_TT_Wln         = 1;
+  float SF_WLF_Wln        = 1;
+  float SF_Wb_Wln         = 1;
+  float SF_Wbb_Wln        = 1;
+  //float SF_TT_Wln         = 8.4434e-01;
+  //float SF_WLF_Wln        = 1.2409e+00;
+  //float SF_Wb_Wln         = 1.5665e+00;
+  //float SF_Wbb_Wln        = 1.7018e+00;
+  float SF_Top_Wln        = 1;
 
   system(Form("mkdir -p %s",plotDir.Data()));
 
-  TFile *inputFile = TFile::Open(inputFileName, "READ"); assert(inputFile);
+  TFile *inputFile = TFile::Open(inputFileName, "READ");
+  if(!inputFile) return; // assert(inputFile);
   TFile *mlfit=0;
   string regionName; {
     size_t lastDot = string(inputFileName).find_last_of(".");
     size_t lastSlash = string(inputFileName).find_last_of("/");
     regionName = string(inputFileName).substr(lastSlash+7, lastDot-lastSlash-7);
   }
+  
   if(mlfitResult!="") {
     mlfit=TFile::Open(mlfitResult); assert(mlfit);
     RooArgSet *norm_prefit   = (RooArgSet*)mlfit->Get("norm_prefit");
     RooArgSet *norm_postfit  = (RooArgSet*)mlfit->Get("norm_fit_s" );
     inputFile->cd();
     //RooArgSet *norm_postfit  = (RooArgSet*)mlfit->Get("norm_fit_s" );
-    //SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()));
-    //SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()));
-    //SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()));
-    //SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()));
-    //SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()));
-    SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTT )))->Integral();
-    SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWLF)))->Integral();
-    SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWb )))->Integral();
-    SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWbb)))->Integral();
-    SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTop)))->Integral();
+    SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()));
+    SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()));
+    SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()));
+    SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()));
+    SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()));
+    //SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTT )))->Integral();
+    //SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWLF)))->Integral();
+    //SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWb )))->Integral();
+    //SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWbb)))->Integral();
+    //SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTop)))->Integral();
     printf("Renorm. from mlfit:\n");
     printf("k_TT_Wln  = %.3f\n", SF_TT_Wln  );
     printf("k_WLF_Wln = %.3f\n", SF_WLF_Wln );
@@ -72,16 +75,19 @@ TList *finalPlot2018(
   }
 
   TList *listOfHistoNames=inputFile->GetListOfKeys();
-  TList *listOfCanvases=new TList();
+  //TList *listOfCanvases=new TList();
   for(unsigned iHisto=0; iHisto<=(unsigned)listOfHistoNames->LastIndex(); iHisto++) {
     TString theHistoName = listOfHistoNames->At(iHisto)->GetName();
-    if(theHistoName.Contains("psi")) continue;
+    //if(theHistoName.Contains("psi")) continue;
     bool isFitShape = theHistoName.Contains("MVAVar");
     bool stackSignal = isFitShape;
+    bool doLogPlot = stackSignal;// || theHistoName.Contains("HTT") || theHistoName.Contains("pfmetsig");
+    bool doRatioPad = !isBlinded || stackSignal;
+    bool plotQCD=true; if(selType==kWHSR || selType==kWHFJSR /* || (selType>=kWHLightFlavorFJCR && selType<=kWHFJSR)*/ || isFitShape) plotQCD=false;
     TString outPdf = Form("%s/%s_%s.pdf", plotDir.Data(), regionName.c_str(), theHistoName.Data()); 
     TString outPng = Form("%s/%s_%s.png", plotDir.Data(), regionName.c_str(), theHistoName.Data()); 
     TString xlabel=""; TString plotName;
-    TH1F *histos[nPlotCategories], *hTotalBkg=0;
+    TH1F *histos[nPlotCategories], *hTotalBkg=0, *hTotalBkgPrefit=0;
     for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {
       plotCategory i = static_cast<plotCategory>(iCat);
       if(!plotQCD && i==kPlotQCD) continue;
@@ -101,9 +107,9 @@ TList *finalPlot2018(
       } else plotName=plotNames[i]; 
 
       // Fill histograms
-      if(iCat==kPlotData || !isFitShape || !mlfit) {
-        histos[i]=(TH1F*)inputFile->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
-        histos[i]->SetDirectory(0);
+      histos[i]=(TH1F*)inputFile->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
+      histos[i]->SetDirectory(0);
+      if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotVH || !isFitShape || !mlfit) {
         if     (i==kPlotTT  ) histos[i]->Scale( SF_TT_Wln);
         else if(i==kPlotWLF ) histos[i]->Scale(SF_WLF_Wln);
         else if(i==kPlotWb  ) histos[i]->Scale( SF_Wb_Wln);
@@ -112,8 +118,14 @@ TList *finalPlot2018(
       } else {
         // If we have a MLF result, and this is the shape variable,
         // use the shape from background only postfit
-        histos[i]=(TH1F*)mlfit->Get(Form("shapes_fit_b/%s/%s",regionName.c_str(), plotBaseNames[iCat].Data()));
-        histos[i]->SetDirectory(0);
+        printf("shapes_fit_s/%s/%s\n",regionName.c_str(), plotBaseNames[iCat].Data());
+        TH1F *postfitHisto = (TH1F*)mlfit->Get(Form("shapes_fit_s/%s/%s",regionName.c_str(), plotBaseNames[iCat].Data()));
+        TH1F *postfitHisto_b = (TH1F*)mlfit->Get(Form("shapes_fit_b/%s/%s",regionName.c_str(), plotBaseNames[iCat].Data()));
+        for(int nb=1; nb<=postfitHisto->GetNbinsX(); nb++) {
+          histos[i]->SetBinContent(nb, postfitHisto->GetBinContent(nb));
+          histos[i]->SetBinError(nb, postfitHisto->GetBinError(nb));
+          //printf("%s bin%d %.2f\n", plotBaseNames[iCat].Data(), nb, postfitHisto->GetBinError(nb)/postfitHisto->GetBinContent(nb));
+        }
       }
       if(xlabel=="") xlabel=histos[i]->GetTitle();
       histos[i]->SetName(plotName);
@@ -131,6 +143,18 @@ TList *finalPlot2018(
         histos[i]->SetFillStyle(1001);
       }
     }
+    if(mlfit && isFitShape) {
+      TH1F *postfitTotalBkg = (TH1F*)mlfit->Get(Form("shapes_fit_s/%s/total_background",regionName.c_str()));
+      TH1F *prefitTotalBkg = (TH1F*)mlfit->Get(Form("shapes_prefit/%s/total_background",regionName.c_str()));
+      hTotalBkg=(TH1F*)histos[kPlotData]->Clone("hTotal");
+      hTotalBkgPrefit=(TH1F*)histos[kPlotData]->Clone("hTotalPrefit");
+      for(int nb=1; nb<=histos[kPlotData]->GetNbinsX(); nb++) {
+        hTotalBkg->SetBinContent(nb, postfitTotalBkg->GetBinContent(nb));
+        hTotalBkg->SetBinError(nb, postfitTotalBkg->GetBinError(nb));
+        hTotalBkgPrefit->SetBinContent(nb, prefitTotalBkg->GetBinContent(nb));
+        hTotalBkgPrefit->SetBinError(nb, prefitTotalBkg->GetBinError(nb));
+      }
+    }
     string units=""; {
       size_t lastOpenBrace = string(xlabel).find_last_of("[");
       size_t lastCloseBrace = string(xlabel).find_last_of("]");
@@ -142,7 +166,7 @@ TList *finalPlot2018(
     bool variableWidth=false; float binWidth=-1;
     for(int nb=1; nb<=nbins; nb++) { 
       if(nb==1) { binWidth=histos[kPlotData]->GetXaxis()->GetBinWidth(nb); continue; }
-      if(!variableWidth && TMath::Abs(binWidth/((float)histos[kPlotData]->GetXaxis()->GetBinWidth(nb))-1.) > 0.02) variableWidth=true;
+      if(!variableWidth && TMath::Abs(binWidth/((float)histos[kPlotData]->GetXaxis()->GetBinWidth(nb))-1.) > 0.0001) variableWidth=true;
       if(histos[kPlotData]->GetXaxis()->GetBinWidth(nb) < binWidth) binWidth=histos[kPlotData]->GetXaxis()->GetBinWidth(nb);
     }
     if(stackSignal) {
@@ -160,22 +184,30 @@ TList *finalPlot2018(
     float xmin=histos[kPlotData]->GetXaxis()->GetBinLowEdge(1);
     float xmax=histos[kPlotData]->GetXaxis()->GetBinLowEdge(nbins+1);
     
+    if(mlfit && isFitShape && variableWidth) for(int nb=1; nb<=nbins; nb++) {
+      hTotalBkg->SetBinContent(nb, hTotalBkg->GetBinContent(nb) / hTotalBkg->GetXaxis()->GetBinWidth(nb)*binWidth);
+      hTotalBkg->SetBinError(nb, hTotalBkg->GetBinError(nb) / hTotalBkg->GetXaxis()->GetBinWidth(nb)*binWidth);
+      hTotalBkgPrefit->SetBinContent(nb, hTotalBkgPrefit->GetBinContent(nb) / hTotalBkgPrefit->GetXaxis()->GetBinWidth(nb)*binWidth);
+      hTotalBkgPrefit->SetBinError(nb, hTotalBkgPrefit->GetBinError(nb) / hTotalBkgPrefit->GetXaxis()->GetBinWidth(nb)*binWidth);
+    }
+
     for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {
       plotCategory i = static_cast<plotCategory>(iCat);
       if(!plotQCD && i==kPlotQCD) continue;
       if(variableWidth) for(int nb=1; nb<=nbins; nb++) { 
-        if(binWidth!=histos[i]->GetXaxis()->GetBinWidth(nb))
+        if(binWidth!=histos[i]->GetXaxis()->GetBinWidth(nb)) {
           histos[i]->SetBinContent(nb, histos[i]->GetBinContent(nb) / histos[i]->GetXaxis()->GetBinWidth(nb)*binWidth);
           histos[i]->SetBinError(nb, histos[i]->GetBinError(nb) / histos[i]->GetXaxis()->GetBinWidth(nb)*binWidth);
+        }
       }
       // Summing Up
-      if(!hTotalBkg) {
+      if(!hTotalBkg && !(mlfit && isFitShape)) {
         hTotalBkg=(TH1F*)histos[i]->Clone("hTotal");
         hTotalBkg->Reset(); hTotalBkg->Clear();
         hTotalBkg->SetDirectory(0);
         hTotalBkg->SetTitle("hTotal");
       }
-      if(hTotalBkg && i!=kPlotData && i!=kPlotVH) {
+      if(!(mlfit && isFitShape) && hTotalBkg && i!=kPlotData && i!=kPlotVH) {
         hTotalBkg->Add(histos[i]);
       }
     }
@@ -184,10 +216,12 @@ TList *finalPlot2018(
       histos[kPlotVH]->Scale(signalInflationFactor);
       // needs to be worked on
       if(selType<=kWHFJPresel) {
-        if  (signalInflationFactor>1) plotName = Form("WH(125)x%d", (int)round(signalInflationFactor));
+        if     (signalInflationFactor>1e5) plotName = Form("WH(125)x%.1e", signalInflationFactor);
+        else if(signalInflationFactor>  1) plotName = Form("WH(125)x%d", (int)round(signalInflationFactor));
         else                          plotName = "WH(125)";
       } else {
-        if  (signalInflationFactor>1) plotName = Form("ZH(125)x%d", (int)round(signalInflationFactor));
+        if     (signalInflationFactor>1e5) plotName = Form("ZH(125)x%.1e", signalInflationFactor);
+        else if(signalInflationFactor>  1) plotName = Form("ZH(125)x%d", (int)round(signalInflationFactor));
         else                          plotName = "ZH(125)";
       }
       histos[kPlotVH]->SetName(plotName);
@@ -208,7 +242,8 @@ TList *finalPlot2018(
         hRatio->SetBinContent( nb, hRatio->GetBinContent(nb) / hTotalBkg->GetBinContent(nb));
         hRatio->SetBinError( nb, hRatio->GetBinError(nb) / histos[kPlotData]->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
         if(isBlinded && (!stackSignal||histos[kPlotData]->GetBinLowEdge(nb)>=0)) hRatio->SetBinError( nb, hRatio->GetBinError(nb) / hTotalBkg->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
-        else            hRatio->SetBinError( nb, hRatio->GetBinError(nb) / histos[kPlotData]->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
+        //else            hRatio->SetBinError( nb, hRatio->GetBinError(nb) / histos[kPlotData]->GetBinContent(nb) / hRatio->GetBinContent(nb)); 
+        else            hRatio->SetBinError( nb, histos[kPlotData]->GetBinError(nb) / hTotalBkg->GetBinContent(nb));
       } else {
         hRatio->SetBinContent( nb, 1);
         hRatio->SetBinError(nb, 1);
@@ -220,9 +255,18 @@ TList *finalPlot2018(
     hErrorBand->SetMarkerColor(kBlack); hErrorBand->SetMarkerSize(0);
 
     TH1F *hRatioBand = (TH1F*)hErrorBand->Clone("hRatioBand");
+    TH1F *hRatioBandPrefit=0;
+    if(mlfit && isFitShape) {
+      hRatioBandPrefit = (TH1F*)hRatio->Clone("hRatioBandPrefit");
+    }
     for(int nb=1; nb<=hRatio->GetNbinsX(); nb++) {
       hRatioBand->SetBinContent(nb,1);
-      hRatioBand->SetBinError(nb, hTotalBkg->GetBinError(nb) / hTotalBkg->GetBinContent(nb) / hRatio->GetBinContent(nb));
+      //hRatioBand->SetBinError(nb, hTotalBkg->GetBinError(nb) / hTotalBkg->GetBinContent(nb) / hRatio->GetBinContent(nb));
+      hRatioBand->SetBinError(nb, hTotalBkg->GetBinError(nb) / hTotalBkg->GetBinContent(nb));
+      if(hRatioBandPrefit) {
+        hRatioBandPrefit->SetBinContent(nb, 1);
+        hRatioBandPrefit->SetBinError(nb, hTotalBkgPrefit->GetBinError(nb) / hTotalBkgPrefit->GetBinContent(nb));
+      }
     }
     THStack *hs = new THStack("hs",plotTitle!=""?plotTitle:selectionNames[selType]); assert(hs);
     hs->Add(histos[ kPlotVZbb ] );   
@@ -239,37 +283,46 @@ TList *finalPlot2018(
     if(stackSignal) hs->Add(histos[kPlotVH]);
  
     TCanvas *canvas = new TCanvas(Form("canvas_%s",theHistoName.Data()),theHistoName,600,480);
-    canvas->SetTopMargin(0.0); 
-    canvas->SetBottomMargin(0); 
-    canvas->SetRightMargin(0.02);
-    TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1.,1);
-    pad1->SetTopMargin(0.1);
-    pad1->SetLeftMargin(0.15);
-    pad1->SetRightMargin(0.04);
-    pad1->SetBottomMargin(0.03); 
-    //pad1->SetGridx();         
-    pad1->Draw();             
-    pad1->cd();              
-    if(stackSignal) pad1->SetLogy();
+    TPad *pad1=0,*pad2=0;
+    if(doRatioPad) {
+      canvas->SetTopMargin(0.0); 
+      canvas->SetRightMargin(0.02);
+      canvas->SetBottomMargin(0); 
+      pad1= new TPad("pad1", "pad1", 0, 0.3, 1.,1);
+      pad1->SetTopMargin(0.1);
+      pad1->SetLeftMargin(0.15);
+      pad1->SetRightMargin(0.04);
+      pad1->SetBottomMargin(0.03); 
+      //pad1->SetGridx();         
+      pad1->Draw();             
+      pad1->cd();              
+      if(doLogPlot) pad1->SetLogy();
+    }
     hs->Draw("HIST");
+    if(doRatioPad) {
+      hs->GetXaxis()->SetTitle("");
+      hs->GetXaxis()->SetLabelSize(0);
+      hs->GetYaxis()->SetTitleOffset(1.2);
+      hs->GetYaxis()->SetTitleSize(0.05);
+      hs->GetYaxis()->SetLabelSize(0.05);
+    } else {
+      hs->GetXaxis()->SetTitle(xlabel);
+    }
     
     //float binWidth=(xmax-xmin)/(float)nbins;
     
-    hs->GetXaxis()->SetTitle("");
-    hs->GetXaxis()->SetLabelSize(0);
-    hs->GetYaxis()->SetTitleOffset(1.2);
-    hs->GetYaxis()->SetTitleSize(0.05);
     hs->GetYaxis()->SetTitle(Form( (binWidth>=10.? "Events / %.0f %s" : binWidth>=1.? "Events / %.1f %s": "Events / %.2f %s"), binWidth, units.c_str()));
-    hs->GetYaxis()->SetLabelSize(0.05);
     float plotMax=1.4;
     if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=2.;
     float theMax = TMath::Max(histos[kPlotVH]->GetMaximum(),TMath::Max(hs->GetMaximum(), histos[kPlotData]->GetMaximum()));
-    if(stackSignal) { 
-      if(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())>1 && histos[kPlotData]->GetBinContent(histos[kPlotData]->GetMinimumBin())>1)
-        hs->SetMinimum(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())/3.);
+    if(doLogPlot) { 
+      //if(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())>1 && histos[kPlotData]->GetBinContent(histos[kPlotData]->GetMinimumBin())>1)
+      if(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())>1 || histos[kPlotData]->GetBinContent(histos[kPlotData]->GetMinimumBin())>1)
+        hs->SetMinimum(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())/2.);
       else hs->SetMinimum(0.1);
-      float span=hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin());
-      hs->SetMaximum(TMath::Max((float)50.0,float(hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin())*pow(10,TMath::Min(2.,TMath::Log10(span)*1.3f)))));
+      float span=hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin())-hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin());
+      //float span=hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin());
+      hs->SetMaximum(TMath::Max((float)50.0,float(hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin())+pow(span,1.5))));
     } else {
       hs->SetMaximum( plotMax*theMax);
     }
@@ -278,9 +331,11 @@ TList *finalPlot2018(
     //if(!isBlinded) histos[kPlotData]->Draw("P E0 SAME");
     histos[kPlotData]->Draw("P E0 SAME");
     TLegend *legend1,*legend2;
-    if(plotQCD) legend1=new TLegend(0.47,0.50,0.71,0.88);
-    else        legend1=new TLegend(0.47,0.555,0.71,0.88); 
-    legend2=new TLegend(0.71,0.555,0.95,.88);
+    float x1=.59,x2=.77,x3=.95;
+    if(!doRatioPad) { x1=.4; x2=.64; x3=.88;}
+    if(plotQCD) legend1=new TLegend(x1,0.50 ,x2,0.88);
+    else        legend1=new TLegend(x1,0.555,x2,0.88); 
+    legend2=new TLegend(x2,0.555,x3,.88);
     legend1->AddEntry(histos[ kPlotData ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotData)] ,"lp");
     if(plotQCD) legend1->AddEntry(histos[ kPlotQCD  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotQCD )] ,"f");
     legend1->AddEntry(histos[ kPlotTT   ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotTT  )] ,"f");
@@ -297,42 +352,65 @@ TList *finalPlot2018(
     legend1->SetFillColorAlpha(kWhite, .5); legend2->SetFillColorAlpha(kWhite, 0.5);
     legend1->SetBorderSize(0); legend2->SetBorderSize(0);
     legend1->Draw("same"); legend2->Draw("SAME");
-    canvas->cd();
-    TPad *pad2 = new TPad("pad2", "pad2", 0, 0.05, 1, 0.3);
-    pad2->SetLeftMargin(0.15);
-    pad2->SetTopMargin(0);
-    pad2->SetBottomMargin(0.4);
-    pad2->SetRightMargin(0.04);
-    //pad2->SetGridx(); 
-    pad2->Draw();
-    pad2->cd();
-    hRatioBand->SetTitle("");
-    hRatioBand->GetXaxis()->SetTitleSize(0.16);
-    hRatioBand->GetXaxis()->SetTitleOffset(1.05);
-    hRatioBand->GetYaxis()->SetNdivisions(503);
-    hRatioBand->GetXaxis()->SetLabelSize(0.2);
-    hRatioBand->GetXaxis()->SetTitle(xlabel);
-    hRatioBand->GetYaxis()->SetTitle("Data/MC");
-    hRatioBand->GetYaxis()->CenterTitle();
-    hRatioBand->GetYaxis()->SetTitleOffset(0.37);
-    hRatioBand->GetYaxis()->SetTitleSize(0.12);
-    hRatioBand->GetYaxis()->SetLabelSize(0.15);
-    hRatioBand->SetFillStyle(3254);
-    hRatioBand->SetFillColor(kBlack);
-    hRatioBand->SetMinimum(.3);
-    hRatioBand->SetMaximum(1.7);
-    hRatioBand->Draw("E2");
-    hRatio->SetLineColor(kBlack);
-    hRatio->SetMarkerStyle(20);
-    hRatio->SetMarkerSize(0.8);
-    hRatio->Draw("P E0 x0 SAME");
-    TLine *baseline = new TLine(xmin,1,xmax,1);
-    baseline->SetLineStyle(kSolid); baseline->Draw("SAME");
+    if(doRatioPad) {
+      canvas->cd();
+      pad2 = new TPad("pad2", "pad2", 0, 0.05, 1, 0.3);
+      pad2->SetLeftMargin(0.15);
+      pad2->SetTopMargin(0);
+      pad2->SetBottomMargin(0.4);
+      pad2->SetRightMargin(0.04);
+      //pad2->SetGridx(); 
+      pad2->Draw(); pad2->cd();
+      hRatioBand->SetTitle("");
+      hRatioBand->GetXaxis()->SetTitleSize(0.16);
+      hRatioBand->GetXaxis()->SetTitleOffset(1.05);
+      hRatioBand->GetYaxis()->SetNdivisions(503);
+      hRatioBand->GetXaxis()->SetLabelSize(0.2);
+      hRatioBand->GetXaxis()->SetTitle(xlabel);
+      hRatioBand->GetYaxis()->SetTitle("Data/MC");
+      hRatioBand->GetYaxis()->CenterTitle();
+      hRatioBand->GetYaxis()->SetTitleOffset(0.37);
+      hRatioBand->GetYaxis()->SetTitleSize(0.12);
+      hRatioBand->GetYaxis()->SetLabelSize(0.15);
+      hRatioBand->SetFillStyle(3254);
+      hRatioBand->SetFillColor(kBlack);
+      hRatioBand->SetLineColor(kBlack);
+      hRatioBand->SetMinimum(.3);
+      hRatioBand->SetMaximum(1.7);
+      hRatioBand->Draw("E2");
+      if(hRatioBandPrefit) {
+        hRatioBandPrefit->SetMarkerColor(kBlack);
+        hRatioBandPrefit->SetMarkerSize(0);
+        hRatioBandPrefit->SetLineColor(kBlack);
+        hRatioBandPrefit->SetFillColorAlpha(kBlue-9,0.5);
+        hRatioBandPrefit->SetFillStyle(1001);
+        hRatioBandPrefit->Draw("e2 same");
+        hRatioBand->Draw("E2 same");
+      }
+      
+      hRatio->SetLineColor(kBlack);
+      hRatio->SetMarkerStyle(20);
+      hRatio->SetMarkerSize(0.8);
+      hRatio->Draw("P E1 x0 SAME");
+      TLine *baseline = new TLine(xmin,1,xmax,1);
+      baseline->SetLineStyle(kSolid); baseline->Draw("SAME");
+      TLegend *ratioLegend=0;
+      if(hRatioBandPrefit) {
+        ratioLegend = new TLegend(.17,.86,.46,.97);
+        ratioLegend->SetNColumns(2);
+        ratioLegend->SetFillColorAlpha(kWhite, .5);
+        ratioLegend->SetBorderSize(0);
+        ratioLegend->AddEntry(hRatioBandPrefit, "Prefit stat.+syst.","f");
+        ratioLegend->AddEntry(hRatioBand, "Postfit stat.+syst.","f");
+        ratioLegend->Draw("same");
+      }
+    }
     canvas->Print(outPdf);
     system(Form("gs -sDEVICE=png16m -dTextAlphaBits=4 -g1800x1440 -dUseCropBox -dFIXEDMEDIA -dPDFFitPage -o %s %s >/dev/null 2>&1 &",outPng.Data(), outPdf.Data()));
-    listOfCanvases->Add(canvas);
+    delete canvas;
   }
-  return listOfCanvases;
-  //return canvas;
+
+
+  return;
 }
 

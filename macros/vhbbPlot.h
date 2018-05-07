@@ -49,21 +49,28 @@ namespace vhbbPlot {
     {"ZnnH"   , -0.044}
   }; 
   enum selectionType { 
-    kWHLightFlavorCR   = 0x1 <<  0,
-    kWHHeavyFlavorCR   = 0x1 <<  1,
-    kWH2TopCR          = 0x1 <<  2,
-    kWHSR              = 0x1 <<  3,
-    kWHPresel          = 0x1 <<  4,
-    kWHLightFlavorFJCR = 0x1 <<  5,
-    kWHHeavyFlavorFJCR = 0x1 <<  6,
-    kWHTT2bFJCR        = 0x1 <<  7,
-    kWHTT1bFJCR        = 0x1 <<  8,
-    kWHFJSR            = 0x1 <<  9, 
-    kWHFJPresel        = 0x1 <<  10
-    //kZllHLightFlavorCR = 0x1 << 15,
-    //kZllHHeavyFlavorCR = 0x1 << 16,
-    //kZllH2TopCR        = 0x1 << 17,
-    //kZllHSR            = 0x1 << 18 
+    kWHLightFlavorCR     = 0x1 <<  0,
+    kWHHeavyFlavorCR     = 0x1 <<  1,
+    kWH2TopCR            = 0x1 <<  2,
+    kWHSR                = 0x1 <<  3,
+    kWHPresel            = 0x1 <<  4,
+    kWHLightFlavorFJCR   = 0x1 <<  5,
+    kWHHeavyFlavorFJCR   = 0x1 <<  6,
+    kWHTT2bFJCR          = 0x1 <<  7,
+    kWHTT1bFJCR          = 0x1 <<  8,
+    kWHFJSR              = 0x1 <<  9, 
+    kWHFJPresel          = 0x1 << 10,
+    kZllHLightFlavorCR   = 0x1 << 11,
+    kZllHHeavyFlavorCR   = 0x1 << 12,
+    kZllH2TopCR          = 0x1 << 13,
+    kZllHSR              = 0x1 << 14,
+    kZllHPresel          = 0x1 << 15,
+    kZllHLightFlavorFJCR = 0x1 << 16,
+    kZllHHeavyFlavorFJCR = 0x1 << 17,
+    kZllH2TopFJCR        = 0x1 << 18,
+    kZllHFJSR            = 0x1 << 19,
+    kZllHFJPresel        = 0x1 << 20,
+    
   };
   enum sampleType {
     kData       , // 0 
@@ -100,15 +107,15 @@ namespace vhbbPlot {
     { kPlotVZbb , 842         },
     { kPlotVVLF , kAzure-9    },
     { kPlotTT   , kOrange-2   },
-    { kPlotTop  , kYellow-6   },
-//    { kPlotTop  , kPink+7     },
-    { kPlotWbb  , kViolet+2   },
+    //{ kPlotTop  , kYellow-6   },
+    { kPlotTop  , kOrange-1   },
+    //{ kPlotWbb  , kViolet+2   },
+    { kPlotWbb  , kViolet+3   },
     { kPlotWb   , kViolet+8   },
     { kPlotWLF  , kViolet+6   },
     { kPlotZbb  , kRed-8      },
     { kPlotZb   , kMagenta-10 },
     { kPlotZLF  , kPink+1     },
-//    { kPlotVH   , kOrange+9   }
     { kPlotVH   , kRed+1      }
   };
   std::map<plotCategory, TString> plotNames={

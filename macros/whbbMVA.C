@@ -155,8 +155,8 @@ void whbbMVA(
     //dataloader->AddVariable( minSubjetCSV                        , "FJ min subjet B-tag"               , ""           , 'F');
     //dataloader->AddVariable( "fj1DoubleCSV"                      , "FJ double B-tag"                   , ""           , 'F');
     //dataloader->AddVariable( "fj1HTTMass"                        , "FJ HTT mass"                       , "GeV"        , 'F');
-    //dataloader->AddVariable( "fj1Tau32SD"                        , "FJ #tau_{32}^{SD}"                 , ""           , 'F');
-    //dataloader->AddVariable( "fj1Tau21SD"                        , "FJ #tau_{21}^{SD}"                 , ""           , 'F');
+    dataloader->AddVariable( "fj1Tau32SD"                        , "FJ #tau_{32}^{SD}"                 , ""           , 'F');
+    dataloader->AddVariable( "fj1Tau21SD"                        , "FJ #tau_{21}^{SD}"                 , ""           , 'F');
     //dataloader->AddVariable( "lepton1Flav"                       , "Lepton flavor"                     , ""           , 'I');
     //dataloader->AddVariable( "deltaPhiLep1Met"                   , "#Delta#phi(lepton,p_{T}^{miss})"   , "Rad"        , 'F');
     //dataloader->AddVariable( "mT"                                , "W boson m_{T}"                     , "GeV"        , 'F');
@@ -164,17 +164,17 @@ void whbbMVA(
     //dataloader->AddVariable( dPhil1fj1                           , "#Delta#phi(lep,FJ)"                , "Rad"        , 'F');
     //dataloader->AddVariable( dPhiWfj1                            , "#Delta#phi(W,FJ)"                  , "Rad"        , 'F');
     dataloader->AddVariable( "nIsojet"                           , "Isolated AK4 jets"                 , ""           , 'I');
-    //dataloader->AddVariable( "fj1Pt"                             , "FJ p_{T}"                          , "GeV"        , 'F');
-    dataloader->AddVariable( adjustedFatjetEta                   , "FJ #eta"                           , ""           , 'F');
+    dataloader->AddVariable( "fjWPtBalance := fabs(fj1Pt/topWBosonPt)" , "|FJ p_{T}/W p_{T}|"                          , "GeV"        , 'F');
+    //dataloader->AddVariable( adjustedFatjetEta                   , "FJ #eta"                           , ""           , 'F');
     dataloader->AddVariable( "fj1HTTFRec"                        , "FJ HTT f_{rec}"                    , ""           , 'F');
     dataloader->AddVariable( "fj1MSD_corr"                       , "FJ soft drop mass"                 , "GeV"        , 'F');
-    dataloader->AddVariable( "fj1Tau32"                          , "FJ #tau_{32}"                      , ""           , 'F');
-    dataloader->AddVariable( "fj1Tau21"                          , "FJ #tau_{21}"                      , ""           , 'F');
-    dataloader->AddVariable( "lepton1Pt"                         , "Lepton p_{T}"                      , "GeV"        , 'F');
+    //dataloader->AddVariable( "fj1Tau32"                          , "FJ #tau_{32}"                      , ""           , 'F');
+    //dataloader->AddVariable( "fj1Tau21"                          , "FJ #tau_{21}"                      , ""           , 'F');
+    //dataloader->AddVariable( "lepton1Pt"                         , "Lepton p_{T}"                      , "GeV"        , 'F');
     dataloader->AddVariable( "lepton1Charge"                     , "Lepton charge"                     , ""           , 'I');
     dataloader->AddVariable( "deltaPhiVH"                        , "#Delta#phi(W,H)"                   , "Rad"        , 'F');
     dataloader->AddVariable( "topWBosonPt"                       , "W boson p_{T}"                     , "GeV"        , 'F');
-    dataloader->AddVariable( "pfmet"                             , "p_{T}^{miss}"                      , "GeV"        , 'F');
+    //dataloader->AddVariable( "pfmet"                             , "p_{T}^{miss}"                      , "GeV"        , 'F');
     dataloader->AddVariable( dPhil1W                             , "#Delta#phi(lep,W)"                 , "Rad"        , 'F');
     dataloader->AddVariable( dEtal1fj1                           , "|#Delta#eta(lep,FJ)|"              , ""           , 'F');
     //dataloader->AddVariable( psi["021004010502"]                 , "#psi(2,1.0,4,1,0.5,2)"             , ""           , 'F'); 
@@ -196,11 +196,11 @@ void whbbMVA(
     //dataloader->AddVariable( psi["022004021003"]                 , "#psi(2,2.0,4,2,1.0,3)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["012003010502"]                 , "#psi(1,2.0,3,1,0.5,2)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["022003011002"]                 , "#psi(2,2.0,3,1,1.0,2)"             , ""           , 'F'); 
-    //dataloader->AddVariable( psi["022004031003"]                 , "#psi(2,2.0,4,3,1.0,3)"             , ""           , 'F'); 
+    dataloader->AddVariable( psi["022004031003"]                 , "#psi(2,2.0,4,3,1.0,3)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["012004030503"]                 , "#psi(1,2.0,4,3,0.5,3)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["021004030503"]                 , "#psi(2,1.0,4,3,0.5,3)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["020504010502"]                 , "#psi(2,0.5,4,1,0.5,2)"             , ""           , 'F'); 
-    //dataloader->AddVariable( psi["022004030503"]                 , "#psi(2,2.0,4,3,0.5,3)"             , ""           , 'F'); 
+    dataloader->AddVariable( psi["022004030503"]                 , "#psi(2,2.0,4,3,0.5,3)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["011004010502"]                 , "#psi(1,1.0,4,1,0.5,2)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["030503010502"]                 , "#psi(3,0.5,3,1,0.5,2)"             , ""           , 'F');  //useful but poorly modeled
     //dataloader->AddVariable( psi["021003010502"]                 , "#psi(2,1.0,3,1,0.5,2)"             , ""           , 'F'); 
@@ -225,7 +225,7 @@ void whbbMVA(
     //dataloader->AddVariable( psi["010504010502"]                 , "#psi(1,0.5,4,1,0.5,2)"             , ""           , 'F'); //useful but poorly modeled
     //dataloader->AddVariable( psi["021004021003"]                 , "#psi(2,1.0,4,2,1.0,3)"             , ""           , 'F'); 
     //dataloader->AddVariable( psi["012003012002"]                 , "#psi(1,2.0,3,1,2.0,2)"             , ""           , 'F');
-    //dataloader->AddVariable( psi["022004022003"]                 , "#psi(2,2.0,4,2,2.0,3)"             , ""           , 'F'); 
+    dataloader->AddVariable( psi["022004022003"]                 , "#psi(2,2.0,4,2,2.0,3)"             , ""           , 'F'); 
     
     //dataloader->AddVariable( psi["012002011002"]                 , "#psi(1,2.0,2,1,1.0,2)"             , ""           , 'F');
     //dataloader->AddVariable( psi["014003022003"]                 , "#psi(1,4.0,3,2,2.0,3)"             , ""           , 'F');
@@ -355,10 +355,15 @@ void whbbMVA(
     prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
     prepareOptions+=":MixMode=Random";
   dataloader->PrepareTrainingAndTestTree(preselectionCut, prepareOptions);
-  TString hyperparameters="!H:!V:BoostType=AdaBoost:MinNodeSize=2.5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12::nCuts=100";
+  
+  // for resolved
+  //TString hyperparameters="!H:!V:BoostType=AdaBoost:MinNodeSize=2.5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12::nCuts=1000";
+
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
   //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=Pray:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
-  //TString hyperparameters="!H:!V:NTrees=2000:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.05:nCuts=100";
+  // for boosted
+  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=Pray:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.05:nCuts=1000";
+  TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=Pray:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=AdaBoost:AdaBoostBeta=0.12:nCuts=1000";
   //if(useGaussDeco) hyperparameters += ":VarTransform=G,D";
   factory->BookMethod(dataloader, TMVA::Types::kBDT, trainName, hyperparameters);
   /*vector<int> NTrees = {200,500};

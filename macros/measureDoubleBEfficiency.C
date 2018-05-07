@@ -20,19 +20,13 @@
 
 #include "vhbbPlot.h"
 using namespace vhbbPlot;
-void measureDoubleBEfficiency(TString inputFile="/mnt/hadoop/scratch/dhsu/whbbPlots/root/plotTreeBoosted.root") {
-  TString wptCorrFilename="MitVHBBAnalysis/wptCorrections_InclusiveResolved_Linear.root";
-  TFile *wptCorrFile = TFile::Open(wptCorrFilename, "READ");
-  TF1 *theWptCorr = (TF1*)wptCorrFile->Get("wptCorr_nominal");
-  assert(theWptCorr);
-  TH1F *theWptCorrHist = (TH1F*)wptCorrFile->Get("histWithStatUnc_wptCorr_nominal");
-  assert(theWptCorrHist);
+void measureDoubleBEfficiency(TString inputFile="/data/t3home000/dhsu/whbbPlots/root/plotTreeBoosted.root") {
   TFile *plotTreeFile = TFile::Open(inputFile,"READ");
   TTree *plotTree = (TTree*)plotTreeFile->Get("plotTree"); assert(plotTree);
 
-  //unsigned long int time_now = static_cast<unsigned long int>(time(NULL));
-  //unsigned int randomToySeed=(time_now-731178000); // random seed based on Dylan's age in seconds
-  //TRandom3 toymaker(randomToySeed);
+  unsigned long int time_now = static_cast<unsigned long int>(time(NULL));
+  unsigned int randomToySeed=(time_now-731178000); // random seed based on Dylan's age in seconds
+  TRandom3 toymaker(randomToySeed);
   
   int runNumber = -1;
   int lumiNumber = -1;
@@ -55,7 +49,7 @@ void measureDoubleBEfficiency(TString inputFile="/mnt/hadoop/scratch/dhsu/whbbPl
   plotTree->SetBranchStatus("topWBosonPt"  ,1); plotTree->SetBranchAddress("topWBosonPt"  , &topWBosonPt  );
   plotTree->SetBranchStatus("typeLepSel"   ,1); plotTree->SetBranchAddress("typeLepSel"   , &typeLepSel   );
   plotTree->SetBranchStatus("isojetNBtags" ,1); plotTree->SetBranchAddress("isojetNBtags" , &isojetNBtags );
-  plotTree->SetBranchStatus("fj1MSD"       ,1); plotTree->SetBranchAddress("fj1MSD"       , &fj1MSD       );
+  plotTree->SetBranchStatus("fj1MSD_corr"  ,1); plotTree->SetBranchAddress("fj1MSD_corr"  , &fj1MSD_corr  );
   plotTree->SetBranchStatus("fj1Pt"        ,1); plotTree->SetBranchAddress("fj1Pt"        , &fj1Pt        );
   plotTree->SetBranchStatus("fj1DoubleCSV" ,1); plotTree->SetBranchAddress("fj1DoubleCSV" , &fj1DoubleCSV );   
   
@@ -85,8 +79,8 @@ void measureDoubleBEfficiency(TString inputFile="/mnt/hadoop/scratch/dhsu/whbbPl
     if((selectionBits&selection)==0) continue;
     plotTree->GetBranch("theCategory")->GetEntry(ientry); 
     if(theCategory!=kPlotTT && theCategory!=kPlotWbb && theCategory!=kPlotWb && theCategory!=kPlotWLF) continue;
-    plotTree->GetBranch("fj1MSD")->GetEntry(ientry);
-    if(fj1MSD<40) continue;
+    plotTree->GetBranch("fj1MSD_corr")->GetEntry(ientry);
+    if(fj1MSD_corr<40) continue;
     plotTree->GetEntry(ientry);
 
     if     (theCategory==kPlotTT ) processIdx=0; 
@@ -101,38 +95,58 @@ void measureDoubleBEfficiency(TString inputFile="/mnt/hadoop/scratch/dhsu/whbbPl
             (selectionBits & kWHFJSR           )!=0   ) regionIdx=2; //C
     else if((selectionBits & kWHTT2bFJCR       )!=0   ) regionIdx=3; //D
     else continue;
-    float wptCorrFactor=theWptCorr->Eval(TMath::Min(topWBosonPt,(float)499.99));
-    weight *= wptCorrFactor;
+    //float wptCorrFactor=theWptCorr->Eval(TMath::Min(topWBosonPt,(float)499.99));
+    //weight *= wptCorrFactor;
     yield[processIdx][regionIdx] += weight;
     sumw2[processIdx][regionIdx] += weight*weight;
     N    [processIdx][regionIdx]++;
   }
   float rms[4][4];
   for(int i=0;i<4;i++) for(int j=0;j<4;j++) {
-    rms[i][j] = sqrt(sumw2[i][j]/(float)N[i][j]);
+    :q
+    vi//rms[i][j] = sqrt(sumw2[i][j]/(float)N[i][j]);
+    rms[i][j] = sqrt(sumw2[i][j]);
+    //rms[i][j] = yield[i][j]/sqrt(float(N[i][j]));
   }
   float eff[4][2], err[4][2];
-  float toyPass,toyFail,toyNPass,toyNFail,NPass,NFail,errPass,errFail;
+  float toyPass,toyFail,toyNPass,toyNFail,NPass,NFail,NsigErrPass,NsigErrFail;
   TH1F *toyEffs = new TH1F("toyEffs","toyEffs", 1000, 0,1);
   for(int i=0;i<4;i++) {
     // 0 isojet btags
-    //toyEffs->Reset(); toyEffs->Clear();
-    //NPass=yield[i][2]; NFail=yield[i][2]
-    //for(int iToy=0; iToy<1000; iToy++) {
-    //  toyPass=toymaker.Gaus(0,1);
-    //  toyFail=toymaker.Gaus(0,1);
-    //  toyNPass = TMath::Max(0.,NPass + toyPass * NsigErrPass);
-    //  toyNFail = TMath::Max(0.,NFail + toyFail * NsigErrFail);
-    //}
     eff[i][0] = yield[i][2]/(yield[i][2]+yield[i][0]);
+    toyEffs->Reset(); toyEffs->Clear();
+    NPass=yield[i][2]; NFail=yield[i][0];
+    NsigErrPass = rms[i][2];
+    NsigErrFail = rms[i][0];
+    for(int iToy=0; iToy<1000; iToy++) {
+      toyPass=toymaker.Gaus(-1,1);
+      toyFail=toymaker.Gaus(-1,1);
+      toyNPass = TMath::Max(float(0.),NPass + toyPass * NsigErrPass);
+      toyNFail = TMath::Max(float(0.),NFail + toyFail * NsigErrFail);
+      toyEffs->Fill(toyNPass/(toyNPass+toyNFail));
+    }
+    err[i][0] = toyEffs->GetStdDev();
+    // 1+ isojet btags
     eff[i][1] = yield[i][3]/(yield[i][3]+yield[i][1]);
+    toyEffs->Reset(); toyEffs->Clear();
+    NPass=yield[i][3]; NFail=yield[i][1];
+    NsigErrPass = rms[i][3];
+    NsigErrFail = rms[i][1];
+    for(int iToy=0; iToy<1000; iToy++) {
+      toyPass=toymaker.Gaus(-1,1);
+      toyFail=toymaker.Gaus(-1,1);
+      toyNPass = TMath::Max(float(0.),NPass + toyPass * NsigErrPass);
+      toyNFail = TMath::Max(float(0.),NFail + toyFail * NsigErrFail);
+      toyEffs->Fill(toyNPass/(toyNPass+toyNFail));
+    }
+    err[i][1] = toyEffs->GetStdDev();
   }
-  printf("%16s%16s%16s\n","Process","Eff.(0ijB)","Eff.(1+ijB)");
-  printf("------------------------------------------------\n");
-  printf("%16s%16.3f%16.3f\n","ttbar"  ,eff[0][0],eff[0][1]);
-  printf("%16s%16.3f%16.3f\n","W+bb"   ,eff[1][0],eff[1][1]);
-  printf("%16s%16.3f%16.3f\n","W+b"    ,eff[2][0],eff[2][1]);
-  printf("%16s%16.3f%16.3f\n","W+udcsg",eff[3][0],eff[3][1]);
+  printf("%16s%16s%8s%16s%8s\n","Process","Eff.(0ijB)","+/-","Eff.(1+ijB)","+/-");
+  printf("-----------------------------------------------------------------------------------\n");
+  printf("%16s%16.3f%8.5f%16.3f%8.5f\n","ttbar"  ,eff[0][0],err[0][0],eff[0][1],err[0][1]);
+  printf("%16s%16.3f%8.5f%16.3f%8.5f\n","W+bb"   ,eff[1][0],err[1][0],eff[1][1],err[1][1]);
+  printf("%16s%16.3f%8.5f%16.3f%8.5f\n","W+b"    ,eff[2][0],err[2][0],eff[2][1],err[2][1]);
+  printf("%16s%16.3f%8.5f%16.3f%8.5f\n","W+udcsg",eff[3][0],err[3][0],eff[3][1],err[3][1]);
 
  
 

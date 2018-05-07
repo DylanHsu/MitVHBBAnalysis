@@ -44,12 +44,15 @@ bool vhbbPlotSkim(
   if(!loadPandaAnalysisFlat) { throw std::runtime_error("Error loading shared object libPandaAnalysisFlat.so"); return false; }
 
   // Handle File IO
-  //bool batchMode=false;
-  //if(inputFileName!="") batchMode=true;
-  //if(batchMode) {
-    if(inputFileName==outputFileName) { throw std::runtime_error("Input file and output file are the same file"); return false; }
-    TFile *inputFile = TFile::Open(inputFileName, "READ");
-    if(!inputFile) { throw std::runtime_error("Problem opening input file"); return false; }
+  if(inputFileName==outputFileName) { 
+    throw std::runtime_error("Input file and output file are the same file"); 
+    return false; 
+  }
+  TFile *inputFile = TFile::Open(inputFileName, "READ");
+  if(!inputFile) { 
+    throw std::runtime_error("Problem opening input file"); 
+    return false;
+  }
   TTree *events = (TTree*)inputFile->Get("events");
   if(!events) { throw std::runtime_error("Problem loading tree"); return false; }
 
@@ -98,8 +101,6 @@ bool vhbbPlotSkim(
   for(unsigned iB=0; iB<(unsigned)listOfBranches->GetEntries(); iB++) {
     TBranch *branch = (TBranch*)listOfBranches->At(iB);
     TString branchName = branch->GetName();
-    //if(branchName.Contains("fj1GenPt") || branchName.Contains("fj1Gen")) continue;
-    //if(branchName.Contains("genFj1")) continue;
     bool isExtraBranch=false;
     auto x = extraAddresses.find(branchName);
     isExtraBranch= (x!=extraAddresses.end());
@@ -147,8 +148,8 @@ bool vhbbPlotSkim(
   unsigned char typeLepSel, theCategory;
   unsigned selectionBits, selectionBits_jesUp, selectionBits_jesDown, nMinusOneBits;
   float lepton1Pt, lepton1Eta, lepton1Phi, lepton1RelIso, lepton1D0, lepton1DZ;
+  float lepton2Pt, lepton2Eta, lepton2Phi, lepton2RelIso, lepton2D0, lepton2DZ;
   int lepton1Flav, lepton1Charge;
-  float lepton2Pt, lepton2Eta, lepton2Phi;
   float hbbJet1Pt, hbbJet1Eta, hbbJet1Phi;
   float hbbJet2Pt, hbbJet2Eta, hbbJet2Phi;
   float hbbJet1PtUp, hbbJet1PtDown, hbbJet2PtUp, hbbJet2PtDown;
@@ -159,6 +160,7 @@ bool vhbbPlotSkim(
   float deltaPhiVH, deltaPhiVH_jesUp, deltaPhiVH_jesDown;
   float topWBosonPt, topWBosonPt_jesUp, topWBosonPt_jesDown, topWBosonPhi_jesUp, topWBosonPhi_jesDown;
   float mT_jesUp, mT_jesDown; // need to be in PandaExpress ntuples
+  float ZBosonPt, ZBosonM, ZBosonPhi, ZBosonEta;
   float fj1MSD_corr,fj1MSD_corr_jesUp,fj1MSD_corr_jesDown; 
   
   // For boosted categories, the number of 30 GeV AK4 jets not in the fat jet
@@ -206,11 +208,6 @@ bool vhbbPlotSkim(
   float *sf_sjbtagGT0BDown = (float*)dummyTree->GetBranch("sf_sjbtagGT0BDown")->GetAddress();
   float *sf_sjbtagGT0MUp   = (float*)dummyTree->GetBranch("sf_sjbtagGT0MUp"  )->GetAddress();
   float *sf_sjbtagGT0MDown = (float*)dummyTree->GetBranch("sf_sjbtagGT0MDown")->GetAddress();
-  //float *sf_sjbtag2      = (float*)dummyTree->GetBranch("sf_sjbtag2"     )->GetAddress();
-  //float *sf_sjbtag2BUp   = (float*)dummyTree->GetBranch("sf_sjbtag2BUp"  )->GetAddress();
-  //float *sf_sjbtag2BDown = (float*)dummyTree->GetBranch("sf_sjbtag2BDown")->GetAddress();
-  //float *sf_sjbtag2MUp   = (float*)dummyTree->GetBranch("sf_sjbtag2MUp"  )->GetAddress();
-  //float *sf_sjbtag2MDown = (float*)dummyTree->GetBranch("sf_sjbtag2MDown")->GetAddress();
   
   plotTree->Branch("runNumber"       , &gt.runNumber    );
   plotTree->Branch("lumiNumber"      , &gt.lumiNumber   );
@@ -226,105 +223,61 @@ bool vhbbPlotSkim(
   plotTree->Branch("pfmetsig"        , &gt.pfmetsig     );
   plotTree->Branch("puppimetsig"     , &gt.puppimetsig  );
   plotTree->Branch("pfmetphi"        , &gt.pfmetphi     );
-  plotTree->Branch("topWBosonPt"             , &gt.topWBosonPt           );
-  plotTree->Branch("topWBosonPt_jesUp"       , &topWBosonPt_jesUp        );
-  plotTree->Branch("topWBosonPt_jesDown"     , &topWBosonPt_jesDown      );
-  plotTree->Branch("topWBosonPhi"            , &gt.topWBosonPhi          );
-  plotTree->Branch("topWBosonPhi_jesUp"      , &topWBosonPhi_jesUp       );
-  plotTree->Branch("topWBosonPhi_jesDown"    , &topWBosonPhi_jesDown     );
-  plotTree->Branch("mT"                      , &gt.mT                    );
-  plotTree->Branch("mT_jesUp"                , &mT_jesUp                 );
-  plotTree->Branch("mT_jesDown"              , &mT_jesDown               );
-  plotTree->Branch("typeLepSel"              , &typeLepSel               );
-  plotTree->Branch("lepton1Pt"               , &lepton1Pt                );
-  plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
-  plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
-  plotTree->Branch("lepton1RelIso"           , &lepton1RelIso            );
-  plotTree->Branch("lepton1D0"               , &lepton1D0                );
-  plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
-  plotTree->Branch("lepton1Flav"             , &lepton1Flav              );
-  plotTree->Branch("lepton1Charge"           , &lepton1Charge            );
-  plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
-  plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
-  plotTree->Branch("deltaPhiVH_jesUp"        , &deltaPhiVH_jesUp         );
-  plotTree->Branch("deltaPhiVH_jesDown"      , &deltaPhiVH_jesDown       );
   plotTree->Branch("nFatjet"                 , &gt.nFatjet               );
-
-  plotTree->Branch("weight"                  , &weight                   );
-  plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
-  plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
-  plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
-  plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
-  plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
-  plotTree->Branch("weight_QCDr1f5"          , &weight_QCDr1f5           );
-  plotTree->Branch("weight_QCDr2f1"          , &weight_QCDr2f1           );
-  plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
-  plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
-  plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
-  plotTree->Branch("weight_NLOQCDrUp"        , &weight_NLOQCDrUp         );
-  plotTree->Branch("weight_NLOQCDrDown"      , &weight_NLOQCDrDown       );
-  plotTree->Branch("weight_NLOQCDfUp"        , &weight_NLOQCDfUp         );
-  plotTree->Branch("weight_NLOQCDfDown"      , &weight_NLOQCDfDown       );
-  plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
-  plotTree->Branch("weight_btagBUp"          , &weight_btagBUp           );
-  plotTree->Branch("weight_btagBDown"        , &weight_btagBDown         );
-  plotTree->Branch("weight_btagMUp"          , &weight_btagMUp           );
-  plotTree->Branch("weight_btagMDown"        , &weight_btagMDown         );
-  plotTree->Branch("weight_cmvaLFUp"         , weight_cmvaLFUp         , "weight_cmvaLFUp[5][3]/F"        );
-  plotTree->Branch("weight_cmvaHFUp"         , weight_cmvaHFUp         , "weight_cmvaHFUp[5][3]/F"        );
-  plotTree->Branch("weight_cmvaHFStats1Up"   , weight_cmvaHFStats1Up   , "weight_cmvaHFStats1Up[5][3]/F"  );
-  plotTree->Branch("weight_cmvaHFStats2Up"   , weight_cmvaHFStats2Up   , "weight_cmvaHFStats2Up[5][3]/F"  );
-  plotTree->Branch("weight_cmvaLFStats1Up"   , weight_cmvaLFStats1Up   , "weight_cmvaLFStats1Up[5][3]/F"  );
-  plotTree->Branch("weight_cmvaLFStats2Up"   , weight_cmvaLFStats2Up   , "weight_cmvaLFStats2Up[5][3]/F"  );
-  plotTree->Branch("weight_cmvaCErr1Up"      , weight_cmvaCErr1Up      , "weight_cmvaCErr1Up[5][3]/F"     );
-  plotTree->Branch("weight_cmvaCErr2Up"      , weight_cmvaCErr2Up      , "weight_cmvaCErr2Up[5][3]/F"     );
-  plotTree->Branch("weight_cmvaJESUp"        , weight_cmvaJESUp        , "weight_cmvaJESUp[5][3]/F"       );
-  plotTree->Branch("weight_cmvaLFDown"       , weight_cmvaLFDown       , "weight_cmvaLFDown[5][3]/F"      );
-  plotTree->Branch("weight_cmvaHFDown"       , weight_cmvaHFDown       , "weight_cmvaHFDown[5][3]/F"      );
-  plotTree->Branch("weight_cmvaHFStats1Down" , weight_cmvaHFStats1Down , "weight_cmvaHFStats1Down[5][3]/F");
-  plotTree->Branch("weight_cmvaHFStats2Down" , weight_cmvaHFStats2Down , "weight_cmvaHFStats2Down[5][3]/F");
-  plotTree->Branch("weight_cmvaLFStats1Down" , weight_cmvaLFStats1Down , "weight_cmvaLFStats1Down[5][3]/F");
-  plotTree->Branch("weight_cmvaLFStats2Down" , weight_cmvaLFStats2Down , "weight_cmvaLFStats2Down[5][3]/F");
-  plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
-  plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
-  plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
-  if(selection>=kWHLightFlavorCR && selection<=kWHPresel) {
-    plotTree->Branch("nJet"                    , &gt.nJet                  );
-    plotTree->Branch("nJet_jesUp"              , &gt.nJet_jesUp            );
-    plotTree->Branch("nJet_jesDown"            , &gt.nJet_jesDown          );
-    plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
-    plotTree->Branch("hbbDijetPtUp"            , &hbbDijetPtUp             );
-    plotTree->Branch("hbbDijetPtDown"          , &hbbDijetPtDown           );
-    plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
-    plotTree->Branch("hbbDijetMass"            , &hbbDijetMass             );
-    plotTree->Branch("hbbDijetMassUp"          , &hbbDijetMassUp           );
-    plotTree->Branch("hbbDijetMassDown"        , &hbbDijetMassDown         );
-    plotTree->Branch("bDiscrMin"               , &bDiscrMin                );
-    plotTree->Branch("bDiscrMax"               , &bDiscrMax                );
-    plotTree->Branch("hbbJet1Pt"               , &hbbJet1Pt                );
-    plotTree->Branch("hbbJet1Eta"              , &hbbJet1Eta               );
-    plotTree->Branch("hbbJet1Phi"              , &hbbJet1Phi               );
-    plotTree->Branch("hbbJet2Pt"               , &hbbJet2Pt                );
-    plotTree->Branch("hbbJet2Eta"              , &hbbJet2Eta               );
-    plotTree->Branch("hbbJet2Phi"              , &hbbJet2Phi               );
-    plotTree->Branch("hbbJet1PtUp"             , &hbbJet1PtUp              );
-    plotTree->Branch("hbbJet1PtDown"           , &hbbJet1PtDown            );
-    plotTree->Branch("hbbJet2PtUp"             , &hbbJet2PtUp              );
-    plotTree->Branch("hbbJet2PtDown"           , &hbbJet2PtDown            );
-    plotTree->Branch("topMassLep1Met"          , &gt.topMassLep1Met        );
-    plotTree->Branch("topMassLep1Met_jesUp"    , &gt.topMassLep1Met_jesUp  );
-    plotTree->Branch("topMassLep1Met_jesDown"  , &gt.topMassLep1Met_jesDown);
-    plotTree->Branch("topWBosonEta"            , &gt.topWBosonEta          );
-    plotTree->Branch("topWBosonCosThetaCS"     , &gt.topWBosonCosThetaCS   );
-    plotTree->Branch("sumEtSoft1"              , &gt.sumEtSoft1            );
-    plotTree->Branch("nSoft2"                  , &gt.nSoft2                );
-    plotTree->Branch("nSoft5"                  , &gt.nSoft5                );
-    plotTree->Branch("nSoft10"                 , &gt.nSoft10               );
-    plotTree->Branch("hbbCosThetaJJ"           , &gt.hbbCosThetaJJ         );
-    plotTree->Branch("hbbCosThetaCSJ1"         , &gt.hbbCosThetaCSJ1       );
+  if((selection<=kWHLightFlavorCR && selection<=kWHPresel) ||
+     (selection<=kWHLightFlavorFJCR && selection<=kWHFJPresel)) {
+    plotTree->Branch("topWBosonPt"             , &gt.topWBosonPt           );
+    plotTree->Branch("topWBosonPt_jesUp"       , &topWBosonPt_jesUp        );
+    plotTree->Branch("topWBosonPt_jesDown"     , &topWBosonPt_jesDown      );
+    plotTree->Branch("topWBosonPhi"            , &gt.topWBosonPhi          );
+    plotTree->Branch("topWBosonPhi_jesUp"      , &topWBosonPhi_jesUp       );
+    plotTree->Branch("topWBosonPhi_jesDown"    , &topWBosonPhi_jesDown     );
+    plotTree->Branch("mT"                      , &gt.mT                    );
+    plotTree->Branch("mT_jesUp"                , &mT_jesUp                 );
+    plotTree->Branch("mT_jesDown"              , &mT_jesDown               );
+    plotTree->Branch("typeLepSel"              , &typeLepSel               );
+    plotTree->Branch("lepton1Pt"               , &lepton1Pt                );
+    plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
+    plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
+    plotTree->Branch("lepton1RelIso"           , &lepton1RelIso            );
+    plotTree->Branch("lepton1D0"               , &lepton1D0                );
+    plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
+    plotTree->Branch("lepton1Flav"             , &lepton1Flav              );
+    plotTree->Branch("lepton1Charge"           , &lepton1Charge            );
+    plotTree->Branch("deltaPhiLep1Met"         , &deltaPhiLep1Met          );
+    plotTree->Branch("deltaPhiVH"              , &deltaPhiVH               );
+    plotTree->Branch("deltaPhiVH_jesUp"        , &deltaPhiVH_jesUp         );
+    plotTree->Branch("deltaPhiVH_jesDown"      , &deltaPhiVH_jesDown       );
+    if(selection>=kWHLightFlavorCR && selection<=kWHPresel) {
+      plotTree->Branch("topMassLep1Met"          , &gt.topMassLep1Met        );
+      plotTree->Branch("topMassLep1Met_jesUp"    , &gt.topMassLep1Met_jesUp  );
+      plotTree->Branch("topMassLep1Met_jesDown"  , &gt.topMassLep1Met_jesDown);
+      plotTree->Branch("topWBosonEta"            , &gt.topWBosonEta          );
+      plotTree->Branch("topWBosonCosThetaCS"     , &gt.topWBosonCosThetaCS   );
+    }
+  } else if((selection<=kZllHLightFlavorCR && selection<=kZllHPresel) ||
+     (selection<=kZllHLightFlavorFJCR && selection<=kZllHFJPresel)) {
+    plotTree->Branch("ZBosonPt"                , &ZBosonPt                 );
+    plotTree->Branch("ZBosonEta"               , &ZBosonEta                );
+    plotTree->Branch("ZBosonPhi"               , &ZBosonPhi                );
+    plotTree->Branch("ZBosonM"                 , &ZBosonM                  );
+    plotTree->Branch("typeLepSel"              , &typeLepSel               );
+    plotTree->Branch("lepton1Pt"               , &lepton1Pt                );
+    plotTree->Branch("lepton1Eta"              , &lepton1Eta               );
+    plotTree->Branch("lepton1Phi"              , &lepton1Phi               );
+    plotTree->Branch("lepton1RelIso"           , &lepton1RelIso            );
+    plotTree->Branch("lepton1D0"               , &lepton1D0                );
+    plotTree->Branch("lepton1DZ"               , &lepton1DZ                );
+    plotTree->Branch("lepton2Pt"               , &lepton2Pt                );
+    plotTree->Branch("lepton2Eta"              , &lepton2Eta               );
+    plotTree->Branch("lepton2Phi"              , &lepton2Phi               );
+    plotTree->Branch("lepton2RelIso"           , &lepton2RelIso            );
+    plotTree->Branch("lepton2D0"               , &lepton2D0                );
+    plotTree->Branch("lepton2DZ"               , &lepton2DZ                );
   }
-  // Save fatjet variables if we are in a boosted category, or if we aren't using a boosted category
-  if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
+  // Save fatjet variables if we are in a boosted category
+  if((selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) ||
+     (selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel)) {
     plotTree->Branch("nIsojet"               , &nIsojet                  );
     plotTree->Branch("isojetNBtags"          , &isojetNBtags             );
     plotTree->Branch("fj1Tau32"              , &gt.fj1Tau32              );
@@ -405,28 +358,79 @@ bool vhbbPlotSkim(
     plotTree->Branch("fj1ECFN_2_4_40", (float*)dummyTree->GetBranch("fj1ECFN_2_4_40")->GetAddress());
     plotTree->Branch("fj1ECFN_3_4_40", (float*)dummyTree->GetBranch("fj1ECFN_3_4_40")->GetAddress());
   }
+  // Common variables
+  plotTree->Branch("nJet"                    , &gt.nJet                  );
+  plotTree->Branch("nJet_jesUp"              , &gt.nJet_jesUp            );
+  plotTree->Branch("nJet_jesDown"            , &gt.nJet_jesDown          );
+  plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
+  plotTree->Branch("hbbDijetPtUp"            , &hbbDijetPtUp             );
+  plotTree->Branch("hbbDijetPtDown"          , &hbbDijetPtDown           );
+  plotTree->Branch("hbbDijetPt"              , &hbbDijetPt               );
+  plotTree->Branch("hbbDijetMass"            , &hbbDijetMass             );
+  plotTree->Branch("hbbDijetMassUp"          , &hbbDijetMassUp           );
+  plotTree->Branch("hbbDijetMassDown"        , &hbbDijetMassDown         );
+  plotTree->Branch("bDiscrMin"               , &bDiscrMin                );
+  plotTree->Branch("bDiscrMax"               , &bDiscrMax                );
+  plotTree->Branch("hbbJet1Pt"               , &hbbJet1Pt                );
+  plotTree->Branch("hbbJet1Eta"              , &hbbJet1Eta               );
+  plotTree->Branch("hbbJet1Phi"              , &hbbJet1Phi               );
+  plotTree->Branch("hbbJet2Pt"               , &hbbJet2Pt                );
+  plotTree->Branch("hbbJet2Eta"              , &hbbJet2Eta               );
+  plotTree->Branch("hbbJet2Phi"              , &hbbJet2Phi               );
+  plotTree->Branch("hbbJet1PtUp"             , &hbbJet1PtUp              );
+  plotTree->Branch("hbbJet1PtDown"           , &hbbJet1PtDown            );
+  plotTree->Branch("hbbJet2PtUp"             , &hbbJet2PtUp              );
+  plotTree->Branch("hbbJet2PtDown"           , &hbbJet2PtDown            );
+  plotTree->Branch("sumEtSoft1"              , &gt.sumEtSoft1            );
+  plotTree->Branch("nSoft2"                  , &gt.nSoft2                );
+  plotTree->Branch("nSoft5"                  , &gt.nSoft5                );
+  plotTree->Branch("nSoft10"                 , &gt.nSoft10               );
+  plotTree->Branch("hbbCosThetaJJ"           , &gt.hbbCosThetaJJ         );
+  plotTree->Branch("hbbCosThetaCSJ1"         , &gt.hbbCosThetaCSJ1       );
+
+  plotTree->Branch("weight"                  , &weight                   );
+  plotTree->Branch("weight_VHCorrUp"         , &weight_VHCorrUp          );
+  plotTree->Branch("weight_VHCorrDown"       , &weight_VHCorrDown        );
+  plotTree->Branch("weight_pdfUp"            , &weight_pdfUp             );
+  plotTree->Branch("weight_pdfDown"          , &weight_pdfDown           );
+  plotTree->Branch("weight_QCDr1f2"          , &weight_QCDr1f2           );
+  plotTree->Branch("weight_QCDr1f5"          , &weight_QCDr1f5           );
+  plotTree->Branch("weight_QCDr2f1"          , &weight_QCDr2f1           );
+  plotTree->Branch("weight_QCDr2f2"          , &weight_QCDr2f2           );
+  plotTree->Branch("weight_QCDr5f1"          , &weight_QCDr5f1           );
+  plotTree->Branch("weight_QCDr5f5"          , &weight_QCDr5f5           );
+  plotTree->Branch("weight_NLOQCDrUp"        , &weight_NLOQCDrUp         );
+  plotTree->Branch("weight_NLOQCDrDown"      , &weight_NLOQCDrDown       );
+  plotTree->Branch("weight_NLOQCDfUp"        , &weight_NLOQCDfUp         );
+  plotTree->Branch("weight_NLOQCDfDown"      , &weight_NLOQCDfDown       );
+  plotTree->Branch("weight_lepSFUp"          , &weight_lepSFUp           );
+  plotTree->Branch("weight_btagBUp"          , &weight_btagBUp           );
+  plotTree->Branch("weight_btagBDown"        , &weight_btagBDown         );
+  plotTree->Branch("weight_btagMUp"          , &weight_btagMUp           );
+  plotTree->Branch("weight_btagMDown"        , &weight_btagMDown         );
+  plotTree->Branch("weight_cmvaLFUp"         , weight_cmvaLFUp         , "weight_cmvaLFUp[5][3]/F"        );
+  plotTree->Branch("weight_cmvaHFUp"         , weight_cmvaHFUp         , "weight_cmvaHFUp[5][3]/F"        );
+  plotTree->Branch("weight_cmvaHFStats1Up"   , weight_cmvaHFStats1Up   , "weight_cmvaHFStats1Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaHFStats2Up"   , weight_cmvaHFStats2Up   , "weight_cmvaHFStats2Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaLFStats1Up"   , weight_cmvaLFStats1Up   , "weight_cmvaLFStats1Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaLFStats2Up"   , weight_cmvaLFStats2Up   , "weight_cmvaLFStats2Up[5][3]/F"  );
+  plotTree->Branch("weight_cmvaCErr1Up"      , weight_cmvaCErr1Up      , "weight_cmvaCErr1Up[5][3]/F"     );
+  plotTree->Branch("weight_cmvaCErr2Up"      , weight_cmvaCErr2Up      , "weight_cmvaCErr2Up[5][3]/F"     );
+  plotTree->Branch("weight_cmvaJESUp"        , weight_cmvaJESUp        , "weight_cmvaJESUp[5][3]/F"       );
+  plotTree->Branch("weight_cmvaLFDown"       , weight_cmvaLFDown       , "weight_cmvaLFDown[5][3]/F"      );
+  plotTree->Branch("weight_cmvaHFDown"       , weight_cmvaHFDown       , "weight_cmvaHFDown[5][3]/F"      );
+  plotTree->Branch("weight_cmvaHFStats1Down" , weight_cmvaHFStats1Down , "weight_cmvaHFStats1Down[5][3]/F");
+  plotTree->Branch("weight_cmvaHFStats2Down" , weight_cmvaHFStats2Down , "weight_cmvaHFStats2Down[5][3]/F");
+  plotTree->Branch("weight_cmvaLFStats1Down" , weight_cmvaLFStats1Down , "weight_cmvaLFStats1Down[5][3]/F");
+  plotTree->Branch("weight_cmvaLFStats2Down" , weight_cmvaLFStats2Down , "weight_cmvaLFStats2Down[5][3]/F");
+  plotTree->Branch("weight_cmvaCErr1Down"    , weight_cmvaCErr1Down    , "weight_cmvaCErr1Down[5][3]/F"   );
+  plotTree->Branch("weight_cmvaCErr2Down"    , weight_cmvaCErr2Down    , "weight_cmvaCErr2Down[5][3]/F"   );
+  plotTree->Branch("weight_cmvaJESDown"      , weight_cmvaJESDown      , "weight_cmvaJESDown[5][3]/F"     );
   
   vector<double> theEWKCorrPars; 
   if(useHtBinnedVJetsKFactor) {
     unsigned htLow=0, htHigh=0;
     if(sample==kWjets || sample==kZjets) {
-      // Determine the HT bin
-      // Assume the sample names are of the form "/path/to/WJets_ht100to200.root"
-      //string inputFileNameStr(inputFileName);
-      //size_t htWord    = inputFileNameStr.find("ht");
-      //size_t toWord    = inputFileNameStr.find("to");
-      //size_t lastDot   = inputFileNameStr.find_last_of(".");
-      //string htLowStr   = inputFileNameStr.substr(htWord+2, toWord-htWord-2);
-      //string htHighStr  = inputFileNameStr.substr(toWord+2, lastDot-toWord-2);
-      //htLow   = atoi(htLowStr.c_str());
-      //if(htHighStr=="inf"||htHighStr=="Inf")
-      //  htHigh=99999;
-      //else
-      //  htHigh  = atoi(htHighStr.c_str());
-      //if(htLow==0 || htHigh==0) {
-      //  throw std::runtime_error(Form("Warning: Error parsing the filename \"%s\", probably it is not of the form \"/path/to/WJets_ht100to200.root\" (go fix that)", inputFileName.Data()));
-      //  return false;
-      //}
       theEWKCorrPars = EWKCorrPars(sample);
       if(theEWKCorrPars.size()<4) {
         throw std::runtime_error("Warning: theEWKCorrPars does not have 4 array elements, make sure function EWKCorrPars is being called correctly!");
@@ -462,12 +466,12 @@ bool vhbbPlotSkim(
     bLoad(b["runNumber"],ientry);
     bLoad(b["lumiNumber"],ientry);
     bLoad(b["eventNumber"],ientry);
-    // Analysis Preselection
+    
+    // Begin Analysis Preselection
     int nLooseLep=0;
     int iTightLep;
     if(selection>=kWHLightFlavorCR && selection<=kWHPresel) { // WH Resolved Category
       {
-        
         // Lepton multiplicity
         bLoad(b["nLooseLep"],ientry);
         if(gt.nLooseLep<1) continue; //N_al = 0
@@ -485,9 +489,7 @@ bool vhbbPlotSkim(
      
         // Jet multiplicity
         bLoad(b["nJet"],ientry);
-        if(debug) printf("hello from line %d (njet=%d)\n",__LINE__,gt.nJet);
         if     (gt.nJet<2) continue;
-        if(debug) printf("hello from line %d\n",__LINE__);
         if(useBoostedCategory) { 
           bLoad(b["nFatjet"],ientry);
           bLoad(b["fj1MSD_corr"],ientry);
@@ -509,9 +511,7 @@ bool vhbbPlotSkim(
         // Jet kinematics
         bLoad(b["nJot"],ientry);
         bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
-        if(debug) printf("hello from line %d\n",__LINE__);
         if(gt.hbbjtidx[0]>gt.nJot || gt.hbbjtidx[1]>gt.nJot) continue; // Bug fix
-        if(debug) printf("hello from line %d\n",__LINE__);
         bLoad(b["jetPt"],ientry);
         bLoad(b["jetRegFac"],ientry);
         bLoad(b["jetEta"],ientry);
@@ -604,7 +604,7 @@ bool vhbbPlotSkim(
         bLoad(b["topWBosonPt"],ientry);
         if(gt.topWBosonPt<50.) continue;
         if(debug) printf("passed W reco\n");
-      } // end preselection
+      } 
       
       // Met
       bLoad(b["pfmet"],ientry);
@@ -847,8 +847,163 @@ bool vhbbPlotSkim(
       deltaPhiVH_jesDown = fabs(TVector2::Phi_mpi_pi(topWBosonPhi_jesDown-gt.fj1Phi));
       deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(lepton1Phi-gt.pfmetphi));
       // End WH Boosted Category
+    } else if(selection>=kZllHLightFlavorCR && selection<=kZllHPresel) {
+      // Begin Z(ll)H Resolved Category
+        // Lepton multiplicity
+        bLoad(b["nLooseLep"],ientry);
+        if(gt.nLooseLep<2) continue; 
+        if(debug) printf("Passed lepton multiplicity\n");
+
+        // Trigger
+        if(sample==kData) {
+          bLoad(b["trigger"],ientry);
+          if( (gt.trigger & (1<<4 | 1<<5))==0 ) continue;
+        }
+        // Lepton ID and isolation
+        bLoad(b["nLooseElectron"],ientry);
+        bLoad(b["nTightElectron"],ientry);
+        bLoad(b["nLooseMuon"],ientry);
+        bLoad(b["nTightMuon"],ientry);
+        bLoad(b["muonSelBit"],ientry);
+        bLoad(b["muonPt"],ientry);
+        bLoad(b["electronSelBit"],ientry);
+        bLoad(b["electronPt"],ientry);
+
+        if(gt.muonPt[0]>20 && gt.muonPt[1]>10 && 
+          gt.muonPdgId[0]+gt.muonPdgId[1]==0 &&
+          (gt.muonSelBit[0] & 1<<3)!=0 &&
+          (gt.muonSelBit[1] & 1<<3)!=0 &&
+          (gt.trigger & 1<<4)!=0 )
+          typeLepSel=1;
+        else if(gt.electronPt[0]>25 && gt.electronPt[1]>15 && 
+          gt.electronPdgId[0]+gt.electronPdgId[1]==0 &&
+          (gt.electronSelBit[0] & 1<<5)!=0 &&
+          (gt.electronSelBit[1] & 1<<5)!=0 &&
+          (gt.trigger & 1<<5)!=0 )
+          typeLepSel=2;
+        if(typeLepSel!=1 && typeLepSel!=2) continue;
+        for(int i=0; i<gt.nLooseMuon; i++) {
+          if((gt.muonSelBit[i]&1<<0)!=0 && gt.muonPt[i]>5) nLooseLep++;
+        }
+        for(int i=0; i<gt.nLooseElectron; i++) {
+          if((gt.electronSelBit[i]&1<<5)!=0 && gt.electronPt[i]>15) nLooseLep++;
+        }
+        if(debug) printf("Passed lepton ID/iso multiplicity\n");
+
+        // Lepton kinematics
+        if     (typeLepSel==1) {
+          bLoad(b["muonEta"],ientry);
+          bLoad(b["muonPhi"],ientry);
+          bLoad(b["muonD0"],ientry);
+          bLoad(b["muonDZ"],ientry);
+          bLoad(b["muonCombIso"],ientry);
+          bLoad(b["muonPdgId"],ientry);
+          lepton1Pt     = gt.muonPt[0];
+          lepton1Eta    = gt.muonEta[0];
+          lepton1Phi    = gt.muonPhi[0]; 
+          lepton1D0     = gt.muonD0[0];
+          lepton1DZ     = gt.muonDZ[0];
+          lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
+          lepton2Pt     = gt.muonPt[1];
+          lepton2Eta    = gt.muonEta[1];
+          lepton2Phi    = gt.muonPhi[1]; 
+          lepton2D0     = gt.muonD0[1];
+          lepton2DZ     = gt.muonDZ[1];
+          lepton2RelIso = gt.muonCombIso[1]/gt.muonPt[1];
+        } else if(typeLepSel==2) {
+          bLoad(b["electronEta"],ientry);
+          bLoad(b["electronPhi"],ientry);
+          bLoad(b["electronD0"],ientry);
+          bLoad(b["electronDZ"],ientry);
+          bLoad(b["electronCombIso"],ientry);
+          bLoad(b["electronPdgId"],ientry);
+          lepton1Pt     = gt.electronPt[0]; 
+          lepton1Eta    = gt.electronEta[0];
+          lepton1Phi    = gt.electronPhi[0];
+          lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
+          lepton1D0     = gt.electronD0[0];
+          lepton1DZ     = gt.electronDZ[0];
+          lepton2Pt     = gt.electronPt[1]; 
+          lepton2Eta    = gt.electronEta[1];
+          lepton2Phi    = gt.electronPhi[1];
+          lepton2RelIso = gt.electronCombIso[1]/gt.electronPt[1];
+          lepton2D0     = gt.electronD0[1];
+          lepton2DZ     = gt.electronDZ[1];
+        }
+        if(debug) printf("Passed lepton kinematics\n");
+        
+        // TEMP: Move to PandaAnalysis
+        TLorentzVector ZBosonP4, lepton1P4, lepton2P4;
+        lepton1P4.SetPtEtaPhiM( lepton1Pt, lepton1Eta, lepton1Phi, typeLepSel==1? 0.106:511e-6);
+        lepton2P4.SetPtEtaPhiM( lepton2Pt, lepton2Eta, lepton2Phi, typeLepSel==1? 0.106:511e-6);
+        ZBosonP4 = lepton1P4 + lepton2P4;
+        ZBosonPt = ZBosonP4.Pt();
+        ZBosonEta = ZBosonP4.Eta();
+        ZBosonPhi = ZBosonP4.Phi();
+        ZBosonM = ZBosonP4.M();
+        if(ZBosonPt<30) continue;
+        if(ZBosonM<10) continue;
+        if(debug) printf("Passed Z boson reconstruction\n");
+        
+        // Jet multiplicity
+        bLoad(b["nJet"],ientry);
+        if     (gt.nJet<2) continue;
+        if(useBoostedCategory) { 
+          bLoad(b["nFatjet"],ientry);
+          bLoad(b["fj1MSD_corr"],ientry);
+          bLoad(b["fj1Pt"],ientry);
+          bLoad(b["fj1Eta"],ientry);
+          bLoad(b["fj1Phi"],ientry);
+          float temp_deltaPhiVH = fabs(TVector2::Phi_mpi_pi(ZBosonPhi-gt.fj1Phi));
+          if(
+            gt.nFatjet != 0 && 
+            gt.fj1Pt >= 250 && 
+            gt.fj1MSD_corr >= 40 &&
+            fabs(gt.fj1Eta) < 2.4 &&
+            gt.topWBosonPt >= 250 &&
+            temp_deltaPhiVH >= 2.5
+          ) continue;
+        }
+        // Jet kinematics
+        bLoad(b["nJot"],ientry);
+        bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
+        if(gt.hbbjtidx[0]>gt.nJot || gt.hbbjtidx[1]>gt.nJot) continue; // Bug fix
+        bLoad(b["jetPt"],ientry);
+        bLoad(b["jetRegFac"],ientry);
+        bLoad(b["jetEta"],ientry);
+        bLoad(b["jetPhi"],ientry);
+        hbbJet1Pt=gt.jetRegFac[0]*gt.jetPt[gt.hbbjtidx[0]]; hbbJet1Eta=gt.jetEta[gt.hbbjtidx[0]]; hbbJet1Phi=gt.jetPhi[gt.hbbjtidx[0]];
+        hbbJet2Pt=gt.jetRegFac[1]*gt.jetPt[gt.hbbjtidx[1]]; hbbJet2Eta=gt.jetEta[gt.hbbjtidx[1]]; hbbJet2Phi=gt.jetPhi[gt.hbbjtidx[1]];
+        if(debug) printf("hbb jet1 pt %.2f, jet2 pt %.2f\n", hbbJet1Pt, hbbJet2Pt);
+        if(hbbJet1Pt<25 || hbbJet2Pt<25) continue;
+        
+        bLoad(b["hbbpt_reg"],ientry);
+        bLoad(b["hbbeta"],ientry);
+        bLoad(b["hbbphi"],ientry);
+        bLoad(b["hbbm_reg"],ientry);
+        hbbDijetPt = gt.hbbpt_reg;
+        hbbDijetMass = gt.hbbm_reg;
+        if(debug) printf("hbbDijetPt %.2f, hbbDijetMass %.2f\n", hbbDijetPt, hbbDijetMass); 
+        if(hbbDijetPt<50.) continue;
+        if(hbbDijetMass<0 || hbbDijetMass>250.) continue;
+        if(debug) printf("passed jet kinematics\n");
+
+        
+      // Met
+      bLoad(b["pfmet"],ientry);
+      bLoad(b["pfmetUp"],ientry);
+      bLoad(b["pfmetDown"],ientry);
+      bLoad(b["pfmetphi"],ientry);
+      
+      // Jet B-tagging
+      bLoad(b["jetCMVA"],ientry);
+      bDiscrMax=gt.jetCMVA[gt.hbbjtidx[0]];
+      bDiscrMin=gt.jetCMVA[gt.hbbjtidx[1]];
+      // End Z(ll)H Resolved Category
     }
-    if((selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel)) {
+    
+    if((selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) ||
+       (selection<=kZllHLightFlavorFJCR && selection<=kZllHFJPresel)) {
       bLoad(b["nFatjet"],ientry);
       bLoad(b["fj1Eta"],ientry);
       bLoad(b["fj1MSD"],ientry);
@@ -1108,9 +1263,9 @@ bool vhbbPlotSkim(
       cut_jesUp["dPhiVH"     ] = deltaPhiVH_jesUp>2.5;
       cut_jesUp["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
       cut_jesUp["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
-      cut_jesUp["mH_WHFJSR"  ] = ((fj1MSD_corr_jesUp>=MSDmin));
-      cut_jesUp["mH_WHHFCR"  ] = fj1MSD_corr_jesUp<MSDmin;
-      cut_jesUp["mH_cutoff"  ] = fj1MSD_corr_jesUp>MSDcutoff;
+      //cut_jesUp["mH_WHFJSR"  ] = ((fj1MSD_corr_jesUp>=MSDmin) && fj1MSD_corr_jesUp<MSDmax);
+      //cut_jesUp["mH_WHHFCR"  ] = fj1MSD_corr_jesUp<MSDmin;
+      //cut_jesUp["mH_cutoff"  ] = fj1MSD_corr_jesUp>MSDcutoff;
       cut_jesUp["isojetBtag" ] = isojetNBtags_jesUp>0;
       cut_jesUp["isojetBVeto"] = isojetNBtags_jesUp==0;
       if(passAllCuts( cut_jesUp, cutsWHLightFlavorFJCR)) selectionBits_jesUp |= kWHLightFlavorFJCR;
@@ -1125,9 +1280,9 @@ bool vhbbPlotSkim(
       cut_jesDown["dPhiVH"     ] = deltaPhiVH_jesDown>2.5;
       cut_jesDown["DoubleBTag" ] = gt.fj1DoubleCSV>=0.8;
       cut_jesDown["DoubleBVeto"] = gt.fj1DoubleCSV<0.8;
-      cut_jesDown["mH_WHFJSR"  ] = ((fj1MSD_corr_jesDown>=MSDmin));
-      cut_jesDown["mH_WHHFCR"  ] = fj1MSD_corr_jesDown<MSDmin;
-      cut_jesDown["mH_cutoff"  ] = fj1MSD_corr_jesDown>MSDcutoff;
+      //cut_jesDown["mH_WHFJSR"  ] = ((fj1MSD_corr_jesDown>=MSDmin) && fj1MSD_corr_jesDown<MSDmax);
+      //cut_jesDown["mH_WHHFCR"  ] = fj1MSD_corr_jesDown<MSDmin;
+      //cut_jesDown["mH_cutoff"  ] = fj1MSD_corr_jesDown>MSDcutoff;
       cut_jesDown["isojetBtag" ] = isojetNBtags_jesDown>0;
       cut_jesDown["isojetBVeto"] = isojetNBtags_jesDown==0;
       if(passAllCuts( cut_jesDown, cutsWHLightFlavorFJCR)) selectionBits_jesDown |= kWHLightFlavorFJCR;
@@ -1167,9 +1322,9 @@ bool vhbbPlotSkim(
         float stitchWeight=1.;
         bLoad(b["trueGenBosonPt"],ientry);
         bLoad(b["nB"],ientry);
-        bLoad(b["nBGenJets"],ientry);
+        bLoad(b["nStatus2BHadrons"],ientry);
         bool bQuarkEnriched  = gt.nB > 0;
-        bool bHadronEnriched = gt.nBGenJets>0 && gt.nB==0;
+        bool bHadronEnriched = gt.nStatus2BHadrons>0 && gt.nB==0;
         if((!bQuarkEnriched && !bHadronEnriched) || gt.trueGenBosonPt<100) {
           stitchWeight=1;
         } else if(bQuarkEnriched) {
@@ -1338,53 +1493,34 @@ bool vhbbPlotSkim(
 
     }
     // Category Assignment
-    switch(sample) {
-      case kData:
-        theCategory=kPlotData; break;
-      case kQCD:
-        theCategory=kPlotQCD;  break;
-      case kVZ:
-        //bLoad(b["nB"],ientry);
-        //if(gt.nB>=2) theCategory=kPlotVZbb;
-        //else      theCategory=kPlotVVLF;
+    int countB; if(sample!=kData) {
+      if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
+        bLoad(b["fj1GenNumB"],ientry);
+        countB = gt.fj1GenNumB;
+      } else {
         bLoad(b["nBGenJets"],ientry);
-        if(gt.nBGenJets>=2) theCategory=kPlotVZbb;
-        else theCategory=kPlotVVLF;
-        break;
-      case kWW:
-        theCategory=kPlotVVLF; break;
-      case kTT:
-        theCategory=kPlotTT; break;
-      case kTop:
-        theCategory=kPlotTop; break;
-      case kWjets:
-        //bLoad(b["nB"],ientry);
-        //if(gt.nB>=2) theCategory=kPlotWbb;
-        //else if(gt.nB==1) theCategory=kPlotWb;
-        //else theCategory=kPlotWLF; // light flavor
-        //if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
-        //} else {
-          bLoad(b["nBGenJets"],ientry);
-          if(gt.nBGenJets>=2) theCategory=kPlotWbb;
-          else if(gt.nBGenJets==1) theCategory=kPlotWb;
-          else theCategory=kPlotWLF; // light flavor
-          break;
-        //}
-      case kZjets:
-        //if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
-        //} else {
-          bLoad(b["nBGenJets"],ientry);
-          if(gt.nBGenJets>=2) theCategory=kPlotZbb;
-          else if(gt.nBGenJets==1) theCategory=kPlotZb;
-          else theCategory=kPlotZLF; // light flavor
-          break;
-        //}
-      case kVH:
-        theCategory=kPlotVH; break;
-      default:
-        theCategory=nPlotCategories;
-        break;
+        countB = gt.nBGenJets;
+      }
     }
+    if     (sample==kData ) theCategory=kPlotData ;
+    else if(sample==kQCD  ) theCategory=kPlotQCD  ;
+    else if(sample==kWW   ) theCategory=kPlotVVLF ;
+    else if(sample==kTT   ) theCategory=kPlotTT   ; 
+    else if(sample==kTop  ) theCategory=kPlotTop  ;
+    else if(sample==kVH   ) theCategory=kPlotVH   ;
+    else if(sample==kWjets) {
+      if(countB>1) theCategory=kPlotWbb;
+      else if(countB>0) theCategory=kPlotWb;
+      else theCategory=kPlotWLF;
+    } else if(sample==kZjets) {
+      if(countB>1) theCategory=kPlotZbb;
+      else if(countB>0) theCategory=kPlotZb;
+      else theCategory=kPlotZLF;
+    } else if(sample==kVZ) {
+      if(countB>1) theCategory=kPlotVZbb;
+      else theCategory=kPlotVVLF;
+    } else theCategory=nPlotCategories;
+
     plotTree->Fill();
     //if(ientry%100000==0) printf("\tread %d bytes\n",nBytesRead);
   }

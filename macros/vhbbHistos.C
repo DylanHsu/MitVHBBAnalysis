@@ -5,7 +5,7 @@
 #include <TCanvas.h>
 #include <TF1.h>
 #include <TFile.h>
-#include <TH1D.h>
+#include <TH1F.h>
 #include <THStack.h>
 #include <TLegend.h>
 #include <TLine.h>
@@ -29,7 +29,7 @@ const vector<TString> wptCorrFilenames = {
   "MitVHBBAnalysis/wptCorrections_Resolved_Linear.root",
   "MitVHBBAnalysis/wptCorrections_Boosted_Linear.root",
 };
-const bool useIgnorantVHFSFs=true;
+const bool useIgnorantVHFSFs=false;
 
 using namespace vhbbPlot;
 void vhbbHistos(
@@ -98,42 +98,27 @@ void vhbbHistos(
       MVAVarName="Subleading H(bb) CMVA";
       sprintf(shapeType,"lesserCMVAShape");
     } else if(selection==kWHSR) {
-      MVAbins={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.85,0.9,0.94,1.00};
+      MVAbins={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.9,1.00};
       //MVAbins={-1,-0.5,0,0.30,0.5,0.70,0.85,1.00};
       MVAVarName="BDT Output";
       sprintf(shapeType,"singleClassBDTShape"); 
     } else if(selection>=kWHLightFlavorFJCR && selection<kWHFJSR) {
-      if(selection==kWHHeavyFlavorFJCR) MVAbins={40,50,60,70,80};
-      else                              MVAbins={40,50,60,70,80,100,150,200};
+      /*if(selection==kWHHeavyFlavorFJCR) {
+        MVAbins={0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1};
+        MVAVarName="Min. subjet B-tag (CSV)";
+        sprintf(shapeType,"sjBtagShape");
+      } else {
+        MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
+        MVAVarName="Fatjet soft drop mass [GeV]";
+        sprintf(shapeType,"softDropMassShape");
+      }*/
+      if(selection==kWHHeavyFlavorFJCR) MVAbins={40,45,50,55,60,65,70,75,80};
+      else                              MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
       MVAVarName="Fatjet soft drop mass [GeV]";
       sprintf(shapeType,"softDropMassShape");
     } else if(selection==kWHFJSR) {
-      //MVAbins={-1,-.5,0,0.40,0.75,1.00};
-      MVAbins={-1,0,.2,.4,0.6,0.7,1};
-      MVAVarName="BDT Output";
-      sprintf(shapeType,"singleClassBDTShape"); 
-    }
-    else throw std::runtime_error("bad selection argument");
-  } else if(MVAVarType==4) { // cut and count sanity check
-    if(selection==kWHLightFlavorCR) {
-      MVAbins={-1,1};
-      MVAVarName="Subleading H(bb) CMVA";
-      sprintf(shapeType,"lesserCMVAShape");
-    } else if(selection==kWHHeavyFlavorCR || selection==kWH2TopCR) {
-      MVAbins={-1,1};
-      MVAVarName="Subleading H(bb) CMVA";
-      sprintf(shapeType,"lesserCMVAShape");
-    } else if(selection==kWHSR) {
-      MVAbins={-1,1};
-      MVAVarName="BDT Output";
-      sprintf(shapeType,"singleClassBDTShape"); 
-    } else if(selection>=kWHLightFlavorFJCR && selection<kWHFJSR) {
-      if(selection==kWHHeavyFlavorFJCR) MVAbins={40,80};
-      else                              MVAbins={40,200};
-      MVAVarName="Fatjet soft drop mass [GeV]";
-      sprintf(shapeType,"softDropMassShape");
-    } else if(selection==kWHFJSR) {
-      MVAbins={-1,1};
+      //MVAbins={-1,0,.2,.4,0.6,0.7,1};
+      MVAbins={-0.6,-0.2,0,0.2,0.3,0.6};
       MVAVarName="BDT Output";
       sprintf(shapeType,"singleClassBDTShape"); 
     }
@@ -176,6 +161,7 @@ void vhbbHistos(
   float hbbJet2Pt, hbbJet2Eta, hbbJet2Phi, hbbJet2PtUp, hbbJet2PtDown;
   float topWBosonPt, topWBosonEta, topWBosonPhi, topWBosonCosThetaCS;
   float topWBosonPt_jesUp, topWBosonPt_jesDown, topWBosonPhi_jesUp, topWBosonPhi_jesDown;
+  float fj1WPtBalance,fj1WPtBalance_jesUp,fj1WPtBalance_jesDown;
   float hbbDijetPt, hbbDijetPtUp, hbbDijetPtDown;
   float hbbDijetMass, hbbDijetMassUp, hbbDijetMassDown;
   float hbbCosThetaJJ, hbbCosThetaCSJ1;
@@ -623,17 +609,31 @@ void vhbbHistos(
   float dPhil1fj1, dPhiWfj1, dEtal1fj1;
   float mva_nIsojet;
   float mva_lepton1Charge, mva_lepton1Flav;
-
+  
+  
+  
+  char regionName[128];
+  TString massSuffix="";
+  if(selection==kWHHeavyFlavorCR) { // Mass splitting for the WH HF CR
+    if(lowMass) massSuffix="LowMass";
+    else        massSuffix="HighMass";
+  }
+  char leptonChar='l';
+  if(theLepSel==1) leptonChar='m';
+  if(theLepSel==2) leptonChar='e';
+  sprintf(regionName, "W%cn%s%s", leptonChar,selectionNames[selection].Data(),massSuffix.Data());
+  TFile *shapesFile = TFile::Open(Form("MitVHBBAnalysis/datacards/%s/hists_%s.root",dataCardDir.Data(),regionName),"recreate");
   // construct histograms
   int nPlots=512;
   vector<float> xmin(nPlots), xmax(nPlots);  vector<int> nbins(nPlots);
   vector<TString> histoNames(nPlots), histoTitles(nPlots);
   
   int pMVAVar=-1;
+  float bbmin = (selection==kWHFJSR||selection==kWHHeavyFlavorFJCR||selection==kWHTT2bFJCR)? 0.8:-1;
   if(selection==kWHLightFlavorCR || selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHSR) { int p=0;
     histoNames[p]="pTH"                    ; histoTitles[p]="Higgs daughter dijet p_{T} [GeV]"           ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
     histoNames[p]="mH"                     ; histoTitles[p]="Higgs daughter dijet mass [GeV]"            ; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
-    histoNames[p]="WpT"                    ; histoTitles[p]="W boson p_{T} [GeV]"                        ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
+    histoNames[p]="WpT"                    ; histoTitles[p]="W boson p_{T} [GeV]"                        ; nbins[p]=  25; xmin[p]=   100; xmax[p]=   350; p++; 
     histoNames[p]="deltaPhiVH"             ; histoTitles[p]="#Delta#phi(H,W) [Rad]"                      ; nbins[p]=  32; xmin[p]=     0; xmax[p]= 3.142; p++; 
     histoNames[p]="pTBalanceDijetW"        ; histoTitles[p]="Higgs daughter dijet p_{T} / W boson p_{T}" ; nbins[p]=  30; xmin[p]=     0; xmax[p]=     2; p++; 
     histoNames[p]="lepton1Pt"              ; histoTitles[p]="Lepton p_{T} [GeV]"                         ; nbins[p]=  23; xmin[p]=    20; xmax[p]=   250; p++; 
@@ -650,7 +650,7 @@ void vhbbHistos(
     histoNames[p]="bDiscrMin"              ; histoTitles[p]="Lesser CMVA of Higgs daughter jets"         ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
     histoNames[p]="bDiscrMax"              ; histoTitles[p]="Greater CMVA of Higgs daughter jets"        ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
     histoNames[p]="topMassLep1Met"         ; histoTitles[p]="Reco top mass [GeV]"                        ; nbins[p]=  22; xmin[p]=   60.; xmax[p]=  500.; p++; 
-    histoNames[p]="nJet"                   ; histoTitles[p]="N AK4 CHS jets pT>20"                       ; nbins[p]=   8; xmin[p]=    0.; xmax[p]=    8.; p++; 
+    histoNames[p]="nJet"                   ; histoTitles[p]="N AK4 CHS jets"                             ; nbins[p]=   8; xmin[p]=    0.; xmax[p]=    8.; p++; 
     histoNames[p]="sumEtSoft1"             ; histoTitles[p]="#sum E_{T}(soft 1)"                         ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++; 
     histoNames[p]="nSoft2"                 ; histoTitles[p]="N^{soft}_{2}"                               ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=   25.; p++; 
     histoNames[p]="nSoft5"                 ; histoTitles[p]="N^{soft}_{5}"                               ; nbins[p]=  12; xmin[p]=    0.; xmax[p]=   12.; p++; 
@@ -670,16 +670,15 @@ void vhbbHistos(
     histoNames[p]="dEtaWb1"                ; histoTitles[p]="|#Delta#eta(W,b1)|"                         ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    5.; p++; 
     histoNames[p]="dEtaWb2"                ; histoTitles[p]="|#Delta#eta(W,b2)|"                         ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    5.; p++; 
     histoNames[p]="dEtab1b2"               ; histoTitles[p]="|#Delta#eta(b1,b2)|"                        ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=    5.; p++; 
-    
     histoNames[p]="nIsojet"                ; histoTitles[p]="N central AK4 jets"                         ; nbins[p]=   7; xmin[p]=    0.; xmax[p]=    7.; p++;
     histoNames[p]="fj1Pt"                  ; histoTitles[p]="FJ p_{T} [GeV]"                             ; nbins[p]=  20; xmin[p]=  200.; xmax[p]=  600.; p++;
     histoNames[p]="fj1Eta"                 ; histoTitles[p]="FJ #eta"                                    ; nbins[p]=  20; xmin[p]=  -2.5; xmax[p]=   2.5; p++;
-    histoNames[p]="maxSubjetCSV"           ; histoTitles[p]="FJ greater subjet B-tag (CSV)"              ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
-    histoNames[p]="minSubjetCSV"           ; histoTitles[p]="FJ lesser subjet B-tag (CSV)"               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
+    histoNames[p]="maxSubjetCSV"           ; histoTitles[p]="FJ max subjet B-tag (CSV)"                  ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
+    histoNames[p]="minSubjetCSV"           ; histoTitles[p]="FJ min subjet B-tag (CSV)"                  ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1DoubleCSV"           ; histoTitles[p]="FJ double B-tag"                            ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++;
     histoNames[p]="fj1HTTMass"             ; histoTitles[p]="FJ HTT mass [GeV]"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  200.; p++;
     histoNames[p]="fj1HTTFRec"             ; histoTitles[p]="FJ HTT f_{rec}"                             ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=   0.4; p++;
-    histoNames[p]="fj1MSD_corr"            ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++;
+    histoNames[p]="fj1MSD_corr"            ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  32; xmin[p]=   40.; xmax[p]=  200.; p++;
     histoNames[p]="fj1Tau32"               ; histoTitles[p]="FJ #tau_{32}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau32SD"             ; histoTitles[p]="FJ #tau_{32}^{SD}"                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau21"               ; histoTitles[p]="FJ #tau_{21}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
@@ -746,10 +745,10 @@ void vhbbHistos(
     histoNames[p]="fj1Eta"                 ; histoTitles[p]="FJ #eta"                                    ; nbins[p]=  20; xmin[p]=  -2.5; xmax[p]=   2.5; p++;
     histoNames[p]="maxSubjetCSV"           ; histoTitles[p]="FJ greater subjet B-tag (CSV)"              ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="minSubjetCSV"           ; histoTitles[p]="FJ lesser subjet B-tag (CSV)"               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
-    histoNames[p]="fj1DoubleCSV"           ; histoTitles[p]="FJ double B-tag"                            ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++;
+    histoNames[p]="fj1DoubleCSV"           ; histoTitles[p]="FJ double B-tag"                            ; nbins[p]=  40; xmin[p]= bbmin; xmax[p]=    1.; p++;
     histoNames[p]="fj1HTTMass"             ; histoTitles[p]="FJ HTT mass [GeV]"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  200.; p++;
     histoNames[p]="fj1HTTFRec"             ; histoTitles[p]="FJ HTT f_{rec}"                             ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=   0.4; p++;
-    histoNames[p]="fj1MSD_corr"            ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++;
+    histoNames[p]="fj1MSD_corr"            ; histoTitles[p]="FJ soft drop mass"                          ; nbins[p]=  32; xmin[p]=   40.; xmax[p]=  200.; p++;
     histoNames[p]="fj1Tau32"               ; histoTitles[p]="FJ #tau_{32}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau32SD"             ; histoTitles[p]="FJ #tau_{32}^{SD}"                          ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
     histoNames[p]="fj1Tau21"               ; histoTitles[p]="FJ #tau_{21}"                               ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1.; p++;
@@ -760,6 +759,7 @@ void vhbbHistos(
     histoNames[p]="deltaPhiVH"             ; histoTitles[p]="#Delta#phi(W,H) [Rad]"                      ; nbins[p]=  20; xmin[p]= 1.571; xmax[p]= 3.142; p++;
     histoNames[p]="deltaPhiLep1Met"        ; histoTitles[p]="#Delta#phi(lepton,p_{T}^{miss}) [Rad]"      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 3.142; p++;
     histoNames[p]="topWBosonPt"            ; histoTitles[p]="W boson p_{T} [GeV]"                        ; nbins[p]=  20; xmin[p]=  140.; xmax[p]=  540.; p++;
+    histoNames[p]="fj1WPtBalance"          ; histoTitles[p]="|FJ p_{T}/W boson p_{T}|"                   ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=    3.; p++;
     histoNames[p]="mT"                     ; histoTitles[p]="W boson m_{T} [GeV]"                        ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  200.; p++;
     histoNames[p]="pfmet"                  ; histoTitles[p]="p_{T}^{miss} [GeV]"                         ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=  500.; p++;
     histoNames[p]="pfmetphi"               ; histoTitles[p]="#phi(p_{T}^{miss}) [Rad]"                   ; nbins[p]=  32; xmin[p]=     0; xmax[p]= 3.142; p++; 
@@ -816,7 +816,6 @@ void vhbbHistos(
     histoNames[p]="psi021004021003"        ; histoTitles[p]="#psi(2,1.0,4,2,1.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
     histoNames[p]="psi012003012002"        ; histoTitles[p]="#psi(1,2.0,3,1,2.0,2)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.1  ; p++;
     histoNames[p]="psi022004022003"        ; histoTitles[p]="#psi(2,2.0,4,2,2.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]= 0.04 ; p++;
-
     histoNames[p]="psi012002011002"        ; histoTitles[p]="#psi(1,2.0,2,1,1.0,2)"                      ; nbins[p]=  20; xmin[p]=   2.5; xmax[p]=   7.5; p++;
     histoNames[p]="psi014003022003"        ; histoTitles[p]="#psi(1,4.0,3,2,2.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    1 ; p++;
     histoNames[p]="psi031003014003"        ; histoTitles[p]="#psi(3,1.0,3,1,4.0,3)"                      ; nbins[p]=  20; xmin[p]=    0.; xmax[p]=    5 ; p++;
@@ -833,105 +832,126 @@ void vhbbHistos(
   }
   assert(pMVAVar!=-1);
 
-  TH1D *histos[512][nPlotCategories];
+  TH1F *histos[512][nPlotCategories];
   for(int p=0; p<nPlots; p++) {
     if(histoNames[p]=="") continue;
     for(theCategory=0; theCategory<nPlotCategories; theCategory++) {
-
       if(histoNames[p]=="MVAVar") {
-        histos[p][theCategory] = new TH1D(Form("histo%d",theCategory), histoTitles[p], MVAbins.size()-1, MVAbins.data());
+        histos[p][theCategory] = new TH1F(Form("histo%d",theCategory), histoTitles[p], MVAbins.size()-1, MVAbins.data());
       } else
-        histos[p][theCategory] = new TH1D(Form("histo%d",theCategory), histoTitles[p], nbins[p], xmin[p], xmax[p]);
+        histos[p][theCategory] = new TH1F(Form("histo%d",theCategory), histoTitles[p], nbins[p], xmin[p], xmax[p]);
       histos[p][theCategory]->Sumw2();
       histos[p][theCategory]->SetDirectory(0);
     }
   }
-  TH1D *histo_VHCorrUp    [nPlotCategories];
-  TH1D *histo_VHCorrDown  [nPlotCategories];
-  //TH1D *histo_pdfUp    [nPlotCategories];
-  //TH1D *histo_pdfDown  [nPlotCategories];
-  TH1D *histo_QCDr1f2  [nPlotCategories];
-  TH1D *histo_QCDr1f5  [nPlotCategories];
-  TH1D *histo_QCDr2f1  [nPlotCategories];
-  TH1D *histo_QCDr2f2  [nPlotCategories];
-  TH1D *histo_QCDr5f1  [nPlotCategories];
-  TH1D *histo_QCDr5f5  [nPlotCategories];
-  TH1D *histo_NLOQCDrUp   [nPlotCategories];
-  TH1D *histo_NLOQCDrDown [nPlotCategories];
-  TH1D *histo_NLOQCDfUp   [nPlotCategories];
-  TH1D *histo_NLOQCDfDown [nPlotCategories];
-  TH1D *histo_QCDrScaleUp   [nPlotCategories];
-  TH1D *histo_QCDrScaleDown [nPlotCategories];
-  TH1D *histo_QCDfScaleUp   [nPlotCategories];
-  TH1D *histo_QCDfScaleDown [nPlotCategories];
-  TH1D *histo_eleSFUp  [nPlotCategories],*histo_eleSFDown[nPlotCategories];
-  TH1D *histo_muSFUp   [nPlotCategories],*histo_muSFDown [nPlotCategories];
-  TH1D *histo_cmvaJESUp     [5][3][nPlotCategories], *histo_cmvaJESDown     [5][3][nPlotCategories]; 
-  TH1D *histo_cmvaLFUp      [5][3][nPlotCategories], *histo_cmvaLFDown      [5][3][nPlotCategories]; 
-  TH1D *histo_cmvaHFUp      [5][3][nPlotCategories], *histo_cmvaHFDown      [5][3][nPlotCategories]; 
-  TH1D *histo_cmvaHFStats1Up[5][3][nPlotCategories], *histo_cmvaHFStats1Down[5][3][nPlotCategories]; 
-  TH1D *histo_cmvaHFStats2Up[5][3][nPlotCategories], *histo_cmvaHFStats2Down[5][3][nPlotCategories]; 
-  TH1D *histo_cmvaLFStats1Up[5][3][nPlotCategories], *histo_cmvaLFStats1Down[5][3][nPlotCategories]; 
-  TH1D *histo_cmvaLFStats2Up[5][3][nPlotCategories], *histo_cmvaLFStats2Down[5][3][nPlotCategories]; 
-  TH1D *histo_cmvaCErr1Up   [5][3][nPlotCategories], *histo_cmvaCErr1Down   [5][3][nPlotCategories]; 
-  TH1D *histo_cmvaCErr2Up   [5][3][nPlotCategories], *histo_cmvaCErr2Down   [5][3][nPlotCategories]; 
-  TH1D *histo_VGluUp   [nPlotCategories];
-  TH1D *histo_VGluDown [nPlotCategories];
-  TH1D *histo_wptCorrUp   [nPlotCategories];
-  TH1D *histo_wptCorrDown [nPlotCategories];
-  TH1D *histo_wptCorrNone [nPlotCategories];
-  TH1D *histo_jesUp   [nPlotCategories];
-  TH1D *histo_jesDown [nPlotCategories];
+  TH1F *histo_VHCorrUp    [nPlotCategories];
+  TH1F *histo_VHCorrDown  [nPlotCategories];
+  TH1F *histo_QCDr1f2  [nPlotCategories];
+  TH1F *histo_QCDr1f5  [nPlotCategories];
+  TH1F *histo_QCDr2f1  [nPlotCategories];
+  TH1F *histo_QCDr2f2  [nPlotCategories];
+  TH1F *histo_QCDr5f1  [nPlotCategories];
+  TH1F *histo_QCDr5f5  [nPlotCategories];
+  TH1F *histo_NLOQCDrUp   [nPlotCategories];
+  TH1F *histo_NLOQCDrDown [nPlotCategories];
+  TH1F *histo_NLOQCDfUp   [nPlotCategories];
+  TH1F *histo_NLOQCDfDown [nPlotCategories];
+  TH1F *histo_QCDrScaleUp   [nPlotCategories];
+  TH1F *histo_QCDrScaleDown [nPlotCategories];
+  TH1F *histo_QCDfScaleUp   [nPlotCategories];
+  TH1F *histo_QCDfScaleDown [nPlotCategories];
+  TH1F *histo_eleSFUp  [nPlotCategories],*histo_eleSFDown[nPlotCategories];
+  TH1F *histo_muSFUp   [nPlotCategories],*histo_muSFDown [nPlotCategories];
+  TH1F *histo_cmvaJESUp     [5][3][nPlotCategories], *histo_cmvaJESDown     [5][3][nPlotCategories]; 
+  TH1F *histo_cmvaLFUp      [5][3][nPlotCategories], *histo_cmvaLFDown      [5][3][nPlotCategories]; 
+  TH1F *histo_cmvaHFUp      [5][3][nPlotCategories], *histo_cmvaHFDown      [5][3][nPlotCategories]; 
+  TH1F *histo_cmvaHFStats1Up[5][3][nPlotCategories], *histo_cmvaHFStats1Down[5][3][nPlotCategories]; 
+  TH1F *histo_cmvaHFStats2Up[5][3][nPlotCategories], *histo_cmvaHFStats2Down[5][3][nPlotCategories]; 
+  TH1F *histo_cmvaLFStats1Up[5][3][nPlotCategories], *histo_cmvaLFStats1Down[5][3][nPlotCategories]; 
+  TH1F *histo_cmvaLFStats2Up[5][3][nPlotCategories], *histo_cmvaLFStats2Down[5][3][nPlotCategories]; 
+  TH1F *histo_cmvaCErr1Up   [5][3][nPlotCategories], *histo_cmvaCErr1Down   [5][3][nPlotCategories]; 
+  TH1F *histo_cmvaCErr2Up   [5][3][nPlotCategories], *histo_cmvaCErr2Down   [5][3][nPlotCategories]; 
+  vector<TString> bTagShapeUncNames = {
+    "CMS_vhbb_bTagWeightJES_Pt%d_Eta%d"     , 
+    "CMS_vhbb_bTagWeightLF_Pt%d_Eta%d"      , 
+    "CMS_vhbb_bTagWeightHF_Pt%d_Eta%d"      , 
+    "CMS_vhbb_bTagWeightHFStats1_Pt%d_Eta%d", 
+    "CMS_vhbb_bTagWeightHFStats2_Pt%d_Eta%d", 
+    "CMS_vhbb_bTagWeightLFStats1_Pt%d_Eta%d", 
+    "CMS_vhbb_bTagWeightLFStats2_Pt%d_Eta%d", 
+    "CMS_vhbb_bTagWeightCErr1_Pt%d_Eta%d"   , 
+    "CMS_vhbb_bTagWeightCErr2_Pt%d_Eta%d"    
+  };
+  vector<TString> bTagShapeHistoNames = {
+    "histo%d_cmvaJES%s_pt%d_eta%d"       ,
+    "histo%d_cmvaLF%s_pt%d_eta%d"        ,
+    "histo%d_cmvaHF%s_pt%d_eta%d"        ,
+    "histo%d_cmvaHFStats1%s_pt%d_eta%d"  ,
+    "histo%d_cmvaHFStats2%s_pt%d_eta%d"  ,
+    "histo%d_cmvaLFStats1%s_pt%d_eta%d"  ,
+    "histo%d_cmvaLFStats2%s_pt%d_eta%d"  ,
+    "histo%d_cmvaCErr1%s_pt%d_eta%d"     ,
+    "histo%d_cmvaCErr2%s_pt%d_eta%d"     ,
+  };
+  TH1F *histo_VGluUp   [nPlotCategories];
+  TH1F *histo_VGluDown [nPlotCategories];
+  TH1F *histo_wptCorrUp   [nPlotCategories];
+  TH1F *histo_wptCorrDown [nPlotCategories];
+  TH1F *histo_wptCorrNone [nPlotCategories];
+  TH1F *histo_jesUp   [nPlotCategories];
+  TH1F *histo_jesDown [nPlotCategories];
+  TH1F *histo_doubleBUp   [nPlotCategories];
+  TH1F *histo_doubleBDown [nPlotCategories];
   for(theCategory=0; theCategory<nPlotCategories; theCategory++) {
-    histo_VHCorrUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VHCorrUp"  , theCategory)); histo_VHCorrUp  [theCategory]->SetDirectory(0);
-    histo_VHCorrDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VHCorrDown", theCategory)); histo_VHCorrDown[theCategory]->SetDirectory(0);
-    //histo_pdfUp      [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_pdfUp"    , theCategory)); histo_pdfUp     [theCategory]->SetDirectory(0);
-    //histo_pdfDown    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_pdfDown"  , theCategory)); histo_pdfDown   [theCategory]->SetDirectory(0);
-    histo_QCDr1f2    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f2"  , theCategory)); histo_QCDr1f2   [theCategory]->SetDirectory(0);
-    histo_QCDr1f5    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f5"  , theCategory)); histo_QCDr1f5   [theCategory]->SetDirectory(0);
-    histo_QCDr2f1    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f1"  , theCategory)); histo_QCDr2f1   [theCategory]->SetDirectory(0);
-    histo_QCDr2f2    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f2"  , theCategory)); histo_QCDr2f2   [theCategory]->SetDirectory(0);
-    histo_QCDr5f1    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f1"  , theCategory)); histo_QCDr5f1   [theCategory]->SetDirectory(0);
-    histo_QCDr5f5    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f5"  , theCategory)); histo_QCDr5f5   [theCategory]->SetDirectory(0);
-    histo_QCDrScaleUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDrScaleUp"   , theCategory)); histo_QCDrScaleUp  [theCategory]->SetDirectory(0);
-    histo_QCDrScaleDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDrScaleDown" , theCategory)); histo_QCDrScaleDown[theCategory]->SetDirectory(0);
-    histo_QCDfScaleUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDfScaleUp"   , theCategory)); histo_QCDfScaleUp  [theCategory]->SetDirectory(0);
-    histo_QCDfScaleDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDfScaleDown" , theCategory)); histo_QCDfScaleDown[theCategory]->SetDirectory(0);
-    histo_NLOQCDrUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDrUp"   , theCategory)); histo_NLOQCDrUp  [theCategory]->SetDirectory(0);
-    histo_NLOQCDrDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDrDown" , theCategory)); histo_NLOQCDrDown[theCategory]->SetDirectory(0);
-    histo_NLOQCDfUp  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDfUp"   , theCategory)); histo_NLOQCDfUp  [theCategory]->SetDirectory(0);
-    histo_NLOQCDfDown[theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDfDown" , theCategory)); histo_NLOQCDfDown[theCategory]->SetDirectory(0);
-    histo_eleSFUp    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFUp"  , theCategory)); histo_eleSFUp   [theCategory]->SetDirectory(0);
-    histo_eleSFDown  [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFDown", theCategory)); histo_eleSFDown [theCategory]->SetDirectory(0);
-    histo_muSFUp     [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFUp"   , theCategory)); histo_muSFUp    [theCategory]->SetDirectory(0);
-    histo_muSFDown   [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFDown" , theCategory)); histo_muSFDown  [theCategory]->SetDirectory(0);
-    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-      histo_cmvaJESUp       [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaJESUp_pt%d_eta%d"       , theCategory, iPt, iEta)); histo_cmvaJESUp        [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaLFUp        [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFUp_pt%d_eta%d"        , theCategory, iPt, iEta)); histo_cmvaLFUp         [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaHFUp        [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFUp_pt%d_eta%d"        , theCategory, iPt, iEta)); histo_cmvaHFUp         [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaHFStats1Up  [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats1Up_pt%d_eta%d"  , theCategory, iPt, iEta)); histo_cmvaHFStats1Up   [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaHFStats2Up  [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats2Up_pt%d_eta%d"  , theCategory, iPt, iEta)); histo_cmvaHFStats2Up   [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaLFStats1Up  [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats1Up_pt%d_eta%d"  , theCategory, iPt, iEta)); histo_cmvaLFStats1Up   [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaLFStats2Up  [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats2Up_pt%d_eta%d"  , theCategory, iPt, iEta)); histo_cmvaLFStats2Up   [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaCErr1Up     [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr1Up_pt%d_eta%d"     , theCategory, iPt, iEta)); histo_cmvaCErr1Up      [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaCErr2Up     [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr2Up_pt%d_eta%d"     , theCategory, iPt, iEta)); histo_cmvaCErr2Up      [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaJESDown     [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaJESDown_pt%d_eta%d"     , theCategory, iPt, iEta)); histo_cmvaJESDown      [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaLFDown      [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFDown_pt%d_eta%d"      , theCategory, iPt, iEta)); histo_cmvaLFDown       [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaHFDown      [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFDown_pt%d_eta%d"      , theCategory, iPt, iEta)); histo_cmvaHFDown       [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaHFStats1Down[iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats1Down_pt%d_eta%d", theCategory, iPt, iEta)); histo_cmvaHFStats1Down [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaHFStats2Down[iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats2Down_pt%d_eta%d", theCategory, iPt, iEta)); histo_cmvaHFStats2Down [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaLFStats1Down[iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats1Down_pt%d_eta%d", theCategory, iPt, iEta)); histo_cmvaLFStats1Down [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaLFStats2Down[iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats2Down_pt%d_eta%d", theCategory, iPt, iEta)); histo_cmvaLFStats2Down [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaCErr1Down   [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr1Down_pt%d_eta%d"   , theCategory, iPt, iEta)); histo_cmvaCErr1Down    [iPt][iEta][theCategory]->SetDirectory(0);
-      histo_cmvaCErr2Down   [iPt][iEta][theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr2Down_pt%d_eta%d"   , theCategory, iPt, iEta)); histo_cmvaCErr2Down    [iPt][iEta][theCategory]->SetDirectory(0);
+    histo_VHCorrUp  [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VHCorrUp"  , theCategory)); 
+    histo_VHCorrDown[theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VHCorrDown", theCategory)); 
+    histo_QCDr1f2    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f2"  , theCategory)); 
+    histo_QCDr1f5    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr1f5"  , theCategory)); 
+    histo_QCDr2f1    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f1"  , theCategory)); 
+    histo_QCDr2f2    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr2f2"  , theCategory)); 
+    histo_QCDr5f1    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f1"  , theCategory)); 
+    histo_QCDr5f5    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDr5f5"  , theCategory)); 
+    histo_QCDrScaleUp  [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDrScaleUp"   , theCategory)); 
+    histo_QCDrScaleDown[theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDrScaleDown" , theCategory)); 
+    histo_QCDfScaleUp  [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDfScaleUp"   , theCategory)); 
+    histo_QCDfScaleDown[theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_QCDfScaleDown" , theCategory)); 
+    histo_NLOQCDrUp  [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDrUp"   , theCategory)); 
+    histo_NLOQCDrDown[theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDrDown" , theCategory)); 
+    histo_NLOQCDfUp  [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDfUp"   , theCategory)); 
+    histo_NLOQCDfDown[theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_NLOQCDfDown" , theCategory)); 
+    histo_eleSFUp    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFUp"  , theCategory)); 
+    histo_eleSFDown  [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_eleSFDown", theCategory)); 
+    histo_muSFUp     [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFUp"   , theCategory)); 
+    histo_muSFDown   [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_muSFDown" , theCategory)); 
+    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++)  {
+      histo_cmvaJESUp       [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaJESUp_pt%d_eta%d"       , theCategory, iPt, iEta)); 
+      histo_cmvaLFUp        [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFUp_pt%d_eta%d"        , theCategory, iPt, iEta)); 
+      histo_cmvaHFUp        [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFUp_pt%d_eta%d"        , theCategory, iPt, iEta)); 
+      histo_cmvaHFStats1Up  [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats1Up_pt%d_eta%d"  , theCategory, iPt, iEta)); 
+      histo_cmvaHFStats2Up  [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats2Up_pt%d_eta%d"  , theCategory, iPt, iEta)); 
+      histo_cmvaLFStats1Up  [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats1Up_pt%d_eta%d"  , theCategory, iPt, iEta)); 
+      histo_cmvaLFStats2Up  [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats2Up_pt%d_eta%d"  , theCategory, iPt, iEta)); 
+      histo_cmvaCErr1Up     [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr1Up_pt%d_eta%d"     , theCategory, iPt, iEta)); 
+      histo_cmvaCErr2Up     [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr2Up_pt%d_eta%d"     , theCategory, iPt, iEta)); 
+      histo_cmvaJESDown     [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaJESDown_pt%d_eta%d"     , theCategory, iPt, iEta)); 
+      histo_cmvaLFDown      [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFDown_pt%d_eta%d"      , theCategory, iPt, iEta)); 
+      histo_cmvaHFDown      [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFDown_pt%d_eta%d"      , theCategory, iPt, iEta)); 
+      histo_cmvaHFStats1Down[iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats1Down_pt%d_eta%d", theCategory, iPt, iEta)); 
+      histo_cmvaHFStats2Down[iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaHFStats2Down_pt%d_eta%d", theCategory, iPt, iEta)); 
+      histo_cmvaLFStats1Down[iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats1Down_pt%d_eta%d", theCategory, iPt, iEta)); 
+      histo_cmvaLFStats2Down[iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaLFStats2Down_pt%d_eta%d", theCategory, iPt, iEta)); 
+      histo_cmvaCErr1Down   [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr1Down_pt%d_eta%d"   , theCategory, iPt, iEta)); 
+      histo_cmvaCErr2Down   [iPt][iEta][theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_cmvaCErr2Down_pt%d_eta%d"   , theCategory, iPt, iEta)); 
     }
-    histo_VGluUp      [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VGluUp"      , theCategory)); histo_VGluUp      [theCategory]->SetDirectory(0);
-    histo_VGluDown    [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VGluDown"    , theCategory)); histo_VGluDown    [theCategory]->SetDirectory(0);
-    histo_wptCorrUp   [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrUp"   , theCategory)); histo_wptCorrUp   [theCategory]->SetDirectory(0);
-    histo_wptCorrDown [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrDown" , theCategory)); histo_wptCorrDown [theCategory]->SetDirectory(0);
-    histo_wptCorrNone [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrNone" , theCategory)); histo_wptCorrNone [theCategory]->SetDirectory(0);
-    histo_jesUp   [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_jesUp"   , theCategory)); histo_jesUp   [theCategory]->SetDirectory(0);
-    histo_jesDown [theCategory] = (TH1D*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_jesDown" , theCategory)); histo_jesDown [theCategory]->SetDirectory(0);
+    histo_VGluUp      [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VGluUp"      , theCategory)); 
+    histo_VGluDown    [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_VGluDown"    , theCategory)); 
+    histo_wptCorrUp   [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrUp"   , theCategory)); 
+    histo_wptCorrDown [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrDown" , theCategory)); 
+    histo_wptCorrNone [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_wptCorrNone" , theCategory)); 
+    histo_jesUp   [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_jesUp"   , theCategory)); 
+    histo_jesDown [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_jesDown" , theCategory)); 
+    histo_doubleBUp   [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_doubleBUp"   , theCategory)); 
+    histo_doubleBDown [theCategory] = (TH1F*)histos[pMVAVar][theCategory]->Clone(Form("histo%d_doubleBDown" , theCategory)); 
   }
   // done constructing histograms
 
@@ -988,6 +1008,7 @@ void vhbbHistos(
   mvaInputRefs["fj1Tau32SD"                                            ]=&fj1Tau32SD            ;
   mvaInputRefs["fj1Tau21"                                              ]=&fj1Tau21              ;
   mvaInputRefs["fj1Tau21SD"                                            ]=&fj1Tau21SD            ;
+  mvaInputRefs["fabs(fj1Pt/topWBosonPt)"                               ]=&fj1WPtBalance         ;
   mvaInputRefs["(nFatjet==0)*(-1)+(nFatjet!=0)*fabs(TVector2::Phi_mpi_pi(lepton1Phi-fj1Phi))"]=&dPhil1fj1;
   mvaInputRefs["(nFatjet==0)*(-1)+(nFatjet!=0)*fabs(TVector2::Phi_mpi_pi(topWBosonPhi-fj1Phi))"]=&dPhiWfj1;
   mvaInputRefs["(nFatjet==0)*(-1)+(nFatjet!=0)*fabs(lepton1Eta-fj1Eta)"]=&dEtal1fj1;
@@ -1068,7 +1089,9 @@ void vhbbHistos(
   mvaInputRefs_jesUp["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))"   ]=&dPhiWb1_jesUp         ;    
   mvaInputRefs_jesUp["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))"   ]=&dPhiWb2_jesUp         ;    
   mvaInputRefs_jesUp["fj1Pt"                                                 ]=&fj1PtScaleUp          ;
-  mvaInputRefs_jesUp["fj1MSD_corr"                                           ]=&fj1MSD_corr_jesUp     ;
+  //mvaInputRefs_jesUp["fj1MSD_corr"                                           ]=&fj1MSD_corr_jesUp     ;
+  mvaInputRefs_jesUp["fj1MSD_corr"                                           ]=&fj1MSD_corr           ;
+  mvaInputRefs_jesUp["fabs(fj1Pt/topWBosonPt)"                               ]=&fj1WPtBalance_jesUp   ;
 
   mvaInputRefs_jesDown = mvaInputRefs;
   mvaInputRefs_jesDown["hbbDijetMass"                                          ]=&hbbDijetMassDown      ;    
@@ -1085,7 +1108,9 @@ void vhbbHistos(
   mvaInputRefs_jesDown["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet1Phi))"   ]=&dPhiWb1_jesDown       ;    
   mvaInputRefs_jesDown["fabs(TVector2::Phi_mpi_pi(topWBosonPhi-hbbJet2Phi))"   ]=&dPhiWb2_jesDown       ;    
   mvaInputRefs_jesDown["fj1Pt"                                                 ]=&fj1PtScaleDown        ;
-  mvaInputRefs_jesDown["fj1MSD_corr"                                           ]=&fj1MSD_corr_jesDown   ;
+  //mvaInputRefs_jesDown["fj1MSD_corr"                                           ]=&fj1MSD_corr_jesDown   ;
+  mvaInputRefs_jesDown["fj1MSD_corr"                                           ]=&fj1MSD_corr           ;
+  mvaInputRefs_jesDown["fabs(fj1Pt/topWBosonPt)"                               ]=&fj1WPtBalance_jesDown ;
   TMVA::Reader *reader=0, *reader_jesUp=0, *reader_jesDown=0;
   // to do - not hardcoded
   if(MVAVarType==2 || MVAVarType==3) {
@@ -1120,12 +1145,24 @@ void vhbbHistos(
   for(Long64_t ientry=0; ientry<nentries; ientry++) {
     if(ientry%oneTenth==0) printf("######## Reading entry %lld/%lld ########################################################\n",ientry,nentries); 
     plotTree->GetBranch("typeLepSel")->GetEntry(ientry); if(theLepSel!=-1 && typeLepSel!=theLepSel) continue;
-    plotTree->GetBranch("nMinusOneBits")->GetEntry(ientry); if((nMinusOneBits & selection)==0) continue;
+    plotTree->GetBranch("nMinusOneBits")->GetEntry(ientry);
+    plotTree->GetBranch("selectionBits")->GetEntry(ientry);
+    plotTree->GetBranch("selectionBits_jesUp")->GetEntry(ientry);
+    plotTree->GetBranch("selectionBits_jesDown")->GetEntry(ientry);
+    if(
+      (nMinusOneBits & selection)==0 &&
+      (selectionBits & selection)==0 &&
+      (selectionBits_jesUp & selection)==0 &&
+      (selectionBits_jesDown & selection)==0
+    ) continue;
     plotTree->GetBranch("theCategory")->GetEntry(ientry); if(theCategory>=nPlotCategories) continue;
-    if(isBlinded && theCategory==kPlotData && (selection==kWHSR)) continue;
+    if(isBlinded && theCategory==kPlotData && (selection==kWHSR||selection==kWHFJSR)) continue;
     plotTree->GetEntry(ientry);
     if(weight>500.) continue;
+    
+    // Cut out the low mass here, so we can look at it in plots or change the cut
     if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR && fj1MSD_corr<40) continue;
+
     if(theCategory!=kPlotData && theCategory!=kPlotQCD && (MVAVarType==2 || MVAVarType==3)) { // veto on training events
       if((selection==kWHSR || selection==kWHFJSR) &&(eventNumber % 10) < 3) continue; 
     }
@@ -1225,6 +1262,9 @@ void vhbbHistos(
       dPhil1fj1 = fabs(TVector2::Phi_mpi_pi(lepton1Phi   - fj1Phi  ));
       dPhiWfj1  = fabs(TVector2::Phi_mpi_pi(topWBosonPhi - fj1Phi  ));
       dEtal1fj1 = fabs(lepton1Eta   - fj1Eta );
+      fj1WPtBalance = topWBosonPt>0? TMath::Abs(fj1Pt/topWBosonPt):-1;
+      fj1WPtBalance_jesUp = topWBosonPt>0? TMath::Abs(fj1PtScaleUp/topWBosonPt_jesUp):-1;
+      fj1WPtBalance_jesDown = topWBosonPt>0? TMath::Abs(fj1PtScaleDown/topWBosonPt_jesDown):-1;
       mva_lepton1Flav = lepton1Flav;
       mva_lepton1Charge = lepton1Charge; 
       mva_nIsojet = nIsojet;
@@ -1322,8 +1362,6 @@ void vhbbHistos(
       if(wptCorrFactor!=1) {
         weight_VHCorrUp    *= wptCorrFactor;
         weight_VHCorrDown  *= wptCorrFactor;
-        //weight_pdfUp       *= wptCorrFactor;
-        //weight_pdfDown     *= wptCorrFactor;
         weight_QCDr1f2     *= wptCorrFactor;
         weight_QCDr1f5     *= wptCorrFactor;
         weight_QCDr2f1     *= wptCorrFactor;
@@ -1338,6 +1376,7 @@ void vhbbHistos(
         // VGluUp and VGluDown not corrected by the wptCorrFactor here because
         // the resulting shape histo gets renormalized to the nominal sum of weights later
         for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+          weight_cmvaJESUp       [iPt][iEta] *= wptCorrFactor;
           weight_cmvaLFUp        [iPt][iEta] *= wptCorrFactor;
           weight_cmvaHFUp        [iPt][iEta] *= wptCorrFactor;
           weight_cmvaHFStats1Up  [iPt][iEta] *= wptCorrFactor;
@@ -1346,6 +1385,7 @@ void vhbbHistos(
           weight_cmvaLFStats2Up  [iPt][iEta] *= wptCorrFactor;
           weight_cmvaCErr1Up     [iPt][iEta] *= wptCorrFactor;
           weight_cmvaCErr2Up     [iPt][iEta] *= wptCorrFactor;
+          weight_cmvaJESDown     [iPt][iEta] *= wptCorrFactor;
           weight_cmvaLFDown      [iPt][iEta] *= wptCorrFactor;
           weight_cmvaHFDown      [iPt][iEta] *= wptCorrFactor;
           weight_cmvaHFStats1Down[iPt][iEta] *= wptCorrFactor;
@@ -1364,16 +1404,77 @@ void vhbbHistos(
       theCategory==kPlotWbb || theCategory==kPlotWb || theCategory==kPlotWLF ||
       theCategory==kPlotZbb || theCategory==kPlotZb || theCategory==kPlotZLF)
     ) { weight_VGluUp *= 1.2; weight_VGluDown *= 0.8; }
+    float weight_doubleBUp=weight,weight_doubleBDown=weight;
+    if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR && (theCategory==kPlotVH||theCategory==kPlotWbb)) {
+      float weight_noDoubleBSF = weight;
+      bool pass= selection==kWHFJSR || selection==kWHHeavyFlavorFJCR || selection==kWHTT2bFJCR;
+      float eff = theCategory==kPlotWbb? .5:0.95;
+      float sf,sfUp,sfDown;
+      if(fj1Pt<350)      { sf=0.92; sfUp=0.95; sfDown=0.89;}
+      else if(fj1Pt<430) { sf=1.01; sfUp=1.04; sfDown=0.97;}
+      else               { sf=0.92; sfUp=0.95; sfDown=0.87;}
+      weight             = weight_noDoubleBSF * (pass? sfDown : (1. - eff*sf    )/(1.-eff));
+      weight_doubleBUp   = weight_noDoubleBSF * (pass? sfDown : (1. - eff*sfUp  )/(1.-eff));
+      weight_doubleBDown = weight_noDoubleBSF * (pass? sfDown : (1. - eff*sfDown)/(1.-eff));
+      
+      float doubleBCorrFactor = 0;
+      if(weight_noDoubleBSF!=0) doubleBCorrFactor = weight/weight_noDoubleBSF;
+      
+      weight_VHCorrUp    *= doubleBCorrFactor;
+      weight_VHCorrDown  *= doubleBCorrFactor;
+      weight_QCDr1f2     *= doubleBCorrFactor;
+      weight_QCDr1f5     *= doubleBCorrFactor;
+      weight_QCDr2f1     *= doubleBCorrFactor;
+      weight_QCDr2f2     *= doubleBCorrFactor;
+      weight_QCDr5f1     *= doubleBCorrFactor;
+      weight_QCDr5f5     *= doubleBCorrFactor;
+      weight_NLOQCDfUp   *= doubleBCorrFactor;
+      weight_NLOQCDfDown *= doubleBCorrFactor;
+      weight_NLOQCDrUp   *= doubleBCorrFactor;
+      weight_NLOQCDrDown *= doubleBCorrFactor;
+      weight_lepSFUp     *= doubleBCorrFactor;
+      // VGluUp and VGluDown not corrected by the doubleBCorrFactor here because
+      // the resulting shape histo gets renormalized to the nominal sum of weights later
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        weight_cmvaJESUp       [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaLFUp        [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaHFUp        [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaHFStats1Up  [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaHFStats2Up  [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaLFStats1Up  [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaLFStats2Up  [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaCErr1Up     [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaCErr2Up     [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaJESDown     [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaLFDown      [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaHFDown      [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaHFStats1Down[iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaHFStats2Down[iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaLFStats1Down[iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaLFStats2Down[iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaCErr1Down   [iPt][iEta] *= doubleBCorrFactor;
+        weight_cmvaCErr2Down   [iPt][iEta] *= doubleBCorrFactor;
+      }
+      
+    }
 
     float theVar; 
-    bool passFullSel         = (selectionBits & selection)!=0; 
-    bool passFullSel_jesUp   = (selectionBits_jesUp & selection)!=0; 
-    bool passFullSel_jesDown = (selectionBits_jesDown & selection)!=0; 
-    bool passMassSplit=true;
+    bool passMassSplit=true, passMassSplit_jesUp=true, passMassSplit_jesDown=true;
     if(selection==kWHHeavyFlavorCR) { // Mass splitting for the WH HF CR
-      if(lowMass  && hbbDijetMass>=90.) passMassSplit=false;
-      if(!lowMass && hbbDijetMass<150.) passMassSplit=false;
+      if(lowMass) {
+        if(hbbDijetMass    >=90.) passMassSplit=false;
+        if(hbbDijetMassUp  >=90.) passMassSplit_jesUp=false;
+        if(hbbDijetMassDown>=90.) passMassSplit_jesDown=false;
+      } else {
+        if(hbbDijetMass    <150.) passMassSplit=false;
+        if(hbbDijetMassUp  <150.) passMassSplit_jesUp=false;
+        if(hbbDijetMassDown<150.) passMassSplit_jesDown=false;
+      }
     }
+    bool passFullSel         = (selectionBits & selection)!=0 && passMassSplit; 
+    bool passFullSel_jesUp   = (selectionBits_jesUp & selection)!=0 && passMassSplit_jesUp; 
+    //printf("passFullSel_jesUp = %d\n", passFullSel_jesUp);
+    bool passFullSel_jesDown = (selectionBits_jesDown & selection)!=0 && passMassSplit_jesDown; 
     float bdtValue=-99,bdtValue_jesUp=-99,bdtValue_jesDown=-99;
     switch(MVAVarType) {
       case 1:
@@ -1426,8 +1527,13 @@ void vhbbHistos(
           MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
         } else if(selection>=kWHLightFlavorFJCR && selection<=kWHTT1bFJCR) {
           MVAVar=fj1MSD_corr;
-          MVAVar_jesUp=fj1MSD_corr_jesUp;
-          MVAVar_jesDown=fj1MSD_corr_jesDown;
+          //MVAVar_jesUp=fj1MSD_corr_jesUp;
+          //MVAVar_jesDown=fj1MSD_corr_jesDown;
+          MVAVar_jesUp=fj1MSD_corr;
+          MVAVar_jesDown=fj1MSD_corr;
+          //MVAVar=fj1MinCSV;
+          //MVAVar_jesUp=fj1MinCSV;
+          //MVAVar_jesDown=fj1MinCSV;
         } else if(selection==kWHFJSR) {
           MVAVar=bdtValue; MVAVar_jesUp=bdtValue_jesUp; MVAVar_jesDown=bdtValue_jesDown;
         }
@@ -1555,6 +1661,7 @@ void vhbbHistos(
       else if (histoNames[p]=="deltaPhiVH"          ) { theVar = TMath::Min(deltaPhiVH            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="deltaPhiLep1Met"     ) { theVar = TMath::Min(deltaPhiLep1Met       , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="topWBosonPt"         ) { theVar = TMath::Min(topWBosonPt           , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
+      else if (histoNames[p]=="fj1WPtBalance"       ) { theVar = TMath::Min(fj1WPtBalance         , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="mT"                  ) { theVar = TMath::Min(mT                    , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="pfmet"               ) { theVar = TMath::Min(pfmet         , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="pfmetphi"            ) { theVar = TMath::Min(pfmetphi      , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
@@ -1569,7 +1676,7 @@ void vhbbHistos(
       else if (histoNames[p]=="fj1DoubleCSV"        ) { theVar = TMath::Min(fj1DoubleCSV          , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1HTTMass"          ) { theVar = TMath::Min(fj1HTTMass            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1HTTFRec"          ) { theVar = TMath::Min(fj1HTTFRec            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
-      else if (histoNames[p]=="fj1MSD_corr"         ) { theVar = TMath::Min(fj1MSD_corr           , float(xmax[p]- 1e-6)); makePlot = passFullSel != ((nMinusOneBits&selection)!=0 && theVar<40); }
+      else if (histoNames[p]=="fj1MSD_corr"         ) { theVar = TMath::Min(fj1MSD_corr           , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau32"            ) { theVar = TMath::Min(fj1Tau32              , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau32SD"          ) { theVar = TMath::Min(fj1Tau32SD            , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="fj1Tau21"            ) { theVar = TMath::Min(fj1Tau21              , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
@@ -1646,8 +1753,6 @@ void vhbbHistos(
     if(passFullSel && passMassSplit && theCategory!=kPlotData) {
       histo_VHCorrUp    [theCategory]->Fill(MVAVar, weight_VHCorrUp    ); 
       histo_VHCorrDown  [theCategory]->Fill(MVAVar, weight_VHCorrDown  ); 
-      //histo_pdfUp       [theCategory]->Fill(MVAVar, weight_pdfUp    ); 
-      //histo_pdfDown     [theCategory]->Fill(MVAVar, weight_pdfDown  ); 
       histo_QCDr1f2     [theCategory]->Fill(MVAVar, weight_QCDr1f2  ); 
       histo_QCDr1f5     [theCategory]->Fill(MVAVar, weight_QCDr1f5  ); 
       histo_QCDr2f1     [theCategory]->Fill(MVAVar, weight_QCDr2f1  ); 
@@ -1667,6 +1772,8 @@ void vhbbHistos(
       histo_wptCorrUp   [theCategory]->Fill(MVAVar, weight_wptCorrUp  );
       histo_wptCorrDown [theCategory]->Fill(MVAVar, weight_wptCorrDown);
       histo_wptCorrNone [theCategory]->Fill(MVAVar, weight_wptCorrNone);
+      histo_doubleBUp   [theCategory]->Fill(MVAVar, weight_doubleBUp  );
+      histo_doubleBDown [theCategory]->Fill(MVAVar, weight_doubleBDown);
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
         histo_cmvaJESUp       [iPt][iEta][theCategory]->Fill(MVAVar, weight_cmvaLFUp        [iPt][iEta]);
         histo_cmvaLFUp        [iPt][iEta][theCategory]->Fill(MVAVar, weight_cmvaLFUp        [iPt][iEta]);
@@ -1687,19 +1794,22 @@ void vhbbHistos(
         histo_cmvaCErr1Down   [iPt][iEta][theCategory]->Fill(MVAVar, weight_cmvaCErr1Down   [iPt][iEta]);
         histo_cmvaCErr2Down   [iPt][iEta][theCategory]->Fill(MVAVar, weight_cmvaCErr2Down   [iPt][iEta]);
       }
+      //printf("  filling histo with MVAVar %.3f\n",MVAVar);
     }
-    if(passFullSel_jesUp && theCategory!=kPlotData)
+    if(passFullSel_jesUp && theCategory!=kPlotData) {
       histo_jesUp   [theCategory]->Fill(MVAVar_jesUp, weight); 
-    if(passFullSel_jesDown && theCategory!=kPlotData)
+      //printf("  filling histo_jesUp with MVAVar %.3f\n",MVAVar_jesUp);
+    } if(passFullSel_jesDown && theCategory!=kPlotData) {
       histo_jesDown [theCategory]->Fill(MVAVar_jesDown, weight);
+      //printf("  filling histo_jesDown with MVAVar %.3f\n",MVAVar_jesDown);
+    }
+    //if(theCategory==6) printf("nominal=%d jesUp=%d jesdown=%d\n",passFullSel,passFullSel_jesUp,passFullSel_jesDown);
   }
   if(sf_training!=1) for(int ic=kPlotData+1; ic<nPlotCategories; ic++) {
     if(ic==kPlotQCD) continue;
     for(int p=0; p<=pMVAVar; p++) histos[p][ic]->Scale(sf_training);
     histo_VHCorrUp    [ic]->Scale(sf_training);
     histo_VHCorrDown  [ic]->Scale(sf_training);
-    //histo_pdfUp       [ic]->Scale(sf_training);
-    //histo_pdfDown     [ic]->Scale(sf_training);
     histo_QCDr1f2     [ic]->Scale(sf_training);
     histo_QCDr1f5     [ic]->Scale(sf_training);
     histo_QCDr2f1     [ic]->Scale(sf_training);
@@ -1721,7 +1831,10 @@ void vhbbHistos(
     histo_wptCorrNone [ic]->Scale(sf_training);
     histo_jesUp       [ic]->Scale(sf_training);
     histo_jesDown     [ic]->Scale(sf_training);
+    histo_doubleBUp   [ic]->Scale(sf_training);
+    histo_doubleBDown [ic]->Scale(sf_training);
     for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+
       histo_cmvaJESUp       [iPt][iEta][ic]->Scale(sf_training);
       histo_cmvaLFUp        [iPt][iEta][ic]->Scale(sf_training);
       histo_cmvaHFUp        [iPt][iEta][ic]->Scale(sf_training);
@@ -1748,8 +1861,6 @@ void vhbbHistos(
   printf("  histos   [pMVAVar][kPlotWLF]->Integral() = %.2e\n", histos   [pMVAVar][kPlotWLF]->Integral());
   printf("  histo_VHCorrUp    [kPlotWLF]->Integral() = %.2e\n", histo_VHCorrUp    [kPlotWLF]->Integral());
   printf("  histo_VHCorrDown  [kPlotWLF]->Integral() = %.2e\n", histo_VHCorrDown  [kPlotWLF]->Integral());
-  //printf("  histo_pdfUp       [kPlotWLF]->Integral() = %.2e\n", histo_pdfUp       [kPlotWLF]->Integral());
-  //printf("  histo_pdfDown     [kPlotWLF]->Integral() = %.2e\n", histo_pdfDown     [kPlotWLF]->Integral());
   printf("  histo_QCDr1f2     [kPlotWLF]->Integral() = %.2e\n", histo_QCDr1f2     [kPlotWLF]->Integral());
   printf("  histo_QCDr1f5     [kPlotWLF]->Integral() = %.2e\n", histo_QCDr1f5     [kPlotWLF]->Integral());
   printf("  histo_QCDr2f1     [kPlotWLF]->Integral() = %.2e\n", histo_QCDr2f1     [kPlotWLF]->Integral());
@@ -1761,11 +1872,9 @@ void vhbbHistos(
       histo_wptCorrUp   [ic]->Scale(histo_wptCorrNone[ic]->Integral()/histo_wptCorrUp   [ic]->Integral());
       histo_wptCorrDown [ic]->Scale(histo_wptCorrNone[ic]->Integral()/histo_wptCorrDown [ic]->Integral());
       float maintainNormAfterWptCorr = histo_wptCorrNone[ic]->Integral()/histos[pMVAVar][ic]->Integral();
-      histos   [pMVAVar][ic]->Scale(maintainNormAfterWptCorr);
+      for(int p=0; p<=pMVAVar; p++) histos[p][ic]->Scale(maintainNormAfterWptCorr);
       histo_VHCorrUp    [ic]->Scale(maintainNormAfterWptCorr);
       histo_VHCorrDown  [ic]->Scale(maintainNormAfterWptCorr);
-      //histo_pdfUp       [ic]->Scale(maintainNormAfterWptCorr);
-      //histo_pdfDown     [ic]->Scale(maintainNormAfterWptCorr);
       histo_QCDr1f2     [ic]->Scale(maintainNormAfterWptCorr);
       histo_QCDr1f5     [ic]->Scale(maintainNormAfterWptCorr);
       histo_QCDr2f1     [ic]->Scale(maintainNormAfterWptCorr);
@@ -1784,7 +1893,9 @@ void vhbbHistos(
       histo_VGluDown    [ic]->Scale(maintainNormAfterWptCorr);
       histo_jesUp       [ic]->Scale(maintainNormAfterWptCorr);
       histo_jesDown     [ic]->Scale(maintainNormAfterWptCorr);
-      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+      histo_doubleBUp   [ic]->Scale(maintainNormAfterWptCorr);
+      histo_doubleBDown [ic]->Scale(maintainNormAfterWptCorr);
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) { 
         histo_cmvaJESUp       [iPt][iEta][ic]->Scale(maintainNormAfterWptCorr);
         histo_cmvaLFUp        [iPt][iEta][ic]->Scale(maintainNormAfterWptCorr);
         histo_cmvaHFUp        [iPt][iEta][ic]->Scale(maintainNormAfterWptCorr);
@@ -1810,8 +1921,6 @@ void vhbbHistos(
   printf("  histos   [pMVAVar][kPlotWLF]->Integral() = %.2e\n", histos   [pMVAVar][kPlotWLF]->Integral());
   printf("  histo_VHCorrUp    [kPlotWLF]->Integral() = %.2e\n", histo_VHCorrUp    [kPlotWLF]->Integral());
   printf("  histo_VHCorrDown  [kPlotWLF]->Integral() = %.2e\n", histo_VHCorrDown  [kPlotWLF]->Integral());
-  //printf("  histo_pdfUp       [kPlotWLF]->Integral() = %.2e\n", histo_pdfUp       [kPlotWLF]->Integral());
-  //printf("  histo_pdfDown     [kPlotWLF]->Integral() = %.2e\n", histo_pdfDown     [kPlotWLF]->Integral());
   printf("  histo_QCDr1f2     [kPlotWLF]->Integral() = %.2e\n", histo_QCDr1f2     [kPlotWLF]->Integral());
   printf("  histo_QCDr1f5     [kPlotWLF]->Integral() = %.2e\n", histo_QCDr1f5     [kPlotWLF]->Integral());
   printf("  histo_QCDr2f1     [kPlotWLF]->Integral() = %.2e\n", histo_QCDr2f1     [kPlotWLF]->Integral());
@@ -1822,34 +1931,14 @@ void vhbbHistos(
   // All normalizations done, start writing output
 
 
-  char regionName[128];
-  TString massSuffix="";
-  if(selection==kWHHeavyFlavorCR) { // Mass splitting for the WH HF CR
-    if(lowMass) massSuffix="LowMass";
-    else        massSuffix="HighMass";
-  }
-  char leptonChar='l';
-  if(theLepSel==1) leptonChar='m';
-  if(theLepSel==2) leptonChar='e';
-  sprintf(regionName, "W%cn%s%s", leptonChar,selectionNames[selection].Data(),massSuffix.Data());
-  char outputFileName[512];
-  sprintf(outputFileName,"MitVHBBAnalysis/datacards/%s/plots_%s.root",dataCardDir.Data(),regionName);
-  TFile *output_plots = new TFile(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
-  for(int p=0; p<nPlots; p++) {
-    if(histoNames[p]=="") continue;
-    TDirectory *plotDir = output_plots->mkdir(histoNames[p]);
-    plotDir->cd();
-    for(theCategory=kPlotData; theCategory!=nPlotCategories; theCategory++)
-      histos[p][theCategory]->Write();
-  }
-  output_plots->Close();
+
   // Hack to symmetrize the JES uncertainties
-  for(int ic=kPlotData+1; ic<nPlotCategories; ic++) for(int nb=1; nb<=histos[pMVAVar][kPlotData]->GetNbinsX(); nb++) {
-    if(histo_jesUp[ic]->GetBinContent(nb)>0) 
-      histo_jesDown[ic]->SetBinContent(nb,
-        pow(histos[pMVAVar][ic]->GetBinContent(nb),2) / histo_jesUp[ic]->GetBinContent(nb)
-      );
-  }
+  //for(int ic=kPlotData+1; ic<nPlotCategories; ic++) for(int nb=1; nb<=histos[pMVAVar][kPlotData]->GetNbinsX(); nb++) {
+  //  if(histo_jesUp[ic]->GetBinContent(nb)>0) 
+  //    histo_jesDown[ic]->SetBinContent(nb,
+  //      pow(histos[pMVAVar][ic]->GetBinContent(nb),2) / histo_jesUp[ic]->GetBinContent(nb)
+  //    );
+  //}
 
   // Compute QCD Scale envelope and bound the systematic shapes to [0.5,2] the nominal
   for(int ic=kPlotData+1; ic<nPlotCategories; ic++) {
@@ -1876,39 +1965,6 @@ void vhbbHistos(
           histo_QCDrScaleUp  [ic]->GetBinContent(nb),
           histo_QCDrScaleUp  [ic]->GetBinContent(nb)
         );
-      // Bound between [0.5,2.0] (essentially does nothing)
-      histo_QCDrScaleUp  [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDrScaleUp  [ic]->GetBinContent(nb))));
-      histo_QCDrScaleDown[ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDrScaleDown[ic]->GetBinContent(nb))));
-      histo_QCDfScaleUp  [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDfScaleUp  [ic]->GetBinContent(nb))));
-      histo_QCDfScaleDown[ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_QCDfScaleDown[ic]->GetBinContent(nb))));
-      //histo_pdfUp       [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_pdfUp       [ic]->GetBinContent(nb))));
-      //histo_pdfDown     [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_pdfDown     [ic]->GetBinContent(nb))));
-      histo_VHCorrUp    [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_VHCorrUp    [ic]->GetBinContent(nb))));
-      histo_VHCorrDown  [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_VHCorrDown  [ic]->GetBinContent(nb))));
-      histo_muSFUp      [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_muSFUp      [ic]->GetBinContent(nb))));
-      histo_muSFDown    [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_muSFDown    [ic]->GetBinContent(nb))));
-      histo_eleSFUp     [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_eleSFUp     [ic]->GetBinContent(nb))));
-      histo_eleSFDown   [ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_eleSFDown   [ic]->GetBinContent(nb))));
-      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-        histo_cmvaJESUp       [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaJESUp       [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaLFUp        [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFUp        [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaHFUp        [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaHFUp        [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaHFStats1Up  [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaHFStats1Up  [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaHFStats2Up  [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaHFStats2Up  [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaLFStats1Up  [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFStats1Up  [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaLFStats2Up  [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFStats2Up  [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaCErr1Up     [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaCErr1Up     [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaCErr2Up     [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaCErr2Up     [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaJESDown     [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaJESDown     [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaLFDown      [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFDown      [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaHFDown      [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaHFDown      [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaHFStats1Down[iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaHFStats1Down[iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaHFStats2Down[iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaHFStats2Down[iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaLFStats1Down[iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFStats1Down[iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaLFStats2Down[iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaLFStats2Down[iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaCErr1Down   [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaCErr1Down   [iPt][iEta][ic]->GetBinContent(nb))));
-        histo_cmvaCErr2Down   [iPt][iEta][ic]->SetBinContent(nb, TMath::Max(halfNom,TMath::Min(twiceNom,histo_cmvaCErr2Down   [iPt][iEta][ic]->GetBinContent(nb))));
-      }
     }
   }
   // Renormalize the W+glu shape uncertainties to the nominal shape
@@ -1923,17 +1979,22 @@ void vhbbHistos(
   // Prepare the datacard C-('.' Q)
   int ic0 = kPlotQCD+1;
   const char *ttbar = plotBaseNames[kPlotTT ].Data(), *Wbb=plotBaseNames[kPlotWbb].Data(), *Wb=plotBaseNames[kPlotWb ].Data(), *WLF=plotBaseNames[kPlotWLF].Data();
+  TH1F *bgSum = (TH1F*)histos[pMVAVar][kPlotData]->Clone("bgSum");
+  bgSum->Reset(); bgSum->Clear();
+  for(int ic=ic0; ic<nPlotCategories; ic++) {
+    if(ic==kPlotVH) continue;
+    bgSum->Add(histos[pMVAVar][ic]);
+  }
   
   char outputLimitsShape[512];
   sprintf(outputLimitsShape,"MitVHBBAnalysis/datacards/%s/datacard_%s.txt",dataCardDir.Data(),regionName);
   ofstream card; card.open(outputLimitsShape);
-  TFile *shapesFile = TFile::Open(Form("MitVHBBAnalysis/datacards/%s/hists_%s.root",dataCardDir.Data(),regionName),"recreate");
   card << Form("imax 1 number of channels\n");
   card << Form("jmax * number of background\n");
   card << Form("kmax * number of nuisance parameters\n");
   card << Form("shapes * %s hists_%s.root %s_%s_$PROCESS %s_%s_$PROCESS_$SYSTEMATIC",regionName,regionName,shapeType,regionName,shapeType,regionName)<<std::endl;
   card << Form("bin     "); card<<regionName<<std::endl;
-  card << Form("Observation %d\n", (int)(isBlinded? 0 : histos[pMVAVar][kPlotData]->Integral())); 
+  card << Form("Observation %d\n", (int)(isBlinded? bgSum->Integral() : histos[pMVAVar][kPlotData]->Integral())); 
   card << Form("bin     "); for(int ic=ic0; ic<nPlotCategories; ic++) card<<regionName<<" "; card<<std::endl;
   card << Form("process "); for(int ic=ic0; ic<nPlotCategories; ic++) card<<Form("%9s ",plotBaseNames[ic].Data()); card<<std::endl;
   card << Form("process "); for(int ic=ic0; ic<nPlotCategories; ic++) card<<Form("%9d ", ic==kPlotVH?0:ic); card<<std::endl;
@@ -1952,9 +2013,16 @@ void vhbbHistos(
   
   // Stat Bounding
   TH1F *statBoundingUp=0, *statBoundingDown=0;
-  if(selection==kWHSR || selection==kWHFJSR) for(int ic=ic0; ic<nPlotCategories; ic++) {
+  if(
+    selection==kWHSR ||
+    selection==kWHHeavyFlavorFJCR || 
+    selection==kWHFJSR
+  ) for(int ic=ic0; ic<nPlotCategories; ic++) {
     for(int nb=1; nb<=histos[pMVAVar][ic]->GetNbinsX(); nb++) {
       //singleClassBDTShape_WenWHSR_$PROCESS_$SYSTEMATIC
+      if((selection==kWHHeavyFlavorFJCR || selection==kWHFJSR) &&
+        ic!=kPlotTop && ic!=kPlotTT && ic!=kPlotWLF && ic!=kPlotWb && ic!=kPlotWbb && ic!=kPlotVH)
+        continue;
       systName=Form("%sStatBounding_%s_bin%d_13TeV",plotBaseNames[ic].Data(),regionName,nb);
       statBoundingUp   = (TH1F*)histos[pMVAVar][ic]->Clone(Form("%s_%s_%s_%sUp"  ,shapeType,regionName,plotBaseNames[ic].Data(),systName.Data()));
       statBoundingDown = (TH1F*)histos[pMVAVar][ic]->Clone(Form("%s_%s_%s_%sDown",shapeType,regionName,plotBaseNames[ic].Data(),systName.Data()));
@@ -2003,21 +2071,73 @@ void vhbbHistos(
     }
     card<<std::endl;
   }
+
   // BTag Shape Uncertainty
-  for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-    systName=Form("CMS_bTagWeightJES_Pt%d_Eta%d"     , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaJESUp     [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaJESDown     [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightLF_Pt%d_Eta%d"      , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaLFUp      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaLFDown      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightHF_Pt%d_Eta%d"      , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaHFUp      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaHFDown      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightHFStats1_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaHFStats1Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaHFStats1Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightHFStats2_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaHFStats2Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaHFStats2Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightLFStats1_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaLFStats1Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaLFStats1Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightLFStats2_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaLFStats2Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaLFStats2Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightCErr1_Pt%d_Eta%d"   , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaCErr1Up   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaCErr1Down   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
-    systName=Form("CMS_bTagWeightCErr2_Pt%d_Eta%d"   , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { card<<"1.0 "; histo_cmvaCErr2Up   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaCErr2Down   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } card<<std::endl;
+  if(selection>=kWHLightFlavorCR && selection<=kWHFJSR) { 
+    bool use[9][nPlotCategories];
+    float maxEffect[9];
+    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+      for(int ic=ic0; ic<nPlotCategories; ic++) {
+        maxEffect[0]=0;
+        maxEffect[1]=0;
+        maxEffect[2]=0;
+        maxEffect[3]=0;
+        maxEffect[4]=0;
+        maxEffect[5]=0;
+        maxEffect[6]=0;
+        maxEffect[7]=0;
+        maxEffect[8]=0;
+        bool processIsConsidered = (ic==kPlotTT||ic==kPlotTop||ic==kPlotWbb||ic==kPlotWb||ic==kPlotWLF);
+        if(processIsConsidered) for(int nb=1; nb<=histos[pMVAVar][ic]->GetNbinsX(); nb++) {
+          if(histos[pMVAVar][ic]->GetBinContent(nb)<=0) continue;
+          maxEffect[0] = TMath::Max( maxEffect[0], (float)(TMath::Abs(histo_cmvaJESUp     [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[1] = TMath::Max( maxEffect[1], (float)(TMath::Abs(histo_cmvaLFUp      [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[2] = TMath::Max( maxEffect[2], (float)(TMath::Abs(histo_cmvaHFUp      [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[3] = TMath::Max( maxEffect[3], (float)(TMath::Abs(histo_cmvaHFStats1Up[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[4] = TMath::Max( maxEffect[4], (float)(TMath::Abs(histo_cmvaHFStats2Up[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[5] = TMath::Max( maxEffect[5], (float)(TMath::Abs(histo_cmvaLFStats1Up[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[6] = TMath::Max( maxEffect[6], (float)(TMath::Abs(histo_cmvaLFStats2Up[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[7] = TMath::Max( maxEffect[7], (float)(TMath::Abs(histo_cmvaCErr1Up   [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[8] = TMath::Max( maxEffect[8], (float)(TMath::Abs(histo_cmvaCErr2Up   [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[0] = TMath::Max( maxEffect[0], (float)(TMath::Abs(histo_cmvaJESDown     [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[1] = TMath::Max( maxEffect[1], (float)(TMath::Abs(histo_cmvaLFDown      [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[2] = TMath::Max( maxEffect[2], (float)(TMath::Abs(histo_cmvaHFDown      [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[3] = TMath::Max( maxEffect[3], (float)(TMath::Abs(histo_cmvaHFStats1Down[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[4] = TMath::Max( maxEffect[4], (float)(TMath::Abs(histo_cmvaHFStats2Down[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[5] = TMath::Max( maxEffect[5], (float)(TMath::Abs(histo_cmvaLFStats1Down[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[6] = TMath::Max( maxEffect[6], (float)(TMath::Abs(histo_cmvaLFStats2Down[iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[7] = TMath::Max( maxEffect[7], (float)(TMath::Abs(histo_cmvaCErr1Down   [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+          maxEffect[8] = TMath::Max( maxEffect[8], (float)(TMath::Abs(histo_cmvaCErr2Down   [iPt][iEta][ic]->GetBinContent(nb) - histos[pMVAVar][ic]->GetBinContent(nb))/histos[pMVAVar][ic]->GetBinContent(nb)));
+        }
+        // Condition to use that shape unc.
+        for(unsigned iUnc=0; iUnc<9; iUnc++) use[iUnc][ic]= (maxEffect[iUnc]>=0.001);
+      }
+      systName=Form("CMS_bTagWeightJES_Pt%d_Eta%d"     , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[0][ic]) { card<<"1.0 "; histo_cmvaJESUp     [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaJESDown     [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightLF_Pt%d_Eta%d"      , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[1][ic]) { card<<"1.0 "; histo_cmvaLFUp      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaLFDown      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightHF_Pt%d_Eta%d"      , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[2][ic]) { card<<"1.0 "; histo_cmvaHFUp      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaHFDown      [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightHFStats1_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[3][ic]) { card<<"1.0 "; histo_cmvaHFStats1Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaHFStats1Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightHFStats2_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[4][ic]) { card<<"1.0 "; histo_cmvaHFStats2Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaHFStats2Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightLFStats1_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[5][ic]) { card<<"1.0 "; histo_cmvaLFStats1Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaLFStats1Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightLFStats2_Pt%d_Eta%d", iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[6][ic]) { card<<"1.0 "; histo_cmvaLFStats2Up[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaLFStats2Down[iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightCErr1_Pt%d_Eta%d"   , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[7][ic]) { card<<"1.0 "; histo_cmvaCErr1Up   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaCErr1Down   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+      systName=Form("CMS_bTagWeightCErr2_Pt%d_Eta%d"   , iPt, iEta); card<<(systName+" shape ").Data(); for(int ic=ic0; ic<nPlotCategories; ic++) { if(use[8][ic]) { card<<"1.0 "; histo_cmvaCErr2Up   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Up"); histo_cmvaCErr2Down   [iPt][iEta][ic]->Write(shapeName[ic]+"_"+systName+"Down"); } else card<<"- "; } card<<std::endl;
+    }
   }
+  if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
+    card<<Form("CMS_doubleB shape "); for(int ic=ic0; ic<nPlotCategories; ic++) {
+      if(ic==kPlotVH||ic==kPlotWbb) { card<<"1.0 "; histo_doubleBUp[ic]->Write(shapeName[ic]+"_CMS_doubleBUp"); histo_doubleBDown[ic]->Write(shapeName[ic]+"_CMS_doubleBDown"); }
+      else card<<"- ";
+    } card<<std::endl;
+
+  }
+  
   //// Total Jet Energy Scale Shape Uncertainty
   card<<Form("CMS_scale_j shape "); for(int ic=ic0; ic<nPlotCategories; ic++) {
-    card<<"1.0 "; histo_jesUp[ic]->Write(shapeName[ic]+"_CMS_scale_jUp"); histo_jesDown[ic]->Write(shapeName[ic]+"_CMS_scale_jDown");
+    if(!(selection==kWHFJSR && (ic==kPlotZbb || ic==kPlotZb || ic==kPlotZLF || ic == kPlotWLF)) &&
+       !(selection==kWHFJSR && (ic==kPlotZbb || ic==kPlotZb || ic==kPlotZLF))
+    ) {
+      card<<"1.0 "; histo_jesUp[ic]->Write(shapeName[ic]+"_CMS_scale_jUp"); histo_jesDown[ic]->Write(shapeName[ic]+"_CMS_scale_jDown");
+    } else card << "- ";
   } card<<std::endl;
   // WPT Corr Errors
   if(useWptCorr) { 
@@ -2045,6 +2165,16 @@ void vhbbHistos(
   if(theLepSel!=1) { card<<Form("CMS_eff2016_e shape "); for(int ic=ic0; ic<nPlotCategories; ic++) {
     card<<"1.0 "; histo_eleSFUp[ic]->Write(shapeName[ic]+"_CMS_eff2016_eUp"); histo_eleSFDown[ic]->Write(shapeName[ic]+"_CMS_eff2016_eDown");
   } card<<std::endl; }
+  
+  // Gluon fraction for W+jets
+  if(selection>=kWHLightFlavorFJCR && selection<=kWHFJSR) {
+    card<<Form("WjetsGluFrac shape ");  for(int ic=ic0; ic<nPlotCategories; ic++) {
+      if(ic==kPlotWbb||ic==kPlotWb||ic==kPlotWLF) {
+        card<<"1.0 "; histo_VGluUp[ic]->Write(shapeName[ic]+"_WjetsGluFracUp"); histo_VGluDown[ic]->Write(shapeName[ic]+"_WjetsGluFracDown");
+      } else card<<"- ";
+    } card<<std::endl;
+  }
+
 
   // Systematics -- Normalization Uncertainties
   // PDF Acceptance
@@ -2089,35 +2219,39 @@ void vhbbHistos(
     // Double B-tag scale factor extraction in situ
     // A priori MC efficiencies for the double B cut
     
-    // Mar 22 2018 (before switching to corrected MSD)
-    //   Process      Eff.(0ijB)     Eff.(1+ijB)
-    // -----------------------------------------
-    //     ttbar           0.128           0.114
-    //      W+bb           0.394           0.178
-    //       W+b           0.229           0.104
-    //   W+udcsg           0.021           0.026
+//  Process      Eff.(0ijB)     +/-     Eff.(1+ijB)     +/-
+//----------------------------------------------------------------------------
+//    ttbar           0.124 0.00112           0.115 0.00071
+//     W+bb           0.500 0.00190           0.451 0.00412
+//      W+b           0.159 0.00228           0.166 0.00263
+//  W+udcsg           0.021 0.00031           0.027 0.00069
+    
+    card << Form("SF_%sFJ_Wln rateParam  * %s 1 [0.2,5]",ttbar,ttbar) << std::endl;
+    card << Form("SF_%sFJ_Wln rateParam  * %s 1 [0.2,5]",Wbb  ,Wbb  ) << std::endl;
+    card << Form("SF_%sFJ_Wln lnN ",Wb); for(int ic=ic0; ic<nPlotCategories; ic++) card<< (ic==kPlotWb? "1.25 ":"- "); card<<std::endl;
+    card << Form("SF_%sFJ_Wln rateParam  * %s 1 [0.2,5]",WLF  ,WLF  ) << std::endl;
 
     if(!useIgnorantVHFSFs) {
-      card << "effDoubleB_TT   param 0.13  0.013" << std::endl; 
-      card << "effDoubleB_Wbb  param 0.39  0.039"  << std::endl; 
-      card << "effDoubleB_Wb   param 0.23  0.023"  << std::endl; 
+      card << "effDoubleB_TT   param 0.12  0.012" << std::endl; 
+      //card << "effDoubleB_Wbb  param 0.50  0.05"   << std::endl; 
+      //card << "effDoubleB_Wb   param 0.16  0.016"  << std::endl; 
       card << "effDoubleB_WLF  param 0.024 0.0024" << std::endl; 
       // Efficiency scale factors for the double B cut
       card << "effSFDoubleB_TT  extArg 1.0 [0.1,10]" << std::endl;
-      card << "effSFDoubleB_Wbb extArg 1.0 [0.1,10]" << std::endl;
-      card << "effSFDoubleB_Wb  extArg 1.0 [0.1,10]" << std::endl;
+      //card << "effSFDoubleB_Wbb extArg 1.0 [0.1,10]" << std::endl;
+      //card << "effSFDoubleB_Wb  extArg 1.0 [0.1,10]" << std::endl;
       card << "effSFDoubleB_WLF extArg 1.0 [0.1,10]" << std::endl;
       // Passing B-tag scale factor rateparam
       if(selection==kWHHeavyFlavorFJCR || selection==kWHTT2bFJCR || selection==kWHFJSR) {
         card << Form("passBB_TT  rateParam * %s (@0*1.0) effSFDoubleB_TT"  ,ttbar) << std::endl;
-        card << Form("passBB_Wbb rateParam * %s (@0*1.0) effSFDoubleB_Wbb" ,Wbb  ) << std::endl;
-        card << Form("passBB_Wb  rateParam * %s (@0*1.0) effSFDoubleB_Wb " ,Wb   ) << std::endl;
+        //card << Form("passBB_Wbb rateParam * %s (@0*1.0) effSFDoubleB_Wbb" ,Wbb  ) << std::endl;
+        //card << Form("passBB_Wb  rateParam * %s (@0*1.0) effSFDoubleB_Wb " ,Wb   ) << std::endl;
         card << Form("passBB_WLF rateParam * %s (@0*1.0) effSFDoubleB_WLF" ,WLF  ) << std::endl;
         
       } else if(selection==kWHLightFlavorFJCR || selection==kWHTT1bFJCR) {
         card << Form("failBB_TT  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_TT,effDoubleB_TT",ttbar) << std::endl;
-        card << Form("failBB_Wbb rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Wbb,effDoubleB_Wbb",Wbb  ) << std::endl;
-        card << Form("failBB_Wb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Wb,effDoubleB_Wb"  ,Wb   ) << std::endl;
+        //card << Form("failBB_Wbb rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Wbb,effDoubleB_Wbb",Wbb  ) << std::endl;
+        //card << Form("failBB_Wb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Wb,effDoubleB_Wb"  ,Wb   ) << std::endl;
         card << Form("failBB_WLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_WLF,effDoubleB_WLF",WLF  ) << std::endl;
       }
     } else { // Ignorant scale factor method for W+HF.
@@ -2149,7 +2283,19 @@ void vhbbHistos(
       }
     }
   }
- 
+  shapesFile->Close();
+  
+  char outputFileName[512];
+  sprintf(outputFileName,"MitVHBBAnalysis/datacards/%s/plots_%s.root",dataCardDir.Data(),regionName);
+  TFile *output_plots = new TFile(outputFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
+  for(int p=0; p<nPlots; p++) {
+    if(histoNames[p]=="") continue;
+    TDirectory *plotDir = output_plots->mkdir(histoNames[p]);
+    plotDir->cd();
+    for(theCategory=kPlotData; theCategory!=nPlotCategories; theCategory++)
+      histos[p][theCategory]->Write();
+  }
+  output_plots->Close();
 
 }
 
