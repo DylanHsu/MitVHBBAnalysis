@@ -25,9 +25,11 @@
 // True means the events with a fatjet are reserved for boosted VH
 
 const bool useHtBinnedVJetsKFactor=true;
-const int NJES = (int)shiftjes::N;
-const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/";
-
+//const int NJES = (int)shiftjes::N;
+const int NJES = 1;
+//const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/";
+const TString ntupleDir = "/tmp/dhsu/";
+const int nLepSel=2;
 using namespace vhbbPlot;
 
 void zllhAnalysis(
@@ -41,9 +43,9 @@ void zllhAnalysis(
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
-  //samples.emplace_back("DoubleEG"  ,  kData);
-  //samples.emplace_back("DoubleMuon",  kData);
-  samples.emplace_back("TTTo2L2Nu" ,  kTT  );
+  samples.emplace_back("DoubleEG"  ,  kData);
+  samples.emplace_back("DoubleMuon",  kData);
+  //samples.emplace_back("TTTo2L2Nu" ,  kTT  );
   // End List of Samples
   /////////////////////////////
   
@@ -72,7 +74,8 @@ void zllhAnalysis(
     kZllHFJSR            ,
     kZllHFJPresel        
   };
-
+  vector<TString> leptonStrings={"mm","ee"};
+ 
   for(unsigned iSel=0; iSel<selections.size(); iSel++) { // Define the shape variable
     selectionType sel = selections[iSel];
     if(MVAVarType==1) {
@@ -95,7 +98,7 @@ void zllhAnalysis(
         MVAbins[sel]={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000};
         MVAVarName[sel]="Subleading H(bb) CMVA";
         shapeType[sel]="lesserCMVAShape";
-      } else if(sel==kZllHHeavyFlavorCR || sel==kZllH2TopCR) {
+      } else if(sel==kZllHHeavyFlavorCR || sel==kZllH2TopCR || sel==kZllHPresel) {
         MVAbins[sel]={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
         MVAVarName[sel]="Subleading H(bb) CMVA";
         shapeType[sel]="lesserCMVAShape";
@@ -103,7 +106,7 @@ void zllhAnalysis(
         MVAbins[sel]={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.9,1.00};
         MVAVarName[sel]="BDT Output";
         shapeType[sel]="singleClassBDTShape"; 
-      } else if(sel>=kZllHLightFlavorFJCR && sel<kZllHFJSR) {
+      } else if((sel>=kZllHLightFlavorFJCR && sel<kZllHFJSR) || sel==kZllHFJPresel) {
         if(sel==kZllHHeavyFlavorFJCR)
           MVAbins[sel]={40,45,50,55,60,65,70,75,80};
         else
@@ -118,6 +121,82 @@ void zllhAnalysis(
     } else throw std::runtime_error("bad MVAVarType");
   }
   
+  // Declare histograms for plotting
+  const int nPlots=50;
+  vector<float> xmin(nPlots), xmax(nPlots);  vector<int> nbins(nPlots);
+  vector<TString> histoNames(nPlots), histoTitles(nPlots);
+  { int p=0;
+    histoNames[p]="MVAVar"      ; histoTitles[p]=""                ;                                                p++;
+    histoNames[p]="Mjj"         ; histoTitles[p]="Dijet mass [GeV]"; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
+    histoNames[p]="bdtValue"    ; histoTitles[p]="BDT Output"      ; nbins[p]=  40; xmin[p]=    -1; xmax[p]=    1.; p++; 
+  }
+  
+  TH1F *histos[nLepSel][selections.size()][nPlots][nPlotCategories];
+  for(unsigned lepSel=0; lepSel<nLepSel; lepSel++) 
+  for(unsigned iSel=0; iSel<selections.size(); iSel++)
+  for(int p=0; p<nPlots; p++) {
+    selectionType sel = selections[iSel];
+    if(histoNames[p]=="") continue;
+    for(unsigned char ic=0; ic<nPlotCategories; ic++) {
+      if(histoNames[p]=="MVAVar") {
+        histos[lepSel][iSel][p][ic] = new TH1F(
+          Form("histo%d_%s_%s",ic,selectionNames[iSel].Data(),leptonStrings[lepSel].Data()), 
+          MVAVarName[sel], MVAbins[sel].size()-1, MVAbins[sel].data());
+      } else {
+        histos[lepSel][iSel][p][ic] = new TH1F(
+          Form("histo%d_%s_%s",ic,selectionNames[iSel].Data(),leptonStrings[lepSel].Data()),
+          histoTitles[p], nbins[p], xmin[p], xmax[p]);
+      }
+      histos[lepSel][iSel][p][ic]->Sumw2();
+      histos[lepSel][iSel][p][ic]->SetDirectory(0);
+    }
+  }
+
+  // Declare shape uncertainty histograms
+  TH1F *histo_VHCorrUp                           [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_VHCorrDown                         [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDr1f2                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDr1f5                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDr2f1                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDr2f2                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDr5f1                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDr5f5                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDrScaleUp                        [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDrScaleDown                      [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDfScaleUp                        [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDfScaleDown                      [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_eleSFUp                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_eleSFDown                          [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_muSFUp                             [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_muSFDown                           [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_btag[GeneralTree::nCsvShifts][5][3][nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_VGluUp                             [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_VGluDown                           [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_jes[(int)shiftjes::N]              [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_jesDown                            [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_doubleBUp                          [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_doubleBDown                        [nLepSel][selections.size()][nPlotCategories];
+  /*
+  for(unsigned lepSel=0; lepSel<nLepSel; lepSel++) 
+  for(unsigned iSel=0; iSel<selections.size(); iSel++)
+  for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
+    histo_VHCorrUp     [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_VHCorrUp"      , ic)); 
+    histo_VHCorrDown   [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_VHCorrDown"    , ic)); 
+    histo_QCDr1f2      [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDr1f2"       , ic)); 
+    histo_QCDr1f5      [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDr1f5"       , ic)); 
+    histo_QCDr2f1      [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDr2f1"       , ic)); 
+    histo_QCDr2f2      [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDr2f2"       , ic)); 
+    histo_QCDr5f1      [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDr5f1"       , ic)); 
+    histo_QCDr5f5      [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDr5f5"       , ic)); 
+    histo_QCDrScaleUp  [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDrScaleUp"   , ic)); 
+    histo_QCDrScaleDown[lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDrScaleDown" , ic)); 
+    histo_QCDfScaleUp  [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDfScaleUp"   , ic)); 
+    histo_QCDfScaleDown[lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_QCDfScaleDown" , ic)); 
+    histo_eleSFUp      [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_eleSFUp"       , ic)); 
+    histo_eleSFDown    [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_eleSFDown"     , ic)); 
+    histo_muSFUp       [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_muSFUp"        , ic)); 
+    histo_muSFDown     [lepSel][iSel][ic] = (TH1F*)histos[lepSel][iSel][0][ic]->Clone(Form("histo%d_muSFDown"      , ic)); 
+  }*/
   ////////////////////////////////////////////////////////////////////////
   // Instantiate GeneralTree object for reading the ntuples
   GeneralTree gt;
@@ -197,6 +276,7 @@ void zllhAnalysis(
   // Done declaring weight variables
   ////////////////////////////////////////////////////////////////////////
 
+  // Analysis Cuts
   float isojetBtagCut = (year==2017)? deepcsvLoose : cmvaLoose;
   std::map<selectionType,vector<TString>> cuts;
   cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                       };
@@ -211,6 +291,7 @@ void zllhAnalysis(
   cuts[kZllHFJSR           ] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"               };
   cuts[kZllHFJPresel       ] = {"ZpTFJ","pTFJ","dPhiZHFJ"                                         };
 
+  ////////////////////////////////////////////////////////////////////////
   // Begin Chain Loop
   TTree *events=0; 
   for(auto const &sample: samples) {
@@ -253,7 +334,7 @@ void zllhAnalysis(
       //////////////////////
       // Clear variables
       theCategory=-1; // plot category 
-      typeLepSel=99; // 0: mixed e-mu, 1: all mu, 2: all e, 99: undefined
+      typeLepSel=99; // 0: Z(mm), 1: Z(ee), 2: e-mu (not implemented yet), 99: undefined
 
       // Clear the jet pts for the b tag decorrelation
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
@@ -301,21 +382,21 @@ void zllhAnalysis(
         (gt.muonSelBit[0] & 1<<3)!=0 &&
         (gt.muonSelBit[1] & 1<<3)!=0 &&
         (gt.trigger & 1<<4)!=0
-      ) typeLepSel=1;
+      ) typeLepSel=0;
       else if(gt.electronPt[0]>25 && gt.electronPt[1]>15 && 
         gt.electronPdgId[0]+gt.electronPdgId[1]==0 &&
         (gt.electronSelBit[0] & 1<<5)!=0 &&
         (gt.electronSelBit[1] & 1<<5)!=0 &&
         (gt.trigger & 1<<5)!=0
-      ) typeLepSel=2;
+      ) typeLepSel=1;
       // E-Mu Selection Not implemented yet!!!
-      if(typeLepSel!=1 && typeLepSel!=2) continue;
+      if(typeLepSel!=0 && typeLepSel!=1) continue;
       if(debug) printf("  Passed lepton ID/iso multiplicity\n");
 
       // Lepton kinematics
       float lepton1Pt,lepton1Eta,lepton1Phi,lepton1RelIso,lepton1D0,lepton1DZ,
             lepton2Pt,lepton2Eta,lepton2Phi,lepton2RelIso,lepton2D0,lepton2DZ;
-      if (typeLepSel==1) {
+      if (typeLepSel==0) {
         bLoad(b["muonEta"],ientry);
         bLoad(b["muonPhi"],ientry);
         bLoad(b["muonD0"],ientry);
@@ -334,7 +415,7 @@ void zllhAnalysis(
         lepton2D0     = gt.muonD0[1];
         lepton2DZ     = gt.muonDZ[1];
         lepton2RelIso = gt.muonCombIso[1]/gt.muonPt[1];
-      } else if(typeLepSel==2) {
+      } else if(typeLepSel==1) {
         bLoad(b["electronEta"],ientry);
         bLoad(b["electronPhi"],ientry);
         bLoad(b["electronD0"],ientry);
@@ -363,8 +444,6 @@ void zllhAnalysis(
       if(debug) printf("  Passed Z boson reconstruction\n");
       
       // Jet multiplicity
-      bLoad(b["nJet"],ientry);
-      if     (gt.nJet[0]<2) continue;
       bool isBoostedCategory=false;
       if(useBoostedCategory) { 
         bLoad(b["nFatjet"],ientry);
@@ -387,11 +466,12 @@ void zllhAnalysis(
       if(isBoostedCategory) {
         // No checks here? 
       } else { 
-        bLoad(b["nJot"],ientry);
+        bLoad(b["nJet"],ientry);
         bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
         bLoad(b["hbbpt"],ientry);
         bLoad(b["hbbm_reg"],ientry);
         if(
+          gt.nJet[0]<2 || 
           gt.hbbpt[0]<50 || 
           gt.hbbm_reg[0]<0 ||
           gt.hbbm_reg[0]>250) 
@@ -406,19 +486,25 @@ void zllhAnalysis(
       
       // Jet B-tagging
       bool bjet1IsTight, bjet2IsLoose;
+      float bjet1btag, bjet2btag;
       if(year==2016) {
         bLoad(b["jotCMVA"],ientry);
         bjet1IsTight = gt.jotCMVA[gt.hbbjtidx[0][0]] > cmvaTight;
         bjet2IsLoose = gt.jotCMVA[gt.hbbjtidx[0][1]] > cmvaLoose;
+        bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
+        bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
       } else if(year==2017) {
         bLoad(b["jotCSV"],ientry);
         bjet1IsTight = gt.jotCSV[gt.hbbjtidx[0][0]] > deepcsvTight;
         bjet2IsLoose = gt.jotCSV[gt.hbbjtidx[0][1]] > deepcsvLoose;
+        bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
+        bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
       }
 
       bLoad(b["jotPt"],ientry);
       bLoad(b["jotEta"],ientry);
       bLoad(b["jotPhi"],ientry);
+      /*
       if(isBoostedCategory) {
         // Isojets for boosted category
         bLoad(b["fjEta"],ientry);
@@ -433,7 +519,7 @@ void zllhAnalysis(
           if(gt.jotPt[iJES][iJ]>30) {
             isojets[iJES].push_back(iJ);
             if(isojetBtag>isojetBtagCut) isojetNBtags[iJES]++;
-          }
+          //}
           
           // Decorrelated b-tag nuisances for the isojets
           // Nominal JES scenario only
@@ -480,7 +566,7 @@ void zllhAnalysis(
             jetBtags  [iPt][iEta].push_back(btag);
           }
         }
-      }
+      }*/
       
       // Load branches for the cuts
       bLoad(b["ZBosonPt"],ientry);
@@ -510,17 +596,19 @@ void zllhAnalysis(
         } 
         if(iJES==(int)shiftjes::kJESTotalUp  ) cut["lowMET"] = gt.pfmet[1] < 60;
         if(iJES==(int)shiftjes::kJESTotalDown) cut["lowMET"] = gt.pfmet[2] < 60;
-        cut["dPhiZH"  ] = fabs(gt.hbbphi[iJES] - gt.ZBosonPhi) > 2.5;
-        cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 100;
-        cut["mjj"     ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
-        cut["mjjSB"   ] = !cut["mjjSB"] && gt.hbbm_reg[iJES]<250;
-        cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
-        cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
-        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
-        cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
-        cut["0ijb"    ] = isojetNBtags[iJES]==0;
-        cut["1ijb"    ] = isojetNBtags[iJES]>0;
-        
+        if(isBoostedCategory) {
+          cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
+          cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
+          cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
+          cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
+          cut["0ijb"    ] = isojetNBtags[iJES]==0;
+          cut["1ijb"    ] = !cut["0ijb"];
+        } else {
+          cut["dPhiZH"  ] = fabs(gt.hbbphi[iJES] - gt.ZBosonPhi) > 2.5;
+          cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 100;
+          cut["mjj"     ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
+          cut["mjjSB"   ] = !cut["mjjSB"] && gt.hbbm_reg[iJES]<250;
+        } 
         selectionBits[iJES]=0; nMinusOneBits=0;
         for(unsigned iSel=0; iSel<selections.size(); iSel++) { 
           selectionType sel = selections[iSel];
@@ -535,8 +623,6 @@ void zllhAnalysis(
       }
 
       // Event weighting
-      float weight;
-
       if(type==kData) {
         weight=1;
       } else {
@@ -558,7 +644,7 @@ void zllhAnalysis(
           gt.sf_ewkV=1;
         }
         
-        if (typeLepSel==1) {
+        if (typeLepSel==0) {
           bLoad(b["muonSfReco"],ientry);
           bLoad(b["muonSfTight"],ientry);
           bLoad(b["muonSfUnc"],ientry);
@@ -566,7 +652,7 @@ void zllhAnalysis(
           weight *= gt.sf_muTrig;
           weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
           weight *= gt.muonSfReco[1] * gt.muonSfTight[1];
-        } else if(typeLepSel==2) {
+        } else if(typeLepSel==1) {
           bLoad(b["electronSfReco"],ientry);
           bLoad(b["electronSfMvaWP90"],ientry);
           bLoad(b["electronSfUnc"],ientry);
@@ -628,6 +714,84 @@ void zllhAnalysis(
           }
         }
       }
+
+      // Calculate the shape variable in all JES scenarios for all the regions
+      float MVAVar[selections.size()][(int)shiftjes::N], bdtValue[(int)shiftjes::N];
+      for(unsigned iSel=0; iSel<selections.size(); iSel++) for(unsigned iJES=0; iJES<NJES; iJES++) {
+        selectionType sel = selections[iSel];
+        switch(MVAVarType) {
+          case 1:
+          default:
+            if(sel==kZllHLightFlavorCR ||
+              sel==kZllHHeavyFlavorCR ||
+              sel==kZllH2TopCR        ||
+              sel==kZllHSR            ||
+              sel==kZllHPresel        )
+              MVAVar[iSel][iJES]=gt.hbbpt_reg[iJES];
+            else
+              MVAVar[iSel][iJES]=gt.fjPt[iJES];
+            break;
+          case 3:
+            if(sel==kZllHSR || sel==kZllHFJSR)
+              MVAVar[iSel][iJES]=bdtValue[iJES];
+            else if(sel==kZllHLightFlavorCR ||
+              sel==kZllHHeavyFlavorCR       || 
+              sel==kZllH2TopCR)
+              MVAVar[iSel][iJES]=bjet2btag;
+            else if(sel==kZllHLightFlavorFJCR ||
+              sel==kZllHHeavyFlavorFJCR       ||
+              sel==kZllHTT2bFJCR              ||
+              sel==kZllHTT1bFJCR)
+              MVAVar[iSel][iJES]=gt.fjMSD_corr[iJES];
+            break;
+        }
+      }
+
+      // Category Assignment for Plotting and Datacards
+      unsigned char category; int countB;
+      if(type!=kData) {
+        if(isBoostedCategory) {
+          bLoad(b["fjGenNumB"],ientry);
+          countB = gt.fjGenNumB;
+        } else {
+          bLoad(b["nBGenJets"],ientry);
+          countB = gt.nBGenJets;
+        }
+      }
+      if     (type==kData ) category=kPlotData ;
+      else if(type==kQCD  ) category=kPlotQCD  ;
+      else if(type==kWW   ) category=kPlotVVLF ;
+      else if(type==kTT   ) category=kPlotTT   ; 
+      else if(type==kTop  ) category=kPlotTop  ;
+      else if(type==kWH   ) category=kPlotWH   ;
+      else if(type==kZH   ) category=kPlotZH   ;
+      else if(type==kWjets) {
+        if(countB>1) category=kPlotWbb;
+        else if(countB>0) category=kPlotWb;
+        else category=kPlotWLF;
+      } else if(type==kZjets) {
+        if(countB>1) category=kPlotZbb;
+        else if(countB>0) category=kPlotZb;
+        else category=kPlotZLF;
+      } else if(type==kVZ) {
+        if(countB>1) category=kPlotVZbb;
+        else category=kPlotVVLF;
+      } else throw std::runtime_error("category problem!");
+ 
+      // Fill the plotting histograms
+      for(unsigned iSel=0; iSel<selections.size(); iSel++) for(int p=0; p<nPlots; p++) { bool makePlot=false;
+        selectionType sel = selections[iSel];
+        bool passFullSel = (selectionBits[0] & sel) != 0;
+        float theVar;
+        // Variables -- change the makePlot for n-1 later
+        if      (histoNames[p]=="MVAVar"    ) { theVar = MVAVar[iSel][0]  ; makePlot = passFullSel; }
+        if      (histoNames[p]=="Mjj"       ) { theVar = gt.hbbm_reg[0]   ; makePlot = passFullSel; }
+        if      (histoNames[p]=="bdtValue"  ) { theVar = bdtValue[0]      ; makePlot = passFullSel; }
+        else continue;
+        if(!makePlot) continue;
+        histos[typeLepSel][iSel][p][category]->Fill(theVar, weight);
+      }    
+    
     } // End Event Loop
     inputFile->Close();
   } // End Chain Loop
@@ -635,4 +799,23 @@ void zllhAnalysis(
   if(deepcsvSFs) delete deepcsvSFs;
   if(deepcsvCalib) delete deepcsvCalib;
   if(cmvaReweighter) delete cmvaReweighter;
+  
+  // Write plots
+  char regionName[128];
+  for(unsigned lepSel=0; lepSel<nLepSel; lepSel++) 
+  for(unsigned iSel=0; iSel<selections.size(); iSel++) {
+    selectionType sel = selections[iSel];
+    sprintf(regionName, "Z%s%s",leptonStrings[lepSel].Data(),selectionNames[sel].Data());
+    TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s.root",dataCardDir.Data(),regionName);
+    TFile *outputPlots = new TFile(plotFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
+    for(int p=0; p<nPlots; p++) {
+      if(histoNames[p]=="") continue;
+      TDirectory *plotDir = outputPlots->mkdir(histoNames[p]); plotDir->cd();
+      for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++)
+        histos[lepSel][iSel][p][theCategory]->Write(Form("histo%d",ic));
+    }
+    outputPlots->Close();
+  }
+
+
 }
