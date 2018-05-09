@@ -1471,10 +1471,14 @@ void vhbbHistos(
         if(hbbDijetMassDown<150.) passMassSplit_jesDown=false;
       }
     }
-    bool passFullSel         = (selectionBits & selection)!=0 && passMassSplit; 
-    bool passFullSel_jesUp   = (selectionBits_jesUp & selection)!=0 && passMassSplit_jesUp; 
+    bool passOrthogonal=true, passOrthogonal_jesUp=true, passOrthogonal_jesDown=true;
+    if(pfmet>170) passOrthogonal=false;
+    if(pfmetUp>170) passOrthogonal_jesUp=false;
+    if(pfmetDown>170) passOrthogonal_jesDown=false;
+    bool passFullSel         = (selectionBits & selection)!=0 && passMassSplit && passOrthogonal; 
+    bool passFullSel_jesUp   = (selectionBits_jesUp & selection)!=0 && passMassSplit_jesUp && passOrthogonal_jesUp; 
     //printf("passFullSel_jesUp = %d\n", passFullSel_jesUp);
-    bool passFullSel_jesDown = (selectionBits_jesDown & selection)!=0 && passMassSplit_jesDown; 
+    bool passFullSel_jesDown = (selectionBits_jesDown & selection)!=0 && passMassSplit_jesDown && passOrthogonal_jesDown; 
     float bdtValue=-99,bdtValue_jesUp=-99,bdtValue_jesDown=-99;
     switch(MVAVarType) {
       case 1:
@@ -1560,8 +1564,8 @@ void vhbbHistos(
       else if (histoNames[p]=="Hbjet2Pt"            ) { theVar = TMath::Min(hbbJet2Pt     , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="dPhiHbbJet1MET"      ) { theVar = TMath::Min(dPhiHbbJet1MET, float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="dPhiHbbJet2MET"      ) { theVar = TMath::Min(dPhiHbbJet2MET, float(xmax[p]- 1e-6)); makePlot = passFullSel; }
-      else if (histoNames[p]=="bDiscrMin"           ) { theVar = TMath::Min(bDiscrMin     , float(xmax[p]- 1e-6)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && (selection==kWHSR && theVar<bDiscrLoose )); }
-      else if (histoNames[p]=="bDiscrMax"           ) { theVar = TMath::Min(bDiscrMax     , float(xmax[p]- 1e-6)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && ((selection==kWHLightFlavorCR && (theVar<bDiscrLoose || theVar>bDiscrMedium) ) || (selection!=kWHLightFlavorCR && theVar<bDiscrTight)) ); }
+      else if (histoNames[p]=="bDiscrMin"           ) { theVar = TMath::Min(bDiscrMin     , float(xmax[p]- 1e-6)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && (selection==kWHSR && theVar<cmvaLoose )); }
+      else if (histoNames[p]=="bDiscrMax"           ) { theVar = TMath::Min(bDiscrMax     , float(xmax[p]- 1e-6)); makePlot = passFullSel != ((nMinusOneBits & selection)!=0 && ((selection==kWHLightFlavorCR && (theVar<cmvaLoose || theVar>cmvaMedium) ) || (selection!=kWHLightFlavorCR && theVar<cmvaTight)) ); }
       else if (histoNames[p]=="topMassLep1Met"      ) { theVar = TMath::Min(topMassLep1Met, float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="nJet"                ) { theVar = TMath::Min((float)nJet   , float(xmax[p]- 1e-6)); makePlot = passFullSel; }
       else if (histoNames[p]=="sumEtSoft1"          ) { theVar = TMath::Min(sumEtSoft1    , float(xmax[p]- 1e-6)); makePlot = passFullSel; }

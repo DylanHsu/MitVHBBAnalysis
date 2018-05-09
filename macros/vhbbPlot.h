@@ -8,7 +8,8 @@ namespace vhbbPlot {
   
   float theLumi=35900.;
   //const float bDiscrLoose = 0.5426, bDiscrMedium = 0.8484, bDiscrTight  = 0.9535; //csv
-  const float bDiscrLoose = -0.5884, bDiscrMedium = 0.4432, bDiscrTight  = 0.9432; //cmva
+  const float cmvaLoose = -0.5884, cmvaMedium = 0.4432, cmvaTight  = 0.9432; //cmva
+  const float deepcsvLoose = 0.1522, deepcsvMedium = 0.4941, deepcsvTight = 0.8001; //cmva
   const float doubleBCut = 0.8; // double b tagger
   
   TString trainTreeEventSplitStr="(eventNumber % 10)<3";
@@ -67,9 +68,10 @@ namespace vhbbPlot {
     kZllHPresel          = 0x1 << 15,
     kZllHLightFlavorFJCR = 0x1 << 16,
     kZllHHeavyFlavorFJCR = 0x1 << 17,
-    kZllH2TopFJCR        = 0x1 << 18,
-    kZllHFJSR            = 0x1 << 19,
-    kZllHFJPresel        = 0x1 << 20,
+    kZllHTT2bFJCR        = 0x1 << 18,
+    kZllHTT1bFJCR        = 0x1 << 19,
+    kZllHFJSR            = 0x1 << 20,
+    kZllHFJPresel        = 0x1 << 21,
     
   };
   enum sampleType {
@@ -81,7 +83,8 @@ namespace vhbbPlot {
     kTop        , // 5
     kWjets      , // 6
     kZjets      , // 7
-    kVH         , // 7
+    kWH         , // 8
+    kZH         , // 8
     nSampleTypes 
   };
   enum plotCategory {
@@ -97,7 +100,8 @@ namespace vhbbPlot {
     kPlotZbb  , // 9  
     kPlotZb   , //10  
     kPlotZLF  , //11   
-    kPlotVH   , //12   
+    kPlotWH   , //12   
+    kPlotZH   , //13   
     nPlotCategories
   };
   
@@ -114,7 +118,8 @@ namespace vhbbPlot {
     { kPlotZbb  , kRed-8      },
     { kPlotZb   , kMagenta-10 },
     { kPlotZLF  , kPink+1     },
-    { kPlotVH   , kRed+1      }
+    { kPlotWH   , kRed+1      },
+    { kPlotZH   , kRed+3      }
   };
   std::map<plotCategory, TString> plotNames={
     { kPlotData , "Data"     },
@@ -129,7 +134,8 @@ namespace vhbbPlot {
     { kPlotZbb  , "Z+bb"     },
     { kPlotZb   , "Z+b"      },
     { kPlotZLF  , "Z+udcsg"  },
-    { kPlotVH   , "WH(125)"  }
+    { kPlotWH   , "WH(125)"  },
+    { kPlotZH   , "ZH(125)"  }
   };
   std::map<int, TString> plotBaseNames={
     { kPlotData , "Data" },
@@ -144,18 +150,32 @@ namespace vhbbPlot {
     { kPlotZbb  , "Zbb"  },
     { kPlotZb   , "Zb"   },
     { kPlotZLF  , "ZLF"  },
-    { kPlotVH   , "VH"   }
+    { kPlotWH   , "WH"   },
+    { kPlotZH   , "WH"   }
   }; 
   std::map<int, TString> selectionNames={ 
     { kWHLightFlavorCR    , "WHLightFlavorCR"    },
     { kWHHeavyFlavorCR    , "WHHeavyFlavorCR"    },
     { kWH2TopCR           , "WH2TopCR"           },
     { kWHSR               , "WHSR"               },
+    { kWHPresel           , "WHPresel"           },
     { kWHLightFlavorFJCR  , "WHLightFlavorFJCR"  },
     { kWHHeavyFlavorFJCR  , "WHHeavyFlavorFJCR"  },
     { kWHTT2bFJCR         , "WHTT2bFJCR"         },
     { kWHTT1bFJCR         , "WHTT1bFJCR"         },
     { kWHFJSR             , "WHFJSR"             },
+    { kWHFJPresel         , "WHFJPresel"         },
+    { kZllHLightFlavorCR    , "ZllHLightFlavorCR"    },
+    { kZllHHeavyFlavorCR    , "ZllHHeavyFlavorCR"    },
+    { kZllH2TopCR           , "ZllH2TopCR"           },
+    { kZllHSR               , "ZllHSR"               },
+    { kZllHPresel           , "ZllHPresel"           },
+    { kZllHLightFlavorFJCR  , "ZllHLightFlavorFJCR"  },
+    { kZllHHeavyFlavorFJCR  , "ZllHHeavyFlavorFJCR"  },
+    { kZllHTT2bFJCR         , "ZllHTT2bFJCR"         },
+    { kZllHTT1bFJCR         , "ZllHTT1bFJCR"         },
+    { kZllHFJSR             , "ZllHFJSR"             },
+    { kZllHFJPresel         , "ZllHFJPresel"         }
   };
   std::map<int, float> pdfAcceptUncs={
     { kPlotVZbb , 1.02  },
@@ -167,7 +187,8 @@ namespace vhbbPlot {
     { kPlotZbb  , 1.02  },
     { kPlotZb   , 1.03  },
     { kPlotZLF  , 1.05  },
-    { kPlotVH   , 1.01  }
+    { kPlotWH   , 1.01  },
+    { kPlotZH   , 1.01  }
   };
   // This function loads the ith entry of the branch, only if it has not already been loaded
   int bLoad(TBranch *branch, Long64_t ientry) {

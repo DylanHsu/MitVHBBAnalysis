@@ -1,4 +1,7 @@
 #include "PandaAnalysis/Flat/interface/GeneralTree.h"
+#include "CondFormats/BTauObjects/interface/BTagEntry.h"
+#include "CondFormats/BTauObjects/interface/BTagCalibration.h"
+#include "CondTools/BTau/interface/BTagCalibrationReader.h"
 #include "PandaAnalysis/Utilities/src/CSVHelper.cc"
 #include <Compression.h>
 #include <TSystem.h>
@@ -16,24 +19,40 @@
 #include <unistd.h>
 #include "vhbbPlot.h"
 #include "formulas.h"
+
 // useBoostedCategory - This controls whether to cut on the number of fatjets in the resolved regions
 // False means you will use all possible events to do the resolved VH
 // True means the events with a fatjet are reserved for boosted VH
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N;
+const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/";
 
 using namespace vhbbPlot;
-void vhbbPlotSkim(
+
+void zllhAnalysis(
   TString dataCardDir,
   bool useBoostedCategory=false,
   int MVAVarType=3,
   unsigned year=2016,
-  bool debug=false
+  unsigned debug=0 
 ) {
+  
+  /////////////////////////////
+  // List of Samples
+  vector<pair<TString,vhbbPlot::sampleType>> samples;
+  //samples.emplace_back("DoubleEG"  ,  kData);
+  //samples.emplace_back("DoubleMuon",  kData);
+  samples.emplace_back("TTTo2L2Nu" ,  kTT  );
+  // End List of Samples
+  /////////////////////////////
+  
+  // Load Shared Objects for ACLIC
+  gSystem->Load("libPandaAnalysisFlat.so");
+  
   assert(dataCardDir!="");
   if(dataCardDir!="") system(Form("mkdir -p MitVHBBAnalysis/datacards/%s",dataCardDir.Data()));
-  const double theLumi=35900.;
+  double theLumi= (year==2016)? 35900.:41000;
   
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
@@ -118,8 +137,35 @@ void vhbbPlotSkim(
   // Done making GeneralTree object
   ////////////////////////////////////////////////////////////////////////
   // Load corrections to apply offline
-  // CMVA reweighting for 2016
-  CSVHelper *cmvaReweighter = new CSVHelper("PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root"   , "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root"   , 5);
+  // CMVA reweighting for 2016, DeepCSV reweighting for 2017
+  BTagCalibrationReader *deepcsvSFs=0; BTagCalibration *deepcsvCalib=0; CSVHelper *cmvaReweighter=0;
+  std::vector<std::string> btagSystNames;
+  if(year==2016) {
+    cmvaReweighter = new CSVHelper(
+      "PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root", 
+      "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root", 
+       5);
+  } else if(year==2017) {
+    // get the official syst name strings
+    btagSystNames.reserve(GeneralTree::nCsvShifts);
+    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+      GeneralTree::csvShift shift = gt.csvShifts[iShift];
+      if (shift==GeneralTree::csvCent) continue;
+      btagSystNames.push_back(GeneralTree::csvShiftName(shift).Data());
+    }    
+    deepcsvSFs = new BTagCalibrationReader(
+      BTagEntry::OP_RESHAPING,
+      GeneralTree::csvShiftName(GeneralTree::csvCent).Data(), 
+      btagSystNames);
+    BTagCalibration *deepcsvCalib = new BTagCalibration(
+      "DeepCSV", 
+      "PandaAnalysis/data/csv/DeepCSV_94XSF_V2_B_F.csv");
+    deepcsvSFs->load(*(deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
+    deepcsvSFs->load(*(deepcsvCalib), BTagEntry::FLAV_C, "iterativeFit");
+    deepcsvSFs->load(*(deepcsvCalib), BTagEntry::FLAV_UDSG, "iterativeFit");
+    
+  }
+  vector<double> ZjetsEWKCorr = EWKCorrPars(kZjets);
 
   // CMVA jet kinematic decorrelated weight nuisances
   vector<double> jetPts[5][3], jetPtsUp[5][3], jetPtsDown[5][3], jetEtas[5][3], jetBtags[5][3];
@@ -144,18 +190,9 @@ void vhbbPlotSkim(
   unsigned char typeLepSel, theCategory;
   // Declare variables for the variations of the weights
   float weight;
-  float weight_pdfUp, weight_pdfDown;
   float weight_QCDr1f2, weight_QCDr1f5, weight_QCDr2f1, weight_QCDr2f2, weight_QCDr5f1, weight_QCDr5f5;
   float weight_lepSFUp;
-  float weight_cmvaLFUp      [5][3] , weight_cmvaLFDown      [5][3]; 
-  float weight_cmvaHFUp      [5][3] , weight_cmvaHFDown      [5][3]; 
-  float weight_cmvaHFStats1Up[5][3] , weight_cmvaHFStats1Down[5][3]; 
-  float weight_cmvaHFStats2Up[5][3] , weight_cmvaHFStats2Down[5][3]; 
-  float weight_cmvaLFStats1Up[5][3] , weight_cmvaLFStats1Down[5][3]; 
-  float weight_cmvaLFStats2Up[5][3] , weight_cmvaLFStats2Down[5][3]; 
-  float weight_cmvaCErr1Up   [5][3] , weight_cmvaCErr1Down   [5][3]; 
-  float weight_cmvaCErr2Up   [5][3] , weight_cmvaCErr2Down   [5][3]; 
-  float weight_cmvaJESUp     [5][3] , weight_cmvaJESDown     [5][3]; 
+  float weight_btag[GeneralTree::nCsvShifts][5][3];
   float weight_VHCorrUp, weight_VHCorrDown; 
   // Done declaring weight variables
   ////////////////////////////////////////////////////////////////////////
@@ -175,13 +212,16 @@ void vhbbPlotSkim(
   cuts[kZllHFJPresel       ] = {"ZpTFJ","pTFJ","dPhiZHFJ"                                         };
 
   // Begin Chain Loop
-  //for(placeholder) { 
-    // Nasty hack code to get the tree branches and their addresses, have to do it for each file
-    sampleType sample = kData;
-    TFile *inputFile=0;
-
-    TTree *events = (TTree*)inputFile->Get("events");
+  TTree *events=0; 
+  for(auto const &sample: samples) {
+    TString sampleName = sample.first; sampleType type = sample.second;
+    TString inputFileName = Form("%s%s.root",ntupleDir.Data(),sampleName.Data());
+    TFile *inputFile = TFile::Open(inputFileName,"READ");
+    if(!inputFile) { throw std::runtime_error("Problem opening file"); }
+    events = (TTree*)inputFile->Get("events");
     if(!events) { throw std::runtime_error("Problem loading tree"); }
+    
+    // Nasty hack code to get the tree branches and their addresses, have to do it for each file
     TObjArray *listOfBranches = events->GetListOfBranches();
     for(unsigned iB=0; iB<(unsigned)listOfBranches->GetEntries(); iB++) {
       TBranch *branch = (TBranch*)listOfBranches->At(iB);
@@ -193,7 +233,7 @@ void vhbbPlotSkim(
         b[x->first] = events->GetBranch(x->first);
         if(!b[x->first]) { throw std::runtime_error(Form("Extra branch %s could not be found in events tree\n", x->first.Data())); }
         b[x->first]->SetAddress(x->second);
-        if(debug) printf("Booking extra branch \"%s\"\n", x->first.Data());
+        if(debug>=2) printf("Booking extra branch \"%s\"\n", x->first.Data());
         continue;
       }
       TBranch *dummyBranch = dummyTree->GetBranch(branchName);
@@ -202,12 +242,13 @@ void vhbbPlotSkim(
       b[branchName] = events->GetBranch(branchName);
       if(!b[branchName]) { throw std::runtime_error(Form("Branch \"%s\" could not be found in events tree", x->first.Data())); }
       b[branchName]->SetAddress(address);
-      if(debug) printf("Booking GeneralTree branch \"%s\"\n", branchName.Data());
+      if(debug>=2) printf("Booking GeneralTree branch \"%s\"\n", branchName.Data());
     }
  
     Long64_t nentries = events->GetEntries();
     // Begin Event Loop
     for (Long64_t ientry=0; ientry<nentries; ientry++) {
+      if(debug && ientry!=0) usleep(2e5);
       if(debug || ientry%100000==0) printf("######## Reading entry %lld/%lld ########################################################\n",ientry,nentries);
       //////////////////////
       // Clear variables
@@ -234,12 +275,13 @@ void vhbbPlotSkim(
       // Basic cuts
       bLoad(b["nLooseLep"],ientry);
       if(gt.nLooseLep<2) continue; 
-      if(debug) printf("Passed lepton multiplicity\n");
+      if(debug) printf("  Passed lepton multiplicity\n");
 
       // Trigger
-      if(sample==kData) {
+      if(type==kData) {
         bLoad(b["trigger"],ientry);
         if( (gt.trigger & (1<<4 | 1<<5))==0 ) continue;
+        if(debug) printf("  Passed trigger\n");
       }
 
       // Lepton ID and isolation
@@ -249,8 +291,10 @@ void vhbbPlotSkim(
       bLoad(b["nTightMuon"],ientry);
       bLoad(b["muonSelBit"],ientry);
       bLoad(b["muonPt"],ientry);
+      bLoad(b["muonPdgId"],ientry);
       bLoad(b["electronSelBit"],ientry);
       bLoad(b["electronPt"],ientry);
+      bLoad(b["electronPdgId"],ientry);
 
       if(gt.muonPt[0]>20 && gt.muonPt[1]>10 && 
         gt.muonPdgId[0]+gt.muonPdgId[1]==0 &&
@@ -266,7 +310,7 @@ void vhbbPlotSkim(
       ) typeLepSel=2;
       // E-Mu Selection Not implemented yet!!!
       if(typeLepSel!=1 && typeLepSel!=2) continue;
-      if(debug) printf("Passed lepton ID/iso multiplicity\n");
+      if(debug) printf("  Passed lepton ID/iso multiplicity\n");
 
       // Lepton kinematics
       float lepton1Pt,lepton1Eta,lepton1Phi,lepton1RelIso,lepton1D0,lepton1DZ,
@@ -310,13 +354,13 @@ void vhbbPlotSkim(
         lepton2D0     = gt.electronD0[1];
         lepton2DZ     = gt.electronDZ[1];
       }
-      if(debug) printf("Passed lepton kinematics\n");
+      if(debug) printf("  Passed lepton kinematics\n");
 
       bLoad(b["ZBosonPt"],ientry);
       bLoad(b["ZBosonM"],ientry);
       if(gt.ZBosonPt<30) continue;
       if(gt.ZBosonM<10) continue;
-      if(debug) printf("Passed Z boson reconstruction\n");
+      if(debug) printf("  Passed Z boson reconstruction\n");
       
       // Jet multiplicity
       bLoad(b["nJet"],ientry);
@@ -353,8 +397,9 @@ void vhbbPlotSkim(
           gt.hbbm_reg[0]>250) 
           continue;
       }
-      if(debug) printf("passed jet kinematics\n");
-
+      if(debug) printf("  Passed jet kinematics\n");
+      if(debug) printf("Passed preselection!\n");
+      
       // Met
       bLoad(b["pfmet"],ientry);
       //bLoad(b["pfmetphi"],ientry);
@@ -370,12 +415,12 @@ void vhbbPlotSkim(
         bjet1IsTight = gt.jotCSV[gt.hbbjtidx[0][0]] > deepcsvTight;
         bjet2IsLoose = gt.jotCSV[gt.hbbjtidx[0][1]] > deepcsvLoose;
       }
-      
-      // Isojets for boosted category
+
+      bLoad(b["jotPt"],ientry);
+      bLoad(b["jotEta"],ientry);
+      bLoad(b["jotPhi"],ientry);
       if(isBoostedCategory) {
-        bLoad(b["jotPt"],ientry);
-        bLoad(b["jotEta"],ientry);
-        bLoad(b["jotPhi"],ientry);
+        // Isojets for boosted category
         bLoad(b["fjEta"],ientry);
         bLoad(b["fjPhi"],ientry);
         for(unsigned iJES=0; iJES<NJES; iJES++) 
@@ -390,7 +435,7 @@ void vhbbPlotSkim(
             if(isojetBtag>isojetBtagCut) isojetNBtags[iJES]++;
           }
           
-          // CMVA jet kinematic decorrelated weight nuisances for the isojets
+          // Decorrelated b-tag nuisances for the isojets
           // Nominal JES scenario only
           if(iJES!=0) continue;
           int iPt=-1, iEta=-1;
@@ -412,9 +457,30 @@ void vhbbPlotSkim(
             jetBtags  [iPt][iEta].push_back(isojetBtag);
           }
         }
+      } else {
+        // In resolved case, need decorrelated b-tag nuisances for all the ak4 jets
+        // Nominal JES scenario only
+        for(unsigned char iJ=0; iJ<gt.nJot[0]; iJ++) {
+          int iPt=-1, iEta=-1;
+          double jetAbsEta=fabs(gt.jotEta[iJ]);
+          if      (gt.jetPt[iJ] >= 19.99 && gt.jetPt[iJ] < 30 ) iPt = 0;
+          else if (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
+          if      (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
+          else if (gt.jetPt[iJ] >= 40    && gt.jetPt[iJ] < 60 ) iPt = 2;
+          else if (gt.jetPt[iJ] >= 60    && gt.jetPt[iJ] < 100) iPt = 3;
+          else if (gt.jetPt[iJ] >= 100                        ) iPt = 4;
+          if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
+          else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
+          else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
+          if(iPt>=0 && iEta>=0) {
+            float btag = (year==2017)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+            jetPts    [iPt][iEta].push_back(gt.jotPt[0][iJ]);
+            jetEtas   [iPt][iEta].push_back(gt.jotEta[iJ]);
+            jetFlavors[iPt][iEta].push_back(gt.jotFlav[iJ]);
+            jetBtags  [iPt][iEta].push_back(btag);
+          }
+        }
       }
-      for(unsigned iJES=0; iJES<NJES; iJES++)
-        nIsojet[iJES]=isojets[iJES].size();
       
       // Load branches for the cuts
       bLoad(b["ZBosonPt"],ientry);
@@ -458,14 +524,115 @@ void vhbbPlotSkim(
         selectionBits[iJES]=0; nMinusOneBits=0;
         for(unsigned iSel=0; iSel<selections.size(); iSel++) { 
           selectionType sel = selections[iSel];
-          if(passAllCuts(cut, cuts[sel])) selectionBits[iJES] |= sel;
+          if(passAllCuts(cut, cuts[sel])) {
+            selectionBits[iJES] |= sel;
+            if(debug>=1) printf("  Passed cuts for region %s\n",vhbbPlot::selectionNames[sel].Data());
+          }
           if(iJES==0 && passNMinusOne(cut, cuts[sel]))
             nMinusOneBits |= sel;
         }
       
       }
- 
+
+      // Event weighting
+      float weight;
+
+      if(type==kData) {
+        weight=1;
+      } else {
+        bLoad(b["normalizedWeight"],ientry);
+        bLoad(b["sf_npv"],ientry);
+        if(type==kWjets || type==kZjets) {
+          if(useHtBinnedVJetsKFactor) {
+            bLoad(b["trueGenBosonPt"],ientry);
+            bLoad(b["lheHT"],ientry);
+            gt.sf_qcdV=qcdKFactor(type, gt.lheHT);
+            gt.sf_ewkV=ZjetsEWKCorr[0]+ZjetsEWKCorr[1]*
+              (TMath::Power((gt.trueGenBosonPt+ZjetsEWKCorr[2]),ZjetsEWKCorr[3]));
+          } else {
+            bLoad(b["sf_qcdV"],ientry);
+            bLoad(b["sf_ewkV"],ientry);
+          }
+        } else { 
+          gt.sf_qcdV=1;
+          gt.sf_ewkV=1;
+        }
+        
+        if (typeLepSel==1) {
+          bLoad(b["muonSfReco"],ientry);
+          bLoad(b["muonSfTight"],ientry);
+          bLoad(b["muonSfUnc"],ientry);
+          bLoad(b["sf_muTrig"],ientry);
+          weight *= gt.sf_muTrig;
+          weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
+          weight *= gt.muonSfReco[1] * gt.muonSfTight[1];
+        } else if(typeLepSel==2) {
+          bLoad(b["electronSfReco"],ientry);
+          bLoad(b["electronSfMvaWP90"],ientry);
+          bLoad(b["electronSfUnc"],ientry);
+          bLoad(b["sf_eleTrig"],ientry);
+          weight *= gt.sf_eleTrig;
+          weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
+          weight *= gt.electronSfReco[1] * gt.electronSfMvaWP90[1];
+        }
+        float recorrect_vhEWK=1, recorrect_vhEWKUp=1, recorrect_vhEWKDown=1;
+        if(type==kVZ) {
+          bLoad(b["sf_wz"],ientry);
+          bLoad(b["sf_zz"],ientry);
+          weight *= gt.sf_wz * gt.sf_zz;
+        } else if(type==kZH) {
+          bLoad(b["sf_vh"],ientry);
+          bLoad(b["sf_vhUp"],ientry);
+          bLoad(b["sf_vhDown"],ientry);
+          //TString vhChannel=lepton1Charge>0?"WplusH":"WminusH";
+          recorrect_vhEWK     = vhEWKCorr("ZllH",gt.sf_vh    );
+          recorrect_vhEWKUp   = vhEWKCorr("ZllH",gt.sf_vhUp  );
+          recorrect_vhEWKDown = vhEWKCorr("ZllH",gt.sf_vhDown);
+          weight *= recorrect_vhEWK;
+        }
+        bLoad(b["sf_cmvaWeight_Cent"],ientry);
+        weight *= gt.sf_csvWeights[GeneralTree::csvCent];
+      }
+
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        if(year==2016) {
+          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
+          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
+          double centralWeight = cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+          for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+            weight_btag[iShift][iPt][iEta] = weight*cmvaReweighter->getCSVWeight(
+              jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
+              theShift,
+              cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
+            )/centralWeight; 
+          }
+        } else if(year==2017) {
+          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
+          for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+            weight_btag[iShift][iPt][iEta] = weight;
+            for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
+              unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
+              BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
+                (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
+              float reshapeFactor = deepcsvSFs->eval_auto_bounds(
+                GeneralTree::csvShiftName(theShift).Data(),
+                flav,
+                jetEtas[iPt][iEta][iJ], 
+                jetPts[iPt][iEta][iJ],
+                jetBtags[iPt][iEta][iJ]
+              );
+              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor;
+            }
+          }
+        }
+      }
     } // End Event Loop
-  //} // End Chain Loop
+    inputFile->Close();
+  } // End Chain Loop
   delete dummyTree; // no longer needed
+  if(deepcsvSFs) delete deepcsvSFs;
+  if(deepcsvCalib) delete deepcsvCalib;
+  if(cmvaReweighter) delete cmvaReweighter;
 }
