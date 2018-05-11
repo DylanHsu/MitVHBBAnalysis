@@ -239,7 +239,7 @@ void whbbMVA(
     //dataloader->AddVariable( psi["021004020503"]                 , "#psi(2,1.0,4,2,0.5,3)"             , ""           , 'F');
     //dataloader->AddVariable( psi["022004012003"]                 , "#psi(2,2.0,4,1,2.0,3)"             , ""           , 'F');
   } else {
-    preselectionCut = Form("(selectionBits & %d)!=0 && weight<500.", vhbbPlot::kWHSR);
+    preselectionCut = Form("(selectionBits & %d)!=0 && weight<500. && pfmet<170", vhbbPlot::kWHSR);
     dataloader->AddVariable( "hbbDijetMass"                      , "H(bb) mass"                        , "GeV"        , 'F');
     dataloader->AddVariable( "hbbDijetPt"                        , "H(bb) p_{T}"                       , "GeV"        , 'F');
     dataloader->AddVariable( "topWBosonPt"                       , "W boson p_{T}"                     , "GeV"        , 'F');

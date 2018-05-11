@@ -2,6 +2,7 @@
 #define vhbbPlot_h
 
 #include <TBranch.h>
+#include "PandaAnalysis/Flat/interface/GeneralTree.h"
 #include <map>
 
 namespace vhbbPlot {
@@ -165,17 +166,17 @@ namespace vhbbPlot {
     { kWHTT1bFJCR         , "WHTT1bFJCR"         },
     { kWHFJSR             , "WHFJSR"             },
     { kWHFJPresel         , "WHFJPresel"         },
-    { kZllHLightFlavorCR    , "ZllHLightFlavorCR"    },
-    { kZllHHeavyFlavorCR    , "ZllHHeavyFlavorCR"    },
-    { kZllH2TopCR           , "ZllH2TopCR"           },
-    { kZllHSR               , "ZllHSR"               },
-    { kZllHPresel           , "ZllHPresel"           },
-    { kZllHLightFlavorFJCR  , "ZllHLightFlavorFJCR"  },
-    { kZllHHeavyFlavorFJCR  , "ZllHHeavyFlavorFJCR"  },
-    { kZllHTT2bFJCR         , "ZllHTT2bFJCR"         },
-    { kZllHTT1bFJCR         , "ZllHTT1bFJCR"         },
-    { kZllHFJSR             , "ZllHFJSR"             },
-    { kZllHFJPresel         , "ZllHFJPresel"         }
+    { kZllHLightFlavorCR  , "LightFlavorCR"    },
+    { kZllHHeavyFlavorCR  , "HeavyFlavorCR"    },
+    { kZllH2TopCR         , "2TopCR"           },
+    { kZllHSR             , "SR"               },
+    { kZllHPresel         , "Presel"           },
+    { kZllHLightFlavorFJCR, "LightFlavorFJCR"  },
+    { kZllHHeavyFlavorFJCR, "HeavyFlavorFJCR"  },
+    { kZllHTT2bFJCR       , "TT2bFJCR"         },
+    { kZllHTT1bFJCR       , "TT1bFJCR"         },
+    { kZllHFJSR           , "FJSR"             },
+    { kZllHFJPresel       , "FJPresel"         }
   };
   std::map<int, float> pdfAcceptUncs={
     { kPlotVZbb , 1.02  },
@@ -252,6 +253,28 @@ namespace vhbbPlot {
   float BenrichedVPT200   = 0.0679764068637;
   float BfilterVPT100     = 0.206608510333;
   float BfilterVPT200     = 0.16396633746;
+
+  const char* btagShiftName(GeneralTree::csvShift shift) {
+    if(shift==GeneralTree::csvJESup        ) return "JESup"        ; 
+    if(shift==GeneralTree::csvJESdown      ) return "JESdown"      ; 
+    if(shift==GeneralTree::csvLFup         ) return "LFup"         ; 
+    if(shift==GeneralTree::csvLFdown       ) return "LFdown"       ; 
+    if(shift==GeneralTree::csvHFup         ) return "HFup"         ; 
+    if(shift==GeneralTree::csvHFdown       ) return "HFdown"       ; 
+    if(shift==GeneralTree::csvHFStats1up   ) return "HFStats1up"   ; 
+    if(shift==GeneralTree::csvHFStats1down ) return "HFStats1down" ; 
+    if(shift==GeneralTree::csvHFStats2up   ) return "HFStats2up"   ; 
+    if(shift==GeneralTree::csvHFStats2down ) return "HFStats2down" ; 
+    if(shift==GeneralTree::csvLFStats1up   ) return "LFStats1up"   ; 
+    if(shift==GeneralTree::csvLFStats1down ) return "LFStats1down" ; 
+    if(shift==GeneralTree::csvLFStats2up   ) return "LFStats2up"   ; 
+    if(shift==GeneralTree::csvLFStats2down ) return "LFStats2down" ; 
+    if(shift==GeneralTree::csvCErr1up      ) return "CErr1up"      ; 
+    if(shift==GeneralTree::csvCErr1down    ) return "CErr1down"    ; 
+    if(shift==GeneralTree::csvCErr2up      ) return "CErr2up"      ; 
+    if(shift==GeneralTree::csvCErr2down    ) return "CErr2down"    ; 
+    printf("Warning: unknown btag shift\n"); return "Unknown";
+  }
 
 }
 #endif
