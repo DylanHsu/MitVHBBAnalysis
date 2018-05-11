@@ -48,8 +48,6 @@ void zllhAnalysis(
   samples.emplace_back("SingleTop_tT"       , kTop    );       
   samples.emplace_back("SingleTop_tTbar"    , kTop    );       
   samples.emplace_back("SingleTop_tW"       , kTop    );       
-  samples.emplace_back("SingleTop_tZll"     , kTop    );       
-  samples.emplace_back("SingleTop_tZnunu"   , kTop    );       
   samples.emplace_back("SingleTop_tbarW"    , kTop    );       
   samples.emplace_back("TTTo2L2Nu"          , kTT     );       
   samples.emplace_back("WWTo2L2Nu"          , kWW     );       
