@@ -20,17 +20,17 @@
 #include "vhbbPlot.h"
 #include "formulas.h"
 
-// useBoostedCategory - This controls whether to cut on the number of fatjets in the resolved regions
-// False means you will use all possible events to do the resolved VH
-// True means the events with a fatjet are reserved for boosted VH
 
 const bool useHtBinnedVJetsKFactor=true;
-//const int NJES = (int)shiftjes::N;
-const int NJES = 1;
-//const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/";
-const TString ntupleDir = "/tmp/dhsu/";
-const int nLepSel=2;
+const int NJES = 1; //(int)shiftjes::N; // Number of JES variations, currently only look at the nominal for performance reason
+const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/"; // Location of the PA ntuples or skims
+const int nLepSel=2; // Number of lepton selections, currently only ee, mm
+
 using namespace vhbbPlot;
+
+// useBoostedCategory:
+// False means you will use all possible events to do the resolved Z(ll)H(bb)
+// True means the events with Z back to back with 250 GeV fatjet are reserved for boosted ZH
 
 void zllhAnalysis(
   TString dataCardDir,
@@ -43,9 +43,36 @@ void zllhAnalysis(
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
-  samples.emplace_back("DoubleEG"  ,  kData);
-  samples.emplace_back("DoubleMuon",  kData);
-  //samples.emplace_back("TTTo2L2Nu" ,  kTT  );
+  samples.emplace_back("DoubleEG"           , kData   );
+  samples.emplace_back("DoubleMuon"         , kData   );
+  samples.emplace_back("SingleTop_tT"       , kTop    );       
+  samples.emplace_back("SingleTop_tTbar"    , kTop    );       
+  samples.emplace_back("SingleTop_tW"       , kTop    );       
+  samples.emplace_back("SingleTop_tZll"     , kTop    );       
+  samples.emplace_back("SingleTop_tZnunu"   , kTop    );       
+  samples.emplace_back("SingleTop_tbarW"    , kTop    );       
+  samples.emplace_back("TTTo2L2Nu"          , kTT     );       
+  samples.emplace_back("WWTo2L2Nu"          , kWW     );       
+  samples.emplace_back("WWTo4Q"             , kWW     );       
+  samples.emplace_back("WWToLNuQQ"          , kWW     );       
+  samples.emplace_back("WZTo1L1Nu2Q"        , kVZ     );       
+  samples.emplace_back("WZTo2L2Q"           , kVZ     );       
+  samples.emplace_back("ZZTo2L2Q"           , kVZ     );       
+  samples.emplace_back("ZZTo4Q"             , kVZ     );       
+  samples.emplace_back("ZJets_ht100to200"   , kZjets  );       
+  samples.emplace_back("ZJets_ht200to400"   , kZjets  );       
+  samples.emplace_back("ZJets_ht400to600"   , kZjets  );       
+  samples.emplace_back("ZJets_ht600to800"   , kZjets  );       
+  samples.emplace_back("ZJets_ht800to1200"  , kZjets  );       
+  samples.emplace_back("ZJets_ht1200to2500" , kZjets  );       
+  samples.emplace_back("ZJets_ht2500toinf"  , kZjets  );       
+//samples.emplace_back("ZJets_pt50to100"    , kZjets  );       
+//samples.emplace_back("ZJets_pt100to250"   , kZjets  );       
+//samples.emplace_back("ZJets_pt250to400"   , kZjets  );       
+//samples.emplace_back("ZJets_pt400to650"   , kZjets  );       
+//samples.emplace_back("ZJets_pt650toinf"   , kZjets  );       
+  samples.emplace_back("ZllHbb_mH125"       , kZH     );       
+  samples.emplace_back("ggZllHbb_mH125"     , kZH     );       
   // End List of Samples
   /////////////////////////////
   
