@@ -92,7 +92,7 @@ void finalPlot2018(
       plotCategory i = static_cast<plotCategory>(iCat);
       if(!plotQCD && i==kPlotQCD) continue;
       // Construct histograms - needs to be worked on
-      if (i==kPlotVH) {
+      if (i==kPlotWH) {
         if(selType==kWHSR || selType==kWHFJSR) {
           if(normSignalToBkg) plotName="WH(125)x?";
           else if(!stackSignal) plotName="WH(125)x10"; 
@@ -109,7 +109,7 @@ void finalPlot2018(
       // Fill histograms
       histos[i]=(TH1F*)inputFile->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
       histos[i]->SetDirectory(0);
-      if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotVH || !isFitShape || !mlfit) {
+      if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotWH || !isFitShape || !mlfit) {
         if     (i==kPlotTT  ) histos[i]->Scale( SF_TT_Wln);
         else if(i==kPlotWLF ) histos[i]->Scale(SF_WLF_Wln);
         else if(i==kPlotWb  ) histos[i]->Scale( SF_Wb_Wln);
@@ -136,7 +136,7 @@ void finalPlot2018(
         histos[i]->SetMarkerColor(plotColors[i]); 
         histos[i]->SetLineColor(plotColors[i]); 
         histos[i]->SetMarkerStyle(20);
-      } else if(i!=kPlotVH) {
+      } else if(i!=kPlotWH) {
         histos[i]->SetLineColor(plotColors[i]);
         histos[i]->SetFillColor(plotColors[i]);
         histos[i]->SetMarkerColor(plotColors[i]);
@@ -170,16 +170,16 @@ void finalPlot2018(
       if(histos[kPlotData]->GetXaxis()->GetBinWidth(nb) < binWidth) binWidth=histos[kPlotData]->GetXaxis()->GetBinWidth(nb);
     }
     if(stackSignal) {
-      histos[kPlotVH]->SetFillColor(plotColors[kPlotVH]);
-      histos[kPlotVH]->SetLineColor(plotColors[kPlotVH]);
+      histos[kPlotWH]->SetFillColor(plotColors[kPlotWH]);
+      histos[kPlotWH]->SetLineColor(plotColors[kPlotWH]);
     } else {
       // Scaling
-      if(!normSignalToBkg && !stackSignal && selType!=kWHSR && selType!=kWHFJSR /*&& selType!=kZnnHSR && selType!=kZllHSR*/) histos[kPlotVH]->Scale(100.);
-      if(!normSignalToBkg && !stackSignal && (selType==kWHSR || selType==kWHFJSR /*|| selType==kZnnHSR || selType==kZllHSR*/)) histos[kPlotVH]->Scale(10.);
-      histos[kPlotVH]->SetMarkerColor(plotColors[kPlotVH]); 
-      histos[kPlotVH]->SetLineColor(plotColors[kPlotVH]); 
-      histos[kPlotVH]->SetLineWidth(3);
-      histos[kPlotVH]->SetFillStyle(0);
+      if(!normSignalToBkg && !stackSignal && selType!=kWHSR && selType!=kWHFJSR /*&& selType!=kZnnHSR && selType!=kZllHSR*/) histos[kPlotWH]->Scale(100.);
+      if(!normSignalToBkg && !stackSignal && (selType==kWHSR || selType==kWHFJSR /*|| selType==kZnnHSR || selType==kZllHSR*/)) histos[kPlotWH]->Scale(10.);
+      histos[kPlotWH]->SetMarkerColor(plotColors[kPlotWH]); 
+      histos[kPlotWH]->SetLineColor(plotColors[kPlotWH]); 
+      histos[kPlotWH]->SetLineWidth(3);
+      histos[kPlotWH]->SetFillStyle(0);
     }
     float xmin=histos[kPlotData]->GetXaxis()->GetBinLowEdge(1);
     float xmax=histos[kPlotData]->GetXaxis()->GetBinLowEdge(nbins+1);
@@ -207,13 +207,13 @@ void finalPlot2018(
         hTotalBkg->SetDirectory(0);
         hTotalBkg->SetTitle("hTotal");
       }
-      if(!(mlfit && isFitShape) && hTotalBkg && i!=kPlotData && i!=kPlotVH) {
+      if(!(mlfit && isFitShape) && hTotalBkg && i!=kPlotData && i!=kPlotWH) {
         hTotalBkg->Add(histos[i]);
       }
     }
     if(normSignalToBkg) {
-      float signalInflationFactor = hTotalBkg->Integral(1., hTotalBkg->GetNbinsX()) / histos[kPlotVH]->Integral(1., histos[kPlotVH]->GetNbinsX());
-      histos[kPlotVH]->Scale(signalInflationFactor);
+      float signalInflationFactor = hTotalBkg->Integral(1., hTotalBkg->GetNbinsX()) / histos[kPlotWH]->Integral(1., histos[kPlotWH]->GetNbinsX());
+      histos[kPlotWH]->Scale(signalInflationFactor);
       // needs to be worked on
       if(selType<=kWHFJPresel) {
         if     (signalInflationFactor>1e5) plotName = Form("WH(125)x%.1e", signalInflationFactor);
@@ -224,8 +224,8 @@ void finalPlot2018(
         else if(signalInflationFactor>  1) plotName = Form("ZH(125)x%d", (int)round(signalInflationFactor));
         else                          plotName = "ZH(125)";
       }
-      histos[kPlotVH]->SetName(plotName);
-      histos[kPlotVH]->SetTitle(plotName);
+      histos[kPlotWH]->SetName(plotName);
+      histos[kPlotWH]->SetTitle(plotName);
     }
    
 
@@ -280,7 +280,7 @@ void finalPlot2018(
     hs->Add(histos[ kPlotTop  ] );   
     hs->Add(histos[ kPlotTT   ] );   
     if(plotQCD) hs->Add(histos[ kPlotQCD  ] );   
-    if(stackSignal) hs->Add(histos[kPlotVH]);
+    if(stackSignal) hs->Add(histos[kPlotWH]);
  
     TCanvas *canvas = new TCanvas(Form("canvas_%s",theHistoName.Data()),theHistoName,600,480);
     TPad *pad1=0,*pad2=0;
@@ -314,7 +314,7 @@ void finalPlot2018(
     hs->GetYaxis()->SetTitle(Form( (binWidth>=10.? "Events / %.0f %s" : binWidth>=1.? "Events / %.1f %s": "Events / %.2f %s"), binWidth, units.c_str()));
     float plotMax=1.4;
     if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=2.;
-    float theMax = TMath::Max(histos[kPlotVH]->GetMaximum(),TMath::Max(hs->GetMaximum(), histos[kPlotData]->GetMaximum()));
+    float theMax = TMath::Max(histos[kPlotWH]->GetMaximum(),TMath::Max(hs->GetMaximum(), histos[kPlotData]->GetMaximum()));
     if(doLogPlot) { 
       //if(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())>1 && histos[kPlotData]->GetBinContent(histos[kPlotData]->GetMinimumBin())>1)
       if(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())>1 || histos[kPlotData]->GetBinContent(histos[kPlotData]->GetMinimumBin())>1)
@@ -326,7 +326,7 @@ void finalPlot2018(
     } else {
       hs->SetMaximum( plotMax*theMax);
     }
-    if(!stackSignal) histos[kPlotVH]->Draw("HIST SAME");
+    if(!stackSignal) histos[kPlotWH]->Draw("HIST SAME");
     hErrorBand->Draw("E2 same");
     //if(!isBlinded) histos[kPlotData]->Draw("P E0 SAME");
     histos[kPlotData]->Draw("P E0 SAME");
@@ -348,7 +348,7 @@ void finalPlot2018(
     legend2->AddEntry(histos[ kPlotZLF  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZLF )] ,"f");
     legend2->AddEntry(histos[ kPlotVVLF ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotVVLF)] ,"f");
     legend2->AddEntry(histos[ kPlotVZbb ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotVZbb)] ,"f");
-    legend2->AddEntry(histos[ kPlotVH   ], histos[kPlotVH]->GetName(), stackSignal?"f":"lp");
+    legend2->AddEntry(histos[ kPlotWH   ], histos[kPlotWH]->GetName(), stackSignal?"f":"lp");
     legend1->SetFillColorAlpha(kWhite, .5); legend2->SetFillColorAlpha(kWhite, 0.5);
     legend1->SetBorderSize(0); legend2->SetBorderSize(0);
     legend1->Draw("same"); legend2->Draw("SAME");
