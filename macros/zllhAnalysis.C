@@ -23,7 +23,9 @@
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = 1; //(int)shiftjes::N; // Number of JES variations, currently only look at the nominal for performance reason
-const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/"; // Location of the PA ntuples or skims
+// Location of the PA ntuples or skims
+//const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/"; 
+const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/dilepton/"; 
 const int nLepSel=2; // Number of lepton selections, currently only ee, mm
 
 using namespace vhbbPlot;
@@ -166,13 +168,13 @@ void zllhAnalysis(
     histoNames[p]="ZBosonLep1CosThetaStarFJ"; histoTitles[p]="cos#theta* Z(ll)+FJ"   ; nbins[p]=  20; xmin[p]=    -1; xmax[p]=    1.; p++; 
     histoNames[p]="Mjj"                     ; histoTitles[p]="Dijet mass [GeV]"      ; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
     histoNames[p]="pTjj"                    ; histoTitles[p]="Dijet pT [GeV]"        ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
-    histoNames[p]="bjet1pT"                 ; histoTitles[p]="B-jet 1 pT [GeV]"      ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
-    histoNames[p]="bjet2pT"                 ; histoTitles[p]="B-jet 2 pT [GeV]"      ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
+    histoNames[p]="bjet1Pt"                 ; histoTitles[p]="B-jet 1 pT [GeV]"      ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
+    histoNames[p]="bjet2Pt"                 ; histoTitles[p]="B-jet 2 pT [GeV]"      ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
     histoNames[p]="bjet1btag"               ; histoTitles[p]="B-jet 1 btag"          ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
     histoNames[p]="bjet2btag"               ; histoTitles[p]="B-jet 2 btag"          ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
     histoNames[p]="nJet"                    ; histoTitles[p]="N central AK4CHS jets" ; nbins[p]=   8; xmin[p]=    0.; xmax[p]=    8.; p++; 
     histoNames[p]="deltaPhiZH"              ; histoTitles[p]="#Delta#phi(Z,H) [Rad]" ; nbins[p]=  20; xmin[p]= 1.571; xmax[p]= 3.142; p++; 
-    histoNames[p]="ptBalanceZH"             ; histoTitles[p]="|H pT / Z pT|"         ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=    2.; p++; 
+    histoNames[p]="ptBalanceZH"             ; histoTitles[p]="|H pT / Z pT|"         ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=    3.; p++; 
     histoNames[p]="sumEtSoft1"              ; histoTitles[p]="#sum E_{T}(soft 1)"    ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++; 
     histoNames[p]="nSoft2"                  ; histoTitles[p]="N^{soft}_{2}"          ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=   25.; p++; 
     histoNames[p]="nSoft5"                  ; histoTitles[p]="N^{soft}_{5}"          ; nbins[p]=  12; xmin[p]=    0.; xmax[p]=   12.; p++; 
@@ -870,6 +872,10 @@ void zllhAnalysis(
       bLoad(b["ZBosonLep1CosThetaCS"],ientry);
       bLoad(b["ZBosonLep1CosThetaStar"],ientry);
       bLoad(b["ZBosonLep1CosThetaStarFJ"],ientry);
+      bLoad(b["sumEtSoft1"],ientry);
+      bLoad(b["nSoft2"],ientry);
+      bLoad(b["nSoft5"],ientry);
+      bLoad(b["nSoft10"],ientry);
       for(unsigned iSel=0; iSel<selections.size(); iSel++) {
         if(debug>=3) printf("\tTrying to fill for iSel=%d\n", iSel);
         selectionType sel = selections[iSel];
