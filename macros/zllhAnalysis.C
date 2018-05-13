@@ -17,6 +17,8 @@
 #include <sstream>
 #include <iomanip>
 #include <unistd.h>
+#include "MitAnalysisRunII/panda/macros/80x/auxiliar.h"
+#include "MitAnalysisRunII/panda/macros/80x/common.h"
 #include "vhbbPlot.h"
 #include "formulas.h"
 
@@ -445,7 +447,8 @@ void zllhAnalysis(
       // Trigger
       if(type==kData) {
         bLoad(b["trigger"],ientry);
-        if( (gt.trigger & (1<<4 | 1<<5))==0 ) continue;
+        bool passTrigger = (gt.trigger & (kMuEGTrig|kMuMuTrig|kMuTrig|kEGEGTrig|kEGTrig)) !=0;
+        if(!passTrigger) continue;
         if(debug) printf("  Passed trigger\n");
       }
 
@@ -464,14 +467,12 @@ void zllhAnalysis(
       if(gt.muonPt[0]>20 && gt.muonPt[1]>10 && 
         gt.muonPdgId[0]+gt.muonPdgId[1]==0 &&
         (gt.muonSelBit[0] & 1<<3)!=0 &&
-        (gt.muonSelBit[1] & 1<<3)!=0 &&
-        (gt.trigger & 1<<4)!=0
+        (gt.muonSelBit[1] & 1<<3)!=0
       ) typeLepSel=0;
       else if(gt.electronPt[0]>25 && gt.electronPt[1]>15 && 
         gt.electronPdgId[0]+gt.electronPdgId[1]==0 &&
         (gt.electronSelBit[0] & 1<<5)!=0 &&
-        (gt.electronSelBit[1] & 1<<5)!=0 &&
-        (gt.trigger & 1<<5)!=0
+        (gt.electronSelBit[1] & 1<<5)!=0
       ) typeLepSel=1;
       // E-Mu Selection Not implemented yet!!!
       if(typeLepSel!=0 && typeLepSel!=1) continue;
