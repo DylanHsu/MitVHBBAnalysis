@@ -33,11 +33,9 @@ void finalPlot2018(
   float SF_WLF_Wln        = 1;
   float SF_Wb_Wln         = 1;
   float SF_Wbb_Wln        = 1;
-  //float SF_TT_Wln         = 8.4434e-01;
-  //float SF_WLF_Wln        = 1.2409e+00;
-  //float SF_Wb_Wln         = 1.5665e+00;
-  //float SF_Wbb_Wln        = 1.7018e+00;
   float SF_Top_Wln        = 1;
+
+  int primarySignal = (selType>=kWHLightFlavorCR && selType<=kWHFJPresel)? kPlotWH:kPlotZH;
 
   system(Form("mkdir -p %s",plotDir.Data()));
 
@@ -91,7 +89,6 @@ void finalPlot2018(
     for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {
       plotCategory i = static_cast<plotCategory>(iCat);
       if(!plotQCD && i==kPlotQCD) continue;
-      // Construct histograms - needs to be worked on
       if (i==kPlotWH) {
         if(selType==kWHSR || selType==kWHFJSR) {
           if(normSignalToBkg) plotName="WH(125)x?";
@@ -102,14 +99,24 @@ void finalPlot2018(
           else if(!stackSignal) plotName="WH(125)x100";
           else plotName="WH(125)";
         }
-        //else if(selType==kZnnHSR || selType==kZllHSR) plotName="ZH(125)x10";
-        else plotName="ZH(125)x100";
+      } else if (i==kPlotZH) {
+        if(selType==kZllHSR || selType==kZllHFJSR) {
+          if(normSignalToBkg) plotName="ZH(125)x?";
+          else if(!stackSignal) plotName="ZH(125)x10"; 
+          else plotName="ZH(125)";
+        } else if(selType>=kZllHLightFlavorCR && selType<kZllHFJPresel) {
+          if(normSignalToBkg) plotName="ZH(125)x?";
+          else if(!stackSignal) plotName="ZH(125)x100";
+          else plotName="ZH(125)";
+        }
       } else plotName=plotNames[i]; 
 
       // Fill histograms
       histos[i]=(TH1F*)inputFile->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
       histos[i]->SetDirectory(0);
-      if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotWH || !isFitShape || !mlfit) {
+      if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotWH || iCat==kPlotZH) {
+        // do nothing currently
+      } else if(!isFitShape || !mlfit) {
         if     (i==kPlotTT  ) histos[i]->Scale( SF_TT_Wln);
         else if(i==kPlotWLF ) histos[i]->Scale(SF_WLF_Wln);
         else if(i==kPlotWb  ) histos[i]->Scale( SF_Wb_Wln);
@@ -136,7 +143,7 @@ void finalPlot2018(
         histos[i]->SetMarkerColor(plotColors[i]); 
         histos[i]->SetLineColor(plotColors[i]); 
         histos[i]->SetMarkerStyle(20);
-      } else if(i!=kPlotWH) {
+      } else if(i!=kPlotWH && i!=kPlotZH) {
         histos[i]->SetLineColor(plotColors[i]);
         histos[i]->SetFillColor(plotColors[i]);
         histos[i]->SetMarkerColor(plotColors[i]);
@@ -172,6 +179,8 @@ void finalPlot2018(
     if(stackSignal) {
       histos[kPlotWH]->SetFillColor(plotColors[kPlotWH]);
       histos[kPlotWH]->SetLineColor(plotColors[kPlotWH]);
+      histos[kPlotZH]->SetFillColor(plotColors[kPlotZH]);
+      histos[kPlotZH]->SetLineColor(plotColors[kPlotZH]);
     } else {
       // Scaling
       if(!normSignalToBkg && !stackSignal && selType!=kWHSR && selType!=kWHFJSR /*&& selType!=kZnnHSR && selType!=kZllHSR*/) histos[kPlotWH]->Scale(100.);
@@ -180,6 +189,12 @@ void finalPlot2018(
       histos[kPlotWH]->SetLineColor(plotColors[kPlotWH]); 
       histos[kPlotWH]->SetLineWidth(3);
       histos[kPlotWH]->SetFillStyle(0);
+      if(!normSignalToBkg && !stackSignal && selType!=kZllHSR && selType!=kZllHFJSR /*&& selType!=kZnnHSR && selType!=kZllHSR*/) histos[kPlotZH]->Scale(100.);
+      if(!normSignalToBkg && !stackSignal && (selType==kZllHSR || selType==kZllHFJSR /*|| selType==kZnnHSR || selType==kZllHSR*/)) histos[kPlotZH]->Scale(10.);
+      histos[kPlotZH]->SetMarkerColor(plotColors[kPlotZH]); 
+      histos[kPlotZH]->SetLineColor(plotColors[kPlotZH]); 
+      histos[kPlotZH]->SetLineWidth(3);
+      histos[kPlotZH]->SetFillStyle(0);
     }
     float xmin=histos[kPlotData]->GetXaxis()->GetBinLowEdge(1);
     float xmax=histos[kPlotData]->GetXaxis()->GetBinLowEdge(nbins+1);
@@ -207,15 +222,15 @@ void finalPlot2018(
         hTotalBkg->SetDirectory(0);
         hTotalBkg->SetTitle("hTotal");
       }
-      if(!(mlfit && isFitShape) && hTotalBkg && i!=kPlotData && i!=kPlotWH) {
+      if(!(mlfit && isFitShape) && hTotalBkg && i!=kPlotData && i!=kPlotWH && i!=kPlotZH) {
         hTotalBkg->Add(histos[i]);
       }
     }
     if(normSignalToBkg) {
-      float signalInflationFactor = hTotalBkg->Integral(1., hTotalBkg->GetNbinsX()) / histos[kPlotWH]->Integral(1., histos[kPlotWH]->GetNbinsX());
-      histos[kPlotWH]->Scale(signalInflationFactor);
+      float signalInflationFactor = hTotalBkg->Integral(1., hTotalBkg->GetNbinsX()) / histos[primarySignal]->Integral(1., histos[primarySignal]->GetNbinsX());
+      histos[primarySignal]->Scale(signalInflationFactor);
       // needs to be worked on
-      if(selType<=kWHFJPresel) {
+      if(primarySignal==kPlotWH) {
         if     (signalInflationFactor>1e5) plotName = Form("WH(125)x%.1e", signalInflationFactor);
         else if(signalInflationFactor>  1) plotName = Form("WH(125)x%d", (int)round(signalInflationFactor));
         else                          plotName = "WH(125)";
@@ -224,8 +239,8 @@ void finalPlot2018(
         else if(signalInflationFactor>  1) plotName = Form("ZH(125)x%d", (int)round(signalInflationFactor));
         else                          plotName = "ZH(125)";
       }
-      histos[kPlotWH]->SetName(plotName);
-      histos[kPlotWH]->SetTitle(plotName);
+      histos[primarySignal]->SetName(plotName);
+      histos[primarySignal]->SetTitle(plotName);
     }
    
 
@@ -280,7 +295,8 @@ void finalPlot2018(
     hs->Add(histos[ kPlotTop  ] );   
     hs->Add(histos[ kPlotTT   ] );   
     if(plotQCD) hs->Add(histos[ kPlotQCD  ] );   
-    if(stackSignal) hs->Add(histos[kPlotWH]);
+    if(stackSignal && primarySignal==kPlotWH) hs->Add(histos[kPlotWH]);
+    if(stackSignal && primarySignal==kPlotZH) hs->Add(histos[kPlotZH]);
  
     TCanvas *canvas = new TCanvas(Form("canvas_%s",theHistoName.Data()),theHistoName,600,480);
     TPad *pad1=0,*pad2=0;
@@ -314,7 +330,7 @@ void finalPlot2018(
     hs->GetYaxis()->SetTitle(Form( (binWidth>=10.? "Events / %.0f %s" : binWidth>=1.? "Events / %.1f %s": "Events / %.2f %s"), binWidth, units.c_str()));
     float plotMax=1.4;
     if(hTotalBkg->GetMean() > xmin + (xmax-xmin)/4.) plotMax=2.;
-    float theMax = TMath::Max(histos[kPlotWH]->GetMaximum(),TMath::Max(hs->GetMaximum(), histos[kPlotData]->GetMaximum()));
+    float theMax = TMath::Max(histos[primarySignal]->GetMaximum(),TMath::Max(hs->GetMaximum(), histos[kPlotData]->GetMaximum()));
     if(doLogPlot) { 
       //if(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())>1 && histos[kPlotData]->GetBinContent(histos[kPlotData]->GetMinimumBin())>1)
       if(hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin())>1 || histos[kPlotData]->GetBinContent(histos[kPlotData]->GetMinimumBin())>1)
@@ -326,7 +342,7 @@ void finalPlot2018(
     } else {
       hs->SetMaximum( plotMax*theMax);
     }
-    if(!stackSignal) histos[kPlotWH]->Draw("HIST SAME");
+    if(!stackSignal) histos[primarySignal]->Draw("HIST SAME");
     hErrorBand->Draw("E2 same");
     //if(!isBlinded) histos[kPlotData]->Draw("P E0 SAME");
     histos[kPlotData]->Draw("P E0 SAME");
@@ -348,7 +364,7 @@ void finalPlot2018(
     legend2->AddEntry(histos[ kPlotZLF  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZLF )] ,"f");
     legend2->AddEntry(histos[ kPlotVVLF ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotVVLF)] ,"f");
     legend2->AddEntry(histos[ kPlotVZbb ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotVZbb)] ,"f");
-    legend2->AddEntry(histos[ kPlotWH   ], histos[kPlotWH]->GetName(), stackSignal?"f":"lp");
+    legend2->AddEntry(histos[primarySignal], histos[primarySignal]->GetName(), stackSignal?"f":"lp");
     legend1->SetFillColorAlpha(kWhite, .5); legend2->SetFillColorAlpha(kWhite, 0.5);
     legend1->SetBorderSize(0); legend2->SetBorderSize(0);
     legend1->Draw("same"); legend2->Draw("SAME");

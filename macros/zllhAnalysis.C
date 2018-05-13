@@ -20,14 +20,15 @@
 #include "MitAnalysisRunII/panda/macros/80x/auxiliar.h"
 #include "MitAnalysisRunII/panda/macros/80x/common.h"
 #include "vhbbPlot.h"
+#include "PandaAnalysis/Flat/interface/Common.h"
 #include "formulas.h"
 
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = 1; //(int)shiftjes::N; // Number of JES variations, currently only look at the nominal for performance reason
 // Location of the PA ntuples or skims
-//const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/"; 
-const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/dilepton/"; 
+const TString ntupleDir = "/data/t3home000/dhsu/dylansVHSkims/2016/dilepton/";
+//const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/";
 const int nLepSel=2; // Number of lepton selections, currently only ee, mm
 
 using namespace vhbbPlot;
@@ -47,34 +48,34 @@ void zllhAnalysis(
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
-  samples.emplace_back("DoubleEG"           , kData   );
-  samples.emplace_back("DoubleMuon"         , kData   );
-  samples.emplace_back("SingleTop_tT"       , kTop    );       
-  samples.emplace_back("SingleTop_tTbar"    , kTop    );       
-  samples.emplace_back("SingleTop_tW"       , kTop    );       
-  samples.emplace_back("SingleTop_tbarW"    , kTop    );       
-  samples.emplace_back("TTTo2L2Nu"          , kTT     );       
-  samples.emplace_back("WWTo2L2Nu"          , kWW     );       
-  samples.emplace_back("WWTo4Q"             , kWW     );       
-  samples.emplace_back("WWToLNuQQ"          , kWW     );       
-  samples.emplace_back("WZTo1L1Nu2Q"        , kVZ     );       
-  samples.emplace_back("WZTo2L2Q"           , kVZ     );       
-  samples.emplace_back("ZZTo2L2Q"           , kVZ     );       
-  samples.emplace_back("ZZTo4Q"             , kVZ     );       
-  samples.emplace_back("ZJets_ht100to200"   , kZjets  );       
-  samples.emplace_back("ZJets_ht200to400"   , kZjets  );       
-  samples.emplace_back("ZJets_ht400to600"   , kZjets  );       
-  samples.emplace_back("ZJets_ht600to800"   , kZjets  );       
-  samples.emplace_back("ZJets_ht800to1200"  , kZjets  );       
-  samples.emplace_back("ZJets_ht1200to2500" , kZjets  );       
-  samples.emplace_back("ZJets_ht2500toinf"  , kZjets  );       
-//samples.emplace_back("ZJets_pt50to100"    , kZjets  );       
-//samples.emplace_back("ZJets_pt100to250"   , kZjets  );       
-//samples.emplace_back("ZJets_pt250to400"   , kZjets  );       
-//samples.emplace_back("ZJets_pt400to650"   , kZjets  );       
-//samples.emplace_back("ZJets_pt650toinf"   , kZjets  );       
-  samples.emplace_back("ZllHbb_mH125"       , kZH     );       
-  samples.emplace_back("ggZllHbb_mH125"     , kZH     );       
+  samples.emplace_back("DoubleEG"           , vhbbPlot::kData   );
+  samples.emplace_back("DoubleMuon"         , vhbbPlot::kData   );
+  samples.emplace_back("SingleTop_tT"       , vhbbPlot::kTop    );       
+  samples.emplace_back("SingleTop_tTbar"    , vhbbPlot::kTop    );       
+  samples.emplace_back("SingleTop_tW"       , vhbbPlot::kTop    );       
+  samples.emplace_back("SingleTop_tbarW"    , vhbbPlot::kTop    );       
+  samples.emplace_back("TTTo2L2Nu"          , vhbbPlot::kTT     );       
+  samples.emplace_back("WWTo2L2Nu"          , vhbbPlot::kWW     );       
+  samples.emplace_back("WWTo4Q"             , vhbbPlot::kWW     );       
+  samples.emplace_back("WWToLNuQQ"          , vhbbPlot::kWW     );       
+  samples.emplace_back("WZTo1L1Nu2Q"        , vhbbPlot::kVZ     );       
+  samples.emplace_back("WZTo2L2Q"           , vhbbPlot::kVZ     );       
+  samples.emplace_back("ZZTo2L2Q"           , vhbbPlot::kVZ     );       
+  samples.emplace_back("ZZTo4Q"             , vhbbPlot::kVZ     );       
+  samples.emplace_back("ZJets_ht100to200"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht200to400"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht400to600"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht600to800"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht800to1200"  , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht1200to2500" , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht2500toinf"  , vhbbPlot::kZjets  );       
+//samples.emplace_back("ZJets_pt50to100"    , vhbbPlot::kZjets  );       
+//samples.emplace_back("ZJets_pt100to250"   , vhbbPlot::kZjets  );       
+//samples.emplace_back("ZJets_pt250to400"   , vhbbPlot::kZjets  );       
+//samples.emplace_back("ZJets_pt400to650"   , vhbbPlot::kZjets  );       
+//samples.emplace_back("ZJets_pt650toinf"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZllHbb_mH125"       , vhbbPlot::kZH     );       
+  samples.emplace_back("ggZllHbb_mH125"     , vhbbPlot::kZH     );       
   // End List of Samples
   /////////////////////////////
   
@@ -83,8 +84,22 @@ void zllhAnalysis(
   
   assert(dataCardDir!="");
   if(dataCardDir!="") system(Form("mkdir -p MitVHBBAnalysis/datacards/%s",dataCardDir.Data()));
-  double theLumi= (year==2016)? 35900.:41000;
-  
+  double theLumi= (year==2016)? 35900.:41300;
+  unsigned long whichTriggers = (1<<pa::kSingleEleTrig) | (1<<pa::kDoubleEleTrig) | (1<<pa::kSingleMuTrig) | (1<<pa::kDoubleMuTrig) | (1<<pa::kEMuTrig);
+ // Load Pileup Weights
+  TString puPath =
+    (year==2016)? "MitAnalysisRunII/data/80x/puWeights_80x_37ifb.root" :
+    "MitAnalysisRunII/data/90x/puWeights_90x.root"; 
+  TFile *fPUFile = TFile::Open(Form("%s",puPath.Data())); assert(fPUFile);
+  TH1D *puWeights     = (TH1D*)(fPUFile->Get("puWeights"    )); assert(puWeights    );
+  TH1D *puWeightsUp   = (TH1D*)(fPUFile->Get("puWeightsUp"  )); assert(puWeightsUp  );
+  TH1D *puWeightsDown = (TH1D*)(fPUFile->Get("puWeightsDown")); assert(puWeightsDown);
+  puWeights    ->SetDirectory(0); 
+  puWeightsUp  ->SetDirectory(0); 
+  puWeightsDown->SetDirectory(0); 
+  delete fPUFile;
+  // Done Loading Pileup Weights
+
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
   std::map<selectionType, vector<float>> MVAbins;
@@ -362,11 +377,11 @@ void zllhAnalysis(
   // Analysis Cuts
   float isojetBtagCut = (year==2017)? deepcsvLoose : cmvaLoose;
   std::map<selectionType,vector<TString>> cuts;
-  cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                       };
-  cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH"};
-  cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                     };
-  cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"                       };
-  cuts[kZllHPresel         ] = {"ZpT","pTjj"                                       };
+  cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                                };
+  cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB" };
+  cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                              };
+  cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"   };
+  cuts[kZllHPresel         ] = {"ZpT","pTjj"                                                };
   cuts[kZllHLightFlavorFJCR] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"               };
   cuts[kZllHHeavyFlavorFJCR] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight", "lowMET"};
   cuts[kZllHTT1bFJCR       ] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"               };
@@ -380,7 +395,7 @@ void zllhAnalysis(
   for(auto const &sample: samples) {
     TString sampleName = sample.first; sampleType type = sample.second;
     TString inputFileName = Form("%s%s.root",ntupleDir.Data(),sampleName.Data());
-    printf("### Opening sample %s\n",sampleName.Data());
+    printf("### Opening sample %s ###\n",sampleName.Data());
     TFile *inputFile = TFile::Open(inputFileName,"READ");
     if(!inputFile) { throw std::runtime_error("Problem opening file"); }
     events = (TTree*)inputFile->Get("events");
@@ -441,13 +456,13 @@ void zllhAnalysis(
       
       // Basic cuts
       bLoad(b["nLooseLep"],ientry);
-      if(gt.nLooseLep<2) continue; 
+      if(gt.nLooseLep!=2) continue; 
       if(debug) printf("  Passed lepton multiplicity\n");
 
       // Trigger
       if(type==kData) {
         bLoad(b["trigger"],ientry);
-        bool passTrigger = (gt.trigger & (kMuEGTrig|kMuMuTrig|kMuTrig|kEGEGTrig|kEGTrig)) !=0;
+        bool passTrigger = (gt.trigger & whichTriggers) !=0;
         if(!passTrigger) continue;
         if(debug) printf("  Passed trigger\n");
       }
@@ -464,12 +479,14 @@ void zllhAnalysis(
       bLoad(b["electronPt"],ientry);
       bLoad(b["electronPdgId"],ientry);
 
-      if(gt.muonPt[0]>20 && gt.muonPt[1]>10 && 
+      if(gt.nLooseMuon==2 && gt.nLooseElectron==0 &&
+        gt.muonPt[0]>20 && gt.muonPt[1]>10 && 
         gt.muonPdgId[0]+gt.muonPdgId[1]==0 &&
         (gt.muonSelBit[0] & 1<<3)!=0 &&
         (gt.muonSelBit[1] & 1<<3)!=0
       ) typeLepSel=0;
-      else if(gt.electronPt[0]>25 && gt.electronPt[1]>15 && 
+      else if(gt.nLooseElectron==2 && gt.nLooseMuon==0 &&
+        gt.electronPt[0]>25 && gt.electronPt[1]>15 && 
         gt.electronPdgId[0]+gt.electronPdgId[1]==0 &&
         (gt.electronSelBit[0] & 1<<5)!=0 &&
         (gt.electronSelBit[1] & 1<<5)!=0
@@ -538,7 +555,8 @@ void zllhAnalysis(
         bLoad(b["fjPt"],ientry);
         bLoad(b["fjEta"],ientry);
         bLoad(b["fjPhi"],ientry);
-        float temp_deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
+        float temp_deltaPhiVH;
+        if(gt.nFatjet>0) temp_deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
         if(
           gt.nFatjet != 0 && 
           gt.fjPt[0] >= 250 && 
@@ -558,18 +576,18 @@ void zllhAnalysis(
           countB = gt.nBGenJets;
         }
       }
-      if     (type==kData ) category=kPlotData ;
-      else if(type==kQCD  ) category=kPlotQCD  ;
-      else if(type==kWW   ) category=kPlotVVLF ;
-      else if(type==kTT   ) category=kPlotTT   ; 
-      else if(type==kTop  ) category=kPlotTop  ;
-      else if(type==kWH   ) category=kPlotWH   ;
-      else if(type==kZH   ) category=kPlotZH   ;
-      else if(type==kWjets) {
+      if     (type==vhbbPlot::kData ) category=kPlotData ;
+      else if(type==vhbbPlot::kQCD  ) category=kPlotQCD  ;
+      else if(type==vhbbPlot::kWW   ) category=kPlotVVLF ;
+      else if(type==vhbbPlot::kTT   ) category=kPlotTT   ; 
+      else if(type==vhbbPlot::kTop  ) category=kPlotTop  ;
+      else if(type==vhbbPlot::kWH   ) category=kPlotWH   ;
+      else if(type==vhbbPlot::kZH   ) category=kPlotZH   ;
+      else if(type==vhbbPlot::kWjets) {
         if(countB>1) category=kPlotWbb;
         else if(countB>0) category=kPlotWb;
         else category=kPlotWLF;
-      } else if(type==kZjets) {
+      } else if(type==vhbbPlot::kZjets) {
         if(countB>1) category=kPlotZbb;
         else if(countB>0) category=kPlotZb;
         else category=kPlotZLF;
@@ -698,7 +716,7 @@ void zllhAnalysis(
       float deltaPhiZH    = !isBoostedCategory? fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi)) : -1;
       float deltaPhiZHFJ  = isBoostedCategory? fabs(TVector2::Phi_mpi_pi(gt.fjPhi - gt.ZBosonPhi)) : -1;
       float ptBalanceZH   = !isBoostedCategory? gt.hbbpt_reg[0] /  gt.ZBosonPt : -1;
-      float ptBalanceZHFJ = !isBoostedCategory? gt.fjPt[0] / gt.ZBosonPt : -1;
+      float ptBalanceZHFJ = isBoostedCategory? gt.fjPt[0] / gt.ZBosonPt : -1;
 
       // Set Selection Bits
       std::map<TString, bool> cut;
@@ -744,12 +762,15 @@ void zllhAnalysis(
       
       }
 
-      // Event weighting
+      // Begin Event weighting
       if(type==kData) {
         weight=1;
       } else {
         bLoad(b["normalizedWeight"],ientry);
-        bLoad(b["sf_npv"],ientry);
+        bLoad(b["pu"],ientry);
+        float puWeight = nPUScaleFactor(puWeights, gt.pu);
+        weight = normalizedWeight * theLumi * puWeight; 
+        
         if(type==kWjets || type==kZjets) {
           if(useHtBinnedVJetsKFactor) {
             bLoad(b["trueGenBosonPt"],ientry);
@@ -761,9 +782,7 @@ void zllhAnalysis(
             bLoad(b["sf_qcdV"],ientry);
             bLoad(b["sf_ewkV"],ientry);
           }
-        } else { 
-          gt.sf_qcdV=1;
-          gt.sf_ewkV=1;
+          weight *= gt.sf_qcdV * gt.sf_ewkV;
         }
         
         if (typeLepSel==0) {
@@ -798,10 +817,35 @@ void zllhAnalysis(
           recorrect_vhEWKDown = vhEWKCorr("ZllH",gt.sf_vhDown);
           weight *= recorrect_vhEWK;
         }
-        bLoad(b["sf_cmvaWeight_Cent"],ientry);
-        weight *= gt.sf_csvWeights[GeneralTree::csvCent];
+        //bLoad(b["sf_cmvaWeight_Cent"],ientry);
+        //weight *= gt.sf_csvWeights[GeneralTree::csvCent];
       }
 
+      // Hack for the central weights 
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        if(year==2016) {
+          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
+          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
+          weight *= cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+        } else if(year==2017) {
+          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
+          unsigned iShift=GeneralTree::csvCent;
+          GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+          for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
+            unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
+            BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
+              (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
+            float reshapeFactor = deepcsvSFs->eval_auto_bounds(
+              GeneralTree::csvShiftName(theShift).Data(),
+              flav,
+              jetEtas[iPt][iEta][iJ], 
+              jetPts[iPt][iEta][iJ],
+              jetBtags[iPt][iEta][iJ]
+            );
+            if(reshapeFactor>0.001) weight *= reshapeFactor;
+          }
+        }
+      }
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
         if(year==2016) {
           // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
