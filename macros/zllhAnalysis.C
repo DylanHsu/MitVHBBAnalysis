@@ -29,7 +29,7 @@ const int NJES = 1; //(int)shiftjes::N; // Number of JES variations, currently o
 // Location of the PA ntuples or skims
 const TString ntupleDir = "/data/t3home000/dhsu/dylansVHSkims/2016/dilepton/";
 //const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/";
-const int nLepSel=2; // Number of lepton selections, currently only ee, mm
+const int nLepSel=3; // Number of lepton selections
 
 using namespace vhbbPlot;
 
@@ -50,18 +50,18 @@ void zllhAnalysis(
   vector<pair<TString,vhbbPlot::sampleType>> samples;
   samples.emplace_back("DoubleEG"           , vhbbPlot::kData   );
   samples.emplace_back("DoubleMuon"         , vhbbPlot::kData   );
-  samples.emplace_back("SingleTop_tT"       , vhbbPlot::kTop    );       
-  samples.emplace_back("SingleTop_tTbar"    , vhbbPlot::kTop    );       
+//samples.emplace_back("SingleTop_tT"       , vhbbPlot::kTop    );       
+//samples.emplace_back("SingleTop_tTbar"    , vhbbPlot::kTop    );       
   samples.emplace_back("SingleTop_tW"       , vhbbPlot::kTop    );       
   samples.emplace_back("SingleTop_tbarW"    , vhbbPlot::kTop    );       
   samples.emplace_back("TTTo2L2Nu"          , vhbbPlot::kTT     );       
   samples.emplace_back("WWTo2L2Nu"          , vhbbPlot::kWW     );       
-  samples.emplace_back("WWTo4Q"             , vhbbPlot::kWW     );       
-  samples.emplace_back("WWToLNuQQ"          , vhbbPlot::kWW     );       
-  samples.emplace_back("WZTo1L1Nu2Q"        , vhbbPlot::kVZ     );       
+//samples.emplace_back("WWTo4Q"             , vhbbPlot::kWW     );       
+//samples.emplace_back("WWToLNuQQ"          , vhbbPlot::kWW     );       
+//samples.emplace_back("WZTo1L1Nu2Q"        , vhbbPlot::kVZ     );       
   samples.emplace_back("WZTo2L2Q"           , vhbbPlot::kVZ     );       
   samples.emplace_back("ZZTo2L2Q"           , vhbbPlot::kVZ     );       
-  samples.emplace_back("ZZTo4Q"             , vhbbPlot::kVZ     );       
+//samples.emplace_back("ZZTo4Q"             , vhbbPlot::kVZ     );       
   samples.emplace_back("ZJets_ht100to200"   , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_ht200to400"   , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_ht400to600"   , vhbbPlot::kZjets  );       
@@ -118,7 +118,7 @@ void zllhAnalysis(
     kZllHFJSR            ,
     kZllHFJPresel        
   };
-  vector<TString> leptonStrings={"mm","ee"};
+  vector<TString> leptonStrings={"mm","ee","em"};
  
   for(unsigned iSel=0; iSel<selections.size(); iSel++) { // Define the shape variable
     selectionType sel = selections[iSel];
@@ -252,6 +252,9 @@ void zllhAnalysis(
 
   printf("Building uncertainty histograms, please wait...\n");
   // Declare shape uncertainty histograms
+  TH1F *histo_Baseline                           [nLepSel][selections.size()][nPlotCategories];  
+  TH1F *histo_PDFUp                              [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_PDFDown                            [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_VHCorrUp                           [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_VHCorrDown                         [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_QCDr1f2                            [nLepSel][selections.size()][nPlotCategories];
@@ -279,23 +282,25 @@ void zllhAnalysis(
   for(unsigned lep=0; lep<nLepSel; lep++) 
   for(unsigned iSel=0; iSel<selections.size(); iSel++)
   for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-    const char *l = leptonStrings[lep].Data(), *sn = selectionNames[(int)selections[iSel]].Data();
-    histo_VHCorrUp     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_VHCorrUp"     , ic,l,sn)); 
-    histo_VHCorrDown   [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_VHCorrDown"   , ic,l,sn)); 
-    histo_QCDr1f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDr1f2"      , ic,l,sn)); 
-    histo_QCDr1f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDr1f5"      , ic,l,sn)); 
-    histo_QCDr2f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDr2f1"      , ic,l,sn)); 
-    histo_QCDr2f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDr2f2"      , ic,l,sn)); 
-    histo_QCDr5f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDr5f1"      , ic,l,sn)); 
-    histo_QCDr5f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDr5f5"      , ic,l,sn)); 
-    histo_QCDrScaleUp  [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDrScaleUp"  , ic,l,sn)); 
-    histo_QCDrScaleDown[lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDrScaleDown", ic,l,sn)); 
-    histo_QCDfScaleUp  [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDfScaleUp"  , ic,l,sn)); 
-    histo_QCDfScaleDown[lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_QCDfScaleDown", ic,l,sn)); 
-    histo_eleSFUp      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_eleSFUp"      , ic,l,sn)); 
-    histo_eleSFDown    [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_eleSFDown"    , ic,l,sn)); 
-    histo_muSFUp       [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_muSFUp"       , ic,l,sn)); 
-    histo_muSFDown     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo%d_Z%sH%s_muSFDown"     , ic,l,sn)); 
+    histo_Baseline     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s"              , plotBaseNames[ic].Data()));
+    histo_VHCorrUp     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrUp"     , plotBaseNames[ic].Data()));
+    histo_VHCorrDown   [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrDown"   , plotBaseNames[ic].Data()));
+    histo_PDFUp        [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_PDFUp"        , plotBaseNames[ic].Data()));
+    histo_PDFDown      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_PDFDown"      , plotBaseNames[ic].Data()));
+    histo_QCDr1f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f2"      , plotBaseNames[ic].Data()));
+    histo_QCDr1f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f5"      , plotBaseNames[ic].Data()));
+    histo_QCDr2f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f1"      , plotBaseNames[ic].Data()));
+    histo_QCDr2f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f2"      , plotBaseNames[ic].Data()));
+    histo_QCDr5f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f1"      , plotBaseNames[ic].Data()));
+    histo_QCDr5f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f5"      , plotBaseNames[ic].Data()));
+    histo_QCDrScaleUp  [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDrScaleUp"  , plotBaseNames[ic].Data()));
+    histo_QCDrScaleDown[lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDrScaleDown", plotBaseNames[ic].Data()));
+    histo_QCDfScaleUp  [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDfScaleUp"  , plotBaseNames[ic].Data()));
+    histo_QCDfScaleDown[lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDfScaleDown", plotBaseNames[ic].Data()));
+    histo_eleSFUp      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFUp"      , plotBaseNames[ic].Data()));
+    histo_eleSFDown    [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFDown"    , plotBaseNames[ic].Data()));
+    histo_muSFUp       [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_muSFUp"       , plotBaseNames[ic].Data()));
+    histo_muSFDown     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_muSFDown"     , plotBaseNames[ic].Data()));
     for(unsigned iPt=0; iPt<5; iPt++)
     for(unsigned iEta=0; iEta<3; iEta++)
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
@@ -303,8 +308,8 @@ void zllhAnalysis(
       if (shift==GeneralTree::csvCent) continue;
       histo_btag[GeneralTree::csvJESup][iPt][iEta][lep][iSel][ic] =
         (TH1F*)histos[lep][iSel][0][ic]->Clone(
-          Form("histo%d_Z%sH%s_btag%s_pt%d_eta%d",
-          ic,l,sn,btagShiftName(shift),iPt,iEta)
+          Form("histo_%s_btag%s_pt%d_eta%d",
+          plotBaseNames[ic].Data(),btagShiftName(shift),iPt,iEta)
         );
     }
   }
@@ -447,7 +452,7 @@ void zllhAnalysis(
 
       //////////////////////
       // Clear variables
-      typeLepSel=99; // 0: Z(mm), 1: Z(ee), 2: e-mu (not implemented yet), 99: undefined
+      typeLepSel=99; // 0: Z(mm), 1: Z(ee), 2: e-mu
 
       // Clear the jet pts for the b tag decorrelation
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
@@ -492,7 +497,7 @@ void zllhAnalysis(
       bLoad(b["electronPdgId"],ientry);
 
       if(gt.nLooseMuon==2 && gt.nLooseElectron==0 &&
-        gt.muonPt[0]>20 && gt.muonPt[1]>10 && 
+        gt.muonPt[0]>25 && gt.muonPt[1]>10 && 
         gt.muonPdgId[0]+gt.muonPdgId[1]==0 &&
         (gt.muonSelBit[0] & 1<<3)!=0 &&
         (gt.muonSelBit[1] & 1<<3)!=0
@@ -503,8 +508,13 @@ void zllhAnalysis(
         (gt.electronSelBit[0] & 1<<5)!=0 &&
         (gt.electronSelBit[1] & 1<<5)!=0
       ) typeLepSel=1;
-      // E-Mu Selection Not implemented yet!!!
-      if(typeLepSel!=0 && typeLepSel!=1) continue;
+      else if(gt.nLooseMuon==1 && gt.nLooseElectron==1 &&
+        ((gt.muonPt[0]>25 && gt.electronPt[0]>15) || (gt.muonPt[0]>15 && gt.electronPt[0]>25)) && 
+        gt.muonPdgId[0]*gt.electronPdgId[0]<0 &&
+        (gt.muonSelBit[0]     & 1<<3)!=0 &&
+        (gt.electronSelBit[0] & 1<<5)!=0
+      ) typeLepSel=2;
+      if(typeLepSel!=0 && typeLepSel!=1 && typeLepSel!=2) continue;
       if(debug) printf("  Passed lepton ID/iso multiplicity\n");
 
       // Lepton kinematics
@@ -548,6 +558,31 @@ void zllhAnalysis(
         lepton2RelIso = gt.electronCombIso[1]/gt.electronPt[1];
         lepton2D0     = gt.electronD0[1];
         lepton2DZ     = gt.electronDZ[1];
+      } else if (typeLepSel==2) {
+        bLoad(b["muonEta"],ientry);
+        bLoad(b["muonPhi"],ientry);
+        bLoad(b["muonD0"],ientry);
+        bLoad(b["muonDZ"],ientry);
+        bLoad(b["muonCombIso"],ientry);
+        bLoad(b["muonPdgId"],ientry);
+        bLoad(b["electronEta"],ientry);
+        bLoad(b["electronPhi"],ientry);
+        bLoad(b["electronD0"],ientry);
+        bLoad(b["electronDZ"],ientry);
+        bLoad(b["electronCombIso"],ientry);
+        bLoad(b["electronPdgId"],ientry);
+        lepton1Pt     = gt.muonPt[0];
+        lepton1Eta    = gt.muonEta[0];
+        lepton1Phi    = gt.muonPhi[0]; 
+        lepton1D0     = gt.muonD0[0];
+        lepton1DZ     = gt.muonDZ[0];
+        lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
+        lepton2Pt     = gt.electronPt[0]; 
+        lepton2Eta    = gt.electronEta[0];
+        lepton2Phi    = gt.electronPhi[0];
+        lepton2D0     = gt.electronD0[0];
+        lepton2DZ     = gt.electronDZ[0];
+        lepton2RelIso = gt.electronCombIso[0]/gt.electronPt[0];
       }
       if(debug) printf("  Passed lepton kinematics\n");
 
@@ -806,7 +841,7 @@ void zllhAnalysis(
           bLoad(b["muonSfTight"],ientry);
           bLoad(b["muonSfUnc"],ientry);
           bLoad(b["sf_muTrig"],ientry);
-          weight *= gt.sf_muTrig;
+          weight *= 1;//gt.sf_muTrig;
           weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
           weight *= gt.muonSfReco[1] * gt.muonSfTight[1];
         } else if(typeLepSel==1) {
@@ -814,10 +849,22 @@ void zllhAnalysis(
           bLoad(b["electronSfMvaWP90"],ientry);
           bLoad(b["electronSfUnc"],ientry);
           bLoad(b["sf_eleTrig"],ientry);
-          weight *= gt.sf_eleTrig;
+          weight *= 1;//gt.sf_eleTrig;
           weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
           weight *= gt.electronSfReco[1] * gt.electronSfMvaWP90[1];
+        } else if (typeLepSel==2) {
+          bLoad(b["muonSfReco"],ientry);
+          bLoad(b["muonSfTight"],ientry);
+          bLoad(b["muonSfUnc"],ientry);
+          bLoad(b["electronSfReco"],ientry);
+          bLoad(b["electronSfMvaWP90"],ientry);
+          bLoad(b["electronSfUnc"],ientry);
+          bLoad(b["sf_eleTrig"],ientry);
+          weight *= 1.0; // no trigger data/MC SF
+          weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
+          weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
         }
+
         float recorrect_vhEWK=1, recorrect_vhEWKUp=1, recorrect_vhEWKDown=1;
         if(type==kVZ) {
           bLoad(b["sf_wz"],ientry);
