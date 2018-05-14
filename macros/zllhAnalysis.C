@@ -499,20 +499,20 @@ void zllhAnalysis(
       if(gt.nLooseMuon==2 && gt.nLooseElectron==0 &&
         gt.muonPt[0]>25 && gt.muonPt[1]>10 && 
         gt.muonPdgId[0]+gt.muonPdgId[1]==0 &&
-        (gt.muonSelBit[0] & 1<<3)!=0 &&
-        (gt.muonSelBit[1] & 1<<3)!=0
+        (gt.muonSelBit[0] & pa::kTight)!=0 &&
+        (gt.muonSelBit[1] & pa::kTight)!=0
       ) typeLepSel=0;
       else if(gt.nLooseElectron==2 && gt.nLooseMuon==0 &&
         gt.electronPt[0]>25 && gt.electronPt[1]>15 && 
         gt.electronPdgId[0]+gt.electronPdgId[1]==0 &&
-        (gt.electronSelBit[0] & 1<<5)!=0 &&
-        (gt.electronSelBit[1] & 1<<5)!=0
+        (gt.electronSelBit[0] & pa::kEleMvaWP90)!=0 &&
+        (gt.electronSelBit[1] & pa::kEleMvaWP90)!=0
       ) typeLepSel=1;
       else if(gt.nLooseMuon==1 && gt.nLooseElectron==1 &&
         ((gt.muonPt[0]>25 && gt.electronPt[0]>15) || (gt.muonPt[0]>15 && gt.electronPt[0]>25)) && 
         gt.muonPdgId[0]*gt.electronPdgId[0]<0 &&
-        (gt.muonSelBit[0]     & 1<<3)!=0 &&
-        (gt.electronSelBit[0] & 1<<5)!=0
+        (gt.muonSelBit[0]     & pa::kTight      )!=0 &&
+        (gt.electronSelBit[0] & pa::kEleMvaWP90)!=0
       ) typeLepSel=2;
       if(typeLepSel!=0 && typeLepSel!=1 && typeLepSel!=2) continue;
       if(debug) printf("  Passed lepton ID/iso multiplicity\n");
