@@ -253,8 +253,6 @@ void zllhAnalysis(
   printf("Building uncertainty histograms, please wait...\n");
   // Declare shape uncertainty histograms
   TH1F *histo_Baseline                           [nLepSel][selections.size()][nPlotCategories];  
-  TH1F *histo_PDFUp                              [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_PDFDown                            [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_VHCorrUp                           [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_VHCorrDown                         [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_QCDr1f2                            [nLepSel][selections.size()][nPlotCategories];
@@ -263,10 +261,8 @@ void zllhAnalysis(
   TH1F *histo_QCDr2f2                            [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_QCDr5f1                            [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_QCDr5f5                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDrScaleUp                        [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDrScaleDown                      [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDfScaleUp                        [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDfScaleDown                      [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDScaleUp                         [nLepSel][selections.size()][nPlotCategories];
+  TH1F *histo_QCDScaleDown                       [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_eleSFUp                            [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_eleSFDown                          [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_muSFUp                             [nLepSel][selections.size()][nPlotCategories];
@@ -275,7 +271,6 @@ void zllhAnalysis(
   TH1F *histo_VGluUp                             [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_VGluDown                           [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_jes[(int)shiftjes::N]              [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_jesDown                            [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_doubleBUp                          [nLepSel][selections.size()][nPlotCategories];
   TH1F *histo_doubleBDown                        [nLepSel][selections.size()][nPlotCategories];
   
@@ -285,18 +280,14 @@ void zllhAnalysis(
     histo_Baseline     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s"              , plotBaseNames[ic].Data()));
     histo_VHCorrUp     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrUp"     , plotBaseNames[ic].Data()));
     histo_VHCorrDown   [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrDown"   , plotBaseNames[ic].Data()));
-    histo_PDFUp        [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_PDFUp"        , plotBaseNames[ic].Data()));
-    histo_PDFDown      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_PDFDown"      , plotBaseNames[ic].Data()));
     histo_QCDr1f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f2"      , plotBaseNames[ic].Data()));
     histo_QCDr1f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f5"      , plotBaseNames[ic].Data()));
     histo_QCDr2f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f1"      , plotBaseNames[ic].Data()));
     histo_QCDr2f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f2"      , plotBaseNames[ic].Data()));
     histo_QCDr5f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f1"      , plotBaseNames[ic].Data()));
     histo_QCDr5f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f5"      , plotBaseNames[ic].Data()));
-    histo_QCDrScaleUp  [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDrScaleUp"  , plotBaseNames[ic].Data()));
-    histo_QCDrScaleDown[lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDrScaleDown", plotBaseNames[ic].Data()));
-    histo_QCDfScaleUp  [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDfScaleUp"  , plotBaseNames[ic].Data()));
-    histo_QCDfScaleDown[lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDfScaleDown", plotBaseNames[ic].Data()));
+    histo_QCDScaleUp   [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDScaleUp"   , plotBaseNames[ic].Data()));
+    histo_QCDScaleDown [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDScaleDown" , plotBaseNames[ic].Data()));
     histo_eleSFUp      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFUp"      , plotBaseNames[ic].Data()));
     histo_eleSFDown    [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFDown"    , plotBaseNames[ic].Data()));
     histo_muSFUp       [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_muSFUp"       , plotBaseNames[ic].Data()));
@@ -372,10 +363,10 @@ void zllhAnalysis(
   unsigned char category; int countB;
   // Declare variables for the variations of the weights
   float weight;
-  float weight_QCDr1f2, weight_QCDr1f5, weight_QCDr2f1, weight_QCDr2f2, weight_QCDr5f1, weight_QCDr5f5;
-  float weight_lepSFUp;
+  float weight_QCDr1f2 = 1, weight_QCDr1f5 = 1, weight_QCDr2f1 = 1, weight_QCDr2f2 = 1, weight_QCDr5f1 = 1, weight_QCDr5f5 = 1;
+  float weight_muSF = 1, weight_elSF = 1;
   float weight_btag[GeneralTree::nCsvShifts][5][3];
-  float weight_VHCorrUp, weight_VHCorrDown; 
+  float weight_VHCorrUp = 1, weight_VHCorrDown = 1;
   // Done declaring weight variables
   ////////////////////////////////////////////////////////////////////////
 
@@ -835,7 +826,16 @@ void zllhAnalysis(
           }
           weight *= gt.sf_qcdV * gt.sf_ewkV;
         }
-        
+        bLoad(b["scale"],ientry);
+        double avgQCDScale = (gt.scale[0]+gt.scale[1]+gt.scale[2]+
+                              gt.scale[3]+gt.scale[4]+gt.scale[5])/6.;
+        weight_QCDr1f2 = gt.scale[0]/avgQCDScale;
+        weight_QCDr1f5 = gt.scale[1]/avgQCDScale;
+        weight_QCDr2f1 = gt.scale[2]/avgQCDScale;
+        weight_QCDr2f2 = gt.scale[3]/avgQCDScale;
+        weight_QCDr5f1 = gt.scale[4]/avgQCDScale;
+        weight_QCDr5f5 = gt.scale[5]/avgQCDScale;
+ 
         if (typeLepSel==0) {
           bLoad(b["muonSfReco"],ientry);
           bLoad(b["muonSfTight"],ientry);
@@ -844,6 +844,7 @@ void zllhAnalysis(
           weight *= 1;//gt.sf_muTrig;
           weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
           weight *= gt.muonSfReco[1] * gt.muonSfTight[1];
+          weight_muSF *= (1+gt.muonSfUnc[0]) * (1+gt.muonSfUnc[1]);
         } else if(typeLepSel==1) {
           bLoad(b["electronSfReco"],ientry);
           bLoad(b["electronSfMvaWP90"],ientry);
@@ -852,6 +853,7 @@ void zllhAnalysis(
           weight *= 1;//gt.sf_eleTrig;
           weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
           weight *= gt.electronSfReco[1] * gt.electronSfMvaWP90[1];
+          weight_elSF *= (1+gt.electronSfUnc[0]) * (1+gt.electronSfUnc[1]);
         } else if (typeLepSel==2) {
           bLoad(b["muonSfReco"],ientry);
           bLoad(b["muonSfTight"],ientry);
@@ -863,6 +865,8 @@ void zllhAnalysis(
           weight *= 1.0; // no trigger data/MC SF
           weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
           weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
+          weight_muSF *= (1+gt.muonSfUnc[0]);
+          weight_elSF *= (1+gt.electronSfUnc[0]);
         }
 
         float recorrect_vhEWK=1, recorrect_vhEWKUp=1, recorrect_vhEWKDown=1;
@@ -973,6 +977,32 @@ void zllhAnalysis(
               sel==kZllHTT1bFJCR)
               MVAVar[iSel][iJES]=gt.fjMSD_corr[iJES];
             break;
+        }
+      }
+
+      // Fill the uncertainty histograms
+      for(unsigned iSel=0; iSel<selections.size(); iSel++) {
+        selectionType sel = selections[iSel];
+        bool passFullSel = (selectionBits[0] & sel) != 0;
+        if(passFullSel) {
+          histo_Baseline    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight);
+          histo_VHCorrUp    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_VHCorrUp);
+          histo_VHCorrDown  [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_VHCorrDown);
+          histo_QCDr1f2     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr1f2);
+          histo_QCDr1f5     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr1f2);
+          histo_QCDr2f1     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr2f1);
+          histo_QCDr2f2     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr2f2);
+          histo_QCDr5f1     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr5f1);
+          histo_QCDr5f5     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr5f5);
+          histo_eleSFUp     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_elSF);
+          histo_eleSFDown   [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight/weight_elSF);
+          histo_muSFUp      [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_muSF);
+          histo_muSFDown    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight/weight_muSF);
+        }
+        for(unsigned iJES=0; iJES<NJES; iJES++) {
+          bool passFullSelJES = (selectionBits[iJES] & sel) != 0;
+          if(!passFullSelJES) continue;
+          histo_jes[iJES][typeLepSel][iSel][category]->Fill(MVAVar[iSel][iJES], weight);
         }
       }
 
