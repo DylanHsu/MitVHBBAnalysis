@@ -22,7 +22,9 @@
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
 #include "formulas.h"
-
+#include <thread>
+#include <future>
+#include <functional>
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = 1; //(int)shiftjes::N; // Number of JES variations, currently only look at the nominal for performance reason
@@ -30,8 +32,69 @@ const int NJES = 1; //(int)shiftjes::N; // Number of JES variations, currently o
 const TString ntupleDir = "/data/t3home000/dhsu/dylansVHSkims/2016/dilepton/";
 //const TString ntupleDir = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/zllTest/";
 const int nLepSel=3; // Number of lepton selections
+const int nSelections=11; // Number of selections
+const int nPlots=50; // Max number of plots
 
 using namespace vhbbPlot;
+
+struct analysisObjects {
+  vector<selectionType> selections = { // List of enums for the selections we care about, defined in vhbbPlot.h
+    kZllHLightFlavorCR   ,
+    kZllHHeavyFlavorCR   ,
+    kZllH2TopCR          ,
+    kZllHSR              ,
+    kZllHPresel          ,
+    kZllHLightFlavorFJCR ,
+    kZllHHeavyFlavorFJCR ,
+    kZllHTT2bFJCR        ,
+    kZllHTT1bFJCR        ,
+    kZllHFJSR            ,
+    kZllHFJPresel        
+  };
+  // Configuration parameters
+  int MVAVarType; 
+  unsigned year;
+  unsigned debug;
+  double lumi;
+  unsigned long whichTriggers;
+  // Plotting and histograms parameters
+  vector<float> xmin, xmax;
+  vector<int> nbins;
+  vector<TString> histoNames, histoTitles;
+  std::map<selectionType, vector<float>> MVAbins;
+  std::map<selectionType, TString> MVAVarName, shapeType; // title of histos, and simple name
+  // Reading/writing trees
+  TTree *dummyTree=0;
+  // Histogram pointers
+  TH1F *histos[nLepSel][nSelections][nPlots][nPlotCategories];
+  TH1F *histo_Baseline                           [nLepSel][nSelections][nPlotCategories];  
+  TH1F *histo_VHCorrUp                           [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_VHCorrDown                         [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDr1f2                            [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDr1f5                            [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDr2f1                            [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDr2f2                            [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDr5f1                            [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDr5f5                            [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDScaleUp                         [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_QCDScaleDown                       [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_eleSFUp                            [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_eleSFDown                          [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_muSFUp                             [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_muSFDown                           [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_btag[GeneralTree::nCsvShifts][5][3][nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_VGluUp                             [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_VGluDown                           [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_jes[(int)shiftjes::N]              [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_doubleBUp                          [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_doubleBDown                        [nLepSel][nSelections][nPlotCategories];
+  // Corrections storage
+  TH1D *puWeights=0, *puWeightsUp=0, *puWeightsDown=0;
+  BTagCalibrationReader *deepcsvSFs=0; 
+  BTagCalibration *deepcsvCalib=0; 
+  CSVHelper *cmvaReweighter=0;
+  vector<double> ZjetsEWKCorr;
+};
 
 // useBoostedCategory:
 // False means you will use all possible events to do the resolved Z(ll)H(bb)
@@ -44,7 +107,12 @@ void zllhAnalysis(
   unsigned year=2016,
   unsigned debug=0 
 ) {
-  
+  struct analysisObjects ao;
+  ao.MVAVarType=MVAVarType;
+  ao.year=year;
+  ao.debug=debug;
+  ao.lumi=(year==2016)? 35900.:41300;
+
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -84,148 +152,133 @@ void zllhAnalysis(
   
   assert(dataCardDir!="");
   if(dataCardDir!="") system(Form("mkdir -p MitVHBBAnalysis/datacards/%s",dataCardDir.Data()));
-  double theLumi= (year==2016)? 35900.:41300;
-  unsigned long whichTriggers = (1<<pa::kSingleEleTrig) | (1<<pa::kDoubleEleTrig) | (1<<pa::kSingleMuTrig) | (1<<pa::kDoubleMuTrig) | (1<<pa::kEMuTrig);
+  ao.whichTriggers = (1<<pa::kSingleEleTrig) | (1<<pa::kDoubleEleTrig) | (1<<pa::kSingleMuTrig) | (1<<pa::kDoubleMuTrig) | (1<<pa::kEMuTrig);
  // Load Pileup Weights
   TString puPath =
     (year==2016)? "MitAnalysisRunII/data/80x/puWeights_80x_37ifb.root" :
     "MitAnalysisRunII/data/90x/puWeights_90x.root"; 
   TFile *fPUFile = TFile::Open(Form("%s",puPath.Data())); assert(fPUFile);
-  TH1D *puWeights     = (TH1D*)(fPUFile->Get("puWeights"    )); assert(puWeights    );
-  TH1D *puWeightsUp   = (TH1D*)(fPUFile->Get("puWeightsUp"  )); assert(puWeightsUp  );
-  TH1D *puWeightsDown = (TH1D*)(fPUFile->Get("puWeightsDown")); assert(puWeightsDown);
-  puWeights    ->SetDirectory(0); 
-  puWeightsUp  ->SetDirectory(0); 
-  puWeightsDown->SetDirectory(0); 
+  ao.puWeights     = (TH1D*)(fPUFile->Get("puWeights"    )); assert(ao.puWeights    );
+  ao.puWeightsUp   = (TH1D*)(fPUFile->Get("puWeightsUp"  )); assert(ao.puWeightsUp  );
+  ao.puWeightsDown = (TH1D*)(fPUFile->Get("puWeightsDown")); assert(ao.puWeightsDown);
+  ao.puWeights    ->SetDirectory(0); 
+  ao.puWeightsUp  ->SetDirectory(0); 
+  ao.puWeightsDown->SetDirectory(0); 
   delete fPUFile;
   // Done Loading Pileup Weights
 
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
-  std::map<selectionType, vector<float>> MVAbins;
-  std::map<selectionType, TString> MVAVarName, shapeType; // title of histos, and simple name
   
-  vector<selectionType> selections = { // List of enums for the selections we care about, defined in vhbbPlot.h
-    kZllHLightFlavorCR   ,
-    kZllHHeavyFlavorCR   ,
-    kZllH2TopCR          ,
-    kZllHSR              ,
-    kZllHPresel          ,
-    kZllHLightFlavorFJCR ,
-    kZllHHeavyFlavorFJCR ,
-    kZllHTT2bFJCR        ,
-    kZllHTT1bFJCR        ,
-    kZllHFJSR            ,
-    kZllHFJPresel        
-  };
   vector<TString> leptonStrings={"mm","ee","em"};
- 
-  for(unsigned iSel=0; iSel<selections.size(); iSel++) { // Define the shape variable
-    selectionType sel = selections[iSel];
-    if(MVAVarType==1) {
+
+  for(unsigned iSel=0; iSel<ao.selections.size(); iSel++) { // Define the shape variable
+    selectionType sel = ao.selections[iSel];
+    if(ao.MVAVarType==1) {
       // 1 - simple pT variable
-      MVAVarName[sel]="Higgs p_{T} classifier [GeV]";
+      ao.MVAVarName[sel]="Higgs p_{T} classifier [GeV]";
       if(sel>=kZllHLightFlavorCR && sel<=kZllHPresel) {
-        MVAbins[sel]={100,120,140,160,180,200,250,300,350};
-        MVAVarName[sel]="H(bb) pT";
-        shapeType[sel]="ptShape";
+        ao.MVAbins[sel]={100,120,140,160,180,200,250,300,350};
+        ao.MVAVarName[sel]="H(bb) pT";
+        ao.shapeType[sel]="ptShape";
       } else if(sel>=kZllHLightFlavorFJCR && sel<=kZllHFJPresel) {
-        MVAbins[sel]={250,300,350,400,450,500,550,600};
-        MVAVarName[sel]="H(bb) pT";
-        shapeType[sel]="ptShape";
+        ao.MVAbins[sel]={250,300,350,400,450,500,550,600};
+        ao.MVAVarName[sel]="H(bb) pT";
+        ao.shapeType[sel]="ptShape";
       } 
-    //} else if(MVAVarType==2) {
+    //} else if(ao.MVAVarType==2) {
       // 2 - multiclass BDT in SR, subleading CMVA in CR (not implemented)
-    } else if(MVAVarType==3) {
+    } else if(ao.MVAVarType==3) {
       // 3 - normal BDT in SR, subleading CMVA in CR
       if(sel==kZllHLightFlavorCR) {
-        MVAbins[sel]={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000};
-        MVAVarName[sel]="Subleading H(bb) CMVA";
-        shapeType[sel]="lesserCMVAShape";
+        ao.MVAbins[sel]={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000};
+        ao.MVAVarName[sel]="Subleading H(bb) CMVA";
+        ao.shapeType[sel]="lesserCMVAShape";
       } else if(sel==kZllHHeavyFlavorCR || sel==kZllH2TopCR || sel==kZllHPresel) {
-        MVAbins[sel]={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
-        MVAVarName[sel]="Subleading H(bb) CMVA";
-        shapeType[sel]="lesserCMVAShape";
+        ao.MVAbins[sel]={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+        ao.MVAVarName[sel]="Subleading H(bb) CMVA";
+        ao.shapeType[sel]="lesserCMVAShape";
       } else if(sel==kZllHSR) {
-        MVAbins[sel]={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.9,1.00};
-        MVAVarName[sel]="BDT Output";
-        shapeType[sel]="singleClassBDTShape"; 
+        ao.MVAbins[sel]={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.9,1.00};
+        ao.MVAVarName[sel]="BDT Output";
+        ao.shapeType[sel]="singleClassBDTShape"; 
       } else if((sel>=kZllHLightFlavorFJCR && sel<kZllHFJSR) || sel==kZllHFJPresel) {
         if(sel==kZllHHeavyFlavorFJCR)
-          MVAbins[sel]={40,45,50,55,60,65,70,75,80};
+          ao.MVAbins[sel]={40,45,50,55,60,65,70,75,80};
         else
-          MVAbins[sel]={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
-        MVAVarName[sel]="Fatjet soft drop mass [GeV]";
-        shapeType[sel]="softDropMassShape";
+          ao.MVAbins[sel]={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
+        ao.MVAVarName[sel]="Fatjet soft drop mass [GeV]";
+        ao.shapeType[sel]="softDropMassShape";
       } else if(sel==kZllHFJSR) {
-        MVAbins[sel]={-0.6,-0.2,0,0.2,0.3,0.6};
-        MVAVarName[sel]="BDT Output";
-        shapeType[sel]="singleClassBDTShape"; 
+        ao.MVAbins[sel]={-0.6,-0.2,0,0.2,0.3,0.6};
+        ao.MVAVarName[sel]="BDT Output";
+        ao.shapeType[sel]="singleClassBDTShape"; 
       }
-    } else throw std::runtime_error("bad MVAVarType");
+    } else throw std::runtime_error("bad ao.MVAVarType");
   }
   
   // Declare histograms for plotting
   printf("Building plotting histograms, please wait...\n");
-  const int nPlots=50;
-  vector<float> xmin(nPlots), xmax(nPlots);  vector<int> nbins(nPlots);
-  vector<TString> histoNames(nPlots), histoTitles(nPlots);
+  ao.xmin.resize(nPlots);
+  ao.xmax.resize(nPlots);
+  ao.nbins.resize(nPlots);
+  ao.histoNames.resize(nPlots); 
+  ao.histoTitles.resize(nPlots);
   { int p=0;
-    histoNames[p]="MVAVar"                  ; histoTitles[p]=""                      ;                                                p++;
-    histoNames[p]="lepton1Pt"               ; histoTitles[p]="Lepton 1 p_{T} [GeV]"  ; nbins[p]=  23; xmin[p]=    20; xmax[p]=   250; p++; 
-    histoNames[p]="lepton2Pt"               ; histoTitles[p]="Lepton 2 p_{T} [GeV]"  ; nbins[p]=  23; xmin[p]=    20; xmax[p]=   250; p++; 
-    histoNames[p]="lepton1Eta"              ; histoTitles[p]="Lepton 1 #eta"         ; nbins[p]=  25; xmin[p]=  -2.5; xmax[p]=   2.5; p++; 
-    histoNames[p]="lepton2Eta"              ; histoTitles[p]="Lepton 2 #eta"         ; nbins[p]=  25; xmin[p]=  -2.5; xmax[p]=   2.5; p++; 
-    histoNames[p]="ZBosonPt"                ; histoTitles[p]="Z boson pT [GeV]"      ; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
-    histoNames[p]="ZBosonEta"               ; histoTitles[p]="Z boson #eta"          ; nbins[p]=  25; xmin[p]=  -2.5; xmax[p]=   2.5; p++; 
-    histoNames[p]="ZBosonPhi"               ; histoTitles[p]="Z boson phi"           ; nbins[p]=  32; xmin[p]=     0; xmax[p]= 3.142; p++; 
-    histoNames[p]="ZBosonM"                 ; histoTitles[p]="Z boson mass"          ; nbins[p]=  60; xmin[p]=     0; xmax[p]=   120; p++; 
-    histoNames[p]="ZBosonLep1CosThetaCS"    ; histoTitles[p]="Z(ll) cos#theta^{CS}"  ; nbins[p]=  20; xmin[p]=    -1; xmax[p]=    1.; p++; 
-    histoNames[p]="ZBosonLep1CosThetaStar"  ; histoTitles[p]="cos#theta* Z(ll)+jj"   ; nbins[p]=  20; xmin[p]=    -1; xmax[p]=    1.; p++; 
-    histoNames[p]="ZBosonLep1CosThetaStarFJ"; histoTitles[p]="cos#theta* Z(ll)+FJ"   ; nbins[p]=  20; xmin[p]=    -1; xmax[p]=    1.; p++; 
-    histoNames[p]="Mjj"                     ; histoTitles[p]="Dijet mass [GeV]"      ; nbins[p]=  25; xmin[p]=     0; xmax[p]=   250; p++; 
-    histoNames[p]="pTjj"                    ; histoTitles[p]="Dijet pT [GeV]"        ; nbins[p]=  18; xmin[p]=    50; xmax[p]=   350; p++; 
-    histoNames[p]="bjet1Pt"                 ; histoTitles[p]="B-jet 1 pT [GeV]"      ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
-    histoNames[p]="bjet2Pt"                 ; histoTitles[p]="B-jet 2 pT [GeV]"      ; nbins[p]=  38; xmin[p]=    20; xmax[p]=   400; p++; 
-    histoNames[p]="bjet1btag"               ; histoTitles[p]="B-jet 1 btag"          ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
-    histoNames[p]="bjet2btag"               ; histoTitles[p]="B-jet 2 btag"          ; nbins[p]=  40; xmin[p]=   -1.; xmax[p]=    1.; p++; 
-    histoNames[p]="nJet"                    ; histoTitles[p]="N central AK4CHS jets" ; nbins[p]=   8; xmin[p]=    0.; xmax[p]=    8.; p++; 
-    histoNames[p]="deltaPhiZH"              ; histoTitles[p]="#Delta#phi(Z,H) [Rad]" ; nbins[p]=  20; xmin[p]= 1.571; xmax[p]= 3.142; p++; 
-    histoNames[p]="ptBalanceZH"             ; histoTitles[p]="|H pT / Z pT|"         ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=    3.; p++; 
-    histoNames[p]="sumEtSoft1"              ; histoTitles[p]="#sum E_{T}(soft 1)"    ; nbins[p]=  30; xmin[p]=    0.; xmax[p]=  300.; p++; 
-    histoNames[p]="nSoft2"                  ; histoTitles[p]="N^{soft}_{2}"          ; nbins[p]=  25; xmin[p]=    0.; xmax[p]=   25.; p++; 
-    histoNames[p]="nSoft5"                  ; histoTitles[p]="N^{soft}_{5}"          ; nbins[p]=  12; xmin[p]=    0.; xmax[p]=   12.; p++; 
-    histoNames[p]="nSoft10"                 ; histoTitles[p]="N^{soft}_{10}"         ; nbins[p]=   8; xmin[p]=    0.; xmax[p]=    8.; p++; 
-    histoNames[p]="bdtValue"                ; histoTitles[p]="BDT Output"            ; nbins[p]=  40; xmin[p]=    -1; xmax[p]=    1.; p++; 
+    ao.histoNames[p]="MVAVar"                  ; ao.histoTitles[p]=""                      ;                                                p++;
+    ao.histoNames[p]="lepton1Pt"               ; ao.histoTitles[p]="Lepton 1 p_{T} [GeV]"  ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
+    ao.histoNames[p]="lepton2Pt"               ; ao.histoTitles[p]="Lepton 2 p_{T} [GeV]"  ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
+    ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton 1 #eta"         ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
+    ao.histoNames[p]="lepton2Eta"              ; ao.histoTitles[p]="Lepton 2 #eta"         ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
+    ao.histoNames[p]="ZBosonPt"                ; ao.histoTitles[p]="Z boson pT [GeV]"      ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
+    ao.histoNames[p]="ZBosonEta"               ; ao.histoTitles[p]="Z boson #eta"          ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
+    ao.histoNames[p]="ZBosonPhi"               ; ao.histoTitles[p]="Z boson phi"           ; ao.nbins[p]=  32; ao.xmin[p]=     0; ao.xmax[p]= 3.142; p++; 
+    ao.histoNames[p]="ZBosonM"                 ; ao.histoTitles[p]="Z boson mass"          ; ao.nbins[p]=  60; ao.xmin[p]=     0; ao.xmax[p]=   120; p++; 
+    ao.histoNames[p]="ZBosonLep1CosThetaCS"    ; ao.histoTitles[p]="Z(ll) cos#theta^{CS}"  ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+    ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+    ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+    ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"      ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
+    ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"        ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
+    ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+    ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+    ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+    ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+    ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets" ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+    ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H) [Rad]" ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+    ao.histoNames[p]="ptBalanceZH"             ; ao.histoTitles[p]="|H pT / Z pT|"         ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+    ao.histoNames[p]="sumEtSoft1"              ; ao.histoTitles[p]="#sum E_{T}(soft 1)"    ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
+    ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"          ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
+    ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"          ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
+    ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"         ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+    ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
   }
   
-  TH1F *histos[nLepSel][selections.size()][nPlots][nPlotCategories];
   for(unsigned lep=0; lep<nLepSel; lep++) 
-  for(unsigned iSel=0; iSel<selections.size(); iSel++)
+  for(unsigned iSel=0; iSel<ao.selections.size(); iSel++)
   for(int p=0; p<nPlots; p++) {
-    selectionType sel = selections[iSel];
-    if(histoNames[p]=="") continue;
+    selectionType sel = ao.selections[iSel];
+    if(ao.histoNames[p]=="") continue;
     for(unsigned char ic=0; ic<nPlotCategories; ic++) {
-      if(histoNames[p]=="MVAVar") {
-        histos[lep][iSel][p][ic] = new TH1F(
+      if(ao.histoNames[p]=="MVAVar") {
+        ao.histos[lep][iSel][p][ic] = new TH1F(
           Form("histo%d_Z%sH%s_%s",
             ic,
             leptonStrings[lep].Data(),
             selectionNames[(int)sel].Data(),
-            histoNames[p].Data()
-          ), MVAVarName[sel], MVAbins[sel].size()-1, MVAbins[sel].data());
+            ao.histoNames[p].Data()
+          ), ao.MVAVarName[sel], ao.MVAbins[sel].size()-1, ao.MVAbins[sel].data());
       } else {
-        histos[lep][iSel][p][ic] = new TH1F(
+        ao.histos[lep][iSel][p][ic] = new TH1F(
           Form("histo%d_Z%sH%s_%s",
             ic,
             leptonStrings[lep].Data(),
             selectionNames[(int)sel].Data(),
-            histoNames[p].Data()
-          ), histoTitles[p], nbins[p], xmin[p], xmax[p]);
+            ao.histoNames[p].Data()
+          ), ao.histoTitles[p], ao.nbins[p], ao.xmin[p], ao.xmax[p]);
       }
-      if(debug) printf("\tMade plot %s\n", histos[lep][iSel][p][ic]->GetName());
-      histos[lep][iSel][p][ic]->Sumw2();
-      histos[lep][iSel][p][ic]->SetDirectory(0);
+      if(debug) printf("\tMade plot %s\n", ao.histos[lep][iSel][p][ic]->GetName());
+      ao.histos[lep][iSel][p][ic]->Sumw2();
+      ao.histos[lep][iSel][p][ic]->SetDirectory(0);
     }
   }
 
@@ -245,60 +298,38 @@ void zllhAnalysis(
   // Map of the branches
   std::map<TString, TBranch*> b;
   // Dummy tree for a list of branch names
-  TTree *dummyTree = new TTree("dummyTree","dummyTree");
-  gt.WriteTree(dummyTree);
+  ao.dummyTree = new TTree("dummyTree","dummyTree");
+  gt.WriteTree(ao.dummyTree);
   // Done making GeneralTree object
   ////////////////////////////////////////////////////////////////////////
 
   printf("Building uncertainty histograms, please wait...\n");
-  // Declare shape uncertainty histograms
-  TH1F *histo_Baseline                           [nLepSel][selections.size()][nPlotCategories];  
-  TH1F *histo_VHCorrUp                           [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_VHCorrDown                         [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDr1f2                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDr1f5                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDr2f1                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDr2f2                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDr5f1                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDr5f5                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDScaleUp                         [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_QCDScaleDown                       [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_eleSFUp                            [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_eleSFDown                          [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_muSFUp                             [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_muSFDown                           [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_btag[GeneralTree::nCsvShifts][5][3][nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_VGluUp                             [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_VGluDown                           [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_jes[(int)shiftjes::N]              [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_doubleBUp                          [nLepSel][selections.size()][nPlotCategories];
-  TH1F *histo_doubleBDown                        [nLepSel][selections.size()][nPlotCategories];
   
   for(unsigned lep=0; lep<nLepSel; lep++) 
-  for(unsigned iSel=0; iSel<selections.size(); iSel++)
+  for(unsigned iSel=0; iSel<ao.selections.size(); iSel++)
   for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-    histo_Baseline     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s"              , plotBaseNames[ic].Data()));
-    histo_VHCorrUp     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrUp"     , plotBaseNames[ic].Data()));
-    histo_VHCorrDown   [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrDown"   , plotBaseNames[ic].Data()));
-    histo_QCDr1f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f2"      , plotBaseNames[ic].Data()));
-    histo_QCDr1f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f5"      , plotBaseNames[ic].Data()));
-    histo_QCDr2f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f1"      , plotBaseNames[ic].Data()));
-    histo_QCDr2f2      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f2"      , plotBaseNames[ic].Data()));
-    histo_QCDr5f1      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f1"      , plotBaseNames[ic].Data()));
-    histo_QCDr5f5      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f5"      , plotBaseNames[ic].Data()));
-    histo_QCDScaleUp   [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDScaleUp"   , plotBaseNames[ic].Data()));
-    histo_QCDScaleDown [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDScaleDown" , plotBaseNames[ic].Data()));
-    histo_eleSFUp      [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFUp"      , plotBaseNames[ic].Data()));
-    histo_eleSFDown    [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFDown"    , plotBaseNames[ic].Data()));
-    histo_muSFUp       [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_muSFUp"       , plotBaseNames[ic].Data()));
-    histo_muSFDown     [lep][iSel][ic] = (TH1F*)histos[lep][iSel][0][ic]->Clone(Form("histo_%s_muSFDown"     , plotBaseNames[ic].Data()));
+    ao.histo_Baseline     [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s"              , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrUp     [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrUp"     , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrDown   [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrDown"   , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f2      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f2"      , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f5      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f5"      , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f1      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f1"      , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f2      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr2f2"      , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f1      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f1"      , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f5      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr5f5"      , plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleUp   [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDScaleUp"   , plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleDown [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDScaleDown" , plotBaseNames[ic].Data()));
+    ao.histo_eleSFUp      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFUp"      , plotBaseNames[ic].Data()));
+    ao.histo_eleSFDown    [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_eleSFDown"    , plotBaseNames[ic].Data()));
+    ao.histo_muSFUp       [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_muSFUp"       , plotBaseNames[ic].Data()));
+    ao.histo_muSFDown     [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_muSFDown"     , plotBaseNames[ic].Data()));
     for(unsigned iPt=0; iPt<5; iPt++)
     for(unsigned iEta=0; iEta<3; iEta++)
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
       GeneralTree::csvShift shift = gt.csvShifts[iShift];
       if (shift==GeneralTree::csvCent) continue;
-      histo_btag[GeneralTree::csvJESup][iPt][iEta][lep][iSel][ic] =
-        (TH1F*)histos[lep][iSel][0][ic]->Clone(
+      ao.histo_btag[GeneralTree::csvJESup][iPt][iEta][lep][iSel][ic] =
+        (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(
           Form("histo_%s_btag%s_pt%d_eta%d",
           plotBaseNames[ic].Data(),btagShiftName(shift),iPt,iEta)
         );
@@ -310,14 +341,13 @@ void zllhAnalysis(
   ////////////////////////////////////////////////////////////////////////
   // Load corrections to apply offline
   // CMVA reweighting for 2016, DeepCSV reweighting for 2017
-  BTagCalibrationReader *deepcsvSFs=0; BTagCalibration *deepcsvCalib=0; CSVHelper *cmvaReweighter=0;
   std::vector<std::string> btagSystNames;
-  if(year==2016) {
-    cmvaReweighter = new CSVHelper(
+  if(ao.year==2016) {
+    ao.cmvaReweighter = new CSVHelper(
       "PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root", 
       "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root", 
        5);
-  } else if(year==2017) {
+  } else if(ao.year==2017) {
     // get the official syst name strings
     btagSystNames.reserve(GeneralTree::nCsvShifts);
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
@@ -325,31 +355,20 @@ void zllhAnalysis(
       if (shift==GeneralTree::csvCent) continue;
       btagSystNames.push_back(GeneralTree::csvShiftName(shift).Data());
     }    
-    deepcsvSFs = new BTagCalibrationReader(
+    ao.deepcsvSFs = new BTagCalibrationReader(
       BTagEntry::OP_RESHAPING,
       GeneralTree::csvShiftName(GeneralTree::csvCent).Data(), 
       btagSystNames);
-    BTagCalibration *deepcsvCalib = new BTagCalibration(
+    ao.deepcsvCalib = new BTagCalibration(
       "DeepCSV", 
       "PandaAnalysis/data/csv/DeepCSV_94XSF_V2_B_F.csv");
-    deepcsvSFs->load(*(deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
-    deepcsvSFs->load(*(deepcsvCalib), BTagEntry::FLAV_C, "iterativeFit");
-    deepcsvSFs->load(*(deepcsvCalib), BTagEntry::FLAV_UDSG, "iterativeFit");
+    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
+    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_C, "iterativeFit");
+    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_UDSG, "iterativeFit");
     
   }
-  vector<double> ZjetsEWKCorr = EWKCorrPars(kZjets);
+  ao.ZjetsEWKCorr = EWKCorrPars(kZjets);
 
-  // CMVA jet kinematic decorrelated weight nuisances
-  vector<double> jetPts[5][3], jetPtsUp[5][3], jetPtsDown[5][3], jetEtas[5][3], jetBtags[5][3];
-  vector<int> jetFlavors[5][3];
-  for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-    jetPts    [iPt][iEta].reserve(20);
-    jetPtsUp  [iPt][iEta].reserve(20);
-    jetPtsDown[iPt][iEta].reserve(20);
-    jetEtas   [iPt][iEta].reserve(20);
-    jetBtags  [iPt][iEta].reserve(20);
-    jetFlavors[iPt][iEta].reserve(20);
-  }
   // Done loading offline corrections
   ////////////////////////////////////////////////////////////////////////
   // Declare local analysis variables
@@ -401,7 +420,18 @@ void zllhAnalysis(
     bool isNLOZjets = sampleName.Contains("ZJets_pt"); // Only use events with HT<100 for NLO pt binned samples in 2016
     // End sample properties
     
-    
+    // CMVA jet kinematic decorrelated weight nuisances
+    vector<double> jetPts[5][3], jetPtsUp[5][3], jetPtsDown[5][3], jetEtas[5][3], jetBtags[5][3];
+    vector<int> jetFlavors[5][3];
+    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+      jetPts    [iPt][iEta].reserve(20);
+      jetPtsUp  [iPt][iEta].reserve(20);
+      jetPtsDown[iPt][iEta].reserve(20);
+      jetEtas   [iPt][iEta].reserve(20);
+      jetBtags  [iPt][iEta].reserve(20);
+      jetFlavors[iPt][iEta].reserve(20);
+    }
+  
     // Nasty hack code to get the tree branches and their addresses, have to do it for each file
     TObjArray *listOfBranches = events->GetListOfBranches();
     for(unsigned iB=0; iB<(unsigned)listOfBranches->GetEntries(); iB++) {
@@ -418,7 +448,7 @@ void zllhAnalysis(
         if(debug>=2) printf("\tBooking extra branch \"%s\"\n", x->first.Data());
         continue;
       }
-      TBranch *dummyBranch = dummyTree->GetBranch(branchName);
+      TBranch *dummyBranch = ao.dummyTree->GetBranch(branchName);
       if(!dummyBranch) { throw std::runtime_error(Form("WARNING: Couldn't find branch \"%s\" in the dummyTree, skipping", branchName.Data())); continue; }
       void* address=dummyBranch->GetAddress();
       b[branchName] = events->GetBranch(branchName);
@@ -470,7 +500,7 @@ void zllhAnalysis(
       // Trigger
       if(type==kData) {
         bLoad(b["trigger"],ientry);
-        bool passTrigger = (gt.trigger & whichTriggers) !=0;
+        bool passTrigger = (gt.trigger & ao.whichTriggers) !=0;
         if(!passTrigger) continue;
         if(debug) printf("  Passed trigger\n");
       }
@@ -788,8 +818,8 @@ void zllhAnalysis(
           cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
         } 
         selectionBits[iJES]=0; nMinusOneBits=0;
-        for(unsigned iSel=0; iSel<selections.size(); iSel++) { 
-          selectionType sel = selections[iSel];
+        for(unsigned iSel=0; iSel<ao.selections.size(); iSel++) { 
+          selectionType sel = ao.selections[iSel];
           if(passAllCuts(cut, cuts[sel])) {
             selectionBits[iJES] |= sel;
             if(debug>=1) printf("  Passed cuts for region %s\n",vhbbPlot::selectionNames[sel].Data());
@@ -806,8 +836,8 @@ void zllhAnalysis(
       } else {
         bLoad(b["normalizedWeight"],ientry);
         bLoad(b["pu"],ientry);
-        float puWeight = nPUScaleFactor(puWeights, gt.pu);
-        weight = normalizedWeight * theLumi * puWeight; 
+        float puWeight = nPUScaleFactor(ao.puWeights, gt.pu);
+        weight = normalizedWeight * ao.lumi * puWeight; 
         
         if(type==kWjets || type==kZjets) {
           if(useHtBinnedVJetsKFactor) {
@@ -818,8 +848,8 @@ void zllhAnalysis(
               bLoad(b["lheHT"],ientry);
               gt.sf_qcdV=qcdKFactor(type, gt.lheHT);
             }
-            gt.sf_ewkV=ZjetsEWKCorr[0]+ZjetsEWKCorr[1]*
-              (TMath::Power((gt.trueGenBosonPt+ZjetsEWKCorr[2]),ZjetsEWKCorr[3]));
+            gt.sf_ewkV=ao.ZjetsEWKCorr[0]+ao.ZjetsEWKCorr[1]*
+              (TMath::Power((gt.trueGenBosonPt+ao.ZjetsEWKCorr[2]),ao.ZjetsEWKCorr[3]));
           } else {
             bLoad(b["sf_qcdV"],ientry);
             bLoad(b["sf_ewkV"],ientry);
@@ -893,7 +923,7 @@ void zllhAnalysis(
         if(year==2016) {
           // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
           double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          weight *= cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+          weight *= ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
         } else if(year==2017) {
           // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
           unsigned iShift=GeneralTree::csvCent;
@@ -902,7 +932,7 @@ void zllhAnalysis(
             unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
             BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
               (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
-            float reshapeFactor = deepcsvSFs->eval_auto_bounds(
+            float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
               GeneralTree::csvShiftName(theShift).Data(),
               flav,
               jetEtas[iPt][iEta][iJ], 
@@ -917,10 +947,10 @@ void zllhAnalysis(
         if(year==2016) {
           // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
           double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          double centralWeight = cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+          double centralWeight = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
           for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
             GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-            weight_btag[iShift][iPt][iEta] = weight*cmvaReweighter->getCSVWeight(
+            weight_btag[iShift][iPt][iEta] = weight*ao.cmvaReweighter->getCSVWeight(
               jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
               theShift,
               cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
@@ -935,7 +965,7 @@ void zllhAnalysis(
               unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
               BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
                 (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
-              float reshapeFactor = deepcsvSFs->eval_auto_bounds(
+              float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
                 GeneralTree::csvShiftName(theShift).Data(),
                 flav,
                 jetEtas[iPt][iEta][iJ], 
@@ -949,10 +979,10 @@ void zllhAnalysis(
       }
 
       // Calculate the shape variable in all JES scenarios for all the regions
-      float MVAVar[selections.size()][(int)shiftjes::N], bdtValue[(int)shiftjes::N];
-      for(unsigned iSel=0; iSel<selections.size(); iSel++) for(unsigned iJES=0; iJES<NJES; iJES++) {
-        selectionType sel = selections[iSel];
-        switch(MVAVarType) {
+      float MVAVar[ao.selections.size()][(int)shiftjes::N], bdtValue[(int)shiftjes::N];
+      for(unsigned iSel=0; iSel<ao.selections.size(); iSel++) for(unsigned iJES=0; iJES<NJES; iJES++) {
+        selectionType sel = ao.selections[iSel];
+        switch(ao.MVAVarType) {
           case 1:
           default:
             if(sel==kZllHLightFlavorCR ||
@@ -981,28 +1011,28 @@ void zllhAnalysis(
       }
 
       // Fill the uncertainty histograms
-      for(unsigned iSel=0; iSel<selections.size(); iSel++) {
-        selectionType sel = selections[iSel];
+      for(unsigned iSel=0; iSel<ao.selections.size(); iSel++) {
+        selectionType sel = ao.selections[iSel];
         bool passFullSel = (selectionBits[0] & sel) != 0;
         if(passFullSel) {
-          histo_Baseline    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight);
-          histo_VHCorrUp    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_VHCorrUp);
-          histo_VHCorrDown  [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_VHCorrDown);
-          histo_QCDr1f2     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr1f2);
-          histo_QCDr1f5     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr1f2);
-          histo_QCDr2f1     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr2f1);
-          histo_QCDr2f2     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr2f2);
-          histo_QCDr5f1     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr5f1);
-          histo_QCDr5f5     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr5f5);
-          histo_eleSFUp     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_elSF);
-          histo_eleSFDown   [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight/weight_elSF);
-          histo_muSFUp      [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_muSF);
-          histo_muSFDown    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight/weight_muSF);
+          ao.histo_Baseline    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight);
+          ao.histo_VHCorrUp    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_VHCorrUp);
+          ao.histo_VHCorrDown  [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_VHCorrDown);
+          ao.histo_QCDr1f2     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr1f2);
+          ao.histo_QCDr1f5     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr1f2);
+          ao.histo_QCDr2f1     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr2f1);
+          ao.histo_QCDr2f2     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr2f2);
+          ao.histo_QCDr5f1     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr5f1);
+          ao.histo_QCDr5f5     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_QCDr5f5);
+          ao.histo_eleSFUp     [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_elSF);
+          ao.histo_eleSFDown   [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight/weight_elSF);
+          ao.histo_muSFUp      [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight*weight_muSF);
+          ao.histo_muSFDown    [typeLepSel][iSel][category]->Fill(MVAVar[iSel][0], weight/weight_muSF);
         }
         for(unsigned iJES=0; iJES<NJES; iJES++) {
           bool passFullSelJES = (selectionBits[iJES] & sel) != 0;
           if(!passFullSelJES) continue;
-          histo_jes[iJES][typeLepSel][iSel][category]->Fill(MVAVar[iSel][iJES], weight);
+          ao.histo_jes[iJES][typeLepSel][iSel][category]->Fill(MVAVar[iSel][iJES], weight);
         }
       }
 
@@ -1014,70 +1044,70 @@ void zllhAnalysis(
       bLoad(b["nSoft2"],ientry);
       bLoad(b["nSoft5"],ientry);
       bLoad(b["nSoft10"],ientry);
-      for(unsigned iSel=0; iSel<selections.size(); iSel++) {
+      for(unsigned iSel=0; iSel<ao.selections.size(); iSel++) {
         if(debug>=3) printf("\tTrying to fill for iSel=%d\n", iSel);
-        selectionType sel = selections[iSel];
+        selectionType sel = ao.selections[iSel];
         bool passFullSel = (selectionBits[0] & sel) != 0;
         if(passFullSel && debug>=3) printf("\tPassed this sel\n");
         float theVar;
         for(int p=0; p<nPlots; p++) { 
           bool makePlot=false;
           // Variables -- change the makePlot for n-1 later
-          if      (histoNames[p]=="MVAVar"                  ) { theVar = MVAVar[iSel][0]            ; makePlot = passFullSel; }
-          else if (histoNames[p]=="lepton1Pt"               ) { theVar = lepton1Pt                  ; makePlot = passFullSel; }
-          else if (histoNames[p]=="lepton2Pt"               ) { theVar = lepton2Pt                  ; makePlot = passFullSel; }
-          else if (histoNames[p]=="lepton1Eta"              ) { theVar = lepton1Eta                 ; makePlot = passFullSel; }
-          else if (histoNames[p]=="lepton2Eta"              ) { theVar = lepton2Eta                 ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ZBosonPt"                ) { theVar = gt.ZBosonPt                ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ZBosonEta"               ) { theVar = gt.ZBosonEta               ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ZBosonPhi"               ) { theVar = gt.ZBosonPhi               ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ZBosonM"                 ) { theVar = gt.ZBosonM                 ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ZBosonLep1CosThetaCS"    ) { theVar = gt.ZBosonLep1CosThetaCS    ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ZBosonLep1CosThetaStar"  ) { theVar = gt.ZBosonLep1CosThetaStar  ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ZBosonLep1CosThetaStarFJ") { theVar = gt.ZBosonLep1CosThetaStarFJ; makePlot = passFullSel; }
-          else if (histoNames[p]=="Mjj"                     ) { theVar = gt.hbbm_reg[0]             ; makePlot = passFullSel; }
-          else if (histoNames[p]=="pTjj"                    ) { theVar = gt.hbbpt_reg[0]            ; makePlot = passFullSel; }
-          else if (histoNames[p]=="bjet1Pt"                 ) { theVar = bjet1Pt                    ; makePlot = passFullSel; }
-          else if (histoNames[p]=="bjet2Pt"                 ) { theVar = bjet2Pt                    ; makePlot = passFullSel; }
-          else if (histoNames[p]=="bjet1btag"               ) { theVar = bjet1btag                  ; makePlot = passFullSel; }
-          else if (histoNames[p]=="bjet2btag"               ) { theVar = bjet2btag                  ; makePlot = passFullSel; }
-          else if (histoNames[p]=="nJet"                    ) { theVar = gt.nJet[0]                 ; makePlot = passFullSel; }
-          else if (histoNames[p]=="deltaPhiZH"              ) { theVar = deltaPhiZH                 ; makePlot = passFullSel; }
-          else if (histoNames[p]=="deltaPhiZHFJ"            ) { theVar = deltaPhiZHFJ               ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ptBalanceZH"             ) { theVar = ptBalanceZH                ; makePlot = passFullSel; }
-          else if (histoNames[p]=="ptBalanceZHFJ"           ) { theVar = ptBalanceZHFJ              ; makePlot = passFullSel; }
-          else if (histoNames[p]=="sumEtSoft1"              ) { theVar = gt.sumEtSoft1              ; makePlot = passFullSel; }
-          else if (histoNames[p]=="nSoft2"                  ) { theVar = gt.nSoft2                  ; makePlot = passFullSel; }
-          else if (histoNames[p]=="nSoft5"                  ) { theVar = gt.nSoft5                  ; makePlot = passFullSel; }
-          else if (histoNames[p]=="nSoft10"                 ) { theVar = gt.nSoft10                 ; makePlot = passFullSel; }
-          else if (histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
+          if      (ao.histoNames[p]=="MVAVar"                  ) { theVar = MVAVar[iSel][0]            ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="lepton1Pt"               ) { theVar = lepton1Pt                  ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="lepton2Pt"               ) { theVar = lepton2Pt                  ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="lepton1Eta"              ) { theVar = lepton1Eta                 ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="lepton2Eta"              ) { theVar = lepton2Eta                 ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ZBosonPt"                ) { theVar = gt.ZBosonPt                ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ZBosonEta"               ) { theVar = gt.ZBosonEta               ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ZBosonPhi"               ) { theVar = gt.ZBosonPhi               ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ZBosonM"                 ) { theVar = gt.ZBosonM                 ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ZBosonLep1CosThetaCS"    ) { theVar = gt.ZBosonLep1CosThetaCS    ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ZBosonLep1CosThetaStar"  ) { theVar = gt.ZBosonLep1CosThetaStar  ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ZBosonLep1CosThetaStarFJ") { theVar = gt.ZBosonLep1CosThetaStarFJ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="Mjj"                     ) { theVar = gt.hbbm_reg[0]             ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="pTjj"                    ) { theVar = gt.hbbpt_reg[0]            ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="bjet1Pt"                 ) { theVar = bjet1Pt                    ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="bjet2Pt"                 ) { theVar = bjet2Pt                    ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="bjet1btag"               ) { theVar = bjet1btag                  ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="bjet2btag"               ) { theVar = bjet2btag                  ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="nJet"                    ) { theVar = gt.nJet[0]                 ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="deltaPhiZH"              ) { theVar = deltaPhiZH                 ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="deltaPhiZHFJ"            ) { theVar = deltaPhiZHFJ               ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ptBalanceZH"             ) { theVar = ptBalanceZH                ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="ptBalanceZHFJ"           ) { theVar = ptBalanceZHFJ              ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="sumEtSoft1"              ) { theVar = gt.sumEtSoft1              ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="nSoft2"                  ) { theVar = gt.nSoft2                  ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="nSoft5"                  ) { theVar = gt.nSoft5                  ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="nSoft10"                 ) { theVar = gt.nSoft10                 ; makePlot = passFullSel; }
+          else if (ao.histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
           if(!makePlot) continue;
-          if(debug>=3) printf("\t\tFilling %s\n",histoNames[p].Data());
-          histos[typeLepSel][iSel][p][category]->Fill(theVar, weight);
+          if(debug>=3) printf("\t\tFilling %s\n",ao.histoNames[p].Data());
+          ao.histos[typeLepSel][iSel][p][category]->Fill(theVar, weight);
         }
       }    
     
     } // End Event Loop
     inputFile->Close();
   } // End Chain Loop
-  delete dummyTree; // no longer needed
-  if(deepcsvSFs) delete deepcsvSFs;
-  if(deepcsvCalib) delete deepcsvCalib;
-  if(cmvaReweighter) delete cmvaReweighter;
+  delete ao.dummyTree; // no longer needed
+  if(ao.deepcsvSFs) delete ao.deepcsvSFs;
+  if(ao.deepcsvCalib) delete ao.deepcsvCalib;
+  if(ao.cmvaReweighter) delete ao.cmvaReweighter;
   
   // Write plots
   char regionName[128];
   for(unsigned lep=0; lep<nLepSel; lep++) 
-  for(unsigned iSel=0; iSel<selections.size(); iSel++) {
-    selectionType sel = selections[iSel];
+  for(unsigned iSel=0; iSel<ao.selections.size(); iSel++) {
+    selectionType sel = ao.selections[iSel];
     sprintf(regionName, "Z%sH%s",leptonStrings[lep].Data(),selectionNames[sel].Data());
     TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s.root",dataCardDir.Data(),regionName);
     TFile *outputPlots = new TFile(plotFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
     for(int p=0; p<nPlots; p++) {
-      if(histoNames[p]=="") continue;
-      TDirectory *plotDir = outputPlots->mkdir(histoNames[p]); plotDir->cd();
+      if(ao.histoNames[p]=="") continue;
+      TDirectory *plotDir = outputPlots->mkdir(ao.histoNames[p]); plotDir->cd();
       for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) 
-        histos[lep][iSel][p][ic]->Write(Form("histo%d",ic));
+        ao.histos[lep][iSel][p][ic]->Write(Form("histo%d",ic));
       
     }
     outputPlots->Close();
