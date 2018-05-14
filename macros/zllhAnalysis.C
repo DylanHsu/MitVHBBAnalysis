@@ -759,7 +759,7 @@ void zllhAnalysis(
           cut["dPhiZH"  ] = fabs(gt.hbbphi[iJES] - gt.ZBosonPhi) > 2.5;
           cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 100;
           cut["mjj"     ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
-          cut["mjjSB"   ] = !cut["mjjSB"] && gt.hbbm_reg[iJES]<250;
+          cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
         } 
         selectionBits[iJES]=0; nMinusOneBits=0;
         for(unsigned iSel=0; iSel<selections.size(); iSel++) { 
