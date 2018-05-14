@@ -69,11 +69,11 @@ void zllhAnalysis(
   samples.emplace_back("ZJets_ht800to1200"  , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_ht1200to2500" , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_ht2500toinf"  , vhbbPlot::kZjets  );       
-//samples.emplace_back("ZJets_pt50to100"    , vhbbPlot::kZjets  );       
-//samples.emplace_back("ZJets_pt100to250"   , vhbbPlot::kZjets  );       
-//samples.emplace_back("ZJets_pt250to400"   , vhbbPlot::kZjets  );       
-//samples.emplace_back("ZJets_pt400to650"   , vhbbPlot::kZjets  );       
-//samples.emplace_back("ZJets_pt650toinf"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt50to100"    , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt100to250"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt250to400"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt400to650"   , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt650toinf"   , vhbbPlot::kZjets  );       
   samples.emplace_back("ZllHbb_mH125"       , vhbbPlot::kZH     );       
   samples.emplace_back("ggZllHbb_mH125"     , vhbbPlot::kZH     );       
   // End List of Samples
@@ -401,6 +401,11 @@ void zllhAnalysis(
     events = (TTree*)inputFile->Get("events");
     if(!events) { throw std::runtime_error("Problem loading tree"); }
     
+    // Sample properties
+    bool isNLOZjets = sampleName.Contains("ZJets_pt"); // Only use events with HT<100 for NLO pt binned samples in 2016
+    // End sample properties
+    
+    
     // Nasty hack code to get the tree branches and their addresses, have to do it for each file
     TObjArray *listOfBranches = events->GetListOfBranches();
     for(unsigned iB=0; iB<(unsigned)listOfBranches->GetEntries(); iB++) {
@@ -433,6 +438,13 @@ void zllhAnalysis(
     for (Long64_t ientry=0; ientry<nentries; ientry++) {
       if(debug && ientry!=0) usleep(2e5);
       if(debug || ientry%100000==0) printf("> Reading entry %lld/%lld ...\n",ientry,nentries);
+      
+      // Stitching for low pT NLO Z+jets in 2016
+      if(isNLOZjets && year==2016) {
+        bLoad(b["lheHT"],ientry);
+        if(gt.lheHT>=100) continue;
+      }
+
       //////////////////////
       // Clear variables
       typeLepSel=99; // 0: Z(mm), 1: Z(ee), 2: e-mu (not implemented yet), 99: undefined
@@ -774,8 +786,12 @@ void zllhAnalysis(
         if(type==kWjets || type==kZjets) {
           if(useHtBinnedVJetsKFactor) {
             bLoad(b["trueGenBosonPt"],ientry);
-            bLoad(b["lheHT"],ientry);
-            gt.sf_qcdV=qcdKFactor(type, gt.lheHT);
+            if(isNLOZjets) {
+              gt.sf_qcdV=1;
+            } else {
+              bLoad(b["lheHT"],ientry);
+              gt.sf_qcdV=qcdKFactor(type, gt.lheHT);
+            }
             gt.sf_ewkV=ZjetsEWKCorr[0]+ZjetsEWKCorr[1]*
               (TMath::Power((gt.trueGenBosonPt+ZjetsEWKCorr[2]),ZjetsEWKCorr[3]));
           } else {
