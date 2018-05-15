@@ -522,6 +522,8 @@ void zllhAnalysis(
         newcardShape << Form("%d  ",0);
       else if(ic==kPlotGGZH)
         newcardShape << Form("%d  ",-1);
+      else
+        newcardShape << Form("%d  ",ic);
     }
     newcardShape << Form("\n");
 
@@ -983,8 +985,8 @@ void analyzeSample(
     //bLoad(b["pfmetphi"],ientry);
     
     // Jet B-tagging
-    bool bjet1IsTight, bjet2IsLoose;
-    float bjet1btag, bjet2btag;
+    bool bjet1IsTight=false, bjet2IsLoose=false;
+    float bjet1btag=-2, bjet2btag=-2;
     if(ao.year==2016) {
       bLoad(b["jotCMVA"],ientry);
       bjet1IsTight = gt.jotCMVA[gt.hbbjtidx[0][0]] > cmvaTight;
@@ -995,8 +997,8 @@ void analyzeSample(
       bLoad(b["jotCSV"],ientry);
       bjet1IsTight = gt.jotCSV[gt.hbbjtidx[0][0]] > deepcsvTight;
       bjet2IsLoose = gt.jotCSV[gt.hbbjtidx[0][1]] > deepcsvLoose;
-      bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
-      bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
+      bjet1btag = gt.jotCSV[gt.hbbjtidx[0][0]];
+      bjet2btag = gt.jotCSV[gt.hbbjtidx[0][1]];
     }
 
     bLoad(b["jotPt"],ientry);
@@ -1134,6 +1136,9 @@ void analyzeSample(
       bLoad(b["normalizedWeight"],ientry);
       bLoad(b["pu"],ientry);
       float puWeight = nPUScaleFactor(ao.puWeights, gt.pu);
+      weight_pileupUp = nPUScaleFactor(ao.puWeightsUp, gt.pu)/puWeight;
+      weight_pileupDown = nPUScaleFactor(ao.puWeightsDown, gt.pu)/puWeight;
+      
       weight = normalizedWeight * ao.lumi * puWeight; 
       
       if(type==kWjets || type==kZjets) {
@@ -1210,6 +1215,8 @@ void analyzeSample(
         recorrect_vhEWKUp   = vhEWKCorr("ZllH",gt.sf_vhUp  );
         recorrect_vhEWKDown = vhEWKCorr("ZllH",gt.sf_vhDown);
         weight *= recorrect_vhEWK;
+        weight_VHCorrUp = recorrect_vhEWKUp/recorrect_vhEWK;
+        weight_VHCorrDown = recorrect_vhEWKDown/recorrect_vhEWK;
       }
       //bLoad(b["sf_cmvaWeight_Cent"],ientry);
       //weight *= gt.sf_csvWeights[GeneralTree::csvCent];
@@ -1311,6 +1318,8 @@ void analyzeSample(
       bool passFullSel = (selectionBits[0] & ao.selection) != 0;
       if(passFullSel) {
         ao.histo_Baseline    [typeLepSel][category]->Fill(MVAVar[0], weight);
+        ao.histo_pileupUp    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_pileupUp);
+        ao.histo_pileupDown  [typeLepSel][category]->Fill(MVAVar[0], weight*weight_pileupDown);
         ao.histo_VHCorrUp    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrUp);
         ao.histo_VHCorrDown  [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrDown);
         ao.histo_QCDr1f2     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f2);
