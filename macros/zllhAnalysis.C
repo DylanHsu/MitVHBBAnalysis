@@ -71,6 +71,8 @@ struct analysisObjects {
   // Histogram pointers
   TH1F *histos[nLepSel][nSelections][nPlots][nPlotCategories];
   TH1F *histo_Baseline                           [nLepSel][nSelections][nPlotCategories];  
+  TH1F *histo_pileupUp                           [nLepSel][nSelections][nPlotCategories];
+  TH1F *histo_pileupDown                         [nLepSel][nSelections][nPlotCategories];
   TH1F *histo_VHCorrUp                           [nLepSel][nSelections][nPlotCategories];
   TH1F *histo_VHCorrDown                         [nLepSel][nSelections][nPlotCategories];
   TH1F *histo_QCDr1f2                            [nLepSel][nSelections][nPlotCategories];
@@ -303,6 +305,8 @@ void zllhAnalysis(
   for(unsigned iSel=0; iSel<ao.selections.size(); iSel++)
   for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
     ao.histo_Baseline     [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s"              , plotBaseNames[ic].Data()));
+    ao.histo_pileupUp     [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_pileupUp"             , plotBaseNames[ic].Data()));
+    ao.histo_pileupDown   [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
     ao.histo_VHCorrUp     [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrUp"     , plotBaseNames[ic].Data()));
     ao.histo_VHCorrDown   [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_VHCorrDown"   , plotBaseNames[ic].Data()));
     ao.histo_QCDr1f2      [lep][iSel][ic] = (TH1F*)ao.histos[lep][iSel][0][ic]->Clone(Form("histo_%s_QCDr1f2"      , plotBaseNames[ic].Data()));
@@ -371,17 +375,17 @@ void zllhAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                                };
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB" };
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                              };
-  ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"   };
-  ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                                };
-  ao.cuts[kZllHLightFlavorFJCR] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"     };
-  ao.cuts[kZllHHeavyFlavorFJCR] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight"};
-  ao.cuts[kZllHTT1bFJCR       ] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     };
-  ao.cuts[kZllHTT2bFJCR       ] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     };
-  ao.cuts[kZllHFJSR           ] = {"ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"     };
-  ao.cuts[kZllHFJPresel       ] = {"ZpTFJ","pTFJ","dPhiZHFJ"                               };
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"};
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                             , "boostedVeto"};
+  ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"};
+  ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                               , "boostedVeto"};
+  ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"     , "bvetoFJ"};
+  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight", "btagFJ" };
+  ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"};
+  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                                          };
   ////////////////////////////////////////////////////////////////////////
   // Begin Chain Loop
   vector<thread> threads;
@@ -414,6 +418,204 @@ void zllhAnalysis(
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
+  
+  // Compute some uncertainties once event by events weights are filled
+  for(unsigned lep=0; lep<nLepSel; lep++) 
+  for(unsigned iSel=0; iSel<ao.selections.size(); iSel++)
+  for(unsigned ic=0; ic!=nPlotCategories; ic++) {
+    selectionType sel = ao.selections[iSel];
+    if(leptonStrings[lep]=="em" && sel!=kZllHSR) continue; // avoiding unnecessary histograms
+    for(int nb=1; nb<=ao.histo_Baseline[lep][iSel][ic]->GetNbinsX(); nb++){
+      // compute QCD scale uncertainties bin-by-bin
+      double diffQCDScale[6] = {
+       TMath::Abs(ao.histo_QCDr1f2[lep][iSel][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb)),
+       TMath::Abs(ao.histo_QCDr1f5[lep][iSel][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb)),
+       TMath::Abs(ao.histo_QCDr2f1[lep][iSel][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb)),
+       TMath::Abs(ao.histo_QCDr2f2[lep][iSel][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb)),
+       TMath::Abs(ao.histo_QCDr5f1[lep][iSel][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb)),
+       TMath::Abs(ao.histo_QCDr5f5[lep][iSel][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb))};
+
+      double systQCDScale = diffQCDScale[0];
+      for(int nqcd=0; nqcd<6; nqcd++) {
+        if(diffQCDScale[nqcd] > systQCDScale) systQCDScale = diffQCDScale[nqcd];
+      }
+
+      if(ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb) > 0) 
+        systQCDScale = 1.0+systQCDScale/ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb);
+      else systQCDScale = 1;
+
+      ao.histo_QCDScaleUp  [lep][iSel][ic]->SetBinContent(nb, ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb)*systQCDScale);
+      ao.histo_QCDScaleDown[lep][iSel][ic]->SetBinContent(nb, ao.histo_Baseline[lep][iSel][ic]->GetBinContent(nb)/systQCDScale);
+
+    } // all bins in histograms
+  }
+
+  // Writing datacards  
+  for(unsigned lep=0; lep<nLepSel; lep++) 
+  for(unsigned iSel=0; iSel<ao.selections.size(); iSel++) {
+    selectionType sel = ao.selections[iSel];
+    if(leptonStrings[lep]=="em" && sel!=kZllHSR) continue; // avoiding unnecessary histograms
+
+    char outFileDatacardsName[200];
+    sprintf(outFileDatacardsName,"MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s.root",
+                                 dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[sel].Data());
+    TFile* outFileDatacards = new TFile(outFileDatacardsName,"recreate");
+    outFileDatacards->cd();
+
+    for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
+      ao.histo_Baseline    [lep][iSel][ic]->Write();
+      ao.histo_pileupUp    [lep][iSel][ic]->Write();
+      ao.histo_pileupDown  [lep][iSel][ic]->Write();
+      ao.histo_VHCorrUp    [lep][iSel][ic]->Write();
+      ao.histo_VHCorrDown  [lep][iSel][ic]->Write();
+      ao.histo_QCDScaleUp  [lep][iSel][ic]->Write();
+      ao.histo_QCDScaleDown[lep][iSel][ic]->Write();
+      ao.histo_eleSFUp     [lep][iSel][ic]->Write();
+      ao.histo_eleSFDown   [lep][iSel][ic]->Write();
+      ao.histo_muSFUp      [lep][iSel][ic]->Write();
+      ao.histo_muSFDown    [lep][iSel][ic]->Write();
+      for(unsigned iJES=0; iJES<NJES; iJES++) { 
+        ao.histo_jes[iJES][lep][iSel][ic]->Write();
+      }
+      for(unsigned iPt=0; iPt<5; iPt++)
+      for(unsigned iEta=0; iEta<3; iEta++)
+      for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+        GeneralTree::csvShift shift = gt.csvShifts[iShift];
+        if (shift==GeneralTree::csvCent) continue;
+        ao.histo_btag[iShift][iPt][iEta][lep][iSel][ic]->Write();
+      }
+    }
+    outFileDatacards->Close();
+
+    ofstream newcardShape;
+    newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s.txt",
+                      dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[sel].Data()));
+    newcardShape << Form("imax * number of channels\n");
+    newcardShape << Form("jmax * number of background minus 1\n");
+    newcardShape << Form("kmax * number of nuisance parameters\n");
+
+    newcardShape << Form("shapes    *   *   %s  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",outFileDatacardsName);
+    newcardShape << Form("shapes data_obs * %s  histo_%s\n",outFileDatacardsName,plotBaseNames[kPlotData].Data());
+
+    newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][iSel][kPlotData]->GetSumOfWeights());
+
+    newcardShape << Form("bin   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("chZ%sH%s  ",leptonStrings[lep].Data(),selectionNames[sel].Data());
+    newcardShape << Form("\n");
+
+    newcardShape << Form("process   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("%s  ",plotBaseNames[ic].Data());
+    newcardShape << Form("\n");
+ 
+    newcardShape << Form("process  ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
+      if     (ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0 && ic!=kPlotZH)
+        newcardShape << Form("%d  ",ic);
+      else if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+        newcardShape << Form("%d  ",0);
+    }
+    newcardShape << Form("\n");
+
+    newcardShape << Form("rate  ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("%f  ",ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights());
+    newcardShape << Form("\n");
+
+    newcardShape << Form("lumi_13TeV    lnN     ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+       newcardShape << Form("%6.3f ",1.023);
+    newcardShape << Form("\n");
+
+    newcardShape << Form("pileup    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    newcardShape << Form("VHCorr    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
+      if     (ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0 && ic!=kPlotZH)
+        newcardShape << Form("-  ");
+      else if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+        newcardShape << Form("1.0  ");
+    }
+    newcardShape << Form("\n");
+
+    newcardShape << Form("eleSF    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    newcardShape << Form("muSF    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0) {
+      newcardShape << Form("QCDScale%s    shape   ",plotBaseNames[ic].Data());
+      for(unsigned ic2=kPlotVZbb; ic2!=nPlotCategories; ic2++) {
+        if(ao.histo_Baseline[lep][iSel][ic2]->GetSumOfWeights() > 0) {
+          if(ic==ic2) newcardShape << Form("1.0  ");
+          else        newcardShape << Form("-  ");
+        }
+      }
+      newcardShape << Form("\n");
+    }
+
+    for(unsigned iJES=0; iJES<NJES; iJES++) {
+      newcardShape << Form("%s    shape   ",jesName(static_cast<shiftjes>(iJES)).Data());
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+        newcardShape << Form("1.0  ");
+      newcardShape << Form("\n");
+    }
+
+    for(unsigned iPt=0; iPt<5; iPt++)
+    for(unsigned iEta=0; iEta<3; iEta++)
+    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+      GeneralTree::csvShift shift = gt.csvShifts[iShift];
+      if (shift==GeneralTree::csvCent) continue;
+      newcardShape << Form("btag%s_pt%d_eta%d    shape   ",btagShiftName(shift),iPt,iEta);
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+        newcardShape << Form("1.0  ");
+      newcardShape << Form("\n");
+    }
+
+    newcardShape << Form("pdf_qqbar    lnN   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][iSel][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("%f  ",pdfAcceptUncs[ic]);
+    newcardShape << Form("\n");
+
+    newcardShape<<Form("CMS_VH_TopNorm lnN ");
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) 
+      newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
+    newcardShape<<std::endl;
+    
+    newcardShape<<Form("CMS_VH_VVNorm lnN ");
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
+    newcardShape<<std::endl;
+
+    newcardShape << Form("SF_TT_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotTT].Data());
+    newcardShape << Form("SF_Zbb_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
+    newcardShape << Form("SF_Zb_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
+    newcardShape << Form("SF_ZLF_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
+
+
+    newcardShape << Form("* autoMCStats 0\n");
+    newcardShape.close();
+  }
   
   // Write plots
   char regionName[128];
@@ -776,7 +978,7 @@ void analyzeSample(
     float bjet1Pt = gt.jotPt[0][gt.hbbjtidx[0][0]];
     float bjet2Pt = gt.jotPt[0][gt.hbbjtidx[0][1]];
     
-    if(category!=kPlotData && category!=kPlotQCD) { if(isBoostedCategory) {
+    if(isBoostedCategory) {
       // Isojets for boosted category
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
@@ -837,7 +1039,7 @@ void analyzeSample(
           jetBtags  [iPt][iEta].push_back(btag);
         }
       }
-    }}
+    }
     
     // Load branches and calculate stuff for the cuts
     bLoad(b["ZBosonPt"],ientry);
@@ -857,17 +1059,19 @@ void analyzeSample(
     std::map<TString, bool> cut;
     for(unsigned iJES=0; iJES<NJES; iJES++) {
       if(iJES==0) {
-        cut["ZpT"       ] = gt.ZBosonPt > 50;
-        cut["ZpTFJ"     ] = gt.ZBosonPt > 250;
-        cut["dPhiZHFJ"  ] = fabs(gt.fjPhi - gt.ZBosonPhi) > 2.5;
-        cut["btag"      ] = bjet1IsTight && bjet2IsLoose;
-        cut["bveto"     ] = !bjet1IsTight && !bjet2IsLoose;
-        cut["btagFJ"    ] = gt.fjDoubleCSV > doubleBCut;
-        cut["bvetoFJ"   ] = gt.fjDoubleCSV < doubleBCut;
-        cut["Zmass"     ] = gt.ZBosonM >= 75 && gt.ZBosonM < 105;
-        cut["ZmassTight"] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
-        cut["ZmassSB"   ] = (gt.ZBosonM >= 10 && gt.ZBosonM < 75) || (gt.ZBosonM >= 105 && gt.ZBosonM < 120);
-        cut["lowMET"    ] = gt.pfmet[0] < 60;
+        cut["ZpT"        ] = gt.ZBosonPt > 50;
+        cut["ZpTFJ"      ] = gt.ZBosonPt > 250;
+        cut["dPhiZHFJ"   ] = fabs(gt.fjPhi - gt.ZBosonPhi) > 2.5;
+        cut["btag"       ] = bjet1IsTight && bjet2IsLoose;
+        cut["bveto"      ] = !bjet1IsTight && !bjet2IsLoose;
+        cut["btagFJ"     ] = gt.fjDoubleCSV > doubleBCut;
+        cut["bvetoFJ"    ] = gt.fjDoubleCSV < doubleBCut;
+        cut["Zmass"      ] = gt.ZBosonM >= 75 && gt.ZBosonM < 105;
+        cut["ZmassTight" ] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
+        cut["ZmassSB"    ] = (gt.ZBosonM >= 10 && gt.ZBosonM < 75) || (gt.ZBosonM >= 105 && gt.ZBosonM < 120);
+        cut["lowMET"     ] = gt.pfmet[0] < 60;
+        cut["boostedCat" ] = isBoostedCategory;
+        cut["boostedVeto"] = !isBoostedCategory;
       } 
       if(iJES==(int)shiftjes::kJESTotalUp  ) cut["lowMET"] = gt.pfmet[1] < 60;
       if(iJES==(int)shiftjes::kJESTotalDown) cut["lowMET"] = gt.pfmet[2] < 60;
