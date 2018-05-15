@@ -305,8 +305,9 @@ void zllhAnalysis(
   GeneralTree gt; 
   printf("Building uncertainty histograms, please wait...\n");
   for(unsigned lep=0; lep<nLepSel; lep++) 
-  for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+  for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
     ao.histo_Baseline     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s"              , plotBaseNames[ic].Data()));
+    if(ic<kPlotVZbb) continue;
     ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"             , plotBaseNames[ic].Data()));
     ao.histo_pileupDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
     ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"     , plotBaseNames[ic].Data()));
@@ -334,8 +335,8 @@ void zllhAnalysis(
       if (shift==GeneralTree::csvCent) continue;
       ao.histo_btag[GeneralTree::csvJESup][iPt][iEta][lep][ic] =
         (TH1F*)ao.histos[lep][0][ic]->Clone(
-          Form("histo_%s_btag%s_pt%d_eta%d",
-          plotBaseNames[ic].Data(),btagShiftName(shift),iPt,iEta)
+          Form("histo_%s_btag_pt%d_eta%d_%s",
+          plotBaseNames[ic].Data(),iPt,iEta,btagShiftName(shift))
         );
     }
   }
@@ -464,6 +465,7 @@ void zllhAnalysis(
 
     for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
       ao.histo_Baseline    [lep][ic]->Write();
+      if(ic<kPlotVZbb) continue;
       ao.histo_pileupUp    [lep][ic]->Write();
       ao.histo_pileupDown  [lep][ic]->Write();
       ao.histo_VHCorrUp    [lep][ic]->Write();
@@ -475,6 +477,7 @@ void zllhAnalysis(
       ao.histo_muSFUp      [lep][ic]->Write();
       ao.histo_muSFDown    [lep][ic]->Write();
       for(unsigned iJES=0; iJES<NJES; iJES++) { 
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         ao.histo_jes[iJES][lep][ic]->Write();
       }
       for(unsigned iPt=0; iPt<5; iPt++)
@@ -512,11 +515,13 @@ void zllhAnalysis(
     newcardShape << Form("\n");
  
     newcardShape << Form("process  ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
-      if     (ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 && ic!=kPlotZH)
-        newcardShape << Form("%d  ",ic);
-      else if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      if(ic==kPlotZH)
         newcardShape << Form("%d  ",0);
+      else if(ic==kPlotGGZH)
+        newcardShape << Form("%d  ",-1);
     }
     newcardShape << Form("\n");
 
@@ -540,10 +545,12 @@ void zllhAnalysis(
 
     newcardShape << Form("VHCorr    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
-      if     (ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 && ic!=kPlotZH)
-        newcardShape << Form("-  ");
-      else if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      if(ic!=kPlotZH && ic!=kPlotGGZH) 
         newcardShape << Form("1.0  ");
+      else
+        newcardShape << Form("-  ");
     }
     newcardShape << Form("\n");
 
@@ -584,7 +591,11 @@ void zllhAnalysis(
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
       GeneralTree::csvShift shift = gt.csvShifts[iShift];
       if (shift==GeneralTree::csvCent) continue;
-      newcardShape << Form("btag%s_pt%d_eta%d    shape   ",btagShiftName(shift),iPt,iEta);
+      // Get the name of the nuisance only from the Up variations
+      TString shiftName(btagShiftName(shift));
+      if(!shiftName.Contains("Up")) continue;
+      TString nuisanceName = shiftName(0,shiftName.Length()-2);
+      newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
         newcardShape << Form("1.0  ");
@@ -596,6 +607,22 @@ void zllhAnalysis(
     if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
       newcardShape << Form("%f  ",pdfAcceptUncs[ic]);
     newcardShape << Form("\n");
+
+    newcardShape<<"pdf_qqbar lnN "; 
+    for(int ic=0; ic<=kPlotGGZH; ic++) {
+      if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
+        newcardShape<<pdfAcceptUncs[ic]<<" ";
+      else newcardShape<<"- ";
+    } 
+    newcardShape<<std::endl;
+    newcardShape<<"pdf_gg lnN ";
+    for(int ic=0; ic<=kPlotGGZH; ic++) {
+      if(ic==kPlotTop||ic==kPlotTT|ic==kPlotGGZH)
+        newcardShape<<pdfAcceptUncs[ic]<<" "; 
+      else
+        newcardShape<<"- ";
+    } 
+    newcardShape<<std::endl;
 
     newcardShape<<Form("CMS_VH_TopNorm lnN ");
     for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) 
@@ -611,7 +638,6 @@ void zllhAnalysis(
     newcardShape << Form("SF_Zbb_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
     newcardShape << Form("SF_Zb_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
     newcardShape << Form("SF_ZLF_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
-
 
     newcardShape << Form("* autoMCStats 0\n");
     newcardShape.close();
@@ -922,8 +948,12 @@ void analyzeSample(
     else if(type==vhbbPlot::kTT   ) category=kPlotTT   ; 
     else if(type==vhbbPlot::kTop  ) category=kPlotTop  ;
     else if(type==vhbbPlot::kWH   ) category=kPlotWH   ;
-    else if(type==vhbbPlot::kZH   ) category=kPlotZH   ;
-    else if(type==vhbbPlot::kWjets) {
+    else if(type==vhbbPlot::kZH   ) {
+      if(sampleName.Contains("gg")) 
+        category=kPlotGGZH;
+      else
+        category=kPlotZH;
+    } else if(type==vhbbPlot::kWjets) {
       if(countB>1) category=kPlotWbb;
       else if(countB>0) category=kPlotWb;
       else category=kPlotWLF;
@@ -1047,12 +1077,15 @@ void analyzeSample(
     // Load branches and calculate stuff for the cuts
     bLoad(b["ZBosonPt"],ientry);
     bLoad(b["ZBosonPhi"],ientry);
-    bLoad(b["hbbpt_reg"],ientry);
-    bLoad(b["hbbphi"],ientry);
-    bLoad(b["hbbm_reg"],ientry);
-    bLoad(b["fjPt"],ientry);
-    bLoad(b["fjPhi"],ientry);
-    bLoad(b["fjMSD_corr"],ientry);
+    if(isBoostedCategory) {
+      bLoad(b["fjPt"],ientry);
+      bLoad(b["fjPhi"],ientry);
+      bLoad(b["fjMSD_corr"],ientry);
+    } else {
+      bLoad(b["hbbpt_reg"],ientry);
+      bLoad(b["hbbphi"],ientry);
+      bLoad(b["hbbm_reg"],ientry);
+    }
     float deltaPhiZH    = !isBoostedCategory? fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi)) : -1;
     float ptBalanceZH   = !isBoostedCategory? gt.hbbpt_reg[0] /  gt.ZBosonPt : -1;
     float ptBalanceZHFJ = isBoostedCategory? gt.fjPt[0] / gt.ZBosonPt : -1;

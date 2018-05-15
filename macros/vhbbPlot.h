@@ -85,7 +85,7 @@ namespace vhbbPlot {
     kWjets      , // 6
     kZjets      , // 7
     kWH         , // 8
-    kZH         , // 8
+    kZH         , // 9
     nSampleTypes 
   };
   enum plotCategory {
@@ -103,6 +103,7 @@ namespace vhbbPlot {
     kPlotZLF  , //11   
     kPlotWH   , //12   
     kPlotZH   , //13   
+    kPlotGGZH , //14
     nPlotCategories
   };
   
@@ -120,7 +121,8 @@ namespace vhbbPlot {
     { kPlotZb   , kMagenta-10 },
     { kPlotZLF  , kPink+1     },
     { kPlotWH   , kRed+1      },
-    { kPlotZH   , kRed+3      }
+    { kPlotZH   , kRed+3      },
+    { kPlotGGZH , kRed+3      }
   };
   std::map<plotCategory, TString> plotNames={
     { kPlotData , "Data"     },
@@ -136,7 +138,8 @@ namespace vhbbPlot {
     { kPlotZb   , "Z+b"      },
     { kPlotZLF  , "Z+udcsg"  },
     { kPlotWH   , "WH(125)"  },
-    { kPlotZH   , "ZH(125)"  }
+    { kPlotZH   , "ZH(125)"  },
+    { kPlotGGZH , "ZH(125)"  }
   };
   std::map<int, TString> plotBaseNames={
     { kPlotData , "Data" },
@@ -152,7 +155,8 @@ namespace vhbbPlot {
     { kPlotZb   , "Zb"   },
     { kPlotZLF  , "ZLF"  },
     { kPlotWH   , "WH"   },
-    { kPlotZH   , "WH"   }
+    { kPlotZH   , "ZH"   },
+    { kPlotGGZH , "ggZH" }
   }; 
   std::map<int, TString> selectionNames={ 
     { kWHLightFlavorCR    , "WHLightFlavorCR"    },
@@ -189,7 +193,8 @@ namespace vhbbPlot {
     { kPlotZb   , 1.03  },
     { kPlotZLF  , 1.05  },
     { kPlotWH   , 1.01  },
-    { kPlotZH   , 1.01  }
+    { kPlotZH   , 1.023 },
+    { kPlotGGZH , 1.18  }
   };
   // This function loads the ith entry of the branch, only if it has not already been loaded
   int bLoad(TBranch *branch, Long64_t ientry) {
@@ -255,24 +260,24 @@ namespace vhbbPlot {
   float BfilterVPT200     = 0.16396633746;
 
   const char* btagShiftName(GeneralTree::csvShift shift) {
-    if(shift==GeneralTree::csvJESup        ) return "JESup"        ; 
-    if(shift==GeneralTree::csvJESdown      ) return "JESdown"      ; 
-    if(shift==GeneralTree::csvLFup         ) return "LFup"         ; 
-    if(shift==GeneralTree::csvLFdown       ) return "LFdown"       ; 
-    if(shift==GeneralTree::csvHFup         ) return "HFup"         ; 
-    if(shift==GeneralTree::csvHFdown       ) return "HFdown"       ; 
-    if(shift==GeneralTree::csvHFStats1up   ) return "HFStats1up"   ; 
-    if(shift==GeneralTree::csvHFStats1down ) return "HFStats1down" ; 
-    if(shift==GeneralTree::csvHFStats2up   ) return "HFStats2up"   ; 
-    if(shift==GeneralTree::csvHFStats2down ) return "HFStats2down" ; 
-    if(shift==GeneralTree::csvLFStats1up   ) return "LFStats1up"   ; 
-    if(shift==GeneralTree::csvLFStats1down ) return "LFStats1down" ; 
-    if(shift==GeneralTree::csvLFStats2up   ) return "LFStats2up"   ; 
-    if(shift==GeneralTree::csvLFStats2down ) return "LFStats2down" ; 
-    if(shift==GeneralTree::csvCErr1up      ) return "CErr1up"      ; 
-    if(shift==GeneralTree::csvCErr1down    ) return "CErr1down"    ; 
-    if(shift==GeneralTree::csvCErr2up      ) return "CErr2up"      ; 
-    if(shift==GeneralTree::csvCErr2down    ) return "CErr2down"    ; 
+    if(shift==GeneralTree::csvJESup        ) return "JESUp"        ; 
+    if(shift==GeneralTree::csvJESdown      ) return "JESDown"      ; 
+    if(shift==GeneralTree::csvLFup         ) return "LFUp"         ; 
+    if(shift==GeneralTree::csvLFdown       ) return "LFDown"       ; 
+    if(shift==GeneralTree::csvHFup         ) return "HFUp"         ; 
+    if(shift==GeneralTree::csvHFdown       ) return "HFDown"       ; 
+    if(shift==GeneralTree::csvHFStats1up   ) return "HFStats1Up"   ; 
+    if(shift==GeneralTree::csvHFStats1down ) return "HFStats1Down" ; 
+    if(shift==GeneralTree::csvHFStats2up   ) return "HFStats2Up"   ; 
+    if(shift==GeneralTree::csvHFStats2down ) return "HFStats2Down" ; 
+    if(shift==GeneralTree::csvLFStats1up   ) return "LFStats1Up"   ; 
+    if(shift==GeneralTree::csvLFStats1down ) return "LFStats1Down" ; 
+    if(shift==GeneralTree::csvLFStats2up   ) return "LFStats2Up"   ; 
+    if(shift==GeneralTree::csvLFStats2down ) return "LFStats2Down" ; 
+    if(shift==GeneralTree::csvCErr1up      ) return "CErr1Up"      ; 
+    if(shift==GeneralTree::csvCErr1down    ) return "CErr1Down"    ; 
+    if(shift==GeneralTree::csvCErr2up      ) return "CErr2Up"      ; 
+    if(shift==GeneralTree::csvCErr2down    ) return "CErr2Down"    ; 
     printf("Warning: unknown btag shift\n"); return "Unknown";
   }
 
