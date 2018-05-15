@@ -602,12 +602,6 @@ void zllhAnalysis(
       newcardShape << Form("\n");
     }
 
-    newcardShape << Form("pdf_qqbar    lnN   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("%f  ",pdfAcceptUncs[ic]);
-    newcardShape << Form("\n");
-
     newcardShape<<"pdf_qqbar lnN "; 
     for(int ic=0; ic<=kPlotGGZH; ic++) {
       if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
