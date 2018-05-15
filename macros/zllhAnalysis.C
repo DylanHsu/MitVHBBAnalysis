@@ -111,6 +111,7 @@ struct analysisObjects {
   float mva_dRBjets, mva_dEtaBjets, mva_dRZH, mva_dEtaZH;
   float mva_nAddJet;
   float mva_weight;
+  unsigned char mva_category;
   
 };
 
@@ -428,6 +429,7 @@ void zllhAnalysis(
     ao.mvaTree->Branch("dEtaZH"      , &ao.mva_dEtaZH      ); 
     ao.mvaTree->Branch("nAddJet"     , &ao.mva_nAddJet     ); 
     ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
+    ao.mvaTree->Branch("category"    , &ao.mva_category    ); 
   }
   
   ////////////////////////////////////////////////////////////////////////
@@ -1452,6 +1454,7 @@ void analyzeSample(
       ao.mva_dEtaZH       = dEtaZH                   ; 
       ao.mva_nAddJet      = gt.nJet[0]-2             ; 
       ao.mva_weight       = weight                   ; 
+      ao.mva_category     = category                 ;
       ao.mvaTree->Fill();
       mvaTreeMutex.unlock();
     }
