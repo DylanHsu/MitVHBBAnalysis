@@ -333,7 +333,7 @@ void zllhAnalysis(
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
       GeneralTree::csvShift shift = gt.csvShifts[iShift];
       if (shift==GeneralTree::csvCent) continue;
-      ao.histo_btag[GeneralTree::csvJESup][iPt][iEta][lep][ic] =
+      ao.histo_btag[iShift][iPt][iEta][lep][ic] =
         (TH1F*)ao.histos[lep][0][ic]->Clone(
           Form("histo_%s_btag_pt%d_eta%d_%s",
           plotBaseNames[ic].Data(),iPt,iEta,btagShiftName(shift))
