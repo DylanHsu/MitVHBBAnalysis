@@ -1144,6 +1144,8 @@ void analyzeSample(
     float dEtaZH        = -1;
     float dRZH          = -1;
     if(isBoostedCategory) {
+      ptBalanceZHFJ = gt.fjPt[0] / gt.ZBosonPt;
+    } else {
       deltaPhiZH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi));
       ptBalanceZH   = gt.hbbpt_reg[0] /  gt.ZBosonPt;
       dEtaBjets     = fabs(gt.jotEta[gt.hbbjtidx[0][0]]-gt.jotEta[gt.hbbjtidx[0][1]]);
@@ -1151,8 +1153,6 @@ void analyzeSample(
       dRBjets       = sqrt(dEtaBjets*dEtaBjets + dPhiBjets*dPhiBjets);
       dEtaZH        = fabs(gt.ZBosonEta - gt.hbbeta[0]);     
       dRZH          = sqrt(dEtaZH*dEtaZH + deltaPhiZH*deltaPhiZH);
-    } else {
-      ptBalanceZHFJ = gt.fjPt[0] / gt.ZBosonPt;
     }
     // deltaPhiZHFJ computed already in Jet multiplicity section
 
@@ -1430,7 +1430,7 @@ void analyzeSample(
     bLoad(b["fjPt"],ientry);
     bLoad(b["fjDoubleCSV"],ientry);
     // Lock the mutex and fill the MVA tree
-    if(ao.selection==kZllHSR) {
+    if(ao.selection==kZllHSR && passFullSel && category!=kPlotData) {
       mvaTreeMutex.lock();
       ao.mva_sumEtSoft1   = gt.sumEtSoft1            ; 
       ao.mva_nSoft2       = gt.nSoft2                ; 
