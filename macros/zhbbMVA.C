@@ -71,7 +71,6 @@ void zhbbMVA(
     dataloader->AddVariable("dRZH"        ,"dRZH"        , "", 'F'); 
     dataloader->AddVariable("dEtaZH"      ,"dEtaZH"      , "", 'F'); 
     dataloader->AddVariable("nAddJet"     ,"nAddJet"     , "", 'F'); 
-    
   }
   TString prepareOptions="NormMode=None";
     //prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
