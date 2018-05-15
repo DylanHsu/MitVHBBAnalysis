@@ -25,6 +25,7 @@
 #include <thread>
 #include <future>
 #include <functional>
+#include <mutex>
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
@@ -36,6 +37,7 @@ const int nPlots=50; // Max number of plots
 
 using namespace vhbbPlot;
 
+std::mutex mvaTreeMutex;
 
 struct analysisObjects {
   // Physics
@@ -100,6 +102,16 @@ struct analysisObjects {
   BTagCalibration *deepcsvCalib=0; 
   CSVHelper *cmvaReweighter=0;
   vector<double> ZjetsEWKCorr;
+  // MVA training tree
+  TTree *mvaTree=0; TFile *mvaFile=0;
+  float mva_sumEtSoft1, mva_nSoft2, mva_nSoft5, mva_nSoft10;
+  float mva_bjet1Pt, mva_bjet2Pt, mva_bjet1btag, mva_bjet2btag;
+  float mva_ZBosonPt, mva_ZBosonM, mva_CosThetaCS, mva_CosThetaStar;
+  float mva_hbbpt, mva_hbbm, mva_dPhiZH, mva_ptBalanceZH;
+  float mva_dRBjets, mva_dEtaBjets, mva_dRZH, mva_dEtaZH;
+  float mva_nAddJet;
+  float mva_weight;
+  
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
@@ -124,6 +136,19 @@ void zllhAnalysis(
   ao.lumi=(year==2016)? 35900:41500;
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
+  // Analysis Cuts
+  ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"};
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                             , "boostedVeto"};
+  ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"};
+  ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                               , "boostedVeto"};
+  ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"     , "bvetoFJ"};
+  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight", "btagFJ" };
+  ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"};
+  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                                          };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -375,20 +400,36 @@ void zllhAnalysis(
   ao.ZjetsEWKCorr = EWKCorrPars(kZjets);
 
   // Done loading offline corrections
-
-  // Analysis Cuts
-  ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"};
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                             , "boostedVeto"};
-  ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"};
-  ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                               , "boostedVeto"};
-  ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"     , "bvetoFJ"};
-  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight", "btagFJ" };
-  ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"};
-  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ" };
-  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"     , "btagFJ" };
-  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                                          };
+  ////////////////////////////////////////////////////////////////////////
+  // Setup MVA training tree if applicable (Not implemented yet for boosted)
+  if(selection==kZllHSR) {
+    system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHSR_mvaTree.root",dataCardDir.Data()),"recreate");
+    ao.mvaTree = new TTree("mvaTree","mvaTree");
+    ao.mvaTree->Branch("sumEtSoft1"  , &ao.mva_sumEtSoft1  ); 
+    ao.mvaTree->Branch("nSoft2"      , &ao.mva_nSoft2      ); 
+    ao.mvaTree->Branch("nSoft5"      , &ao.mva_nSoft5      ); 
+    ao.mvaTree->Branch("nSoft10"     , &ao.mva_nSoft10     ); 
+    ao.mvaTree->Branch("bjet1Pt"     , &ao.mva_bjet1Pt     ); 
+    ao.mvaTree->Branch("bjet2Pt"     , &ao.mva_bjet2Pt     ); 
+    ao.mvaTree->Branch("bjet1btag"   , &ao.mva_bjet1btag   ); 
+    ao.mvaTree->Branch("bjet2btag"   , &ao.mva_bjet2btag   ); 
+    ao.mvaTree->Branch("ZBosonPt"    , &ao.mva_ZBosonPt    ); 
+    ao.mvaTree->Branch("ZBosonM"     , &ao.mva_ZBosonM     ); 
+    ao.mvaTree->Branch("CosThetaCS"  , &ao.mva_CosThetaCS  ); 
+    ao.mvaTree->Branch("CosThetaStar", &ao.mva_CosThetaStar); 
+    ao.mvaTree->Branch("hbbpt"       , &ao.mva_hbbpt       ); 
+    ao.mvaTree->Branch("hbbm"        , &ao.mva_hbbm        ); 
+    ao.mvaTree->Branch("dPhiZH"      , &ao.mva_dPhiZH      ); 
+    ao.mvaTree->Branch("ptBalanceZH" , &ao.mva_ptBalanceZH ); 
+    ao.mvaTree->Branch("dRBjets"     , &ao.mva_dRBjets     ); 
+    ao.mvaTree->Branch("dEtaBjets"   , &ao.mva_dEtaBjets   ); 
+    ao.mvaTree->Branch("dRZH"        , &ao.mva_dRZH        ); 
+    ao.mvaTree->Branch("dEtaZH"      , &ao.mva_dEtaZH      ); 
+    ao.mvaTree->Branch("nAddJet"     , &ao.mva_nAddJet     ); 
+    ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
+  }
+  
   ////////////////////////////////////////////////////////////////////////
   // Begin Chain Loop
   vector<thread> threads;
@@ -420,6 +461,12 @@ void zllhAnalysis(
       inputFile->Close();
     }
   } // End Chain Loop
+  // Finish writing the MVA tree (if applicable)
+  if(selection==kZllHSR) {
+    ao.mvaFile->cd();
+    ao.mvaTree->Write();
+    ao.mvaFile->Close();
+  }
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
@@ -598,9 +645,12 @@ void zllhAnalysis(
       if(!shiftName.Contains("Up")) continue;
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
       newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-        newcardShape << Form("1.0  ");
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+        if((ic==kPlotTT||ic==kPlotTop||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) &&
+           (ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0))
+          newcardShape << Form("1.0  ");
+        else newcardShape<<"- ";
+      }
       newcardShape << Form("\n");
     }
 
@@ -684,6 +734,7 @@ void analyzeSample(
   float weight_QCDr1f2 = 1, weight_QCDr1f5 = 1, weight_QCDr2f1 = 1, weight_QCDr2f2 = 1, weight_QCDr5f1 = 1, weight_QCDr5f5 = 1;
   float weight_muSF = 1, weight_elSF = 1;
   float weight_btag[GeneralTree::nCsvShifts][5][3];
+  float weight_pileupUp = 1, weight_pileupDown = 1;
   float weight_VHCorrUp = 1, weight_VHCorrDown = 1;
   // Done declaring weight variables
   ////////////////////////////////////////////////////////////////////////
@@ -1082,9 +1133,25 @@ void analyzeSample(
       bLoad(b["hbbphi"],ientry);
       bLoad(b["hbbm_reg"],ientry);
     }
-    float deltaPhiZH    = !isBoostedCategory? fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi)) : -1;
-    float ptBalanceZH   = !isBoostedCategory? gt.hbbpt_reg[0] /  gt.ZBosonPt : -1;
-    float ptBalanceZHFJ = isBoostedCategory? gt.fjPt[0] / gt.ZBosonPt : -1;
+    float deltaPhiZH    = -1;
+    float ptBalanceZH   = -1;
+    float ptBalanceZHFJ = -1;
+    float dEtaBjets     = -1;
+    float dPhiBjets     = -1;
+    float dRBjets       = -1;
+    float dEtaZH        = -1;
+    float dRZH          = -1;
+    if(isBoostedCategory) {
+      deltaPhiZH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi));
+      ptBalanceZH   = gt.hbbpt_reg[0] /  gt.ZBosonPt;
+      dEtaBjets     = fabs(gt.jotEta[gt.hbbjtidx[0][0]]-gt.jotEta[gt.hbbjtidx[0][1]]);
+      dPhiBjets     = fabs(TVector2::Phi_mpi_pi(gt.jotPhi[gt.hbbjtidx[0][0]]-gt.jotPhi[gt.hbbjtidx[0][1]]));
+      dRBjets       = sqrt(dEtaBjets*dEtaBjets + dPhiBjets*dPhiBjets);
+      dEtaZH        = fabs(gt.ZBosonEta - gt.hbbeta[0]);     
+      dRZH          = sqrt(dEtaZH*dEtaZH + deltaPhiZH*deltaPhiZH);
+    } else {
+      ptBalanceZHFJ = gt.fjPt[0] / gt.ZBosonPt;
+    }
     // deltaPhiZHFJ computed already in Jet multiplicity section
 
     // Set Selection Bits
@@ -1254,7 +1321,7 @@ void analyzeSample(
         double centralWeight = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
         for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
           GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-          weight_btag[iShift][iPt][iEta] = weight*ao.cmvaReweighter->getCSVWeight(
+          weight_btag[iShift][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(
             jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
             theShift,
             cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
@@ -1264,7 +1331,6 @@ void analyzeSample(
         // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
         for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
           GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-          weight_btag[iShift][iPt][iEta] = weight;
           for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
             unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
             BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
@@ -1276,7 +1342,8 @@ void analyzeSample(
               jetPts[iPt][iEta][iJ],
               jetBtags[iPt][iEta][iJ]
             );
-            if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor;
+            if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] = reshapeFactor;
+            else                    weight_btag[iShift][iPt][iEta] = 1;
           }
         }
       }
@@ -1338,9 +1405,18 @@ void analyzeSample(
         if(!passFullSelJES) continue;
         ao.histo_jes[iJES][typeLepSel][category]->Fill(MVAVar[iJES], weight);
       }
+      for(unsigned iPt=0; iPt<5; iPt++)
+      for(unsigned iEta=0; iEta<3; iEta++)
+      for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+        GeneralTree::csvShift shift = gt.csvShifts[iShift];
+        if (shift==GeneralTree::csvCent) continue;
+        ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(weight*weight_btag[iShift][iPt][iEta]);
+      }
     }
 
-    // Fill the plotting histograms
+    // Fill the plotting histograms and MVA tree (if applicable)
+    bool passFullSel = (selectionBits[0] & ao.selection) != 0;
+    if(passFullSel && ao.debug>=3) printf("\tPassed this sel\n");
     bLoad(b["ZBosonLep1CosThetaCS"],ientry);
     bLoad(b["ZBosonLep1CosThetaStar"],ientry);
     bLoad(b["ZBosonLep1CosThetaStarFJ"],ientry);
@@ -1351,8 +1427,34 @@ void analyzeSample(
     bLoad(b["fjMSD_corr"],ientry);
     bLoad(b["fjPt"],ientry);
     bLoad(b["fjDoubleCSV"],ientry);
-    bool passFullSel = (selectionBits[0] & ao.selection) != 0;
-    if(passFullSel && ao.debug>=3) printf("\tPassed this sel\n");
+    // Lock the mutex and fill the MVA tree
+    if(ao.selection==kZllHSR) {
+      mvaTreeMutex.lock();
+      ao.mva_sumEtSoft1   = gt.sumEtSoft1            ; 
+      ao.mva_nSoft2       = gt.nSoft2                ; 
+      ao.mva_nSoft5       = gt.nSoft5                ; 
+      ao.mva_nSoft10      = gt.nSoft10               ; 
+      ao.mva_bjet1Pt      = bjet1Pt                  ; 
+      ao.mva_bjet2Pt      = bjet2Pt                  ; 
+      ao.mva_bjet1btag    = bjet1btag                ; 
+      ao.mva_bjet2btag    = bjet2btag                ; 
+      ao.mva_ZBosonPt     = gt.ZBosonPt              ; 
+      ao.mva_ZBosonM      = gt.ZBosonM               ; 
+      ao.mva_CosThetaCS   = gt.ZBosonLep1CosThetaCS  ; 
+      ao.mva_CosThetaStar = gt.ZBosonLep1CosThetaStar; 
+      ao.mva_hbbpt        = gt.hbbpt_reg[0]          ; 
+      ao.mva_hbbm         = gt.hbbm_reg[0]           ; 
+      ao.mva_dPhiZH       = deltaPhiZH               ; 
+      ao.mva_ptBalanceZH  = ptBalanceZH              ; 
+      ao.mva_dRBjets      = dRBjets                  ; 
+      ao.mva_dEtaBjets    = dEtaBjets                ; 
+      ao.mva_dRZH         = dRZH                     ; 
+      ao.mva_dEtaZH       = dEtaZH                   ; 
+      ao.mva_nAddJet      = gt.nJet[0]-2             ; 
+      ao.mva_weight       = weight                   ; 
+      ao.mvaTree->Fill();
+      mvaTreeMutex.unlock();
+    }
     float theVar;
     for(int p=0; p<nPlots; p++) { 
       bool makePlot=false;
@@ -1392,7 +1494,10 @@ void analyzeSample(
       else if (ao.histoNames[p]=="nIsojet"                 ) { theVar = nIsojet[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="isojetNBtags"            ) { theVar = isojetNBtags[0]            ; makePlot = passFullSel; }
       if(!makePlot) continue;
-      theVar=TMath::Min((float)(ao.xmax[p]-0.00001), (float)theVar);
+      if(ao.histoNames[p]=="MVAVar")
+        theVar = TMath::Min((float)(ao.MVAbins[ao.MVAbins.size()-1]-0.00001), (float)theVar);
+      else
+        theVar=TMath::Min((float)(ao.xmax[p]-0.00001), (float)theVar);
       if(ao.debug>=3) printf("\t\tFilling %s\n",ao.histoNames[p].Data());
       ao.histos[typeLepSel][p][category]->Fill(theVar, weight);
     }
