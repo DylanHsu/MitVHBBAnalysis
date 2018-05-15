@@ -112,7 +112,8 @@ void zllhAnalysis(
   bool useBoostedCategory=false,
   int MVAVarType=3,
   unsigned year=2016,
-  unsigned debug=0 
+  unsigned debug=0,
+  bool multithread=false
 ) {
   struct analysisObjects ao;
   ao.MVAVarType=MVAVarType;
@@ -395,7 +396,8 @@ void zllhAnalysis(
     printf("### Opening sample %s ###\n",sample.first.Data());
     TString inputFileName = Form("%s%s.root",ntupleDir.Data(),sample.first.Data());
     
-    if(std::find(bigSamples.begin(),bigSamples.end(),sample.first.Data()) != bigSamples.end()) {
+    if(multithread) {
+      // Spawn 10 threads to process 10 identical pointers to this file
       for(int split=0; split<10; split++) {
         TFile *inputFile = TFile::Open(inputFileName,"READ"); assert(inputFile);
         files.push_back(inputFile);
@@ -403,18 +405,19 @@ void zllhAnalysis(
         trees.push_back(events);
         threads.emplace_back(analyzeSample, sample, events, std::ref(ao), split);
       }
+      for(auto &thread: threads)
+        thread.join();
+      threads.clear();
+      for(auto file: files)
+        file->Close();
+      files.clear();
     } else {
       TFile *inputFile = TFile::Open(inputFileName,"READ"); assert(inputFile);
-      files.push_back(inputFile);
       TTree *events = (TTree*)inputFile->Get("events"); assert(events);
-      trees.push_back(events);
-      threads.emplace_back(analyzeSample, sample, events, std::ref(ao), -1);
+      analyzeSample(sample, events, std::ref(ao), -1);
+      inputFile->Close();
     }
   } // End Chain Loop
-  for(auto &thread: threads)
-    thread.join();
-  for(auto file: files)
-    file->Close();
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
