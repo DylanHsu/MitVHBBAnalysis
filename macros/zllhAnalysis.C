@@ -246,29 +246,32 @@ void zllhAnalysis(
     ao.histoNames[p]="ZBosonM"                 ; ao.histoTitles[p]="Z boson mass"          ; ao.nbins[p]=  60; ao.xmin[p]=     0; ao.xmax[p]=   120; p++; 
     ao.histoNames[p]="ZBosonLep1CosThetaCS"    ; ao.histoTitles[p]="Z(ll) cos#theta^{CS}"  ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
-    ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"      ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
-    ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"        ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
-    ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-    ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-    ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-    ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-    ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets" ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-    ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H) [Rad]" ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
-    ao.histoNames[p]="ptBalanceZH"             ; ao.histoTitles[p]="|H pT / Z pT|"         ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
-    ao.histoNames[p]="sumEtSoft1"              ; ao.histoTitles[p]="#sum E_{T}(soft 1)"    ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
-    ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"          ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
-    ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"          ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
-    ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"         ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
-    // fatjet
-    ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
-    ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   500; p++; 
-    ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-    ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
-    ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
-    ao.histoNames[p]="ptBalanceZHFJ"           ; ao.histoTitles[p]="|FJ pT / Z pT|"        ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
-    ao.histoNames[p]="nIsojet"                 ; ao.histoTitles[p]="N isojets"             ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-    ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"       ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
+    if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
+      // fatjet only plots
+      ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
+      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   500; p++; 
+      ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="ptBalanceZHFJ"           ; ao.histoTitles[p]="|FJ pT / Z pT|"        ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="nIsojet"                 ; ao.histoTitles[p]="N isojets"             ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"       ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
+    } else {
+      ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"      ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
+      ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"        ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
+      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets" ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H) [Rad]" ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="ptBalanceZH"             ; ao.histoTitles[p]="|H pT / Z pT|"         ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="sumEtSoft1"              ; ao.histoTitles[p]="#sum E_{T}(soft 1)"    ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
+      ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"          ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
+      ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"          ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
+      ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"         ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+    }
   }
   
   for(unsigned lep=0; lep<nLepSel; lep++) 
@@ -422,7 +425,7 @@ void zllhAnalysis(
   
   // Compute some uncertainties once event by events weights are filled
   for(unsigned lep=0; lep<nLepSel; lep++) 
-  for(unsigned ic=0; ic!=nPlotCategories; ic++) {
+  for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
     if(leptonStrings[lep]=="em" && selection!=kZllHSR) continue; // avoiding unnecessary histograms
     for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
       // compute QCD scale uncertainties bin-by-bin
@@ -881,22 +884,27 @@ void analyzeSample(
     
     // Jet multiplicity
     bool isBoostedCategory=false;
+    float deltaPhiZHFJ=-1;
     if(ao.useBoostedCategory) { 
       bLoad(b["nFatjet"],ientry);
       bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
-      float temp_deltaPhiVH;
-      if(gt.nFatjet>0) temp_deltaPhiVH = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
+      if(gt.nFatjet>0) // protection against NaN values of fjPhi
+        deltaPhiZHFJ = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
       if(
-        gt.nFatjet != 0 && 
+        gt.nFatjet>0 && 
         gt.fjPt[0] >= 250 && 
         gt.fjMSD_corr[0] >= 40 &&
         fabs(gt.fjEta) < 2.4 &&
         gt.ZBosonPt >= 250 &&
-        temp_deltaPhiVH >= 2.5
+        deltaPhiZHFJ >= 2.5
       ) isBoostedCategory=true;
+      // If we consider a boosted category splitting,
+      // only put boosted (resolved) events in boosted (resolved) regions
+      if(isBoostedCategory ^ (ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
+        continue;
     }
     // Category Assignment for Plotting and Datacards
     if(type!=kData) {
@@ -1046,9 +1054,9 @@ void analyzeSample(
     bLoad(b["fjPhi"],ientry);
     bLoad(b["fjMSD_corr"],ientry);
     float deltaPhiZH    = !isBoostedCategory? fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi)) : -1;
-    float deltaPhiZHFJ  = isBoostedCategory? fabs(TVector2::Phi_mpi_pi(gt.fjPhi - gt.ZBosonPhi)) : -1;
     float ptBalanceZH   = !isBoostedCategory? gt.hbbpt_reg[0] /  gt.ZBosonPt : -1;
     float ptBalanceZHFJ = isBoostedCategory? gt.fjPt[0] / gt.ZBosonPt : -1;
+    // deltaPhiZHFJ computed already in Jet multiplicity section
 
     // Set Selection Bits
     std::map<TString, bool> cut;
