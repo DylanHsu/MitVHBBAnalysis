@@ -332,24 +332,24 @@ void zllhAnalysis(
   printf("Building uncertainty histograms, please wait...\n");
   for(unsigned lep=0; lep<nLepSel; lep++) 
   for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
-    ao.histo_Baseline     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s"              , plotBaseNames[ic].Data()));
+    ao.histo_Baseline     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s"                , plotBaseNames[ic].Data()));
     if(ic<kPlotVZbb) continue;
-    ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"             , plotBaseNames[ic].Data()));
+    ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"       , plotBaseNames[ic].Data()));
     ao.histo_pileupDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"     , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrDown"   , plotBaseNames[ic].Data()));
-    ao.histo_QCDr1f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f2"      , plotBaseNames[ic].Data()));
-    ao.histo_QCDr1f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f5"      , plotBaseNames[ic].Data()));
-    ao.histo_QCDr2f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f1"      , plotBaseNames[ic].Data()));
-    ao.histo_QCDr2f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f2"      , plotBaseNames[ic].Data()));
-    ao.histo_QCDr5f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f1"      , plotBaseNames[ic].Data()));
-    ao.histo_QCDr5f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f5"      , plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScaleUp"   , plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScaleDown" , plotBaseNames[ic].Data()));
-    ao.histo_eleSFUp      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFUp"      , plotBaseNames[ic].Data()));
-    ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"    , plotBaseNames[ic].Data()));
-    ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"       , plotBaseNames[ic].Data()));
-    ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"     , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"       , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrDown"     , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f2"        , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f5"        , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f1"        , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f2"        , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f1"        , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f5"        , plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sUp"   , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sDown" , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_eleSFUp      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFUp"        , plotBaseNames[ic].Data()));
+    ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"      , plotBaseNames[ic].Data()));
+    ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"         , plotBaseNames[ic].Data()));
+    ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"       , plotBaseNames[ic].Data()));
     for(unsigned iJES=0; iJES<NJES; iJES++)
       ao.histo_jes[iJES][lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(
         Form("histo_%s_%s", plotBaseNames[ic].Data(), jesName(static_cast<shiftjes>(iJES)).Data())
@@ -361,7 +361,7 @@ void zllhAnalysis(
       if (shift==GeneralTree::csvCent) continue;
       ao.histo_btag[iShift][iPt][iEta][lep][ic] =
         (TH1F*)ao.histos[lep][0][ic]->Clone(
-          Form("histo_%s_btag_pt%d_eta%d_%s",
+          Form("histo_%s_CMS_VH_btag_pt%d_eta%d_%s",
           plotBaseNames[ic].Data(),iPt,iEta,btagShiftName(shift))
         );
     }
@@ -513,6 +513,7 @@ void zllhAnalysis(
     outFileDatacards->cd();
 
     for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0 && ic!=kPlotData) continue;
       ao.histo_Baseline    [lep][ic]->Write();
       if(ic<kPlotVZbb) continue;
       ao.histo_pileupUp    [lep][ic]->Write();
@@ -546,8 +547,8 @@ void zllhAnalysis(
     newcardShape << Form("jmax * number of background minus 1\n");
     newcardShape << Form("kmax * number of nuisance parameters\n");
 
-    newcardShape << Form("shapes    *   *   %s  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",outFileDatacardsName);
-    newcardShape << Form("shapes data_obs * %s  histo_%s\n",outFileDatacardsName,plotBaseNames[kPlotData].Data());
+    newcardShape << Form("shapes      *   * datacard_Z%sH%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[selection].Data());
+    newcardShape << Form("shapes data_obs * datacard_Z%sH%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),plotBaseNames[kPlotData].Data());
 
     newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][kPlotData]->GetSumOfWeights());
 
@@ -565,7 +566,7 @@ void zllhAnalysis(
  
     newcardShape << Form("process  ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
       if(ic==kPlotZH)
         newcardShape << Form("%d  ",0);
@@ -585,7 +586,7 @@ void zllhAnalysis(
     newcardShape << Form("lumi_13TeV    lnN     ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
     if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-       newcardShape << Form("%6.3f ",1.023);
+       newcardShape << Form("%6.3f ",1.025);
     newcardShape << Form("\n");
 
     newcardShape << Form("pileup    shape   ");
@@ -596,7 +597,7 @@ void zllhAnalysis(
 
     newcardShape << Form("VHCorr    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
       if(ic!=kPlotZH && ic!=kPlotGGZH) 
         newcardShape << Form("1.0  ");
@@ -630,7 +631,11 @@ void zllhAnalysis(
     }
 
     for(unsigned iJES=0; iJES<NJES; iJES++) {
-      newcardShape << Form("%s    shape   ",jesName(static_cast<shiftjes>(iJES)).Data());
+      if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+      TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
+      if(!shiftName.EndsWith("Up")) continue;
+      TString nuisanceName = shiftName(0,shiftName.Length()-2);
+      newcardShape << Form("%s    shape   ",nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
         newcardShape << Form("1.0  ");
@@ -644,12 +649,12 @@ void zllhAnalysis(
       if (shift==GeneralTree::csvCent) continue;
       // Get the name of the nuisance only from the Up variations
       TString shiftName(btagShiftName(shift));
-      if(!shiftName.Contains("Up")) continue;
+      if(!shiftName.EndsWith("Up")) continue;
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
       newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-        if((ic==kPlotTT||ic==kPlotTop||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) &&
-           (ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0))
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotTT||ic==kPlotTop||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
           newcardShape << Form("1.0  ");
         else newcardShape<<"- ";
       }
@@ -657,29 +662,40 @@ void zllhAnalysis(
     }
 
     newcardShape<<"pdf_qqbar lnN "; 
-    for(int ic=0; ic<=kPlotGGZH; ic++) {
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
       if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
         newcardShape<<pdfAcceptUncs[ic]<<" ";
       else newcardShape<<"- ";
     } 
     newcardShape<<std::endl;
+
     newcardShape<<"pdf_gg lnN ";
-    for(int ic=0; ic<=kPlotGGZH; ic++) {
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
       if(ic==kPlotTop||ic==kPlotTT|ic==kPlotGGZH)
         newcardShape<<pdfAcceptUncs[ic]<<" "; 
       else
         newcardShape<<"- ";
-    } 
+    }
     newcardShape<<std::endl;
 
     newcardShape<<Form("CMS_VH_TopNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) 
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
       newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
+    }
     newcardShape<<std::endl;
     
     newcardShape<<Form("CMS_VH_VVNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
       newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
+    }
     newcardShape<<std::endl;
 
     newcardShape << Form("SF_TT_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotTT].Data());
@@ -874,7 +890,7 @@ void analyzeSample(
     else if(gt.nLooseMuon==1 && gt.nLooseElectron==1 &&
       ((gt.muonPt[0]>25 && gt.electronPt[0]>15) || (gt.muonPt[0]>15 && gt.electronPt[0]>25)) && 
       gt.muonPdgId[0]*gt.electronPdgId[0]<0 &&
-      (gt.muonSelBit[0]     & pa::kTight      )!=0 &&
+      (gt.muonSelBit[0]     & pa::kTight     )!=0 &&
       (gt.electronSelBit[0] & pa::kEleMvaWP90)!=0
     ) typeLepSel=2;
     if(typeLepSel!=0 && typeLepSel!=1 && typeLepSel!=2) continue;
@@ -1173,7 +1189,7 @@ void analyzeSample(
         cut["lowMET"     ] = gt.pfmet[0] < 60;
         cut["boostedCat" ] = isBoostedCategory;
         cut["boostedVeto"] = !isBoostedCategory;
-      } 
+      }
       if(iJES==(int)shiftjes::kJESTotalUp  ) cut["lowMET"] = gt.pfmet[1] < 60;
       if(iJES==(int)shiftjes::kJESTotalDown) cut["lowMET"] = gt.pfmet[2] < 60;
       if(isBoostedCategory) {
@@ -1230,12 +1246,21 @@ void analyzeSample(
       bLoad(b["scale"],ientry);
       double avgQCDScale = (gt.scale[0]+gt.scale[1]+gt.scale[2]+
                             gt.scale[3]+gt.scale[4]+gt.scale[5])/6.;
-      weight_QCDr1f2 = gt.scale[0]/avgQCDScale;
-      weight_QCDr1f5 = gt.scale[1]/avgQCDScale;
-      weight_QCDr2f1 = gt.scale[2]/avgQCDScale;
-      weight_QCDr2f2 = gt.scale[3]/avgQCDScale;
-      weight_QCDr5f1 = gt.scale[4]/avgQCDScale;
-      weight_QCDr5f5 = gt.scale[5]/avgQCDScale;
+      if(avgQCDScale > 0) {
+        weight_QCDr1f2 = gt.scale[0]/avgQCDScale;
+        weight_QCDr1f5 = gt.scale[1]/avgQCDScale;
+        weight_QCDr2f1 = gt.scale[2]/avgQCDScale;
+        weight_QCDr2f2 = gt.scale[3]/avgQCDScale;
+        weight_QCDr5f1 = gt.scale[4]/avgQCDScale;
+        weight_QCDr5f5 = gt.scale[5]/avgQCDScale;
+      } else {
+        weight_QCDr1f2 = 1.0;
+        weight_QCDr1f5 = 1.0;
+        weight_QCDr2f1 = 1.0;
+        weight_QCDr2f2 = 1.0;
+        weight_QCDr5f1 = 1.0;
+        weight_QCDr5f5 = 1.0;
+      }
 
       if (typeLepSel==0) {
         bLoad(b["muonSfReco"],ientry);
@@ -1245,7 +1270,7 @@ void analyzeSample(
         weight *= gt.sf_muTrig; // 1; //temp
         weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
         weight *= gt.muonSfReco[1] * gt.muonSfTight[1];
-        weight_muSF *= (1+gt.muonSfUnc[0]) * (1+gt.muonSfUnc[1]);
+        weight_muSF = (1+gt.muonSfUnc[0]) * (1+gt.muonSfUnc[1]);
       } else if(typeLepSel==1) {
         bLoad(b["electronSfReco"],ientry);
         bLoad(b["electronSfMvaWP90"],ientry);
@@ -1254,7 +1279,7 @@ void analyzeSample(
         weight *= gt.sf_eleTrig; // 1; //temp
         weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
         weight *= gt.electronSfReco[1] * gt.electronSfMvaWP90[1];
-        weight_elSF *= (1+gt.electronSfUnc[0]) * (1+gt.electronSfUnc[1]);
+        weight_elSF = (1+gt.electronSfUnc[0]) * (1+gt.electronSfUnc[1]);
       } else if (typeLepSel==2) {
         bLoad(b["muonSfReco"],ientry);
         bLoad(b["muonSfTight"],ientry);
@@ -1266,8 +1291,8 @@ void analyzeSample(
         weight *= 1.0; // no trigger data/MC SF
         weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
         weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
-        weight_muSF *= (1+gt.muonSfUnc[0]);
-        weight_elSF *= (1+gt.electronSfUnc[0]);
+        weight_muSF = (1+gt.muonSfUnc[0]);
+        weight_elSF = (1+gt.electronSfUnc[0]);
       }
 
       float recorrect_vhEWK=1, recorrect_vhEWKUp=1, recorrect_vhEWKDown=1;
@@ -1392,7 +1417,7 @@ void analyzeSample(
         ao.histo_VHCorrUp    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrUp);
         ao.histo_VHCorrDown  [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrDown);
         ao.histo_QCDr1f2     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f2);
-        ao.histo_QCDr1f5     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f2);
+        ao.histo_QCDr1f5     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f5);
         ao.histo_QCDr2f1     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr2f1);
         ao.histo_QCDr2f2     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr2f2);
         ao.histo_QCDr5f1     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr5f1);
@@ -1412,7 +1437,7 @@ void analyzeSample(
       for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
         GeneralTree::csvShift shift = gt.csvShifts[iShift];
         if (shift==GeneralTree::csvCent) continue;
-        ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(weight*weight_btag[iShift][iPt][iEta]);
+        ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(MVAVar[0], weight*weight_btag[iShift][iPt][iEta]);
       }
     }
 
