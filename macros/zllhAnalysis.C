@@ -221,6 +221,9 @@ void zllhAnalysis(
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
   TString binZptSuffix="";
+  if(binZpt>=0 && binZpt<nBinsZpt && 
+    !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
+    binZptSuffix = Form("_ZptBin%d",binZpt);
   vector<TString> leptonStrings={"mm","ee","em"};
   // Define the shape variable
   if(ao.MVAVarType==1) {
@@ -517,9 +520,6 @@ void zllhAnalysis(
   }
 
   // Writing datacards  
-  if(binZpt>=0 && binZpt<nBinsZpt && 
-    !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
-    binZptSuffix = Form("_ZptBin%d",binZpt);
   for(unsigned lep=0; lep<nLepSel; lep++) {
     if(leptonStrings[lep]=="em" && selection!=kZllHSR) continue; // avoiding unnecessary histograms
 
