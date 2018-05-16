@@ -113,7 +113,10 @@ void finalPlot2018(
 
       // Fill histograms
       histos[i]=(TH1F*)inputFile->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
+      if(!histos[i]) continue;
       histos[i]->SetDirectory(0);
+      if(iCat==kPlotGGZH) 
+        histos[(int)kPlotZH]->Add(histos[i]);
       if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotWH || iCat==kPlotZH) {
         // do nothing currently
       } else if(!isFitShape || !mlfit) {
