@@ -28,6 +28,8 @@
 #include <mutex>
 #include "TMVA/Reader.h"
 
+// for sel in kZllHSR kZllHLightFlavorCR kZllHHeavyFlavorCR kZllH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/zllhAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
+
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 // Location of the PA ntuples or skims
@@ -39,25 +41,11 @@ const unsigned char nBinsZpt = 2;
 vector<float> binsZpt = {50,150,3000};
 float sf_training=1.4286;
 using namespace vhbbPlot;
-
 std::mutex mvaTreeMutex;
 
 struct analysisObjects {
   // Physics
   selectionType selection;
-  //vector<selectionType> selections = { // List of enums for the selections we care about, defined in vhbbPlot.h
-  //  kZllHLightFlavorCR   ,
-  //  kZllHHeavyFlavorCR   ,
-  //  kZllH2TopCR          ,
-  //  kZllHSR              ,
-  //  kZllHPresel          ,
-  //  kZllHLightFlavorFJCR ,
-  //  kZllHHeavyFlavorFJCR ,
-  //  kZllHTT2bFJCR        ,
-  //  kZllHTT1bFJCR        ,
-  //  kZllHFJSR            ,
-  //  kZllHFJPresel        
-  //};
   std::map<selectionType,vector<TString>> cuts;
   float isojetBtagCut;
   // Configuration parameters
@@ -251,7 +239,7 @@ void zllhAnalysis(
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR) {
-      ao.MVAbins={-1,-0.5,0, 0.20,0.40,0.60,0.70,0.80,0.9,1.00};
+      ao.MVAbins={-1,0,0.2,0.3,0.4,0.5,0.6,0.7};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -734,7 +722,7 @@ void zllhAnalysis(
   char regionName[128];
   for(unsigned lep=0; lep<nLepSel; lep++) {
     sprintf(regionName, "Z%sH%s",leptonStrings[lep].Data(),selectionNames[selection].Data());
-    TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s.root",dataCardDir.Data(),regionName);
+    TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s%s.root",dataCardDir.Data(),regionName,binZptSuffix.Data());
     TFile *outputPlots = new TFile(plotFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
     for(int p=0; p<nPlots; p++) {
       if(ao.histoNames[p]=="") continue;
@@ -810,32 +798,32 @@ void analyzeSample(
   // Done making GeneralTree object
   ////////////////////////////////////////////////////////////////////////
   // Instantiate TMVA reader
-  TMVA::Reader *reader = new TMVA::Reader("Silent");
+  TMVA::Reader reader("Silent");
   // Hardcoded for now, could make it more general if we care
   float mvaInputs[16];
-  reader->AddVariable("sumEtSoft1"  , &mvaInputs[ 0]);
-  reader->AddVariable("bjet1Pt"     , &mvaInputs[ 1]);
-  reader->AddVariable("bjet2Pt"     , &mvaInputs[ 2]);
-  reader->AddVariable("bjet1btag"   , &mvaInputs[ 3]);
-  reader->AddVariable("bjet2btag"   , &mvaInputs[ 4]);
-  reader->AddVariable("ZBosonPt"    , &mvaInputs[ 5]);
-  reader->AddVariable("ZBosonM"     , &mvaInputs[ 6]);
-  reader->AddVariable("CosThetaCS"  , &mvaInputs[ 7]);
-  reader->AddVariable("CosThetaStar", &mvaInputs[ 8]);
-  reader->AddVariable("hbbpt"       , &mvaInputs[ 9]);
-  reader->AddVariable("hbbm"        , &mvaInputs[10]);
-  reader->AddVariable("dPhiZH"      , &mvaInputs[11]);
-  reader->AddVariable("ptBalanceZH" , &mvaInputs[12]);
-  reader->AddVariable("dRBjets"     , &mvaInputs[13]);
-  reader->AddVariable("dEtaBjets"   , &mvaInputs[14]);
-  reader->AddVariable("nAddJet"     , &mvaInputs[15]);
+  reader.AddVariable("sumEtSoft1"  , &mvaInputs[ 0]);
+  reader.AddVariable("bjet1Pt"     , &mvaInputs[ 1]);
+  reader.AddVariable("bjet2Pt"     , &mvaInputs[ 2]);
+  reader.AddVariable("bjet1btag"   , &mvaInputs[ 3]);
+  reader.AddVariable("bjet2btag"   , &mvaInputs[ 4]);
+  reader.AddVariable("ZBosonPt"    , &mvaInputs[ 5]);
+  reader.AddVariable("ZBosonM"     , &mvaInputs[ 6]);
+  reader.AddVariable("CosThetaCS"  , &mvaInputs[ 7]);
+  reader.AddVariable("CosThetaStar", &mvaInputs[ 8]);
+  reader.AddVariable("hbbpt"       , &mvaInputs[ 9]);
+  reader.AddVariable("hbbm"        , &mvaInputs[10]);
+  reader.AddVariable("dPhiZH"      , &mvaInputs[11]);
+  reader.AddVariable("ptBalanceZH" , &mvaInputs[12]);
+  reader.AddVariable("dRBjets"     , &mvaInputs[13]);
+  reader.AddVariable("dEtaBjets"   , &mvaInputs[14]);
+  reader.AddVariable("nAddJet"     , &mvaInputs[15]);
   TString bdtWeights="";
   if(ao.binZpt==0)
     bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml";
   else if(ao.binZpt==1) 
     bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml";
   if(bdtWeights!="")
-    reader->BookMVA("BDT", bdtWeights.Data());
+    reader.BookMVA("BDT", bdtWeights.Data());
 
   // Nasty hack code to get the tree branches and their addresses, have to do it for each file
   TObjArray *listOfBranches = events->GetListOfBranches();
@@ -1465,7 +1453,7 @@ void analyzeSample(
     // Calculate the shape variable in all JES scenarios for all the regions
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
     for(unsigned iJES=0; iJES<NJES; iJES++) {
-      if(reader && (iJES==0 || ao.selection==kZllHSR || ao.selection==kZllHFJSR)) {
+      if(ao.MVAVarType>1 && (iJES==0 || ao.selection==kZllHSR || ao.selection==kZllHFJSR)) {
         mvaInputs[ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
         mvaInputs[ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
         mvaInputs[ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
@@ -1483,7 +1471,7 @@ void analyzeSample(
         mvaInputs[14] = dEtaBjets                                               ; //"dEtaBjets"   
         mvaInputs[15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
         
-        bdtValue[iJES] = reader->EvaluateMVA("BDT");
+        bdtValue[iJES] = reader.EvaluateMVA("BDT");
       }
       switch(ao.MVAVarType) {
         case 1:
@@ -1643,5 +1631,4 @@ void analyzeSample(
     }
        
   } // End Event Loop
-  if(reader) delete reader;
 }
