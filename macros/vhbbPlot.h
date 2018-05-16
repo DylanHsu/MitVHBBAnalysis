@@ -186,6 +186,7 @@ namespace vhbbPlot {
     { kPlotVZbb , 1.02  },
     { kPlotVVLF , 1.03  },
     { kPlotTT   , 1.005 },
+    { kPlotTop  , 1.005 },
     { kPlotWbb  , 1.02  },
     { kPlotWb   , 1.03  },
     { kPlotWLF  , 1.05  },

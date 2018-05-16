@@ -1189,6 +1189,16 @@ void analyzeSample(
         cut["lowMET"     ] = gt.pfmet[0] < 60;
         cut["boostedCat" ] = isBoostedCategory;
         cut["boostedVeto"] = !isBoostedCategory;
+      } else {
+        if(isBoostedCategory) {
+          bLoad(b[Form("fjPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+          bLoad(b[Form("fjPhi_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+          bLoad(b[Form("fjMSD_corr_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+        } else {
+          bLoad(b[Form("hbbpt_reg_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+          bLoad(b[Form("hbbphi_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+          bLoad(b[Form("hbbm_reg_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+	}
       }
       if(iJES==(int)shiftjes::kJESTotalUp  ) cut["lowMET"] = gt.pfmet[1] < 60;
       if(iJES==(int)shiftjes::kJESTotalDown) cut["lowMET"] = gt.pfmet[2] < 60;
@@ -1408,7 +1418,12 @@ void analyzeSample(
     }
 
     // Fill the uncertainty histograms
-    if(category>=kPlotVZbb)  {
+    if(category==kData)  {
+      bool passFullSel = (selectionBits[0] & ao.selection) != 0;
+      if(passFullSel) {
+        ao.histo_Baseline    [typeLepSel][category]->Fill(MVAVar[0], weight);
+      }
+    } else if(category>=kPlotVZbb)  {
       bool passFullSel = (selectionBits[0] & ao.selection) != 0;
       if(passFullSel) {
         ao.histo_Baseline    [typeLepSel][category]->Fill(MVAVar[0], weight);
