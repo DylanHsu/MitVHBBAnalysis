@@ -116,7 +116,7 @@ struct analysisObjects {
   float mva_nAddJet;
   float mva_weight;
   unsigned char mva_category;
-  Long64_t mva_eventNumber;
+  ULong64_t mva_eventNumber;
   
 };
 
@@ -194,7 +194,7 @@ void zllhAnalysis(
   samples.emplace_back("ZJets_pt650toinf"   , vhbbPlot::kZjets  );       
   samples.emplace_back("ZllHbb_mH125"       , vhbbPlot::kZH     );       
   samples.emplace_back("ggZllHbb_mH125"     , vhbbPlot::kZH     );       
-  vector<TString> bigSamples = {"TTTo2L2Nu","ZJets_pt50to100", "WZTo2L2Q"};
+  if(multithread) std::random_shuffle(samples.begin(),samples.end());
   // End List of Samples
   /////////////////////////////
   
@@ -443,6 +443,7 @@ void zllhAnalysis(
     ao.mvaTree->Branch("nAddJet"     , &ao.mva_nAddJet     ); 
     ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
     ao.mvaTree->Branch("category"    , &ao.mva_category    ); 
+    ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
   }
   
   ////////////////////////////////////////////////////////////////////////
@@ -1502,6 +1503,7 @@ void analyzeSample(
     bLoad(b["fjMSD_corr"],ientry);
     bLoad(b["fjPt"],ientry);
     bLoad(b["fjDoubleCSV"],ientry);
+    bLoad(b["eventNumber"],ientry);
     // Lock the mutex and fill the MVA tree
     if(ao.selection==kZllHSR && passFullSel && category!=kPlotData) {
       mvaTreeMutex.lock();
@@ -1528,6 +1530,7 @@ void analyzeSample(
       ao.mva_nAddJet      = gt.nJet[0]-2             ; 
       ao.mva_weight       = weight                   ; 
       ao.mva_category     = category                 ;
+      ao.mva_eventNumber  = gt.eventNumber           ;
       ao.mvaTree->Fill();
       mvaTreeMutex.unlock();
     }
