@@ -35,6 +35,9 @@ const int nLepSel=3; // Number of lepton selections
 //const int nSelections=11; // Number of selections
 const int nPlots=50; // Max number of plots
 
+const unsigned char nBinsZpt = 2;
+vector<float> binsZpt = {50,150,3000};
+
 using namespace vhbbPlot;
 
 std::mutex mvaTreeMutex;
@@ -64,6 +67,7 @@ struct analysisObjects {
   unsigned debug;
   double lumi;
   unsigned long whichTriggers;
+  char binZpt=-1;
   // Plotting and histograms parameters
   vector<float> xmin, xmax;
   vector<int> nbins;
@@ -112,20 +116,28 @@ struct analysisObjects {
   float mva_nAddJet;
   float mva_weight;
   unsigned char mva_category;
+  Long64_t mva_eventNumber;
   
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
 
 // useBoostedCategory:
-// False means you will use all possible events to do the resolved Z(ll)H(bb)
-// True means the events with Z back to back with 250 GeV fatjet are reserved for boosted ZH
+//   False means you will use all possible events to do the resolved Z(ll)H(bb)
+//   True means the events with Z back to back with 250 GeV fatjet are reserved for boosted ZH
+// MVAVarType:
+//   1 - simple kinematic variable
+//   2 - multiclass BDT (not used)
+//   3 - simple BDT
+// binZpt:
+//   must be less than nBinsZpt, negative turns off Zpt binning
 
 void zllhAnalysis(
   TString dataCardDir,
   vhbbPlot::selectionType selection,
   bool useBoostedCategory=false,
   int MVAVarType=3,
+  char binZpt=-1, 
   unsigned year=2016,
   unsigned debug=0,
   bool multithread=false
@@ -137,6 +149,7 @@ void zllhAnalysis(
   ao.lumi=(year==2016)? 35900:41500;
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
+  ao.binZpt = binZpt;
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
   ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"};
@@ -503,12 +516,22 @@ void zllhAnalysis(
   }
 
   // Writing datacards  
+  TString binZptSuffix="";
+  if(binZpt>=0 && binZpt<nBinsZpt && 
+    !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
+    binZptSuffix = Form("_ZptBin%d",binZpt);
   for(unsigned lep=0; lep<nLepSel; lep++) {
     if(leptonStrings[lep]=="em" && selection!=kZllHSR) continue; // avoiding unnecessary histograms
 
     char outFileDatacardsName[200];
-    sprintf(outFileDatacardsName,"MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s.root",
-                                 dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[selection].Data());
+    sprintf(
+      outFileDatacardsName,
+      "MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.root",
+      dataCardDir.Data(),
+      leptonStrings[lep].Data(),
+      selectionNames[selection].Data(),
+      binZptSuffix.Data()
+    );
     TFile* outFileDatacards = new TFile(outFileDatacardsName,"recreate");
     outFileDatacards->cd();
 
@@ -541,14 +564,14 @@ void zllhAnalysis(
     outFileDatacards->Close();
 
     ofstream newcardShape;
-    newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s.txt",
-                      dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[selection].Data()));
+    newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.txt",
+                      dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data()));
     newcardShape << Form("imax * number of channels\n");
     newcardShape << Form("jmax * number of background minus 1\n");
     newcardShape << Form("kmax * number of nuisance parameters\n");
 
-    newcardShape << Form("shapes      *   * datacard_Z%sH%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[selection].Data());
-    newcardShape << Form("shapes data_obs * datacard_Z%sH%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),plotBaseNames[kPlotData].Data());
+    newcardShape << Form("shapes      *   * datacard_Z%sH%s%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data());
+    newcardShape << Form("shapes data_obs * datacard_Z%sH%s%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),plotBaseNames[kPlotData].Data(),binZptSuffix.Data());
 
     newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][kPlotData]->GetSumOfWeights());
 
@@ -698,10 +721,10 @@ void zllhAnalysis(
     }
     newcardShape<<std::endl;
 
-    newcardShape << Form("SF_TT_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotTT].Data());
-    newcardShape << Form("SF_Zbb_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
-    newcardShape << Form("SF_Zb_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
-    newcardShape << Form("SF_ZLF_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
+    newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
+    newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
+    newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
+    newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
 
     newcardShape << Form("* autoMCStats 0\n");
     newcardShape.close();
@@ -895,6 +918,25 @@ void analyzeSample(
     ) typeLepSel=2;
     if(typeLepSel!=0 && typeLepSel!=1 && typeLepSel!=2) continue;
     if(ao.debug) printf("  Passed lepton ID/iso multiplicity\n");
+    
+    // Z boson basics
+    bLoad(b["ZBosonPt"],ientry);
+    bLoad(b["ZBosonEta"],ientry);
+    bLoad(b["ZBosonPhi"],ientry);
+    bLoad(b["ZBosonM"],ientry);
+    // Apply the ZpT window for this pt bin if doing resolved, provided
+    // we have chosen to do so by choosing a non-negative value of binZpt
+    float preselMinZpt=30, preselMaxZpt=9999;
+    if(
+      ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
+      !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel)
+    ) {
+      preselMinZpt = binsZpt[ao.binZpt];
+      preselMaxZpt = binsZpt[ao.binZpt+1];
+    }
+    if(gt.ZBosonPt<preselMinZpt || gt.ZBosonPt>=preselMaxZpt) continue;
+    if(gt.ZBosonM<10) continue;
+    if(ao.debug) printf("  Passed Z boson reconstruction\n");
 
     // Lepton kinematics
     float lepton1Pt,lepton1Eta,lepton1Phi,lepton1RelIso,lepton1D0,lepton1DZ,
@@ -965,14 +1007,6 @@ void analyzeSample(
     }
     if(ao.debug) printf("  Passed lepton kinematics\n");
 
-    bLoad(b["ZBosonPt"],ientry);
-    bLoad(b["ZBosonEta"],ientry);
-    bLoad(b["ZBosonPhi"],ientry);
-    bLoad(b["ZBosonM"],ientry);
-    if(gt.ZBosonPt<30) continue;
-    if(gt.ZBosonM<10) continue;
-    if(ao.debug) printf("  Passed Z boson reconstruction\n");
-    
     // Jet multiplicity
     bool isBoostedCategory=false;
     float deltaPhiZHFJ=-1;
