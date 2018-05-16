@@ -26,6 +26,7 @@
 #include <future>
 #include <functional>
 #include <mutex>
+#include "TMVA/Reader.h"
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
@@ -34,10 +35,9 @@ const TString ntupleDir = "/data/t3home000/dhsu/dylansVHSkims/2016/dilepton/";
 const int nLepSel=3; // Number of lepton selections
 //const int nSelections=11; // Number of selections
 const int nPlots=50; // Max number of plots
-
 const unsigned char nBinsZpt = 2;
 vector<float> binsZpt = {50,150,3000};
-
+float sf_training=1.4286;
 using namespace vhbbPlot;
 
 std::mutex mvaTreeMutex;
@@ -152,17 +152,17 @@ void zllhAnalysis(
   ao.binZpt = binZpt;
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"};
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                             , "boostedVeto"};
-  ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"};
-  ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                               , "boostedVeto"};
-  ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"     , "bvetoFJ"};
-  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight", "btagFJ" };
-  ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"};
-  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ" };
-  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"     , "btagFJ" };
-  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                                          };
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"             };
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"             };
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                             , "boostedVeto"             };
+  ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"};
+  ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                               , "boostedVeto"             };
+  ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"     , "bvetoFJ"             };
+  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight", "btagFJ"              };
+  ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"             };
+  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ"              };
+  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"     , "btagFJ" , "vetoTrain"};
+  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                                                       };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -809,6 +809,33 @@ void analyzeSample(
   gt.WriteTree(dummyTree);
   // Done making GeneralTree object
   ////////////////////////////////////////////////////////////////////////
+  // Instantiate TMVA reader
+  TMVA::Reader *reader = new TMVA::Reader("Silent");
+  // Hardcoded for now, could make it more general if we care
+  float mvaInputs[16];
+  reader->AddVariable("sumEtSoft1"  , &mvaInputs[ 0]);
+  reader->AddVariable("bjet1Pt"     , &mvaInputs[ 1]);
+  reader->AddVariable("bjet2Pt"     , &mvaInputs[ 2]);
+  reader->AddVariable("bjet1btag"   , &mvaInputs[ 3]);
+  reader->AddVariable("bjet2btag"   , &mvaInputs[ 4]);
+  reader->AddVariable("ZBosonPt"    , &mvaInputs[ 5]);
+  reader->AddVariable("ZBosonM"     , &mvaInputs[ 6]);
+  reader->AddVariable("CosThetaCS"  , &mvaInputs[ 7]);
+  reader->AddVariable("CosThetaStar", &mvaInputs[ 8]);
+  reader->AddVariable("hbbpt"       , &mvaInputs[ 9]);
+  reader->AddVariable("hbbm"        , &mvaInputs[10]);
+  reader->AddVariable("dPhiZH"      , &mvaInputs[11]);
+  reader->AddVariable("ptBalanceZH" , &mvaInputs[12]);
+  reader->AddVariable("dRBjets"     , &mvaInputs[13]);
+  reader->AddVariable("dEtaBjets"   , &mvaInputs[14]);
+  reader->AddVariable("nAddJet"     , &mvaInputs[15]);
+  TString bdtWeights="";
+  if(ao.binZpt==0)
+    bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml";
+  else if(ao.binZpt==1) 
+    bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml";
+  if(bdtWeights!="")
+    reader->BookMVA("BDT", bdtWeights.Data());
 
   // Nasty hack code to get the tree branches and their addresses, have to do it for each file
   TObjArray *listOfBranches = events->GetListOfBranches();
@@ -1174,6 +1201,7 @@ void analyzeSample(
     }
     
     // Load branches and calculate stuff for the cuts
+    bLoad(b["eventNumber"],ientry);
     bLoad(b["ZBosonPt"],ientry);
     bLoad(b["ZBosonPhi"],ientry);
     if(isBoostedCategory) {
@@ -1205,6 +1233,12 @@ void analyzeSample(
       dRZH          = sqrt(dEtaZH*dEtaZH + deltaPhiZH*deltaPhiZH);
     }
     // deltaPhiZHFJ computed already in Jet multiplicity section
+    bool vetoTrainEvts = (
+      ao.MVAVarType>1 &&
+      ao.selection==kZllHSR && 
+      category!=kPlotData &&
+      (gt.eventNumber%10)<3
+    );
 
     // Set Selection Bits
     std::map<TString, bool> cut;
@@ -1223,6 +1257,7 @@ void analyzeSample(
         cut["lowMET"     ] = gt.pfmet[0] < 60;
         cut["boostedCat" ] = isBoostedCategory;
         cut["boostedVeto"] = !isBoostedCategory;
+        cut["vetoTrain"  ] = (ao.MVAVarType==1 || (gt.eventNumber%10)>=3 || category==kPlotData);
       } else {
         if(isBoostedCategory) {
           bLoad(b[Form("fjPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
@@ -1232,10 +1267,13 @@ void analyzeSample(
           bLoad(b[Form("hbbpt_reg_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
           bLoad(b[Form("hbbphi_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
           bLoad(b[Form("hbbm_reg_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-	}
+        }
       }
-      if(iJES==(int)shiftjes::kJESTotalUp  ) cut["lowMET"] = gt.pfmet[1] < 60;
-      if(iJES==(int)shiftjes::kJESTotalDown) cut["lowMET"] = gt.pfmet[2] < 60;
+      if(iJES==(int)shiftjes::kJESTotalUp ||
+         iJES==(int)shiftjes::kJESTotalDown) {
+        bLoad(b[Form("pfmet_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+        cut["lowMET"] = gt.pfmet[iJES] < 60;
+      }
       if(isBoostedCategory) {
         cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
         cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
@@ -1358,33 +1396,37 @@ void analyzeSample(
       }
       //bLoad(b["sf_cmvaWeight_Cent"],ientry);
       //weight *= gt.sf_csvWeights[GeneralTree::csvCent];
-    }
-
-    // Hack for the central weights 
-    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-      if(ao.year==2016) {
-        // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
-        double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-        weight *= ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
-      } else if(ao.year==2017) {
-        // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-        unsigned iShift=GeneralTree::csvCent;
-        GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-        for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
-          unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
-          BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
-            (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
-          float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
-            GeneralTree::csvShiftName(theShift).Data(),
-            flav,
-            jetEtas[iPt][iEta][iJ], 
-            jetPts[iPt][iEta][iJ],
-            jetBtags[iPt][iEta][iJ]
-          );
-          if(reshapeFactor>0.001) weight *= reshapeFactor;
+      // Reweight the events here if they were not used for training
+      
+      // Hack for the central Btag weights 
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        if(ao.year==2016) {
+          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
+          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
+          weight *= ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+        } else if(ao.year==2017) {
+          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
+          unsigned iShift=GeneralTree::csvCent;
+          GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+          for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
+            unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
+            BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
+              (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
+            float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
+              GeneralTree::csvShiftName(theShift).Data(),
+              flav,
+              jetEtas[iPt][iEta][iJ], 
+              jetPts[iPt][iEta][iJ],
+              jetBtags[iPt][iEta][iJ]
+            );
+            if(reshapeFactor>0.001) weight *= reshapeFactor;
+          }
         }
       }
+      if((ao.selection==kZllHSR || ao.selection==kZllHFJSR) && ao.MVAVarType>1)
+        weight *= sf_training;
     }
+    
     for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
       if(ao.year==2016) {
         // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
@@ -1423,6 +1465,26 @@ void analyzeSample(
     // Calculate the shape variable in all JES scenarios for all the regions
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
     for(unsigned iJES=0; iJES<NJES; iJES++) {
+      if(reader && (iJES==0 || ao.selection==kZllHSR || ao.selection==kZllHFJSR)) {
+        mvaInputs[ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
+        mvaInputs[ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
+        mvaInputs[ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
+        mvaInputs[ 3] = bjet1btag                                               ; //"bjet1btag"   
+        mvaInputs[ 4] = bjet2btag                                               ; //"bjet2btag"   
+        mvaInputs[ 5] = gt.ZBosonPt                                             ; //"ZBosonPt"    
+        mvaInputs[ 6] = gt.ZBosonM                                              ; //"ZBosonM"     
+        mvaInputs[ 7] = gt.ZBosonLep1CosThetaCS                                 ; //"CosThetaCS"  
+        mvaInputs[ 8] = gt.ZBosonLep1CosThetaStar                               ; //"CosThetaStar"
+        mvaInputs[ 9] = gt.hbbpt_reg[iJES]                                      ; //"hbbpt"       
+        mvaInputs[10] = gt.hbbm_reg[iJES]                                       ; //"hbbm"        
+        mvaInputs[11] = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[iJES]-gt.ZBosonPhi)); //"dPhiZH"      
+        mvaInputs[12] = gt.hbbpt_reg[iJES]/gt.ZBosonPt                          ; //"ptBalanceZH" 
+        mvaInputs[13] = dRBjets                                                 ; //"dRBjets"     
+        mvaInputs[14] = dEtaBjets                                               ; //"dEtaBjets"   
+        mvaInputs[15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
+        
+        bdtValue[iJES] = reader->EvaluateMVA("BDT");
+      }
       switch(ao.MVAVarType) {
         case 1:
         default:
@@ -1503,7 +1565,6 @@ void analyzeSample(
     bLoad(b["fjMSD_corr"],ientry);
     bLoad(b["fjPt"],ientry);
     bLoad(b["fjDoubleCSV"],ientry);
-    bLoad(b["eventNumber"],ientry);
     // Lock the mutex and fill the MVA tree
     if(ao.selection==kZllHSR && passFullSel && category!=kPlotData) {
       mvaTreeMutex.lock();
@@ -1581,6 +1642,6 @@ void analyzeSample(
       ao.histos[typeLepSel][p][category]->Fill(theVar, weight);
     }
        
-  
   } // End Event Loop
+  if(reader) delete reader;
 }

@@ -8,6 +8,7 @@
 #include <TString.h>
 #include "vhbbPlot.h"
 
+using namespace vhbbPlot;
 void zhbbMVA(
   TString inputFileName, 
   TString extraString="", 
@@ -39,10 +40,14 @@ void zhbbMVA(
   if(useMulticlass) {
     return;
   } else {
-    TCut cutSignal = Form("category==%d || category==%d",(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    TCut cutBkg    = Form("category!=%d && category!=%d",(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    dataloader->AddTree(mvaTree, "Background", 1.0, cutBkg   , "test train");
-    dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutSignal, "test train");
+    TCut cutTrainSignal = Form("%s && (category==%d || category==%d)",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTrainBkg    = Form("%s && (category!=%d && category!=%d)",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestSignal = Form("%s && (category==%d || category==%d)",testTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestBkg    = Form("%s && (category!=%d && category!=%d)",testTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    dataloader->AddTree(mvaTree, "Background", 1.0, cutTrainBkg   , "train");
+    dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTrainSignal, "train");
+    dataloader->AddTree(mvaTree, "Background", 1.0, cutTestBkg   , "test");
+    dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTestSignal, "test");
     dataloader->SetWeightExpression("weight", "Signal");
     dataloader->SetWeightExpression("weight", "Background");
   } 
@@ -51,9 +56,9 @@ void zhbbMVA(
   if(isBoosted) {
   } else {
     dataloader->AddVariable("sumEtSoft1"  ,"sumEtSoft1"  , "", 'F'); 
-    dataloader->AddVariable("nSoft2"      ,"nSoft2"      , "", 'F'); 
-    dataloader->AddVariable("nSoft5"      ,"nSoft5"      , "", 'F'); 
-    dataloader->AddVariable("nSoft10"     ,"nSoft10"     , "", 'F'); 
+    //dataloader->AddVariable("nSoft2"      ,"nSoft2"      , "", 'F'); 
+    //dataloader->AddVariable("nSoft5"      ,"nSoft5"      , "", 'F'); 
+    //dataloader->AddVariable("nSoft10"     ,"nSoft10"     , "", 'F'); 
     dataloader->AddVariable("bjet1Pt"     ,"bjet1Pt"     , "", 'F'); 
     dataloader->AddVariable("bjet2Pt"     ,"bjet2Pt"     , "", 'F'); 
     dataloader->AddVariable("bjet1btag"   ,"bjet1btag"   , "", 'F'); 
@@ -68,18 +73,17 @@ void zhbbMVA(
     dataloader->AddVariable("ptBalanceZH" ,"ptBalanceZH" , "", 'F'); 
     dataloader->AddVariable("dRBjets"     ,"dRBjets"     , "", 'F'); 
     dataloader->AddVariable("dEtaBjets"   ,"dEtaBjets"   , "", 'F'); 
-    dataloader->AddVariable("dRZH"        ,"dRZH"        , "", 'F'); 
-    dataloader->AddVariable("dEtaZH"      ,"dEtaZH"      , "", 'F'); 
+    //dataloader->AddVariable("dRZH"        ,"dRZH"        , "", 'F'); 
+    //dataloader->AddVariable("dEtaZH"      ,"dEtaZH"      , "", 'F'); 
     dataloader->AddVariable("nAddJet"     ,"nAddJet"     , "", 'F'); 
   }
   TString prepareOptions="NormMode=None";
-    //prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
-    prepareOptions+=":SplitMode=Random"; // use e.g. all events selected by trainTreeEventSplitStr for training
+    prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
     prepareOptions+=":MixMode=Random";
   dataloader->PrepareTrainingAndTestTree("", prepareOptions);
   
   // for resolved
-  TString hyperparameters="!H:!V:BoostType=AdaBoost:MinNodeSize=2.5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12::nCuts=1000";
+  TString hyperparameters="!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=500:MaxDepth=2:AdaBoostBeta=0.12::nCuts=1000";
 
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
   //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=Pray:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
