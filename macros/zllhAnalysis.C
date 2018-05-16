@@ -220,7 +220,7 @@ void zllhAnalysis(
 
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
-  
+  TString binZptSuffix="";
   vector<TString> leptonStrings={"mm","ee","em"};
   // Define the shape variable
   if(ao.MVAVarType==1) {
@@ -418,7 +418,7 @@ void zllhAnalysis(
   // Setup MVA training tree if applicable (Not implemented yet for boosted)
   if(selection==kZllHSR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
-    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHSR_mvaTree.root",dataCardDir.Data()),"recreate");
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHSR_mvaTree%s.root",dataCardDir.Data(),binZptSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("sumEtSoft1"  , &ao.mva_sumEtSoft1  ); 
     ao.mvaTree->Branch("nSoft2"      , &ao.mva_nSoft2      ); 
@@ -516,7 +516,6 @@ void zllhAnalysis(
   }
 
   // Writing datacards  
-  TString binZptSuffix="";
   if(binZpt>=0 && binZpt<nBinsZpt && 
     !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
     binZptSuffix = Form("_ZptBin%d",binZpt);
