@@ -243,7 +243,10 @@ void zllhAnalysis(
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR) {
-      ao.MVAbins={-1,0,0.1,0.2,0.3,0.4,0.6};
+      if(binZpt==0)
+        ao.MVAbins={-1,0,0.1,0.2,0.3,0.4,0.5,0.6};
+      else
+        ao.MVAbins={-1,0,0.1,0.2,0.3,0.4,0.6};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
