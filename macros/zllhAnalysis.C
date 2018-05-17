@@ -559,7 +559,7 @@ void zllhAnalysis(
     newcardShape << Form("kmax * number of nuisance parameters\n");
 
     newcardShape << Form("shapes      *   * datacard_Z%sH%s%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data());
-    newcardShape << Form("shapes data_obs * datacard_Z%sH%s%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),plotBaseNames[kPlotData].Data(),binZptSuffix.Data());
+    newcardShape << Form("shapes data_obs * datacard_Z%sH%s%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data(),plotBaseNames[kPlotData].Data());
 
     newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][kPlotData]->GetSumOfWeights());
 
