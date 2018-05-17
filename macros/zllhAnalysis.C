@@ -38,6 +38,7 @@ const int nLepSel=3; // Number of lepton selections
 //const int nSelections=11; // Number of selections
 const int nPlots=50; // Max number of plots
 const unsigned char nBinsZpt = 2;
+const int nThreads=10;
 vector<float> binsZpt = {50,150,3000};
 float sf_training=1.4286;
 using namespace vhbbPlot;
@@ -105,6 +106,9 @@ struct analysisObjects {
   float mva_weight;
   unsigned char mva_category;
   ULong64_t mva_eventNumber;
+  // MVA output
+  vector<TMVA::Reader*> reader;
+  float mvaInputs[nThreads][16];
   
 };
 
@@ -437,6 +441,41 @@ void zllhAnalysis(
     ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
   }
   
+  // Instantiate TMVA reader
+  if(MVAVarType>1) {
+    TString bdtWeights="";
+    if(ao.binZpt==0)
+      bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml";
+    else if(ao.binZpt==1) 
+      bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml";
+    if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
+      TMVA::Reader *theReader = new TMVA::Reader("Silent");
+      // This object is never deleted, which is a small memory leak,
+      // but the TMVA Reader destructor has issues
+      
+      // Vars are hardcoded for now, could make it more general if we care
+      theReader->AddVariable("sumEtSoft1"  , &ao.mvaInputs[nThread][ 0]);
+      theReader->AddVariable("bjet1Pt"     , &ao.mvaInputs[nThread][ 1]);
+      theReader->AddVariable("bjet2Pt"     , &ao.mvaInputs[nThread][ 2]);
+      theReader->AddVariable("bjet1btag"   , &ao.mvaInputs[nThread][ 3]);
+      theReader->AddVariable("bjet2btag"   , &ao.mvaInputs[nThread][ 4]);
+      theReader->AddVariable("ZBosonPt"    , &ao.mvaInputs[nThread][ 5]);
+      theReader->AddVariable("ZBosonM"     , &ao.mvaInputs[nThread][ 6]);
+      theReader->AddVariable("CosThetaCS"  , &ao.mvaInputs[nThread][ 7]);
+      theReader->AddVariable("CosThetaStar", &ao.mvaInputs[nThread][ 8]);
+      theReader->AddVariable("hbbpt"       , &ao.mvaInputs[nThread][ 9]);
+      theReader->AddVariable("hbbm"        , &ao.mvaInputs[nThread][10]);
+      theReader->AddVariable("dPhiZH"      , &ao.mvaInputs[nThread][11]);
+      theReader->AddVariable("ptBalanceZH" , &ao.mvaInputs[nThread][12]);
+      theReader->AddVariable("dRBjets"     , &ao.mvaInputs[nThread][13]);
+      theReader->AddVariable("dEtaBjets"   , &ao.mvaInputs[nThread][14]);
+      theReader->AddVariable("nAddJet"     , &ao.mvaInputs[nThread][15]);
+      theReader->BookMVA("BDT", bdtWeights.Data());
+      ao.reader.push_back(theReader);
+    } else {
+      printf("error with BDT weight configuration\n"); return;
+    }
+  }
   ////////////////////////////////////////////////////////////////////////
   // Begin Chain Loop
   vector<thread> threads;
@@ -447,8 +486,8 @@ void zllhAnalysis(
     TString inputFileName = Form("%s%s.root",ntupleDir.Data(),sample.first.Data());
     
     if(multithread) {
-      // Spawn 10 threads to process 10 identical pointers to this file
-      for(int split=0; split<10; split++) {
+      // Spawn nThreads threads to process that many identical pointers to this file
+      for(int split=0; split<nThreads; split++) {
         TFile *inputFile = TFile::Open(inputFileName,"READ"); assert(inputFile);
         files.push_back(inputFile);
         TTree *events = (TTree*)inputFile->Get("events"); assert(events);
@@ -747,6 +786,7 @@ void analyzeSample(
   
   // Sample properties
   bool isNLOZjets = sampleName.Contains("ZJets_pt"); // Only use events with HT<100 for NLO pt binned samples in 2016
+  unsigned nThread = split>=0? split:0;
   // End sample properties
   ////////////////////////////////////////////////////////////////////////
   // Declare local analysis variables
@@ -787,6 +827,7 @@ void analyzeSample(
   gt.is_leptonic    = true;
   gt.btagWeights    = true;
   gt.useCMVA        = true;
+  gt.is_breg        = false;
   // Branches not in GeneralTree;
   std::map<TString, void*> extraAddresses;
   float normalizedWeight; extraAddresses["normalizedWeight"] = &normalizedWeight;
@@ -797,33 +838,6 @@ void analyzeSample(
   gt.WriteTree(dummyTree);
   // Done making GeneralTree object
   ////////////////////////////////////////////////////////////////////////
-  // Instantiate TMVA reader
-  TMVA::Reader reader("Silent");
-  // Hardcoded for now, could make it more general if we care
-  float mvaInputs[16];
-  reader.AddVariable("sumEtSoft1"  , &mvaInputs[ 0]);
-  reader.AddVariable("bjet1Pt"     , &mvaInputs[ 1]);
-  reader.AddVariable("bjet2Pt"     , &mvaInputs[ 2]);
-  reader.AddVariable("bjet1btag"   , &mvaInputs[ 3]);
-  reader.AddVariable("bjet2btag"   , &mvaInputs[ 4]);
-  reader.AddVariable("ZBosonPt"    , &mvaInputs[ 5]);
-  reader.AddVariable("ZBosonM"     , &mvaInputs[ 6]);
-  reader.AddVariable("CosThetaCS"  , &mvaInputs[ 7]);
-  reader.AddVariable("CosThetaStar", &mvaInputs[ 8]);
-  reader.AddVariable("hbbpt"       , &mvaInputs[ 9]);
-  reader.AddVariable("hbbm"        , &mvaInputs[10]);
-  reader.AddVariable("dPhiZH"      , &mvaInputs[11]);
-  reader.AddVariable("ptBalanceZH" , &mvaInputs[12]);
-  reader.AddVariable("dRBjets"     , &mvaInputs[13]);
-  reader.AddVariable("dEtaBjets"   , &mvaInputs[14]);
-  reader.AddVariable("nAddJet"     , &mvaInputs[15]);
-  TString bdtWeights="";
-  if(ao.binZpt==0)
-    bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml";
-  else if(ao.binZpt==1) 
-    bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml";
-  if(bdtWeights!="")
-    reader.BookMVA("BDT", bdtWeights.Data());
 
   // Nasty hack code to get the tree branches and their addresses, have to do it for each file
   TObjArray *listOfBranches = events->GetListOfBranches();
@@ -844,7 +858,10 @@ void analyzeSample(
       continue;
     }
     TBranch *dummyBranch = dummyTree->GetBranch(branchName);
-    if(!dummyBranch) { throw std::runtime_error(Form("WARNING: Couldn't find branch \"%s\" in the dummyTree, skipping", branchName.Data())); continue; }
+    if(!dummyBranch) { 
+      printf("WARNING: Couldn't find branch \"%s\" in the dummyTree, skipping (You may be using ntuples produced with an older version of GeneralTree)\n", branchName.Data()); 
+      continue;
+    }
     void* address=dummyBranch->GetAddress();
     b[branchName] = events->GetBranch(branchName);
     if(!b[branchName]) { throw std::runtime_error(Form("Branch \"%s\" could not be found in events tree", x->first.Data())); }
@@ -860,7 +877,7 @@ void analyzeSample(
   for (Long64_t ientry=0; ientry<nentries; ientry++) {
     if(ao.debug && ientry!=0) usleep(2e5);
     if(ao.debug || ientry%100000==0) printf("> Reading entry %lld/%lld of %s (thread #%d)...\n",ientry,nentries, sampleName.Data(), split);
-    if(split!=-1 && (ientry%10)!=split) continue;
+    if(split!=-1 && (ientry%nThreads)!=split) continue;
     // Stitching for low pT NLO Z+jets in 2016
     if(isNLOZjets && ao.year==2016) {
       bLoad(b["lheHT"],ientry);
@@ -1454,24 +1471,23 @@ void analyzeSample(
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
     for(unsigned iJES=0; iJES<NJES; iJES++) {
       if(ao.MVAVarType>1 && (iJES==0 || ao.selection==kZllHSR || ao.selection==kZllHFJSR)) {
-        mvaInputs[ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
-        mvaInputs[ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
-        mvaInputs[ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
-        mvaInputs[ 3] = bjet1btag                                               ; //"bjet1btag"   
-        mvaInputs[ 4] = bjet2btag                                               ; //"bjet2btag"   
-        mvaInputs[ 5] = gt.ZBosonPt                                             ; //"ZBosonPt"    
-        mvaInputs[ 6] = gt.ZBosonM                                              ; //"ZBosonM"     
-        mvaInputs[ 7] = gt.ZBosonLep1CosThetaCS                                 ; //"CosThetaCS"  
-        mvaInputs[ 8] = gt.ZBosonLep1CosThetaStar                               ; //"CosThetaStar"
-        mvaInputs[ 9] = gt.hbbpt_reg[iJES]                                      ; //"hbbpt"       
-        mvaInputs[10] = gt.hbbm_reg[iJES]                                       ; //"hbbm"        
-        mvaInputs[11] = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[iJES]-gt.ZBosonPhi)); //"dPhiZH"      
-        mvaInputs[12] = gt.hbbpt_reg[iJES]/gt.ZBosonPt                          ; //"ptBalanceZH" 
-        mvaInputs[13] = dRBjets                                                 ; //"dRBjets"     
-        mvaInputs[14] = dEtaBjets                                               ; //"dEtaBjets"   
-        mvaInputs[15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
-        
-        bdtValue[iJES] = reader.EvaluateMVA("BDT");
+        ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
+        ao.mvaInputs[nThread][ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
+        ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
+        ao.mvaInputs[nThread][ 3] = bjet1btag                                               ; //"bjet1btag"   
+        ao.mvaInputs[nThread][ 4] = bjet2btag                                               ; //"bjet2btag"   
+        ao.mvaInputs[nThread][ 5] = gt.ZBosonPt                                             ; //"ZBosonPt"    
+        ao.mvaInputs[nThread][ 6] = gt.ZBosonM                                              ; //"ZBosonM"     
+        ao.mvaInputs[nThread][ 7] = gt.ZBosonLep1CosThetaCS                                 ; //"CosThetaCS"  
+        ao.mvaInputs[nThread][ 8] = gt.ZBosonLep1CosThetaStar                               ; //"CosThetaStar"
+        ao.mvaInputs[nThread][ 9] = gt.hbbpt_reg[iJES]                                      ; //"hbbpt"       
+        ao.mvaInputs[nThread][10] = gt.hbbm_reg[iJES]                                       ; //"hbbm"        
+        ao.mvaInputs[nThread][11] = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[iJES]-gt.ZBosonPhi)); //"dPhiZH"      
+        ao.mvaInputs[nThread][12] = gt.hbbpt_reg[iJES]/gt.ZBosonPt                          ; //"ptBalanceZH" 
+        ao.mvaInputs[nThread][13] = dRBjets                                                 ; //"dRBjets"     
+        ao.mvaInputs[nThread][14] = dEtaBjets                                               ; //"dEtaBjets"   
+        ao.mvaInputs[nThread][15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
+        bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
       }
       switch(ao.MVAVarType) {
         case 1:
