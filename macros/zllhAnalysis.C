@@ -231,15 +231,15 @@ void zllhAnalysis(
   } else if(ao.MVAVarType==3) {
     // 3 - normal BDT in SR, subleading CMVA in CR
     if(selection==kZllHLightFlavorCR) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000};
+      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667};
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+      ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR) {
-      ao.MVAbins={-1,0,0.2,0.3,0.4,0.5,0.6,0.7};
+      ao.MVAbins={-1,0,0.1,0.2,0.3,0.4,0.6};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
