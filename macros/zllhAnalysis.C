@@ -33,7 +33,7 @@
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 // Location of the PA ntuples or skims
-const TString ntupleDir = "/data/t3home000/dhsu/dylansVHSkims/2016/dilepton/";
+const TString ntupleDir = "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb1/dilepton/";
 const int nLepSel=3; // Number of lepton selections
 //const int nSelections=11; // Number of selections
 const int nPlots=50; // Max number of plots
@@ -158,34 +158,35 @@ void zllhAnalysis(
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
-  samples.emplace_back("DoubleEG"           , vhbbPlot::kData   );
-  samples.emplace_back("DoubleMuon"         , vhbbPlot::kData   );
-//samples.emplace_back("SingleTop_tT"       , vhbbPlot::kTop    );       
-//samples.emplace_back("SingleTop_tTbar"    , vhbbPlot::kTop    );       
-  samples.emplace_back("SingleTop_tW"       , vhbbPlot::kTop    );       
-  samples.emplace_back("SingleTop_tbarW"    , vhbbPlot::kTop    );       
-  samples.emplace_back("TTTo2L2Nu"          , vhbbPlot::kTT     );       
-  samples.emplace_back("WWTo2L2Nu"          , vhbbPlot::kWW     );       
-//samples.emplace_back("WWTo4Q"             , vhbbPlot::kWW     );       
-//samples.emplace_back("WWToLNuQQ"          , vhbbPlot::kWW     );       
-//samples.emplace_back("WZTo1L1Nu2Q"        , vhbbPlot::kVZ     );       
-  samples.emplace_back("WZTo2L2Q"           , vhbbPlot::kVZ     );       
-  samples.emplace_back("ZZTo2L2Q"           , vhbbPlot::kVZ     );       
-//samples.emplace_back("ZZTo4Q"             , vhbbPlot::kVZ     );       
-  samples.emplace_back("ZJets_ht100to200"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht200to400"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht400to600"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht600to800"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht800to1200"  , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht1200to2500" , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht2500toinf"  , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt50to100"    , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt100to250"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt250to400"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt400to650"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt650toinf"   , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZllHbb_mH125"       , vhbbPlot::kZH     );       
-  samples.emplace_back("ggZllHbb_mH125"     , vhbbPlot::kZH     );       
+  samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
+  samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
+  samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
+  samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
+  //samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
+  samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );       
+  samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
+  samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
+  samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht200to400"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht400to600"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht600to800"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht800to1200"              , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht1200to2500"             , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_ht2500toinf"              , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt50to100"                , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt100to250"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
+  samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
   if(multithread) std::random_shuffle(samples.begin(),samples.end());
   // End List of Samples
   /////////////////////////////
@@ -756,7 +757,7 @@ void zllhAnalysis(
     newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
     newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
 
-    newcardShape << Form("* autoMCStats 0\n");
+    newcardShape << Form("* autoMCStats 1\n");
     newcardShape.close();
   }
   
@@ -788,7 +789,13 @@ void analyzeSample(
   TString sampleName = sample.first; sampleType type = sample.second;
   
   // Sample properties
-  bool isNLOZjets = sampleName.Contains("ZJets_pt"); // Only use events with HT<100 for NLO pt binned samples in 2016
+  // Only use events with HT<100 for NLO pt binned samples in 2016
+  bool isNLOZjets = sampleName.Contains("ZJets_pt"); 
+  bool isLowMassZjets = sampleName.Contains("ZJets_m10");
+  bool isBQuarkEnriched = sampleName.Contains("bQuarks");
+  bool isBHadronEnriched = sampleName.Contains("bHadrons");
+  bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
+
   unsigned nThread = split>=0? split:0;
   // End sample properties
   ////////////////////////////////////////////////////////////////////////
@@ -881,10 +888,36 @@ void analyzeSample(
     if(ao.debug && ientry!=0) usleep(2e5);
     if(ao.debug || ientry%100000==0) printf("> Reading entry %lld/%lld of %s (thread #%d)...\n",ientry,nentries, sampleName.Data(), split);
     if(split!=-1 && (ientry%nThreads)!=split) continue;
-    // Stitching for low pT NLO Z+jets in 2016
-    if(isNLOZjets && ao.year==2016) {
-      bLoad(b["lheHT"],ientry);
-      if(gt.lheHT>=100) continue;
+    
+    // Stitching Cuts/Weights
+    float stitchWeight=1;
+    if(ao.year==2016) {
+      if(isNLOZjets) {
+        // for low pT NLO Z+jets in 2016
+        bLoad(b["lheHT"],ientry);
+        if(gt.lheHT>=100) continue;
+      }
+      // B-enriched sample stitching
+      // Let the b-enriched samples eat 90% of the XS where there are b quarks or status 2 b hadrons
+      if(type==kZjets) {
+        bLoad(b["trueGenBosonPt"],ientry); // number of B hadrons at matrix element level
+        bLoad(b["nStatus2BHadrons"],ientry); // number of B hadrons at matrix element level
+        bLoad(b["nB"],ientry); // number of B quarks
+        if(isInclusiveZjets && (isBQuarkEnriched||isBHadronEnriched) && gt.trueGenBosonPt>=100) continue;
+        bool hasBQuarks  = gt.nB > 0;
+        bool hasBHadrons = gt.nStatus2BHadrons>0 && gt.nB==0;
+        // Orthogonalize        
+        if(isBQuarkEnriched && !hasBQuarks) continue;
+        if(isBHadronEnriched && !hasBHadrons) continue;
+        // Downweight
+        if(hasBQuarks) {
+          if(isBQuarkEnriched) stitchWeight = 0.9;
+          else                 stitchWeight = 0.1;
+        } else if(hasBHadrons) {
+          if(isBHadronEnriched) stitchWeight = 0.9;
+          else                  stitchWeight = 0.1;
+        }
+      }
     }
 
     //////////////////////
@@ -914,12 +947,10 @@ void analyzeSample(
     if(ao.debug) printf("  Passed lepton multiplicity\n");
 
     // Trigger
-    if(type==kData) {
-      bLoad(b["trigger"],ientry);
-      bool passTrigger = (gt.trigger & ao.whichTriggers) !=0;
-      if(!passTrigger) continue;
-      if(ao.debug) printf("  Passed trigger\n");
-    }
+    bLoad(b["trigger"],ientry);
+    bool passTrigger = (gt.trigger & ao.whichTriggers) !=0;
+    if(!passTrigger) continue;
+    if(ao.debug) printf("  Passed trigger\n");
 
     // Lepton ID and isolation
     bLoad(b["nLooseElectron"],ientry);
@@ -1314,7 +1345,7 @@ void analyzeSample(
       weight_pileupUp = nPUScaleFactor(ao.puWeightsUp, gt.pu)/puWeight;
       weight_pileupDown = nPUScaleFactor(ao.puWeightsDown, gt.pu)/puWeight;
       
-      weight = normalizedWeight * ao.lumi * puWeight; 
+      weight = normalizedWeight * ao.lumi * puWeight * stitchWeight; 
       
       if(type==kWjets || type==kZjets) {
         if(useHtBinnedVJetsKFactor) {
@@ -1357,7 +1388,7 @@ void analyzeSample(
         bLoad(b["muonSfTight"],ientry);
         bLoad(b["muonSfUnc"],ientry);
         bLoad(b["sf_muTrig"],ientry);
-        weight *= gt.sf_muTrig; // 1; //temp
+        weight *= 1.0; // gt.sf_muTrig; 
         weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
         weight *= gt.muonSfReco[1] * gt.muonSfTight[1];
         weight_muSF = (1+gt.muonSfUnc[0]) * (1+gt.muonSfUnc[1]);
@@ -1366,7 +1397,7 @@ void analyzeSample(
         bLoad(b["electronSfMvaWP90"],ientry);
         bLoad(b["electronSfUnc"],ientry);
         bLoad(b["sf_eleTrig"],ientry);
-        weight *= gt.sf_eleTrig; // 1; //temp
+        weight *= 1.0; // gt.sf_eleTrig; 
         weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
         weight *= gt.electronSfReco[1] * gt.electronSfMvaWP90[1];
         weight_elSF = (1+gt.electronSfUnc[0]) * (1+gt.electronSfUnc[1]);
