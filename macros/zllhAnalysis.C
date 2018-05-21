@@ -158,11 +158,12 @@ void zllhAnalysis(
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
-  samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
-  samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
+  //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
+  //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
+  samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
   samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
   samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
-  //samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
+  samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
   samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );       
   samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
   samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
@@ -173,11 +174,11 @@ void zllhAnalysis(
   samples.emplace_back("ZJets_ht800to1200"              , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_ht1200to2500"             , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_ht2500toinf"              , vhbbPlot::kZjets  );       
-  //samples.emplace_back("ZJets_pt50to100"                , vhbbPlot::kZjets  );       
-  //samples.emplace_back("ZJets_pt100to250"               , vhbbPlot::kZjets  );       
-  //samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
-  //samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
-  //samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt50to100"                , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt100to250"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
+  samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );       
   samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );       
@@ -790,7 +791,7 @@ void analyzeSample(
   
   // Sample properties
   // Only use events with HT<100 for NLO pt binned samples in 2016
-  bool isNLOZjets = sampleName.Contains("ZJets_pt"); 
+  bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10"); 
   bool isLowMassZjets = sampleName.Contains("ZJets_m10");
   bool isBQuarkEnriched = sampleName.Contains("bQuarks");
   bool isBHadronEnriched = sampleName.Contains("bHadrons");
@@ -892,8 +893,8 @@ void analyzeSample(
     // Stitching Cuts/Weights
     float stitchWeight=1;
     if(ao.year==2016) {
-      if(isNLOZjets) {
-        // for low pT NLO Z+jets in 2016
+      if(isNLOZjets && !isLowMassZjets) { 
+        // for low pT M>50 NLO Z+jets in 2016
         bLoad(b["lheHT"],ientry);
         if(gt.lheHT>=100) continue;
       }
@@ -1077,15 +1078,13 @@ void analyzeSample(
     bool isBoostedCategory=false;
     float deltaPhiZHFJ=-1;
     if(ao.useBoostedCategory) { 
-      bLoad(b["nFatjet"],ientry);
       bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
-      if(gt.nFatjet>0) // protection against NaN values of fjPhi
+      if(gt.fjPt[0]>0) // protection against NaN values of fjPhi
         deltaPhiZHFJ = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
       if(
-        gt.nFatjet>0 && 
         gt.fjPt[0] >= 250 && 
         gt.fjMSD_corr[0] >= 40 &&
         fabs(gt.fjEta) < 2.4 &&
