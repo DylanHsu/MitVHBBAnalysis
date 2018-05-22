@@ -708,8 +708,12 @@ void zllhAnalysis(
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
       newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-        newcardShape << Form("1.0  ");
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && selection==kZllH2TopCR) 
+          newcardShape << Form("-  ");
+        else
+          newcardShape << Form("1.0  ");
+      }
       newcardShape << Form("\n");
     }
 
