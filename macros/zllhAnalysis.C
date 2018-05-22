@@ -1480,7 +1480,7 @@ void analyzeSample(
             theShift,
             cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
           )/centralWeight; 
-          if(ao.debug>=3) printf("iPt=%d, iEta=%d, %d jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
+          if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
         }
       } else if(ao.year==2017) {
         // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
