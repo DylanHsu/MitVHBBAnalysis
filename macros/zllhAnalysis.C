@@ -1152,21 +1152,24 @@ void analyzeSample(
     // Jet B-tagging
     bool bjet1IsTight=false, bjet2IsLoose=false;
     float bjet1btag=-2, bjet2btag=-2;
+    bLoad(b["jotCMVA"],ientry);
+    bLoad(b["jotCSV"],ientry);
     if(ao.year==2016) {
-      bLoad(b["jotCMVA"],ientry);
       bjet1IsTight = gt.jotCMVA[gt.hbbjtidx[0][0]] > cmvaTight;
       bjet2IsLoose = gt.jotCMVA[gt.hbbjtidx[0][1]] > cmvaLoose;
       bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
     } else if(ao.year==2017) {
-      bLoad(b["jotCSV"],ientry);
       bjet1IsTight = gt.jotCSV[gt.hbbjtidx[0][0]] > deepcsvTight;
       bjet2IsLoose = gt.jotCSV[gt.hbbjtidx[0][1]] > deepcsvLoose;
       bjet1btag = gt.jotCSV[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCSV[gt.hbbjtidx[0][1]];
     }
 
-    bLoad(b["jotPt"],ientry);
+    for(unsigned iJES=0; iJES<NJES; iJES++) {
+      bLoad(b[Form("jotPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+      bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+    }
     bLoad(b["jotEta"],ientry);
     bLoad(b["jotPhi"],ientry);
     float bjet1Pt = gt.jotPt[0][gt.hbbjtidx[0][0]];
