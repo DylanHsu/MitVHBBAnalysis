@@ -6,7 +6,7 @@
 void npnloAddBranch(TString inputFileName, TString lookupFileName) {
   unsigned char npnlo;
   ULong64_t eventNumber;
-  unsigned int lumiNumber;
+  int lumiNumber;
   TFile *lookupFile = TFile::Open(lookupFileName,"read"); assert(lookupFile);
   TTree *npnloLookup = (TTree*) lookupFile->Get("npnloLookup");
   npnloLookup->BuildIndex("lumiNumber","eventNumber");
