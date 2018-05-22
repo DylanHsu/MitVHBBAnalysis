@@ -525,7 +525,7 @@ void zllhAnalysis(
   // Compute some uncertainties once event by events weights are filled
   for(unsigned lep=0; lep<nLepSel; lep++) 
   for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-    if(leptonStrings[lep]=="em" && selection!=kZllHSR) continue; // avoiding unnecessary histograms
+    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; // avoiding unnecessary histograms
     for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
       // compute QCD scale uncertainties bin-by-bin
       double diffQCDScale[6] = {
@@ -553,7 +553,7 @@ void zllhAnalysis(
 
   // Writing datacards  
   for(unsigned lep=0; lep<nLepSel; lep++) {
-    if(leptonStrings[lep]=="em" && selection!=kZllHSR) continue; // avoiding unnecessary histograms
+    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; // avoiding unnecessary histograms
 
     char outFileDatacardsName[200];
     sprintf(
