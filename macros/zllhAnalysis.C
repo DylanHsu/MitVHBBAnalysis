@@ -581,7 +581,8 @@ void zllhAnalysis(
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
-  
+  if(ao.lookupFile) ao.lookupFile->Close();
+ 
   // Compute some uncertainties once event by events weights are filled
   for(unsigned lep=0; lep<nLepSel; lep++) 
   for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
