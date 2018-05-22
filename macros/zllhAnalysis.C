@@ -160,34 +160,34 @@ void zllhAnalysis(
   vector<pair<TString,vhbbPlot::sampleType>> samples;
   //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
   //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
-  samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
-  samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
-  samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
+  //samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
+  //samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
+  //samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
   samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
-  samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );       
-  samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
-  samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
-  samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht200to400"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht400to600"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht600to800"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht800to1200"              , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht1200to2500"             , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht2500toinf"              , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt50to100"                , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt100to250"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
-  samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
+  //samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );       
+  //samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
+  //samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
+  //samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_ht200to400"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_ht400to600"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_ht600to800"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_ht800to1200"              , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_ht1200to2500"             , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_ht2500toinf"              , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt50to100"                , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt100to250"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );       
+  //samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
+  //samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
   if(multithread) std::random_shuffle(samples.begin(),samples.end());
   // End List of Samples
   /////////////////////////////
@@ -1170,8 +1170,11 @@ void analyzeSample(
       bLoad(b[Form("jotPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
       bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
     }
+    bLoad(b["nJot"],ientry);
+    bLoad(b["jotPt"],ientry);
     bLoad(b["jotEta"],ientry);
     bLoad(b["jotPhi"],ientry);
+    bLoad(b["jotFlav"],ientry);
     float bjet1Pt = gt.jotPt[0][gt.hbbjtidx[0][0]];
     float bjet2Pt = gt.jotPt[0][gt.hbbjtidx[0][1]];
     
@@ -1227,6 +1230,7 @@ void analyzeSample(
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
+        if(ao.debug>=3) printf("jet with (pt,|eta|)=(%.2f,%.3f) => (iPt,iEta) = (%d,%d)\n",gt.jotPt[0][iJ],jetAbsEta,iPt,iEta);
         if(iPt>=0 && iEta>=0) {
           float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
           jetPts    [iPt][iEta].push_back(gt.jotPt[0][iJ]);
@@ -1476,6 +1480,7 @@ void analyzeSample(
             theShift,
             cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
           )/centralWeight; 
+          if(ao.debug>=3) printf("iPt=%d, iEta=%d, %d jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
         }
       } else if(ao.year==2017) {
         // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
