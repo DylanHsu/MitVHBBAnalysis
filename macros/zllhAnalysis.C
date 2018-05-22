@@ -708,11 +708,8 @@ void zllhAnalysis(
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
       newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if(ic==kPlotTT||ic==kPlotTop||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
-          newcardShape << Form("1.0  ");
-        else newcardShape<<"- ";
-      }
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+        newcardShape << Form("1.0  ");
       newcardShape << Form("\n");
     }
 
@@ -1574,18 +1571,18 @@ void analyzeSample(
         ao.histo_eleSFDown   [typeLepSel][category]->Fill(MVAVar[0], weight/weight_elSF);
         ao.histo_muSFUp      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_muSF);
         ao.histo_muSFDown    [typeLepSel][category]->Fill(MVAVar[0], weight/weight_muSF);
+        for(unsigned iPt=0; iPt<5; iPt++)
+        for(unsigned iEta=0; iEta<3; iEta++)
+        for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+          GeneralTree::csvShift shift = gt.csvShifts[iShift];
+          if (shift==GeneralTree::csvCent) continue;
+          ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(MVAVar[0], weight*weight_btag[iShift][iPt][iEta]);
+        }
       }
       for(unsigned iJES=0; iJES<NJES; iJES++) {
         bool passFullSelJES = (selectionBits[iJES] & ao.selection) != 0;
         if(!passFullSelJES) continue;
         ao.histo_jes[iJES][typeLepSel][category]->Fill(MVAVar[iJES], weight);
-      }
-      for(unsigned iPt=0; iPt<5; iPt++)
-      for(unsigned iEta=0; iEta<3; iEta++)
-      for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-        GeneralTree::csvShift shift = gt.csvShifts[iShift];
-        if (shift==GeneralTree::csvCent) continue;
-        ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(MVAVar[0], weight*weight_btag[iShift][iPt][iEta]);
       }
     }
 
