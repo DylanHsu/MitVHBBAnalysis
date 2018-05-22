@@ -655,9 +655,9 @@ void zllhAnalysis(
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
       if(ic!=kPlotZH && ic!=kPlotGGZH) 
-        newcardShape << Form("1.0  ");
-      else
         newcardShape << Form("-  ");
+      else
+        newcardShape << Form("1.0  ");
     }
     newcardShape << Form("\n");
 
