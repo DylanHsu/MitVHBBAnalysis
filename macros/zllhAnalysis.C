@@ -1,39 +1,41 @@
+#include <cassert>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <map>
+#include <mutex>
+#include <sstream>
+#include <thread>
+#include <unistd.h>
+
 #include "PandaAnalysis/Flat/interface/GeneralTree.h"
 #include "CondFormats/BTauObjects/interface/BTagEntry.h"
 #include "CondFormats/BTauObjects/interface/BTagCalibration.h"
 #include "CondTools/BTau/interface/BTagCalibrationReader.h"
 #include "PandaAnalysis/Utilities/src/CSVHelper.cc"
+
 #include <Compression.h>
-#include <TSystem.h>
-#include <TTree.h>
 #include <TFile.h>
 #include <TH2D.h>
-#include <TString.h>
 #include <TLorentzVector.h>
+#include <TString.h>
+#include <TSystem.h>
+#include <TTree.h>
+#include <TTreeIndex.h>
 #include <TVector2.h>
-#include <cassert>
-#include <map>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-#include <unistd.h>
+
+#include "formulas.h"
+#include "TMVA/Reader.h"
 #include "MitAnalysisRunII/panda/macros/80x/auxiliar.h"
 #include "MitAnalysisRunII/panda/macros/80x/common.h"
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
-#include "formulas.h"
-#include <thread>
-#include <future>
-#include <functional>
-#include <mutex>
-#include "TMVA/Reader.h"
 
 // for sel in kZllHSR kZllHLightFlavorCR kZllHHeavyFlavorCR kZllH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/zllhAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 // Location of the PA ntuples or skims
-const TString ntupleDir = "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb1/dilepton/";
 const int nLepSel=3; // Number of lepton selections
 //const int nSelections=11; // Number of selections
 const int nPlots=50; // Max number of plots
@@ -42,7 +44,7 @@ const int nThreads=10;
 vector<float> binsZpt = {50,150,3000};
 float sf_training=1.4286;
 using namespace vhbbPlot;
-std::mutex mvaTreeMutex;
+std::mutex mvaTreeMutex, lookupMutex;
 
 struct analysisObjects {
   // Physics
@@ -95,6 +97,12 @@ struct analysisObjects {
   BTagCalibration *deepcsvCalib=0; 
   CSVHelper *cmvaReweighter=0;
   vector<double> ZjetsEWKCorr;
+  // Lookup table for NPNLO based stitching
+  TTree *lookupTree=0; TFile *lookupFile=0;
+  TTreeIndex *eventIndex=0;
+  unsigned char lookup_NPNLO;
+  unsigned int lookup_lumiNum;
+  ULong64_t lookup_eventNum;
   // MVA training tree
   TTree *mvaTree=0; TFile *mvaFile=0;
   float mva_sumEtSoft1, mva_nSoft2, mva_nSoft5, mva_nSoft10;
@@ -142,6 +150,10 @@ void zllhAnalysis(
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
   ao.binZpt = binZpt;
+  TString ntupleDir = (year==2016)?
+    "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb1/dilepton/":
+    "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb1/dilepton/";
+
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
   ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"             };
@@ -160,34 +172,68 @@ void zllhAnalysis(
   vector<pair<TString,vhbbPlot::sampleType>> samples;
   //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
   //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
-  samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
-  samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
-  samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
-  samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
-  samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );       
-  samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
-  samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
-  samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht200to400"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht400to600"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht600to800"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht800to1200"              , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht1200to2500"             , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_ht2500toinf"              , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt50to100"                , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt100to250"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );       
-  samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
-  samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
+  if(year==2016) {
+    samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
+    samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
+    samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
+    samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
+    samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );       
+    samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
+    samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
+    samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_ht200to400"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_ht400to600"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_ht600to800"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_ht800to1200"              , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_ht1200to2500"             , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_ht2500toinf"              , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_pt50to100"                , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_pt100to250"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
+    samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
+  } else if(year==2017) {
+    samples.emplace_back("Diboson_ww_CP5"                 , vhbbPlot::kWW     );
+    samples.emplace_back("Diboson_wz_CP5"                 , vhbbPlot::kVZ     );
+    samples.emplace_back("Diboson_zz_CP5"                 , vhbbPlot::kVZ     );
+    samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
+    samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
+    samples.emplace_back("SingleTop_tW_CP5"               , vhbbPlot::kTop    );
+    samples.emplace_back("SingleTop_tbarW_CP5"            , vhbbPlot::kTop    );
+    samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
+    // 0 files produced by CMS for DY1JetsToLL_M-50_LHEZpT_50-150_TuneCP5_13TeV-amcnloFXFX-pythia8, work around it
+    samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  );
+    samples.emplace_back("Z1Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  );
+    samples.emplace_back("Z1Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  );
+    samples.emplace_back("Z2Jets_ZpT50to150_CP5"          , vhbbPlot::kZjets  );
+    samples.emplace_back("Z2Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  );
+    samples.emplace_back("Z2Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  );
+    samples.emplace_back("Z2Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  );
+    samples.emplace_back("ZJets_inclNLO_CP5"              , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht100to200_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht200to400_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht400to600_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht600to800_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht800to1200_CP5"          , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht1200to2500_CP5"         , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht2500toinf_CP5"          , vhbbPlot::kZjets  );
+    samples.emplace_back("ZJets_m4_ht70to100_CP5"         , vhbbPlot::kZjets  );
+    samples.emplace_back("ZJets_m4_ht100to200_CP5"        , vhbbPlot::kZjets  );
+    samples.emplace_back("ZJets_m4_ht200to400_CP5"        , vhbbPlot::kZjets  );
+    samples.emplace_back("ZJets_m4_ht400to600_CP5"        , vhbbPlot::kZjets  );
+    samples.emplace_back("ZJets_m4_ht600toinf_CP5"        , vhbbPlot::kZjets  );
+    samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
+    samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
+  }
   if(multithread) std::random_shuffle(samples.begin(),samples.end());
   // End List of Samples
   /////////////////////////////
@@ -265,7 +311,21 @@ void zllhAnalysis(
     }
   } else throw std::runtime_error("bad ao.MVAVarType");
   
-  
+  // Load NPNLO Lookup Table for 2017
+  if(year==2017) { 
+    printf("Loading and indexing the NPNLO lookup table...\n");
+    ao.lookupFile = TFile::Open("/data/t3home000/dhsu/npnloLookup/npnloLookup_DYJetsToLL.root","read");
+    assert(ao.lookupFile);
+    ao.lookupTree = (TTree*)ao.lookupFile->Get("Events");
+    assert(ao.lookupTree);
+    ao.lookupTree->SetBranchAddress("LHE_NpNLO",&ao.lookup_NPNLO);
+    ao.lookupTree->SetBranchAddress("event",&ao.lookup_eventNum);
+    ao.lookupTree->SetBranchAddress("luminosityBlock", &ao.lookup_lumiNum);
+    ao.lookupTree->BuildIndex("event");
+    ao.eventIndex = (TTreeIndex*)ao.lookupTree->GetTreeIndex();
+    printf("Done loading and indexing the NPNLO lookup table...\n");
+  }
+
   // Declare histograms for plotting
   printf("Building plotting histograms, please wait...\n");
   ao.xmin.resize(nPlots);
@@ -547,7 +607,32 @@ void zllhAnalysis(
 
       ao.histo_QCDScaleUp  [lep][ic]->SetBinContent(nb, ao.histo_Baseline[lep][ic]->GetBinContent(nb)*systQCDScale);
       ao.histo_QCDScaleDown[lep][ic]->SetBinContent(nb, ao.histo_Baseline[lep][ic]->GetBinContent(nb)/systQCDScale);
-
+      
+      // Force positive bin yields
+      ao.histo_Baseline    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_Baseline[lep][ic]->GetBinContent(nb),1e-7f));
+      if(ic<kPlotVZbb) { 
+        ao.histo_pileupUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupUp    [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_pileupDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupDown  [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_VHCorrUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrUp    [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_VHCorrDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrDown  [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_QCDScaleUp  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleUp  [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_QCDScaleDown[lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleDown[lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_eleSFUp     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFUp     [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_eleSFDown   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFDown   [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_muSFUp      [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFUp      [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_muSFDown    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFDown    [lep][ic]->GetBinContent(nb),1e-7f));
+        for(unsigned iJES=0; iJES<NJES; iJES++) { 
+          if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+          ao.histo_jes[iJES][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_jes[iJES][lep][ic]->GetBinContent(nb),1e-7f));
+        }
+        for(unsigned iPt=0; iPt<5; iPt++)
+        for(unsigned iEta=0; iEta<3; iEta++)
+        for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+          GeneralTree::csvShift shift = gt.csvShifts[iShift];
+          if (shift==GeneralTree::csvCent) continue;
+          ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_btag[iShift][iPt][iEta][lep][ic]->GetBinContent(nb),1e-7f));
+        }
+      }
     } // all bins in histograms
   }
 
@@ -792,11 +877,13 @@ void analyzeSample(
   
   // Sample properties
   // Only use events with HT<100 for NLO pt binned samples in 2016
-  bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10"); 
-  bool isLowMassZjets = sampleName.Contains("ZJets_m10");
+  bool isLowMassZjets = sampleName.Contains("ZJets_m10") || sampleName.Contains("ZJets_m4");
   bool isBQuarkEnriched = sampleName.Contains("bQuarks");
   bool isBHadronEnriched = sampleName.Contains("bHadrons");
   bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
+  bool useNPNLOLookup = (ao.year==2017 && sampleName=="ZJets_inclNLO_CP5");
+  bool isV12jets = sampleName.Contains("Z1Jets") || sampleName.Contains("Z2Jets");
+  bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
 
   unsigned nThread = split>=0? split:0;
   // End sample properties
@@ -902,7 +989,7 @@ void analyzeSample(
       // B-enriched sample stitching
       // Let the b-enriched samples eat 90% of the XS where there are b quarks or status 2 b hadrons
       if(type==kZjets) {
-        bLoad(b["trueGenBosonPt"],ientry); // number of B hadrons at matrix element level
+        bLoad(b["trueGenBosonPt"],ientry); // LHE Z boson pT
         bLoad(b["nStatus2BHadrons"],ientry); // number of B hadrons at matrix element level
         bLoad(b["nB"],ientry); // number of B quarks
         if(isInclusiveZjets && (isBQuarkEnriched||isBHadronEnriched) && gt.trueGenBosonPt>=100) continue;
@@ -919,6 +1006,27 @@ void analyzeSample(
           if(isBHadronEnriched) stitchWeight = 0.9;
           else                  stitchWeight = 0.1;
         }
+      }
+    } else if(ao.year==2017) {
+      if(useNPNLOLookup) {
+        // Here, we perform the lookup of the NPNLO (number of NLO partons) for inclusive Z+jets
+        // This is not a quantity in Panda, we must use a lookup table. Can potentially add this to the ntuples as an extra tree later
+        bLoad(b["eventNumber"],ientry);
+        bLoad(b["trueGenBosonPt"],ientry); 
+        lookupMutex.lock();
+        int lookupBytesRead = ao.lookupTree->GetEntryWithIndex(gt.eventNumber);
+        unsigned char npnlo = ao.lookup_NPNLO;
+        lookupMutex.unlock();
+        if(lookupBytesRead>0) {
+          if(ao.debug>=3) printf("Looked up NPNLO=%d for eventNumber %llu\n", npnlo, gt.eventNumber);
+          if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
+          else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
+          else stitchWeight=1;
+        } else {
+          printf("WARNING: Could not look up NPNLO for eventNumber %llu\n", gt.eventNumber);
+        }
+      } else if(isV12jets) {
+        stitchWeight=0.8;
       }
     }
 
@@ -1354,19 +1462,16 @@ void analyzeSample(
       weight = normalizedWeight * ao.lumi * puWeight * stitchWeight; 
       
       if(type==kWjets || type==kZjets) {
-        if(useHtBinnedVJetsKFactor) {
-          bLoad(b["trueGenBosonPt"],ientry);
-          if(isNLOZjets) {
-            gt.sf_qcdV=1;
-          } else {
-            bLoad(b["lheHT"],ientry);
-            gt.sf_qcdV=qcdKFactor(type, gt.lheHT);
-          }
-          gt.sf_ewkV=ao.ZjetsEWKCorr[0]+ao.ZjetsEWKCorr[1]*
-            (TMath::Power((gt.trueGenBosonPt+ao.ZjetsEWKCorr[2]),ao.ZjetsEWKCorr[3]));
+        bLoad(b["trueGenBosonPt"],ientry);
+        gt.sf_ewkV=ao.ZjetsEWKCorr[0]+ao.ZjetsEWKCorr[1]*
+          (TMath::Power((gt.trueGenBosonPt+ao.ZjetsEWKCorr[2]),ao.ZjetsEWKCorr[3]));
+        if(isNLOZjets || isLowMassZjets) {
+          gt.sf_qcdV=1;
+        } else if(useHtBinnedVJetsKFactor) {
+          bLoad(b["lheHT"],ientry);
+          gt.sf_qcdV=qcdKFactor(type, gt.lheHT);
         } else {
           bLoad(b["sf_qcdV"],ientry);
-          bLoad(b["sf_ewkV"],ientry);
         }
         weight *= gt.sf_qcdV * gt.sf_ewkV;
       }
