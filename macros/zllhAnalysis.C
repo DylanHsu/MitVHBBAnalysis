@@ -1182,7 +1182,7 @@ void analyzeSample(
         float dR2JetFatjet=pow(gt.jotEta[iJ]-gt.fjEta,2)+pow(TVector2::Phi_mpi_pi(gt.jotPhi[iJ]-gt.fjPhi),2);
         if(dR2JetFatjet<0.64) continue;
         
-        float isojetBtag = (ao.year==2017)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+        float isojetBtag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
         if(gt.jotPt[iJES][iJ]>30) {
           isojets[iJES].push_back(iJ);
           if(isojetBtag>ao.isojetBtagCut) isojetNBtags[iJES]++;
@@ -1193,12 +1193,12 @@ void analyzeSample(
         if(iJES!=0) continue;
         int iPt=-1, iEta=-1;
         double jetAbsEta=fabs(gt.jotEta[iJ]);
-        //if      (gt.jetPt[iJ] >= 19.99 && gt.jetPt[iJ] < 30 ) iPt = 0;
-        //else if (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
-        if      (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
-        else if (gt.jetPt[iJ] >= 40    && gt.jetPt[iJ] < 60 ) iPt = 2;
-        else if (gt.jetPt[iJ] >= 60    && gt.jetPt[iJ] < 100) iPt = 3;
-        else if (gt.jetPt[iJ] >= 100                        ) iPt = 4;
+        //if      (gt.jotPt[0][iJ] >= 19.99 && gt.jotPt[0][iJ] < 30 ) iPt = 0;
+        //else if (gt.jotPt[0][iJ] >= 30    && gt.jotPt[0][iJ] < 40 ) iPt = 1;
+        if      (gt.jotPt[0][iJ] >= 30    && gt.jotPt[0][iJ] < 40 ) iPt = 1;
+        else if (gt.jotPt[0][iJ] >= 40    && gt.jotPt[0][iJ] < 60 ) iPt = 2;
+        else if (gt.jotPt[0][iJ] >= 60    && gt.jotPt[0][iJ] < 100) iPt = 3;
+        else if (gt.jotPt[0][iJ] >= 100                           ) iPt = 4;
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
@@ -1216,17 +1216,16 @@ void analyzeSample(
       for(unsigned char iJ=0; iJ<gt.nJot[0]; iJ++) {
         int iPt=-1, iEta=-1;
         double jetAbsEta=fabs(gt.jotEta[iJ]);
-        if      (gt.jetPt[iJ] >= 19.99 && gt.jetPt[iJ] < 30 ) iPt = 0;
-        else if (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
-        if      (gt.jetPt[iJ] >= 30    && gt.jetPt[iJ] < 40 ) iPt = 1;
-        else if (gt.jetPt[iJ] >= 40    && gt.jetPt[iJ] < 60 ) iPt = 2;
-        else if (gt.jetPt[iJ] >= 60    && gt.jetPt[iJ] < 100) iPt = 3;
-        else if (gt.jetPt[iJ] >= 100                        ) iPt = 4;
+        if      (gt.jotPt[0][iJ] >= 19.99 && gt.jotPt[0][iJ] < 30 ) iPt = 0;
+        else if (gt.jotPt[0][iJ] >= 30    && gt.jotPt[0][iJ] < 40 ) iPt = 1;
+        else if (gt.jotPt[0][iJ] >= 40    && gt.jotPt[0][iJ] < 60 ) iPt = 2;
+        else if (gt.jotPt[0][iJ] >= 60    && gt.jotPt[0][iJ] < 100) iPt = 3;
+        else if (gt.jotPt[0][iJ] >= 100                           ) iPt = 4;
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
         if(iPt>=0 && iEta>=0) {
-          float btag = (ao.year==2017)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+          float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
           jetPts    [iPt][iEta].push_back(gt.jotPt[0][iJ]);
           jetEtas   [iPt][iEta].push_back(gt.jotEta[iJ]);
           jetFlavors[iPt][iEta].push_back(gt.jotFlav[iJ]);
