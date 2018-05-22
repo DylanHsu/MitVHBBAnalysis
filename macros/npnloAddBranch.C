@@ -19,8 +19,10 @@ void npnloAddBranch(TString inputFileName, TString lookupFileName) {
   TBranch *branch_npnlo = events->Branch("npnlo",&npnlo);
   Long64_t nEntries = events->GetEntries();
   for(Long64_t i=0; i<nEntries; i++) {
+    events->GetEntry(i);
     int readLookup = npnloLookup->GetEntryWithIndex(lumiNumber,eventNumber);
     if(readLookup<=0) npnlo=255;
+    printf("looked up npnlo=%d for (LS,event)=(%d,%llu)\n",npnlo,lumiNumber,eventNumber);
     branch_npnlo->Fill();
   }
   events->Write();
