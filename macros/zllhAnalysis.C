@@ -1191,7 +1191,7 @@ void analyzeSample(
       if(
         gt.fjPt[0] >= 250 && 
         //gt.fjMSD_corr[0] >= 40 &&
-        gt.fjMSD_corr[0] >= 40 && // TEMPORARY DGH
+        gt.fjMSD[0] >= 40 && // TEMPORARY DGH
         fabs(gt.fjEta) < 2.4 &&
         gt.ZBosonPt >= 250 &&
         deltaPhiZHFJ >= 2.5
