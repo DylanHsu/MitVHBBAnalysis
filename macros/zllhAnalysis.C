@@ -590,29 +590,28 @@ void zllhAnalysis(
       ao.histo_QCDScaleDown[lep][ic]->SetBinContent(nb, ao.histo_Baseline[lep][ic]->GetBinContent(nb)/systQCDScale);
       
       // Force positive bin yields
-      ao.histo_Baseline    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_Baseline[lep][ic]->GetBinContent(nb),1e-7f));
-      if(ic<kPlotVZbb) { 
-        ao.histo_pileupUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupUp    [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_pileupDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupDown  [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_VHCorrUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrUp    [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_VHCorrDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrDown  [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_QCDScaleUp  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleUp  [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_QCDScaleDown[lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleDown[lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_eleSFUp     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFUp     [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_eleSFDown   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFDown   [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_muSFUp      [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFUp      [lep][ic]->GetBinContent(nb),1e-7f));
-        ao.histo_muSFDown    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFDown    [lep][ic]->GetBinContent(nb),1e-7f));
-        for(unsigned iJES=0; iJES<NJES; iJES++) { 
-          if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
-          ao.histo_jes[iJES][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_jes[iJES][lep][ic]->GetBinContent(nb),1e-7f));
-        }
-        for(unsigned iPt=0; iPt<5; iPt++)
-        for(unsigned iEta=0; iEta<3; iEta++)
-        for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-          GeneralTree::csvShift shift = gt.csvShifts[iShift];
-          if (shift==GeneralTree::csvCent) continue;
-          ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_btag[iShift][iPt][iEta][lep][ic]->GetBinContent(nb),1e-7f));
-        }
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+        ao.histo_Baseline    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_Baseline[lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_pileupUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupUp    [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_pileupDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupDown  [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_VHCorrUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrUp    [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_VHCorrDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrDown  [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_QCDScaleUp  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleUp  [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_QCDScaleDown[lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleDown[lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_eleSFUp     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFUp     [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_eleSFDown   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFDown   [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_muSFUp	   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFUp      [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_muSFDown    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFDown    [lep][ic]->GetBinContent(nb),1e-7f));
+      for(unsigned iJES=0; iJES<NJES; iJES++) { 
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        ao.histo_jes[iJES][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_jes[iJES][lep][ic]->GetBinContent(nb),1e-7f));
+      }
+      for(unsigned iPt=0; iPt<5; iPt++)
+      for(unsigned iEta=0; iEta<3; iEta++)
+      for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+        GeneralTree::csvShift shift = gt.csvShifts[iShift];
+        if (shift==GeneralTree::csvCent) continue;
+        ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_btag[iShift][iPt][iEta][lep][ic]->GetBinContent(nb),1e-7f));
       }
     } // all bins in histograms
   }
