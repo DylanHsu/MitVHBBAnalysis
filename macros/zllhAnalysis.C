@@ -265,16 +265,30 @@ void zllhAnalysis(
   if(ao.MVAVarType==1) {
     // 1 - simple pT variable
     ao.MVAVarName="Higgs p_{T} classifier [GeV]";
-    if(selection>=kZllHLightFlavorCR && selection<=kZllHPresel) {
+    if(selection==kZllHSR) {
       ao.MVAbins={100,120,140,160,180,200,250,300,350};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
-    } else if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
+    } else if(selection==kZllHFJSR) {
       ao.MVAbins={250,300,350,400,450,500,550,600};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
-    } 
-  //} else if(ao.MVAVarType==2) {
+    } else if(selection==kZllHLightFlavorCR) {
+      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667};
+      ao.MVAVarName="Subleading H(bb) CMVA";
+      ao.shapeType="lesserCMVAShape";
+    } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
+      ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+      ao.MVAVarName="Subleading H(bb) CMVA";
+      ao.shapeType="lesserCMVAShape";
+    } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
+      if(selection==kZllHHeavyFlavorFJCR)
+        ao.MVAbins={40,45,50,55,60,65,70,75,80};
+      else
+        ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
+      ao.MVAVarName="Fatjet soft drop mass [GeV]";
+      ao.shapeType="softDropMassShape";
+    }
     // 2 - multiclass BDT in SR, subleading CMVA in CR (not implemented)
   } else if(ao.MVAVarType==3) {
     // 3 - normal BDT in SR, subleading CMVA in CR
@@ -1167,7 +1181,8 @@ void analyzeSample(
     bool isBoostedCategory=false;
     float deltaPhiZHFJ=-1;
     if(ao.useBoostedCategory) { 
-      bLoad(b["fjMSD_corr"],ientry);
+      //bLoad(b["fjMSD_corr"],ientry);
+      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
@@ -1175,7 +1190,8 @@ void analyzeSample(
         deltaPhiZHFJ = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
       if(
         gt.fjPt[0] >= 250 && 
-        gt.fjMSD_corr[0] >= 40 &&
+        //gt.fjMSD_corr[0] >= 40 &&
+        gt.fjMSD_corr[0] >= 40 && // TEMPORARY DGH
         fabs(gt.fjEta) < 2.4 &&
         gt.ZBosonPt >= 250 &&
         deltaPhiZHFJ >= 2.5
@@ -1340,7 +1356,8 @@ void analyzeSample(
     if(isBoostedCategory) {
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjPhi"],ientry);
-      bLoad(b["fjMSD_corr"],ientry);
+      //bLoad(b["fjMSD_corr"],ientry);
+      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
     } else {
       bLoad(b["hbbpt_reg"],ientry);
       bLoad(b["hbbphi"],ientry);
@@ -1395,7 +1412,8 @@ void analyzeSample(
         if(isBoostedCategory) {
           bLoad(b[Form("fjPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
           bLoad(b[Form("fjPhi_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-          bLoad(b[Form("fjMSD_corr_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+          //bLoad(b[Form("fjMSD_corr_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+          bLoad(b[Form("fjMSD_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry); // TEMPORARY DGH
         } else {
           bLoad(b[Form("hbbpt_reg_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
           bLoad(b[Form("hbbphi_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
@@ -1408,9 +1426,13 @@ void analyzeSample(
         cut["lowMET"] = gt.pfmet[iJES] < 60;
       }
       if(isBoostedCategory) {
-        cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
-        cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
-        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
+        //cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
+        //cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
+        //cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
+        // TEMPORARY DGH
+        cut["mSD"     ] = gt.fjMSD[iJES] >= 40;
+        cut["mSD_SR"  ] = gt.fjMSD[iJES] >= 80 && gt.fjMSD[iJES]<150;
+        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD[iJES]<80;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
         cut["0ijb"    ] = isojetNBtags[iJES]==0;
         cut["1ijb"    ] = !cut["0ijb"];
@@ -1618,15 +1640,20 @@ void analyzeSample(
       switch(ao.MVAVarType) {
         case 1:
         default:
-          if(ao.selection==kZllHLightFlavorCR ||
-            ao.selection==kZllHHeavyFlavorCR ||
-            ao.selection==kZllH2TopCR        ||
-            ao.selection==kZllHSR            ||
-            ao.selection==kZllHPresel        )
+          if(ao.selection==kZllHSR)
             MVAVar[iJES]=gt.hbbpt_reg[iJES];
-          else
+          else if(ao.selection==kZllHFJSR)
             MVAVar[iJES]=gt.fjPt[iJES];
-          break;
+          else if(ao.selection==kZllHLightFlavorCR ||
+            ao.selection==kZllHHeavyFlavorCR       || 
+            ao.selection==kZllH2TopCR)
+            MVAVar[iJES]=bjet2btag;
+          else if(ao.selection==kZllHLightFlavorFJCR ||
+            ao.selection==kZllHHeavyFlavorFJCR       ||
+            ao.selection==kZllHTT2bFJCR              ||
+            ao.selection==kZllHTT1bFJCR)
+            //MVAVar[iJES]=gt.fjMSD_corr[iJES];
+            MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
         case 3:
           if(ao.selection==kZllHSR || ao.selection==kZllHFJSR)
             MVAVar[iJES]=bdtValue[iJES];
@@ -1638,7 +1665,8 @@ void analyzeSample(
             ao.selection==kZllHHeavyFlavorFJCR       ||
             ao.selection==kZllHTT2bFJCR              ||
             ao.selection==kZllHTT1bFJCR)
-            MVAVar[iJES]=gt.fjMSD_corr[iJES];
+            //MVAVar[iJES]=gt.fjMSD_corr[iJES];
+            MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
           break;
       }
     }
@@ -1692,7 +1720,8 @@ void analyzeSample(
     bLoad(b["nSoft2"],ientry);
     bLoad(b["nSoft5"],ientry);
     bLoad(b["nSoft10"],ientry);
-    bLoad(b["fjMSD_corr"],ientry);
+    //bLoad(b["fjMSD_corr"],ientry);
+    bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
     bLoad(b["fjPt"],ientry);
     bLoad(b["fjDoubleCSV"],ientry);
     // Lock the mutex and fill the MVA tree
@@ -1755,7 +1784,8 @@ void analyzeSample(
       else if (ao.histoNames[p]=="nSoft10"                 ) { theVar = gt.nSoft10                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
       // fatjet
-      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
+      //else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
       else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="doubleB"                 ) { theVar = gt.fjDoubleCSV             ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonLep1CosThetaStarFJ") { theVar = gt.ZBosonLep1CosThetaStarFJ; makePlot = passFullSel; }
