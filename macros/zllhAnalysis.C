@@ -44,7 +44,7 @@ const int nThreads=10;
 vector<float> binsZpt = {50,150,3000};
 float sf_training=1.4286;
 using namespace vhbbPlot;
-std::mutex mvaTreeMutex, lookupMutex;
+std::mutex mvaTreeMutex;
 
 struct analysisObjects {
   // Physics
@@ -97,12 +97,6 @@ struct analysisObjects {
   BTagCalibration *deepcsvCalib=0; 
   CSVHelper *cmvaReweighter=0;
   vector<double> ZjetsEWKCorr;
-  // Lookup table for NPNLO based stitching
-  TTree *lookupTree=0; TFile *lookupFile=0;
-  TTreeIndex *eventIndex=0;
-  unsigned char lookup_NPNLO;
-  unsigned int lookup_lumiNum;
-  ULong64_t lookup_eventNum;
   // MVA training tree
   TTree *mvaTree=0; TFile *mvaFile=0;
   float mva_sumEtSoft1, mva_nSoft2, mva_nSoft5, mva_nSoft10;
@@ -202,14 +196,15 @@ void zllhAnalysis(
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
   } else if(year==2017) {
-    samples.emplace_back("Diboson_ww_CP5"                 , vhbbPlot::kWW     );
+    //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
+    //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
+    samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
     samples.emplace_back("Diboson_wz_CP5"                 , vhbbPlot::kVZ     );
     samples.emplace_back("Diboson_zz_CP5"                 , vhbbPlot::kVZ     );
-    samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
-    samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
+    samples.emplace_back("Diboson_ww_CP5"                 , vhbbPlot::kWW     );
+    samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
     samples.emplace_back("SingleTop_tW_CP5"               , vhbbPlot::kTop    );
     samples.emplace_back("SingleTop_tbarW_CP5"            , vhbbPlot::kTop    );
-    samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
     // 0 files produced by CMS for DY1JetsToLL_M-50_LHEZpT_50-150_TuneCP5_13TeV-amcnloFXFX-pythia8, work around it
     samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("Z1Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  );
@@ -219,13 +214,6 @@ void zllhAnalysis(
     samples.emplace_back("Z2Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("Z2Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_inclNLO_CP5"              , vhbbPlot::kZjets  );
-    //samples.emplace_back("ZJets_ht100to200_CP5"           , vhbbPlot::kZjets  );
-    //samples.emplace_back("ZJets_ht200to400_CP5"           , vhbbPlot::kZjets  );
-    //samples.emplace_back("ZJets_ht400to600_CP5"           , vhbbPlot::kZjets  );
-    //samples.emplace_back("ZJets_ht600to800_CP5"           , vhbbPlot::kZjets  );
-    //samples.emplace_back("ZJets_ht800to1200_CP5"          , vhbbPlot::kZjets  );
-    //samples.emplace_back("ZJets_ht1200to2500_CP5"         , vhbbPlot::kZjets  );
-    //samples.emplace_back("ZJets_ht2500toinf_CP5"          , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_m4_ht70to100_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_m4_ht100to200_CP5"        , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_m4_ht200to400_CP5"        , vhbbPlot::kZjets  );
@@ -233,6 +221,14 @@ void zllhAnalysis(
     samples.emplace_back("ZJets_m4_ht600toinf_CP5"        , vhbbPlot::kZjets  );
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
+    // Ntuples we produce but do not currently use
+    //samples.emplace_back("ZJets_ht100to200_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht200to400_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht400to600_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht600to800_CP5"           , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht800to1200_CP5"          , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht1200to2500_CP5"         , vhbbPlot::kZjets  );
+    //samples.emplace_back("ZJets_ht2500toinf_CP5"          , vhbbPlot::kZjets  );
   }
   if(multithread) std::random_shuffle(samples.begin(),samples.end());
   // End List of Samples
@@ -311,21 +307,6 @@ void zllhAnalysis(
     }
   } else throw std::runtime_error("bad ao.MVAVarType");
   
-  // Load NPNLO Lookup Table for 2017
-  if(year==2017) { 
-    printf("Loading and indexing the NPNLO lookup table...\n");
-    ao.lookupFile = TFile::Open("/data/t3home000/dhsu/npnloLookup/npnloLookup_DYJetsToLL.root","read");
-    assert(ao.lookupFile);
-    ao.lookupTree = (TTree*)ao.lookupFile->Get("Events");
-    assert(ao.lookupTree);
-    ao.lookupTree->SetBranchAddress("LHE_NpNLO",&ao.lookup_NPNLO);
-    ao.lookupTree->SetBranchAddress("event",&ao.lookup_eventNum);
-    ao.lookupTree->SetBranchAddress("luminosityBlock", &ao.lookup_lumiNum);
-    ao.lookupTree->BuildIndex("event");
-    ao.eventIndex = (TTreeIndex*)ao.lookupTree->GetTreeIndex();
-    printf("Done loading and indexing the NPNLO lookup table...\n");
-  }
-
   // Declare histograms for plotting
   printf("Building plotting histograms, please wait...\n");
   ao.xmin.resize(nPlots);
@@ -581,7 +562,6 @@ void zllhAnalysis(
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
-  if(ao.lookupFile) ao.lookupFile->Close();
  
   // Compute some uncertainties once event by events weights are filled
   for(unsigned lep=0; lep<nLepSel; lep++) 
@@ -930,7 +910,11 @@ void analyzeSample(
   gt.is_breg        = false;
   // Branches not in GeneralTree;
   std::map<TString, void*> extraAddresses;
-  float normalizedWeight; extraAddresses["normalizedWeight"] = &normalizedWeight;
+  float normalizedWeight; unsigned char npnlo;
+  extraAddresses["normalizedWeight"] = &normalizedWeight;
+  if(useNPNLOLookup)
+    extraAddresses["npnlo"] = &npnlo;
+    
   // Map of the branches
   std::map<TString, TBranch*> b;
   // Dummy tree for a list of branch names
@@ -1012,20 +996,16 @@ void analyzeSample(
       if(useNPNLOLookup) {
         // Here, we perform the lookup of the NPNLO (number of NLO partons) for inclusive Z+jets
         // This is not a quantity in Panda, we must use a lookup table. Can potentially add this to the ntuples as an extra tree later
+        bLoad(b["npnlo"],ientry);
         bLoad(b["eventNumber"],ientry);
         bLoad(b["trueGenBosonPt"],ientry); 
-        lookupMutex.lock();
-        int lookupBytesRead = ao.lookupTree->GetEntryWithIndex(gt.eventNumber);
-        unsigned char npnlo = ao.lookup_NPNLO;
-        lookupMutex.unlock();
-        if(lookupBytesRead>0) {
-          if(ao.debug>=3) printf("Looked up NPNLO=%d for eventNumber %llu\n", npnlo, gt.eventNumber);
-          if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
-          else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
-          else stitchWeight=1;
-        } else {
-          printf("WARNING: Could not look up NPNLO for eventNumber %llu\n", gt.eventNumber);
+        if(npnlo==255) {
+          printf("WARNING: NPNLO=255 for eventtNumber %llu\n", gt.eventNumber);
+          continue;
         }
+        if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
+        else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
+        else stitchWeight=1;
       } else if(isV12jets) {
         stitchWeight=0.8;
       }
