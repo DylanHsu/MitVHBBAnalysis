@@ -156,7 +156,7 @@ void zllhAnalysis(
   ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"};
   ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                               , "boostedVeto"             };
   ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "0ijb", "Zmass"     , "bvetoFJ"             };
-  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "ZmassTight", "btagFJ"              };
+  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB", "0ijb", "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"             };
   ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR", "0ijb", "Zmass"     , "btagFJ" , "vetoTrain"};
@@ -344,7 +344,7 @@ void zllhAnalysis(
     if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
       // fatjet only plots
       ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
-      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   500; p++; 
+      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
       ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
@@ -1198,7 +1198,7 @@ void analyzeSample(
       ) isBoostedCategory=true;
       // If we consider a boosted category splitting,
       // only put boosted (resolved) events in boosted (resolved) regions
-      if(isBoostedCategory ^ (ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
+      if(isBoostedCategory ^ !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
         continue;
     }
     // Category Assignment for Plotting and Datacards
@@ -1358,6 +1358,7 @@ void analyzeSample(
       bLoad(b["fjPhi"],ientry);
       //bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+      bLoad(b["fjDoubleCSV"],ientry);
     } else {
       bLoad(b["hbbpt_reg"],ientry);
       bLoad(b["hbbphi"],ientry);
@@ -1394,13 +1395,16 @@ void analyzeSample(
     std::map<TString, bool> cut;
     for(unsigned iJES=0; iJES<NJES; iJES++) {
       if(iJES==0) {
-        cut["ZpT"        ] = gt.ZBosonPt > 50;
-        cut["ZpTFJ"      ] = gt.ZBosonPt > 250;
-        cut["dPhiZHFJ"   ] = fabs(gt.fjPhi - gt.ZBosonPhi) > 2.5;
-        cut["btag"       ] = bjet1IsTight && bjet2IsLoose;
-        cut["bveto"      ] = !bjet1IsTight && !bjet2IsLoose;
-        cut["btagFJ"     ] = gt.fjDoubleCSV > doubleBCut;
-        cut["bvetoFJ"    ] = gt.fjDoubleCSV < doubleBCut;
+        if(isBoostedCategory) {
+          cut["ZpTFJ"      ] = gt.ZBosonPt > 250;
+          cut["dPhiZHFJ"   ] = fabs(gt.fjPhi - gt.ZBosonPhi) > 2.5;
+          cut["btagFJ"     ] = gt.fjDoubleCSV > doubleBCut;
+          cut["bvetoFJ"    ] = gt.fjDoubleCSV < doubleBCut;
+        } else {
+          cut["ZpT"        ] = gt.ZBosonPt > 50;
+          cut["btag"       ] = bjet1IsTight && bjet2IsLoose;
+          cut["bveto"      ] = !bjet1IsTight && !bjet2IsLoose;
+        }
         cut["Zmass"      ] = gt.ZBosonM >= 75 && gt.ZBosonM < 105;
         cut["ZmassTight" ] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
         cut["ZmassSB"    ] = (gt.ZBosonM >= 10 && gt.ZBosonM < 75) || (gt.ZBosonM >= 105 && gt.ZBosonM < 120);
