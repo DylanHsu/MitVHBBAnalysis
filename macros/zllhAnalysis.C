@@ -1562,7 +1562,7 @@ void analyzeSample(
           weight *= ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
         } else if(ao.year==2017) {
           // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-          unsigned iShift=GeneralTree::csvCent;
+          unsigned iShift=0;
           GeneralTree::csvShift theShift = gt.csvShifts[iShift];
           for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
             unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
@@ -1575,7 +1575,9 @@ void analyzeSample(
               jetPts[iPt][iEta][iJ],
               jetBtags[iPt][iEta][iJ]
             );
-            if(reshapeFactor>0.001) weight *= reshapeFactor;
+            if(reshapeFactor<0.001) reshapeFactor=1;
+            weight *= reshapeFactor;
+            weight_btag[0][iPt][iEta] = reshapeFactor;
           }
         }
       }
@@ -1599,7 +1601,7 @@ void analyzeSample(
         }
       } else if(ao.year==2017) {
         // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-        for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+        for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
           GeneralTree::csvShift theShift = gt.csvShifts[iShift];
           for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
             unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
@@ -1612,7 +1614,7 @@ void analyzeSample(
               jetPts[iPt][iEta][iJ],
               jetBtags[iPt][iEta][iJ]
             );
-            if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] = reshapeFactor;
+            if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] = reshapeFactor/weight_btag[0][iPt][iEta];
             else                    weight_btag[iShift][iPt][iEta] = 1;
           }
         }
