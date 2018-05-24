@@ -1734,6 +1734,7 @@ void analyzeSample(
         ao.mvaInputs[nThread][12] = lepton2Pt                       ; //"lepton2Pt"     
         ao.mvaInputs[nThread][13] = deltaM                          ; //"deltaM"        
         ao.mvaInputs[nThread][14] = gt.ZBosonLep1CosThetaCS         ; //"CosThetaCS"        
+        bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
       }
       switch(ao.MVAVarType) {
         case 1:
