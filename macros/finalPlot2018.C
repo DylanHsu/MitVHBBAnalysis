@@ -115,6 +115,17 @@ void finalPlot2018(
       histos[i]=(TH1F*)inputFile->Get(Form("%s/histo%d",theHistoName.Data(),iCat));
       if(!histos[i]) continue;
       histos[i]->SetDirectory(0);
+      // Colors
+      if(i==kPlotData) {
+        histos[i]->SetMarkerColor(plotColors[i]); 
+        histos[i]->SetLineColor(plotColors[i]); 
+        histos[i]->SetMarkerStyle(20);
+      } else if(i!=kPlotWH && i!=kPlotZH) {
+        histos[i]->SetLineColor(plotColors[i]);
+        histos[i]->SetFillColor(plotColors[i]);
+        histos[i]->SetMarkerColor(plotColors[i]);
+        histos[i]->SetFillStyle(1001);
+      }
       if(iCat==kPlotGGZH) 
         histos[(int)kPlotZH]->Add(histos[i]);
       if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotWH || iCat==kPlotZH) {
@@ -131,6 +142,7 @@ void finalPlot2018(
         printf("shapes_fit_s/%s/%s\n",regionName.c_str(), plotBaseNames[iCat].Data());
         TH1F *postfitHisto = (TH1F*)mlfit->Get(Form("shapes_fit_s/%s/%s",regionName.c_str(), plotBaseNames[iCat].Data()));
         TH1F *postfitHisto_b = (TH1F*)mlfit->Get(Form("shapes_fit_b/%s/%s",regionName.c_str(), plotBaseNames[iCat].Data()));
+        if(!postfitHisto || !postfitHisto_b) continue;
         for(int nb=1; nb<=postfitHisto->GetNbinsX(); nb++) {
           histos[i]->SetBinContent(nb, postfitHisto->GetBinContent(nb));
           histos[i]->SetBinError(nb, postfitHisto->GetBinError(nb));
@@ -141,17 +153,6 @@ void finalPlot2018(
       histos[i]->SetName(plotName);
       histos[i]->SetTitle(plotTitle);
 
-      // Colors
-      if(i==kPlotData) {
-        histos[i]->SetMarkerColor(plotColors[i]); 
-        histos[i]->SetLineColor(plotColors[i]); 
-        histos[i]->SetMarkerStyle(20);
-      } else if(i!=kPlotWH && i!=kPlotZH) {
-        histos[i]->SetLineColor(plotColors[i]);
-        histos[i]->SetFillColor(plotColors[i]);
-        histos[i]->SetMarkerColor(plotColors[i]);
-        histos[i]->SetFillStyle(1001);
-      }
     }
     if(mlfit && isFitShape) {
       TH1F *postfitTotalBkg = (TH1F*)mlfit->Get(Form("shapes_fit_s/%s/total_background",regionName.c_str()));
