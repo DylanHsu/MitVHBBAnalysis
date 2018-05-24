@@ -9,7 +9,7 @@
 
 void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString histDir="", TString region="", float ymin=.8,float ymax=1.2)
 {
-  TString filename = Form("%s/hists_%s.root",histDir.Data(), region.Data());
+  TString filename = Form("%s/datacard_%s.root",histDir.Data(), region.Data());
   system(Form("mkdir -p %s/systs", histDir.Data()));
   TFile *file=TFile::Open(filename,"READ");
   vector<TString> systNames;
@@ -22,7 +22,8 @@ void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString hi
     TList *listOfHistoNames=file->GetListOfKeys();
     for(unsigned iHisto=0; iHisto<=(unsigned)listOfHistoNames->LastIndex(); iHisto++) {
       TString theHistoName = listOfHistoNames->At(iHisto)->GetName();
-      TString token = Form("%s_%s_%s_", shapeType.Data(), region.Data(), process.Data());
+      //TString token = Form("%s_%s_%s_", shapeType.Data(), region.Data(), process.Data());
+      TString token = Form("histo_%s_", process.Data());
       if(!theHistoName.BeginsWith(token) ||
          !theHistoName.EndsWith("Up")) continue;
       
@@ -32,9 +33,12 @@ void plotSystShape(TString process="WLF", TString syst="QCDrScaleWLF",TString hi
   } else systNames.push_back(syst);
   for(unsigned iSyst=0; iSyst<systNames.size(); iSyst++) {
     TString theSyst = systNames[iSyst];
-    TString histoNomName  = Form("%s_%s_%s"       , shapeType.Data(), region.Data(), process.Data()             );
-    TString histoUpName   = Form("%s_%s_%s_%sUp"  , shapeType.Data(), region.Data(), process.Data(), theSyst.Data());
-    TString histoDownName = Form("%s_%s_%s_%sDown", shapeType.Data(), region.Data(), process.Data(), theSyst.Data());
+    //TString histoNomName  = Form("%s_%s_%s"       , shapeType.Data(), region.Data(), process.Data()             );
+    //TString histoUpName   = Form("%s_%s_%s_%sUp"  , shapeType.Data(), region.Data(), process.Data(), theSyst.Data());
+    //TString histoDownName = Form("%s_%s_%s_%sDown", shapeType.Data(), region.Data(), process.Data(), theSyst.Data());
+    TString histoNomName  = Form("histo_%s"       , process.Data()             );
+    TString histoUpName   = Form("histo_%s_%sUp"  , process.Data(), theSyst.Data());
+    TString histoDownName = Form("histo_%s_%sDown", process.Data(), theSyst.Data());
     TH1F *histoNom=0, *histoUp=0,*histoDown=0;
     histoNom  = (TH1F*)file->Get(histoNomName ); assert(histoNom ); histoNom ->SetDirectory(0); 
     histoUp   = (TH1F*)file->Get(histoUpName  ); assert(histoUp  ); histoUp  ->SetDirectory(0); 
