@@ -150,11 +150,11 @@ void zllhAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","pTjj","bveto","Zmass"                               , "boostedVeto"             };
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","pTjj","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"             };
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","pTjj","btag" ,"ZmassSB"                             , "boostedVeto"             };
-  ao.cuts[kZllHSR             ] = {"ZpT","pTjj","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"};
-  ao.cuts[kZllHPresel         ] = {"ZpT","pTjj"                                               , "boostedVeto"             };
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"			       , "boostedVeto"  	   };
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"  	   };
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"			       , "boostedVeto"  	   };
+  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"	      ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"};
+  ao.cuts[kZllHPresel         ] = {"ZpT"					       , "boostedVeto"  	   };
   ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"             };
   ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"             };
@@ -1438,11 +1438,11 @@ void analyzeSample(
         cut["mSD_SR"  ] = gt.fjMSD[iJES] >= 80 && gt.fjMSD[iJES]<150;
         cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD[iJES]<80;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
-        cut["0ijb"    ] = isojetNBtags[iJES]==0;
+        cut["0ijb"    ] = isojetNBtags[iJES]==0; // not used in SR
         cut["1ijb"    ] = !cut["0ijb"];
       } else {
         cut["dPhiZH"  ] = fabs(gt.hbbphi[iJES] - gt.ZBosonPhi) > 2.5;
-        cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 0;
+        cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 100; // not used
         cut["mjj"     ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
         cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
       } 
@@ -1658,6 +1658,7 @@ void analyzeSample(
             ao.selection==kZllHTT1bFJCR)
             //MVAVar[iJES]=gt.fjMSD_corr[iJES];
             MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
+          break;
         case 3:
           if(ao.selection==kZllHSR || ao.selection==kZllHFJSR)
             MVAVar[iJES]=bdtValue[iJES];
