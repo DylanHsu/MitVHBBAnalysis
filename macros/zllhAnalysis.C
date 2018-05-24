@@ -302,9 +302,9 @@ void zllhAnalysis(
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR) {
       if(binZpt==0)
-        ao.MVAbins={-1,0,0.1,0.2,0.3,0.4,0.5,0.6};
+        ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
       else
-        ao.MVAbins={-1,0,0.1,0.2,0.3,0.4,0.6};
+        ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
