@@ -1198,7 +1198,7 @@ void analyzeSample(
       ) isBoostedCategory=true;
       // If we consider a boosted category splitting,
       // only put boosted (resolved) events in boosted (resolved) regions
-      if(isBoostedCategory ^ !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
+      if(isBoostedCategory ^ (ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
         continue;
     }
     // Category Assignment for Plotting and Datacards
