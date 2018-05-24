@@ -35,9 +35,7 @@
 
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
-// Location of the PA ntuples or skims
 const int nLepSel=3; // Number of lepton selections
-//const int nSelections=11; // Number of selections
 const int nPlots=50; // Max number of plots
 const unsigned char nBinsZpt = 2;
 const int nThreads=10;
@@ -99,15 +97,22 @@ struct analysisObjects {
   vector<double> ZjetsEWKCorr;
   // MVA training tree
   TTree *mvaTree=0; TFile *mvaFile=0;
-  float mva_sumEtSoft1, mva_nSoft2, mva_nSoft5, mva_nSoft10;
-  float mva_bjet1Pt, mva_bjet2Pt, mva_bjet1btag, mva_bjet2btag;
+  // Common vars
   float mva_ZBosonPt, mva_ZBosonM, mva_CosThetaCS, mva_CosThetaStar;
-  float mva_hbbpt, mva_hbbm, mva_dPhiZH, mva_ptBalanceZH;
-  float mva_dRBjets, mva_dEtaBjets, mva_dRZH, mva_dEtaZH;
-  float mva_nAddJet;
   float mva_weight;
   unsigned char mva_category;
   ULong64_t mva_eventNumber;
+  // Resolved only vars
+  float mva_sumEtSoft1, mva_nSoft2, mva_nSoft5, mva_nSoft10;
+  float mva_bjet1Pt, mva_bjet2Pt, mva_bjet1btag, mva_bjet2btag;
+  float mva_hbbpt, mva_hbbm, mva_dPhiZH, mva_ptBalanceZH;
+  float mva_dRBjets, mva_dEtaBjets, mva_dRZH, mva_dEtaZH;
+  float mva_nAddJet;
+  // Boosted only vars
+  float mva_nIsojet, mva_MSD, mva_Tau21SD, mva_fjPt;
+  float mva_ptBalanceZHFJ, mva_dEtaZHFJ, mva_dPhiZHFJ, mva_mTZHFJ;
+  float mva_ptBalanceL1L2, mva_dRL1L2;
+  float mva_lepton1Pt, mva_lepton2Pt, mva_lepton1Eta, mva_lepton2Eta, mva_deltaM;
   // MVA output
   vector<TMVA::Reader*> reader;
   float mvaInputs[nThreads][16];
@@ -315,7 +320,7 @@ void zllhAnalysis(
       ao.MVAVarName="Fatjet soft drop mass [GeV]";
       ao.shapeType="softDropMassShape";
     } else if(selection==kZllHFJSR) {
-      ao.MVAbins={-0.6,-0.2,0,0.2,0.3,0.6};
+      ao.MVAbins={-0.8,-0.4,0,0.4,0.8};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
@@ -339,16 +344,20 @@ void zllhAnalysis(
     ao.histoNames[p]="ZBosonPhi"               ; ao.histoTitles[p]="Z boson phi"           ; ao.nbins[p]=  32; ao.xmin[p]=     0; ao.xmax[p]= 3.142; p++; 
     ao.histoNames[p]="ZBosonM"                 ; ao.histoTitles[p]="Z boson mass"          ; ao.nbins[p]=  60; ao.xmin[p]=     0; ao.xmax[p]=   120; p++; 
     ao.histoNames[p]="ZBosonLep1CosThetaCS"    ; ao.histoTitles[p]="Z(ll) cos#theta^{CS}"  ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
-    ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
       // fatjet only plots
       ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
       ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
+      ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="deltaEtaZHFJ"            ; ao.histoTitles[p]="|#Delta#eta(Z,FJ)|"    ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
       ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="mTZHFJ"                  ; ao.histoTitles[p]="m_{T} (Z+FJ) [GeV]"    ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++; 
+      ao.histoNames[p]="dRL1L2"                  ; ao.histoTitles[p]="#DeltaR(l1,l2)"        ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
       ao.histoNames[p]="ptBalanceZHFJ"           ; ao.histoTitles[p]="|FJ pT / Z pT|"        ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="ptBalanceL1L2"           ; ao.histoTitles[p]="p_{T}^{l1}/p_{T}^{l2}" ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
       ao.histoNames[p]="nIsojet"                 ; ao.histoTitles[p]="N isojets"             ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
       ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"       ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
     } else {
@@ -365,6 +374,7 @@ void zllhAnalysis(
       ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"          ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
       ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"          ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
       ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"         ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     }
   }
   
@@ -499,12 +509,38 @@ void zllhAnalysis(
     ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
     ao.mvaTree->Branch("category"    , &ao.mva_category    ); 
     ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
+  } else if(selection==kZllHFJSR) {
+    system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHFJSR_mvaTree.root",dataCardDir.Data()),"recreate");
+    ao.mvaTree = new TTree("mvaTree","mvaTree");
+    ao.mvaTree->Branch("nIsojet"       , &ao.mva_nIsojet        ); 
+    ao.mvaTree->Branch("MSD"           , &ao.mva_MSD            ); 
+    ao.mvaTree->Branch("fjPt"          , &ao.mva_fjPt           ); 
+    ao.mvaTree->Branch("Tau21SD"       , &ao.mva_Tau21SD        ); 
+    ao.mvaTree->Branch("ptBalanceZHFJ" , &ao.mva_ptBalanceZHFJ  ); 
+    ao.mvaTree->Branch("dEtaZHFJ"      , &ao.mva_dEtaZHFJ       ); 
+    ao.mvaTree->Branch("dPhiZHFJ"      , &ao.mva_dPhiZHFJ       ); 
+    ao.mvaTree->Branch("mTZHFJ"        , &ao.mva_mTZHFJ         ); 
+    ao.mvaTree->Branch("ptBalanceL1L2" , &ao.mva_ptBalanceL1L2  ); 
+    ao.mvaTree->Branch("dRL1L2"        , &ao.mva_dRL1L2         ); 
+    ao.mvaTree->Branch("ZBosonPt"      , &ao.mva_ZBosonPt       ); 
+    ao.mvaTree->Branch("CosThetaCS"    , &ao.mva_CosThetaCS     ); 
+    ao.mvaTree->Branch("lepton1Pt"     , &ao.mva_lepton1Pt      ); 
+    ao.mvaTree->Branch("lepton2Pt"     , &ao.mva_lepton2Pt      ); 
+    ao.mvaTree->Branch("lepton1Eta"    , &ao.mva_lepton1Eta     ); 
+    ao.mvaTree->Branch("lepton2Eta"    , &ao.mva_lepton2Eta     ); 
+    ao.mvaTree->Branch("deltaM"        , &ao.mva_deltaM         ); 
+    ao.mvaTree->Branch("weight"        , &ao.mva_weight         ); 
+    ao.mvaTree->Branch("category"      , &ao.mva_category       ); 
+    ao.mvaTree->Branch("eventNumber"   , &ao.mva_eventNumber    ); 
   }
   
   // Instantiate TMVA reader
   if(MVAVarType>1) {
     TString bdtWeights="";
-    if(ao.binZpt==0)
+    if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) 
+      bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_may24.weights.xml";
+    else if(ao.binZpt==0)
       bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml";
     else if(ao.binZpt==1) 
       bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml";
@@ -514,22 +550,40 @@ void zllhAnalysis(
       // but the TMVA Reader destructor has issues
       
       // Vars are hardcoded for now, could make it more general if we care
-      theReader->AddVariable("sumEtSoft1"  , &ao.mvaInputs[nThread][ 0]);
-      theReader->AddVariable("bjet1Pt"     , &ao.mvaInputs[nThread][ 1]);
-      theReader->AddVariable("bjet2Pt"     , &ao.mvaInputs[nThread][ 2]);
-      theReader->AddVariable("bjet1btag"   , &ao.mvaInputs[nThread][ 3]);
-      theReader->AddVariable("bjet2btag"   , &ao.mvaInputs[nThread][ 4]);
-      theReader->AddVariable("ZBosonPt"    , &ao.mvaInputs[nThread][ 5]);
-      theReader->AddVariable("ZBosonM"     , &ao.mvaInputs[nThread][ 6]);
-      theReader->AddVariable("CosThetaCS"  , &ao.mvaInputs[nThread][ 7]);
-      theReader->AddVariable("CosThetaStar", &ao.mvaInputs[nThread][ 8]);
-      theReader->AddVariable("hbbpt"       , &ao.mvaInputs[nThread][ 9]);
-      theReader->AddVariable("hbbm"        , &ao.mvaInputs[nThread][10]);
-      theReader->AddVariable("dPhiZH"      , &ao.mvaInputs[nThread][11]);
-      theReader->AddVariable("ptBalanceZH" , &ao.mvaInputs[nThread][12]);
-      theReader->AddVariable("dRBjets"     , &ao.mvaInputs[nThread][13]);
-      theReader->AddVariable("dEtaBjets"   , &ao.mvaInputs[nThread][14]);
-      theReader->AddVariable("nAddJet"     , &ao.mvaInputs[nThread][15]);
+      if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+        theReader->AddVariable("nIsojet"       , &ao.mvaInputs[nThread][ 0]); 
+        theReader->AddVariable("fjPt"          , &ao.mvaInputs[nThread][ 1]); 
+        theReader->AddVariable("MSD"           , &ao.mvaInputs[nThread][ 2]); 
+        theReader->AddVariable("Tau21SD"       , &ao.mvaInputs[nThread][ 3]); 
+        theReader->AddVariable("ptBalanceZHFJ" , &ao.mvaInputs[nThread][ 4]); 
+        theReader->AddVariable("dEtaZHFJ"      , &ao.mvaInputs[nThread][ 5]); 
+        theReader->AddVariable("dPhiZHFJ"      , &ao.mvaInputs[nThread][ 6]); 
+        theReader->AddVariable("mTZHFJ"        , &ao.mvaInputs[nThread][ 7]); 
+        theReader->AddVariable("ptBalanceL1L2" , &ao.mvaInputs[nThread][ 8]); 
+        theReader->AddVariable("dRL1L2"        , &ao.mvaInputs[nThread][ 9]); 
+        theReader->AddVariable("ZBosonPt"      , &ao.mvaInputs[nThread][10]); 
+        theReader->AddVariable("lepton1Pt"     , &ao.mvaInputs[nThread][11]); 
+        theReader->AddVariable("lepton2Pt"     , &ao.mvaInputs[nThread][12]); 
+        theReader->AddVariable("deltaM"        , &ao.mvaInputs[nThread][13]); 
+        theReader->AddVariable("CosThetaCS"    , &ao.mvaInputs[nThread][14]);
+      } else {
+        theReader->AddVariable("sumEtSoft1"  , &ao.mvaInputs[nThread][ 0]);
+        theReader->AddVariable("bjet1Pt"     , &ao.mvaInputs[nThread][ 1]);
+        theReader->AddVariable("bjet2Pt"     , &ao.mvaInputs[nThread][ 2]);
+        theReader->AddVariable("bjet1btag"   , &ao.mvaInputs[nThread][ 3]);
+        theReader->AddVariable("bjet2btag"   , &ao.mvaInputs[nThread][ 4]);
+        theReader->AddVariable("ZBosonPt"    , &ao.mvaInputs[nThread][ 5]);
+        theReader->AddVariable("ZBosonM"     , &ao.mvaInputs[nThread][ 6]);
+        theReader->AddVariable("CosThetaCS"  , &ao.mvaInputs[nThread][ 7]);
+        theReader->AddVariable("CosThetaStar", &ao.mvaInputs[nThread][ 8]);
+        theReader->AddVariable("hbbpt"       , &ao.mvaInputs[nThread][ 9]);
+        theReader->AddVariable("hbbm"        , &ao.mvaInputs[nThread][10]);
+        theReader->AddVariable("dPhiZH"      , &ao.mvaInputs[nThread][11]);
+        theReader->AddVariable("ptBalanceZH" , &ao.mvaInputs[nThread][12]);
+        theReader->AddVariable("dRBjets"     , &ao.mvaInputs[nThread][13]);
+        theReader->AddVariable("dEtaBjets"   , &ao.mvaInputs[nThread][14]);
+        theReader->AddVariable("nAddJet"     , &ao.mvaInputs[nThread][15]);
+      }
       theReader->BookMVA("BDT", bdtWeights.Data());
       ao.reader.push_back(theReader);
     } else {
@@ -568,7 +622,7 @@ void zllhAnalysis(
     }
   } // End Chain Loop
   // Finish writing the MVA tree (if applicable)
-  if(selection==kZllHSR) {
+  if(selection==kZllHSR || selection==kZllHFJSR) {
     ao.mvaFile->cd();
     ao.mvaTree->Write();
     ao.mvaFile->Close();
@@ -1324,6 +1378,8 @@ void analyzeSample(
           jetBtags  [iPt][iEta].push_back(isojetBtag);
         }
       }
+      for(unsigned iJES=0; iJES<NJES; iJES++)
+        nIsojet[iJES] = isojets[iJES].size();
     } else {
       // In resolved case, need decorrelated b-tag nuisances for all the ak4 jets
       // Nominal JES scenario only
@@ -1352,13 +1408,16 @@ void analyzeSample(
     // Load branches and calculate stuff for the cuts
     bLoad(b["eventNumber"],ientry);
     bLoad(b["ZBosonPt"],ientry);
+    bLoad(b["ZBosonEta"],ientry);
     bLoad(b["ZBosonPhi"],ientry);
     if(isBoostedCategory) {
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjPhi"],ientry);
+      bLoad(b["fjEta"],ientry);
       //bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
       bLoad(b["fjDoubleCSV"],ientry);
+      bLoad(b["fjTau21SD"],ientry);
     } else {
       bLoad(b["hbbpt_reg"],ientry);
       bLoad(b["hbbphi"],ientry);
@@ -1372,8 +1431,22 @@ void analyzeSample(
     float dRBjets       = -1;
     float dEtaZH        = -1;
     float dRZH          = -1;
+    float ptBalanceL1L2 = -1;
+    float dRL1L2        = -1;
+    float mTZHFJ        = -1;
+    float dEtaZHFJ      = -1;
+    float deltaM        = -1;
+    TLorentzVector ZBosonP4, fjP4, ZHFJP4;
     if(isBoostedCategory) {
+      ZBosonP4.SetPtEtaPhiM(gt.ZBosonPt,gt.ZBosonEta,gt.ZBosonPhi,gt.ZBosonM);
+      fjP4.SetPtEtaPhiM(gt.fjPt[0],gt.fjEta,gt.fjPhi,gt.fjMSD[0]);  // TEMPORARY DGH
+      ZHFJP4 = ZBosonP4 + fjP4;
       ptBalanceZHFJ = gt.fjPt[0] / gt.ZBosonPt;
+      mTZHFJ = ZHFJP4.Mt();
+      ptBalanceL1L2 = lepton1Pt/lepton2Pt;
+      dRL1L2 = sqrt(pow(lepton1Eta-lepton2Eta,2)+pow(TVector2::Phi_mpi_pi(lepton1Phi-lepton2Phi),2));
+      dEtaZHFJ = fabs(gt.fjEta - gt.ZBosonEta);
+      deltaM = fabs(gt.ZBosonM-91.1876);
     } else {
       deltaPhiZH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi));
       ptBalanceZH   = gt.hbbpt_reg[0] /  gt.ZBosonPt;
@@ -1623,8 +1696,8 @@ void analyzeSample(
 
     // Calculate the shape variable in all JES scenarios for all the regions
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
-    for(unsigned iJES=0; iJES<NJES; iJES++) {
-      if(ao.MVAVarType>1 && (iJES==0 || ao.selection==kZllHSR || ao.selection==kZllHFJSR)) {
+    if(ao.MVAVarType>1) for(unsigned iJES=0; iJES<NJES; iJES++) {
+      if((iJES==0 && ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) || ao.selection==kZllHSR) {
         ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
         ao.mvaInputs[nThread][ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
         ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
@@ -1642,6 +1715,25 @@ void analyzeSample(
         ao.mvaInputs[nThread][14] = dEtaBjets                                               ; //"dEtaBjets"   
         ao.mvaInputs[nThread][15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
         bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
+      } else if((iJES==0 && ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) || ao.selection==kZllHFJSR) { 
+        TLorentzVector fjP4_jes, ZHFJP4_jes;
+        fjP4_jes.SetPtEtaPhiM(gt.fjPt[iJES],gt.fjEta,gt.fjPhi,gt.fjMSD[iJES]);  // TEMPORARY DGH
+        ZHFJP4_jes = ZBosonP4 + fjP4_jes;
+        ao.mvaInputs[nThread][ 0] = nIsojet[iJES]                   ; //"nIsojet"       
+        ao.mvaInputs[nThread][ 1] = gt.fjPt[iJES]                   ; //"fjPt"          
+        ao.mvaInputs[nThread][ 2] = gt.fjMSD[iJES]                  ; //"MSD"           
+        ao.mvaInputs[nThread][ 3] = gt.fjTau21SD                    ; //"Tau21SD"       
+        ao.mvaInputs[nThread][ 4] = gt.fjPt[iJES]/gt.ZBosonPt;      ; //"ptBalanceZHFJ" 
+        ao.mvaInputs[nThread][ 5] = dEtaZHFJ                        ; //"dEtaZHFJ"      
+        ao.mvaInputs[nThread][ 6] = deltaPhiZHFJ                    ; //"dPhiZHFJ"      
+        ao.mvaInputs[nThread][ 7] = ZHFJP4_jes.Mt()                 ; //"mTZHFJ"        
+        ao.mvaInputs[nThread][ 8] = ptBalanceL1L2                   ; //"ptBalanceL1L2" 
+        ao.mvaInputs[nThread][ 9] = dRL1L2                          ; //"dRL1L2"        
+        ao.mvaInputs[nThread][10] = gt.ZBosonPt                     ; //"ZBosonPt"      
+        ao.mvaInputs[nThread][11] = lepton1Pt                       ; //"lepton1Pt"     
+        ao.mvaInputs[nThread][12] = lepton2Pt                       ; //"lepton2Pt"     
+        ao.mvaInputs[nThread][13] = deltaM                          ; //"deltaM"        
+        ao.mvaInputs[nThread][14] = gt.ZBosonLep1CosThetaCS         ; //"CosThetaCS"        
       }
       switch(ao.MVAVarType) {
         case 1:
@@ -1760,6 +1852,31 @@ void analyzeSample(
       ao.mva_eventNumber  = gt.eventNumber           ;
       ao.mvaTree->Fill();
       mvaTreeMutex.unlock();
+    } else if(ao.selection==kZllHFJSR && passFullSel && category!=kPlotData) {
+      mvaTreeMutex.lock();
+      ao.mva_nIsojet       = nIsojet[0]      ; 
+      //ao.mva_MSD           = fjMSD_corr[0]  ;
+      ao.mva_fjPt          = gt.fjPt[0]      ; 
+      ao.mva_MSD           = gt.fjMSD[0]     ; // TEMPORARY DGH 
+      ao.mva_Tau21SD       = gt.fjTau21SD    ; 
+      ao.mva_ptBalanceZHFJ = ptBalanceZHFJ   ; 
+      ao.mva_dEtaZHFJ      = dEtaZHFJ        ; 
+      ao.mva_dPhiZHFJ      = deltaPhiZHFJ    ; 
+      ao.mva_mTZHFJ        = mTZHFJ          ; 
+      ao.mva_ptBalanceL1L2 = ptBalanceL1L2   ; 
+      ao.mva_dRL1L2        = dRL1L2          ; 
+      ao.mva_ZBosonPt      = gt.ZBosonPt     ;
+      ao.mva_CosThetaCS    = gt.ZBosonLep1CosThetaCS;
+      ao.mva_lepton1Pt     = lepton1Pt       ; 
+      ao.mva_lepton2Pt     = lepton2Pt       ; 
+      ao.mva_lepton1Eta    = fabs(lepton1Eta);
+      ao.mva_lepton2Eta    = fabs(lepton2Eta);
+      ao.mva_deltaM        = deltaM          ;
+      ao.mva_weight        = weight          ; 
+      ao.mva_category      = category        ;
+      ao.mva_eventNumber   = gt.eventNumber  ;
+      ao.mvaTree->Fill();
+      mvaTreeMutex.unlock();
     }
     float theVar;
     for(int p=0; p<nPlots; p++) { 
@@ -1794,10 +1911,15 @@ void analyzeSample(
       //else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
       else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="Tau21SD"                 ) { theVar = gt.fjTau21SD               ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="doubleB"                 ) { theVar = gt.fjDoubleCSV             ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonLep1CosThetaStarFJ") { theVar = gt.ZBosonLep1CosThetaStarFJ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaEtaZHFJ"            ) { theVar = dEtaZHFJ                   ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="deltaPhiZHFJ"            ) { theVar = deltaPhiZHFJ               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="mTZHFJ"                  ) { theVar = mTZHFJ                     ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dRL1L2"                  ) { theVar = dRL1L2                     ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ptBalanceZHFJ"           ) { theVar = ptBalanceZHFJ              ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="ptBalanceL1L2"           ) { theVar = ptBalanceL1L2              ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nIsojet"                 ) { theVar = nIsojet[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="isojetNBtags"            ) { theVar = isojetNBtags[0]            ; makePlot = passFullSel; }
       if(!makePlot) continue;

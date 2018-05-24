@@ -54,6 +54,23 @@ void zhbbMVA(
   
   TCut preselectionCut;
   if(isBoosted) {
+    dataloader->AddVariable("nIsojet"       , "nIsojet"       , "", 'F');
+    dataloader->AddVariable("fjPt"          , "fjPt"          , "", 'F');
+    dataloader->AddVariable("MSD"           , "MSD"           , "", 'F');
+    dataloader->AddVariable("Tau21SD"       , "Tau21SD"       , "", 'F');
+    dataloader->AddVariable("ptBalanceZHFJ" , "ptBalanceZHFJ" , "", 'F');
+    dataloader->AddVariable("dEtaZHFJ"      , "dEtaZHFJ"      , "", 'F');
+    dataloader->AddVariable("dPhiZHFJ"      , "dPhiZHFJ"      , "", 'F');
+    dataloader->AddVariable("mTZHFJ"        , "mTZHFJ"        , "", 'F');
+    dataloader->AddVariable("ptBalanceL1L2" , "ptBalanceL1L2" , "", 'F');
+    dataloader->AddVariable("dRL1L2"        , "dRL1L2"        , "", 'F');
+    dataloader->AddVariable("ZBosonPt"      , "ZBosonPt"      , "", 'F'); 
+    dataloader->AddVariable("lepton1Pt"     , "lepton1Pt"     , "", 'F');
+    dataloader->AddVariable("lepton2Pt"     , "lepton2Pt"     , "", 'F');
+    //dataloader->AddVariable("lepton1Eta"    , "lepton1Eta"    , "", 'F');
+    //dataloader->AddVariable("lepton2Eta"    , "lepton2Eta"    , "", 'F');
+    dataloader->AddVariable("deltaM"        , "deltaM"        , "", 'F');
+    dataloader->AddVariable("CosThetaCS"  ,"CosThetaCS"  , "", 'F'); 
   } else {
     dataloader->AddVariable("sumEtSoft1"  ,"sumEtSoft1"  , "", 'F'); 
     //dataloader->AddVariable("nSoft2"      ,"nSoft2"      , "", 'F'); 
@@ -83,7 +100,10 @@ void zhbbMVA(
   dataloader->PrepareTrainingAndTestTree("", prepareOptions);
   
   // for resolved
-  TString hyperparameters="!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=500:MaxDepth=2:AdaBoostBeta=0.12::nCuts=1000";
+  TString hyperparameters=
+  isBoosted?
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=400:MaxDepth=2:AdaBoostBeta=0.10:nCuts=10000":
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
 
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
   //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=Pray:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
