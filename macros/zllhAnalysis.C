@@ -1258,17 +1258,17 @@ void analyzeSample(
     //bLoad(b["pfmetphi"],ientry);
     
     // Jet B-tagging
-    bool bjet1IsTight=false, bjet2IsLoose=false;
+    bool bjet1IsLoose=false, bjet2IsLoose=false;
     float bjet1btag=-2, bjet2btag=-2;
     bLoad(b["jotCMVA"],ientry);
     bLoad(b["jotCSV"],ientry);
     if(ao.year==2016) {
-      bjet1IsTight = gt.jotCMVA[gt.hbbjtidx[0][0]] > cmvaTight;
+      bjet1IsLoose = gt.jotCMVA[gt.hbbjtidx[0][0]] > cmvaLoose;
       bjet2IsLoose = gt.jotCMVA[gt.hbbjtidx[0][1]] > cmvaLoose;
       bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
     } else if(ao.year==2017) {
-      bjet1IsTight = gt.jotCSV[gt.hbbjtidx[0][0]] > deepcsvTight;
+      bjet1IsLoose = gt.jotCSV[gt.hbbjtidx[0][0]] > deepcsvLoose;
       bjet2IsLoose = gt.jotCSV[gt.hbbjtidx[0][1]] > deepcsvLoose;
       bjet1btag = gt.jotCSV[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCSV[gt.hbbjtidx[0][1]];
@@ -1402,8 +1402,8 @@ void analyzeSample(
           cut["bvetoFJ"    ] = gt.fjDoubleCSV < doubleBCut;
         } else {
           cut["ZpT"        ] = gt.ZBosonPt > 50;
-          cut["btag"       ] = bjet1IsTight && bjet2IsLoose;
-          cut["bveto"      ] = !bjet1IsTight && !bjet2IsLoose;
+          cut["btag"       ] = bjet1IsLoose && bjet2IsLoose;
+          cut["bveto"      ] = !bjet1IsLoose && !bjet2IsLoose;
         }
         cut["Zmass"      ] = gt.ZBosonM >= 75 && gt.ZBosonM < 105;
         cut["ZmassTight" ] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
@@ -1442,7 +1442,7 @@ void analyzeSample(
         cut["1ijb"    ] = !cut["0ijb"];
       } else {
         cut["dPhiZH"  ] = fabs(gt.hbbphi[iJES] - gt.ZBosonPhi) > 2.5;
-        cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 100;
+        cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 0;
         cut["mjj"     ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
         cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
       } 
