@@ -634,6 +634,16 @@ void zllhAnalysis(
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
+  
+  // renormalize V+Glu shapes to the nominal norm
+  if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel)
+  for(unsigned lep=0; lep<nLepSel; lep++) 
+  for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()>0) {
+      ao.histo_VGluUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->Integral()/ao.histo_VGluUp  [lep][ic]->Integral());
+      ao.histo_VGluDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->Integral()/ao.histo_VGluDown[lep][ic]->Integral());
+    }
+  }
  
   // Compute some uncertainties once event by events weights are filled
   for(unsigned lep=0; lep<nLepSel; lep++) 
@@ -674,6 +684,12 @@ void zllhAnalysis(
       ao.histo_eleSFDown   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFDown   [lep][ic]->GetBinContent(nb),1e-7f));
       ao.histo_muSFUp      [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFUp      [lep][ic]->GetBinContent(nb),1e-7f));
       ao.histo_muSFDown    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFDown    [lep][ic]->GetBinContent(nb),1e-7f));
+      if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+        ao.histo_VGluUp       [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VGluUp       [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_VGluDown     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VGluDown     [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_doubleBUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_doubleBUp    [lep][ic]->GetBinContent(nb),1e-7f));
+        ao.histo_doubleBDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_doubleBDown  [lep][ic]->GetBinContent(nb),1e-7f));
+      }
       for(unsigned iJES=0; iJES<NJES; iJES++) { 
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         ao.histo_jes[iJES][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_jes[iJES][lep][ic]->GetBinContent(nb),1e-7f));
