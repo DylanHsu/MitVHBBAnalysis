@@ -552,9 +552,13 @@ void zllhAnalysis(
     if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) 
       bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_may24.weights.xml";
     else if(ao.binZpt==0)
-      bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml";
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2017.weights.xml";
     else if(ao.binZpt==1) 
-      bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml";
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1_2017.weights.xml";
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
       // This object is never deleted, which is a small memory leak,
