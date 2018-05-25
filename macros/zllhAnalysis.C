@@ -428,6 +428,10 @@ void zllhAnalysis(
     ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"      , plotBaseNames[ic].Data()));
     ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"         , plotBaseNames[ic].Data()));
     ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"       , plotBaseNames[ic].Data()));
+    ao.histo_VGluUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VGluUp"         , plotBaseNames[ic].Data()));
+    ao.histo_VGluDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VGluDown"       , plotBaseNames[ic].Data()));
+    ao.histo_doubleBUp    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_doubleBUp"      , plotBaseNames[ic].Data()));
+    ao.histo_doubleBDown  [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_doubleBDown"    , plotBaseNames[ic].Data()));
     for(unsigned iJES=0; iJES<NJES; iJES++)
       ao.histo_jes[iJES][lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(
         Form("histo_%s_%s", plotBaseNames[ic].Data(), jesName(static_cast<shiftjes>(iJES)).Data())
@@ -725,6 +729,12 @@ void zllhAnalysis(
         if (shift==GeneralTree::csvCent) continue;
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->Write();
       }
+      if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+        ao.histo_VGluUp     [lep][ic]->Write();
+        ao.histo_VGluDown   [lep][ic]->Write();
+        ao.histo_doubleBUp  [lep][ic]->Write();
+        ao.histo_doubleBDown[lep][ic]->Write();
+      }
     }
     outFileDatacards->Close();
 
@@ -889,15 +899,39 @@ void zllhAnalysis(
     
     // Normalization and double B scale factors
     if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+      // Boosted norms
       newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
       newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
       newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
-      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; // checked in kZllHFJPresel doubleB
+      // In situ measurement of doubleB SF for ZLF, Zb, eff checked in kZllHFJPresel
+      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; 
+      newcardShape << "effDoubleB_Zb   param 0.20  0.02  " << std::endl;
       newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
-      if(ao.selection==kZllHHeavyFlavorFJCR || ao.selection==kZllHTT2bFJCR || ao.selection==kZllHFJSR) 
+      newcardShape << "effSFDoubleB_Zb  extArg 1.0 [0.1,10]" << std::endl;
+      if(ao.selection==kZllHHeavyFlavorFJCR || ao.selection==kZllHTT2bFJCR || ao.selection==kZllHFJSR) {
         newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-      else if(ao.selection==kZllHLightFlavorFJCR || ao.selection==kZllHTT1bFJCR)
+        newcardShape << Form("passBB_Zb  rateParam * %s (@0*1.0) effSFDoubleB_Zb \n" ,plotBaseNames[kPlotZb].Data());
+      } else if(ao.selection==kZllHLightFlavorFJCR || ao.selection==kZllHTT1bFJCR) {
         newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
+        newcardShape << Form("failBB_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Zb,effDoubleB_Zb\n" ,plotBaseNames[kPlotZb].Data());
+      }
+      // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
+      newcardShape << Form("CMS_doubleB shape ");
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotZbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
+          newcardShape << "1.0 ";
+        else
+          newcardShape << "- ";
+      }
+      newcardShape<<Form("VjetsGluFrac shape ");
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
+          newcardShape << "1.0 ";
+        else
+          newcardShape << "- ";
+      }
     } else {
       newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
       newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
@@ -965,6 +999,8 @@ void analyzeSample(
   float weight_btag[GeneralTree::nCsvShifts][5][3];
   float weight_pileupUp = 1, weight_pileupDown = 1;
   float weight_VHCorrUp = 1, weight_VHCorrDown = 1;
+  float weight_VGluUp = 1, weight_VGluDown = 1;
+  float weight_doubleBUp = 1, weight_doubleBDown = 1;
   // Done declaring weight variables
   ////////////////////////////////////////////////////////////////////////
     
@@ -1330,15 +1366,15 @@ void analyzeSample(
     bLoad(b["jotCMVA"],ientry);
     bLoad(b["jotCSV"],ientry);
     if(ao.year==2016) {
-      bjet1IsLoose = gt.jotCMVA[gt.hbbjtidx[0][0]] > cmvaLoose;
-      bjet2IsLoose = gt.jotCMVA[gt.hbbjtidx[0][1]] > cmvaLoose;
       bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
+      bjet1IsLoose = bjet1btag > cmvaLoose;
+      bjet2IsLoose = bjet2btag > cmvaLoose;
     } else if(ao.year==2017) {
-      bjet1IsLoose = gt.jotCSV[gt.hbbjtidx[0][0]] > deepcsvLoose;
-      bjet2IsLoose = gt.jotCSV[gt.hbbjtidx[0][1]] > deepcsvLoose;
-      bjet1btag = gt.jotCSV[gt.hbbjtidx[0][0]];
-      bjet2btag = gt.jotCSV[gt.hbbjtidx[0][1]];
+      bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
+      bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
+      bjet1IsLoose = bjet1btag > deepcsvLoose;
+      bjet2IsLoose = bjet2btag > deepcsvLoose;
     }
 
     for(unsigned iJES=0; iJES<NJES; iJES++) {
@@ -1636,6 +1672,7 @@ void analyzeSample(
         weight_VHCorrUp = recorrect_vhEWKUp/recorrect_vhEWK;
         weight_VHCorrDown = recorrect_vhEWKDown/recorrect_vhEWK;
       }
+      
       //bLoad(b["sf_cmvaWeight_Cent"],ientry);
       //weight *= gt.sf_csvWeights[GeneralTree::csvCent];
       // Reweight the events here if they were not used for training
@@ -1669,40 +1706,71 @@ void analyzeSample(
       }
       if((ao.selection==kZllHSR || ao.selection==kZllHFJSR) && ao.MVAVarType>1)
         weight *= sf_training;
-    }
     
-    for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-      if(ao.year==2016) {
-        // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
-        double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-        double centralWeight = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
-        for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-          GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-          weight_btag[iShift][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(
-            jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
-            theShift,
-            cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
-          )/centralWeight; 
-          if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
-        }
-      } else if(ao.year==2017) {
-        // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-        for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
-          GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-          for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
-            unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
-            BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
-              (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
-            float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
-              GeneralTree::csvShiftName(theShift).Data(),
-              flav,
-              jetEtas[iPt][iEta][iJ], 
-              jetPts[iPt][iEta][iJ],
-              jetBtags[iPt][iEta][iJ]
-            );
-            if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] = reshapeFactor/weight_btag[0][iPt][iEta];
-            else                    weight_btag[iShift][iPt][iEta] = 1;
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        if(ao.year==2016) {
+          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
+          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
+          double centralWeight = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+          for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+            weight_btag[iShift][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(
+              jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
+              theShift,
+              cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
+            )/centralWeight; 
+            if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
           }
+        } else if(ao.year==2017) {
+          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
+          for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
+            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+            for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
+              unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
+              BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
+                (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
+              float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
+                GeneralTree::csvShiftName(theShift).Data(),
+                flav,
+                jetEtas[iPt][iEta][iJ], 
+                jetPts[iPt][iEta][iJ],
+                jetBtags[iPt][iEta][iJ]
+              );
+              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] = reshapeFactor/weight_btag[0][iPt][iEta];
+              else                    weight_btag[iShift][iPt][iEta] = 1;
+            }
+          }
+        }
+      }
+      if(ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) { // Boosted only weighting
+      bLoad(b["fjHighestPtGen"],ientry);
+        if(gt.fjHighestPtGen==21 && (
+          category==kPlotWbb || category==kPlotWb || category==kPlotWLF ||
+          category==kPlotZbb || category==kPlotZb || category==kPlotZLF)
+        ) { weight_VGluUp *= 1.2; weight_VGluDown *= 0.8; }
+        
+        bLoad(b["fjPt"],ientry);
+        // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Boosted_event_topologies
+        if(category==kPlotZH || category==kPlotGGZH || category==kPlotZbb) {
+          bool passBB = ao.selection==kZllHFJSR || ao.selection==kZllHHeavyFlavorFJCR || ao.selection==kZllHTT2bFJCR;
+          float sf,sfUp,sfDown;
+          float eff = 0.5; // empirical 
+          if     (gt.fjPt[0]<350) { sf=0.92; sfUp=0.95; sfDown=0.89;}
+          else if(gt.fjPt[0]<430) { sf=1.01; sfUp=1.04; sfDown=0.97;}
+          else                    { sf=0.92; sfUp=0.95; sfDown=0.87;}
+          float kBB,kBBUp,kBBDown; // effect of BB SF on the yield (depends on efficiency and pass/fail)
+          if(passBB) {
+            kBB     = sf;
+            kBBUp   = sfUp;
+            kBBDown = sfDown;
+          } else {
+            kBB     = (1.-eff*sf    )/(1.-eff);
+            kBBUp   = (1.-eff*sfUp  )/(1.-eff);
+            kBBDown = (1.-eff*sfDown)/(1.-eff);
+          }
+          weight *= kBB;
+          weight_doubleBUp   = kBBUp  /kBB;
+          weight_doubleBDown = kBBDown/kBB;
         }
       }
     }
@@ -1814,6 +1882,12 @@ void analyzeSample(
           GeneralTree::csvShift shift = gt.csvShifts[iShift];
           if (shift==GeneralTree::csvCent) continue;
           ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(MVAVar[0], weight*weight_btag[iShift][iPt][iEta]);
+        }
+        if(ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) { // Boosted only weighting
+          ao.histo_VGluUp      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VGluUp);
+          ao.histo_VGluDown    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VGluDown);
+          ao.histo_doubleBUp   [typeLepSel][category]->Fill(MVAVar[0], weight*weight_doubleBUp);
+          ao.histo_doubleBDown [typeLepSel][category]->Fill(MVAVar[0], weight*weight_doubleBDown);
         }
       }
       for(unsigned iJES=0; iJES<NJES; iJES++) {
