@@ -886,11 +886,24 @@ void zllhAnalysis(
       newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
     }
     newcardShape<<std::endl;
-
-    newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
-    newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
-    newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
-    newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
+    
+    // Normalization and double B scale factors
+    if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
+      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
+      newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
+      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; // checked in kZllHFJPresel doubleB
+      newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
+      if(ao.selection==kZllHHeavyFlavorFJCR || ao.selection==kZllHTT2bFJCR || ao.selection==kZllHFJSR) 
+        newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
+      else if(ao.selection==kZllHLightFlavorFJCR || ao.selection==kZllHTT1bFJCR)
+        newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
+    } else {
+      newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
+      newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
+      newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
+      newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
+    }
 
     newcardShape << Form("* autoMCStats 1\n");
     newcardShape.close();
