@@ -33,7 +33,7 @@
 
 // for sel in kZllHSR kZllHLightFlavorCR kZllHHeavyFlavorCR kZllH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/zllhAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
 
-const bool useHtBinnedVJetsKFactor=true;
+const bool useHtBinnedVJetsKFactor=false;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
 const int nPlots=50; // Max number of plots
@@ -91,6 +91,7 @@ struct analysisObjects {
   TH1F *histo_doubleBDown                        [nLepSel][nPlotCategories];
   // Corrections storage
   TH1D *puWeights=0, *puWeightsUp=0, *puWeightsDown=0;
+  TH2D *kfactors_ZJets=0;
   BTagCalibrationReader *deepcsvSFs=0; 
   BTagCalibration *deepcsvCalib=0; 
   CSVHelper *cmvaReweighter=0;
@@ -481,6 +482,12 @@ void zllhAnalysis(
     
   }
   ao.ZjetsEWKCorr = EWKCorrPars(kZjets);
+  if(!useHtBinnedVJetsKFactor) {
+    TFile *kfactorsFile = TFile::Open("PandaAnalysis/data/higgs/hbb_kfactors.root","read");
+    ao.kfactors_ZJets = (TH2D*) kfactorsFile->Get("h_ZJets");
+    ao.kfactors_ZJets->SetDirectory(0);
+    kfactorsFile->Close();
+  }
 
   // Done loading offline corrections
   ////////////////////////////////////////////////////////////////////////
@@ -1615,7 +1622,12 @@ void analyzeSample(
           bLoad(b["lheHT"],ientry);
           gt.sf_qcdV=qcdKFactor(type, gt.lheHT);
         } else {
-          bLoad(b["sf_qcdV"],ientry);
+          bLoad(b["lheHT"],ientry);
+          bLoad(b["trueGenBosonPt"],ientry);
+          gt.sf_qcdV=ao.kfactors_ZJets->GetBinContent(ao.kfactors_ZJets->FindBin(
+            TMath::Min(1.39,gt.trueGenBosonPt/1000.),
+            TMath::Min(1.39,gt.lheHT         /1000.)
+          ));
         }
         weight *= gt.sf_qcdV * gt.sf_ewkV;
       }
@@ -1758,7 +1770,7 @@ void analyzeSample(
           }
         }
       }
-      if(ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) { // Boosted only weighting
+      if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) { // Boosted only weighting
       bLoad(b["fjHighestPtGen"],ientry);
         if(gt.fjHighestPtGen==21 && (
           category==kPlotWbb || category==kPlotWb || category==kPlotWLF ||
@@ -1899,7 +1911,7 @@ void analyzeSample(
           if (shift==GeneralTree::csvCent) continue;
           ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(MVAVar[0], weight*weight_btag[iShift][iPt][iEta]);
         }
-        if(ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) { // Boosted only weighting
+        if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) { // Boosted only weighting
           ao.histo_VGluUp      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VGluUp);
           ao.histo_VGluDown    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VGluDown);
           ao.histo_doubleBUp   [typeLepSel][category]->Fill(MVAVar[0], weight*weight_doubleBUp);
