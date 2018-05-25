@@ -641,7 +641,7 @@ void zllhAnalysis(
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
-  
+
   // renormalize V+Glu shapes to the nominal norm
   if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel)
   for(unsigned lep=0; lep<nLepSel; lep++) 
@@ -743,6 +743,15 @@ void zllhAnalysis(
       ao.histo_muSFDown    [lep][ic]->Write();
       for(unsigned iJES=0; iJES<NJES; iJES++) { 
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        // Special symmetrization procedure
+        TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
+        if(shiftName.EndsWith("Down")){
+          for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
+            double diff = ao.histo_jes[iJES-1][lep][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            double mean = ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            ao.histo_jes[iJES][lep][ic]->SetBinContent(nb,mean-diff);
+          }
+        }
         ao.histo_jes[iJES][lep][ic]->Write();
       }
       for(unsigned iPt=0; iPt<5; iPt++)
@@ -750,6 +759,15 @@ void zllhAnalysis(
       for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
         GeneralTree::csvShift shift = gt.csvShifts[iShift];
         if (shift==GeneralTree::csvCent) continue;
+        // Special symmetrization procedure
+        TString shiftName(btagShiftName(shift));
+        if(shiftName.EndsWith("Down")){
+          for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
+            double diff = ao.histo_btag[iShift-1][iPt][iEta][lep][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            double mean = ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb,mean-diff);
+          }
+        }
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->Write();
       }
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
@@ -919,7 +937,7 @@ void zllhAnalysis(
       newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
     }
     newcardShape<<std::endl;
-    
+
     // Normalization and double B scale factors
     if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
       // Boosted norms
