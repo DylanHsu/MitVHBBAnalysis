@@ -31,8 +31,8 @@
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
 
-// for sel in kZllHSR kZllHLightFlavorCR kZllHHeavyFlavorCR kZllH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/zllhAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
-
+TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb1/dilepton";
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/dilepton";
 const bool useHtBinnedVJetsKFactor=false;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
@@ -40,6 +40,7 @@ const int nPlots=50; // Max number of plots
 const unsigned char nBinsZpt = 2;
 const int nThreads=10;
 vector<float> binsZpt = {50,150,3000};
+vector<TString> leptonStrings={"mm","ee","em"};
 float sf_training=1.4286;
 using namespace vhbbPlot;
 std::mutex mvaTreeMutex;
@@ -121,6 +122,7 @@ struct analysisObjects {
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
+void writeDatacards(analysisObjects &ao, TString dataCardDir);
 
 // useBoostedCategory:
 //   False means you will use all possible events to do the resolved Z(ll)H(bb)
@@ -131,6 +133,7 @@ void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, ana
 //   3 - simple BDT
 // binZpt:
 //   must be less than nBinsZpt, negative turns off Zpt binning
+// batchSampleName, type:
 
 void zllhAnalysis(
   TString dataCardDir,
@@ -140,7 +143,9 @@ void zllhAnalysis(
   char binZpt=-1, 
   unsigned year=2016,
   unsigned debug=0,
-  bool multithread=false
+  bool multithread=false,
+  TString batchSampleName="",
+  vhbbPlot::sampleType batchSampleType=vhbbPlot::kData
 ) {
   struct analysisObjects ao;
   ao.MVAVarType=MVAVarType;
@@ -150,9 +155,7 @@ void zllhAnalysis(
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
   ao.binZpt = binZpt;
-  TString ntupleDir = (year==2016)?
-    "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb1/dilepton/":
-    "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb1/dilepton/";
+  TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
@@ -170,9 +173,16 @@ void zllhAnalysis(
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
-  //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
-  //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
-  if(year==2016) {
+  
+  bool isBatchMode= (batchSampleName!="");
+  TString batchSuffix="";
+  if(isBatchMode) {
+    // Handle batch mode for Condor
+    //multithread=false; // force single threading
+    dataCardDir = dataCardDir + "/split/"; // write output in a subdirectory
+    batchSuffix = "_"+batchSampleName; // add a suffix to the output with this sample's name
+    samples.emplace_back(batchSampleName, batchSampleType);
+  } else if(year==2016) {
     samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
     samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
     samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
@@ -266,7 +276,6 @@ void zllhAnalysis(
   if(binZpt>=0 && binZpt<nBinsZpt && 
     !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
     binZptSuffix = Form("_ZptBin%d",binZpt);
-  vector<TString> leptonStrings={"mm","ee","em"};
   // Define the shape variable
   if(ao.MVAVarType==1) {
     // 1 - simple pT variable
@@ -494,7 +503,8 @@ void zllhAnalysis(
   // Setup MVA training tree if applicable (Not implemented yet for boosted)
   if(selection==kZllHSR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
-    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHSR_mvaTree%s.root",dataCardDir.Data(),binZptSuffix.Data()),"recreate");
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHSR_mvaTree%s%s.root",
+      dataCardDir.Data(),binZptSuffix.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("sumEtSoft1"  , &ao.mva_sumEtSoft1  ); 
     ao.mvaTree->Branch("nSoft2"      , &ao.mva_nSoft2      ); 
@@ -522,7 +532,8 @@ void zllhAnalysis(
     ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
   } else if(selection==kZllHFJSR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
-    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHFJSR_mvaTree.root",dataCardDir.Data()),"recreate");
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHFJSR_mvaTree%s.root",
+      dataCardDir.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("nIsojet"       , &ao.mva_nIsojet        ); 
     ao.mvaTree->Branch("MSD"           , &ao.mva_MSD            ); 
@@ -612,7 +623,7 @@ void zllhAnalysis(
   vector<TFile*> files;
   for(auto const &sample: samples) {
     printf("### Opening sample %s ###\n",sample.first.Data());
-    TString inputFileName = Form("%s%s.root",ntupleDir.Data(),sample.first.Data());
+    TString inputFileName = Form("%s/%s.root",ntupleDir.Data(),sample.first.Data());
     
     if(multithread) {
       // Spawn nThreads threads to process that many identical pointers to this file
@@ -714,19 +725,21 @@ void zllhAnalysis(
       }
     } // all bins in histograms
   }
-
-  // Writing datacards  
+  
+  // Write shape histograms to file
   for(unsigned lep=0; lep<nLepSel; lep++) {
-    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; // avoiding unnecessary histograms
+    // avoiding unnecessary histograms
+    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; 
 
     char outFileDatacardsName[200];
     sprintf(
       outFileDatacardsName,
-      "MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.root",
+      "MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s%s.root",
       dataCardDir.Data(),
       leptonStrings[lep].Data(),
       selectionNames[selection].Data(),
-      binZptSuffix.Data()
+      binZptSuffix.Data(),
+      batchSuffix.Data()
     );
     TFile* outFileDatacards = new TFile(outFileDatacardsName,"recreate");
     outFileDatacards->cd();
@@ -782,224 +795,23 @@ void zllhAnalysis(
       }
     }
     outFileDatacards->Close();
-
-    ofstream newcardShape;
-    newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.txt",
-                      dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data()));
-    newcardShape << Form("imax * number of channels\n");
-    newcardShape << Form("jmax * number of background minus 1\n");
-    newcardShape << Form("kmax * number of nuisance parameters\n");
-
-    newcardShape << Form("shapes      *   * datacard_Z%sH%s%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data());
-    newcardShape << Form("shapes data_obs * datacard_Z%sH%s%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data(),plotBaseNames[kPlotData].Data());
-
-    newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][kPlotData]->GetSumOfWeights());
-
-    newcardShape << Form("bin   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("chZ%sH%s  ",leptonStrings[lep].Data(),selectionNames[selection].Data());
-    newcardShape << Form("\n");
-
-    newcardShape << Form("process   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("%s  ",plotBaseNames[ic].Data());
-    newcardShape << Form("\n");
- 
-    newcardShape << Form("process  ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
-        continue;
-      if(ic==kPlotZH)
-        newcardShape << Form("%d  ",0);
-      else if(ic==kPlotGGZH)
-        newcardShape << Form("%d  ",-1);
-      else
-        newcardShape << Form("%d  ",ic);
-    }
-    newcardShape << Form("\n");
-
-    newcardShape << Form("rate  ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("%f  ",ao.histo_Baseline[lep][ic]->GetSumOfWeights());
-    newcardShape << Form("\n");
-
-    newcardShape << Form("lumi_13TeV    lnN     ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-       newcardShape << Form("%6.3f ",1.025);
-    newcardShape << Form("\n");
-
-    newcardShape << Form("pileup    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
-    newcardShape << Form("\n");
-
-    newcardShape << Form("VHCorr    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
-        continue;
-      if(ic!=kPlotZH && ic!=kPlotGGZH) 
-        newcardShape << Form("-  ");
-      else
-        newcardShape << Form("1.0  ");
-    }
-    newcardShape << Form("\n");
-
-    newcardShape << Form("eleSF    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
-    newcardShape << Form("\n");
-
-    newcardShape << Form("muSF    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
-    newcardShape << Form("\n");
-
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-      newcardShape << Form("QCDScale%s    shape   ",plotBaseNames[ic].Data());
-      for(unsigned ic2=kPlotVZbb; ic2!=nPlotCategories; ic2++) {
-        if(ao.histo_Baseline[lep][ic2]->GetSumOfWeights() > 0) {
-          if(ic==ic2) newcardShape << Form("1.0  ");
-          else        newcardShape << Form("-  ");
-        }
-      }
-      newcardShape << Form("\n");
-    }
-
-    for(unsigned iJES=0; iJES<NJES; iJES++) {
-      if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
-      TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
-      if(!shiftName.EndsWith("Up")) continue;
-      TString nuisanceName = shiftName(0,shiftName.Length()-2);
-      newcardShape << Form("%s    shape   ",nuisanceName.Data());
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-        newcardShape << Form("1.0  ");
-      newcardShape << Form("\n");
-    }
-
-    for(unsigned iPt=0; iPt<5; iPt++)
-    for(unsigned iEta=0; iEta<3; iEta++)
-    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-      GeneralTree::csvShift shift = gt.csvShifts[iShift];
-      if (shift==GeneralTree::csvCent) continue;
-      // Get the name of the nuisance only from the Up variations
-      TString shiftName(btagShiftName(shift));
-      if(!shiftName.EndsWith("Up")) continue;
-      TString nuisanceName = shiftName(0,shiftName.Length()-2);
-      newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && selection==kZllH2TopCR) 
-          newcardShape << Form("-  ");
-        else
-          newcardShape << Form("1.0  ");
-      }
-      newcardShape << Form("\n");
-    }
-
-    newcardShape<<"pdf_qqbar lnN "; 
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
-        newcardShape<<pdfAcceptUncs[ic]<<" ";
-      else newcardShape<<"- ";
-    } 
-    newcardShape<<std::endl;
-
-    newcardShape<<"pdf_gg lnN ";
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      if(ic==kPlotTop||ic==kPlotTT|ic==kPlotGGZH)
-        newcardShape<<pdfAcceptUncs[ic]<<" "; 
-      else
-        newcardShape<<"- ";
-    }
-    newcardShape<<std::endl;
-
-    newcardShape<<Form("CMS_VH_TopNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
-    }
-    newcardShape<<std::endl;
-    
-    newcardShape<<Form("CMS_VH_VVNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
-    }
-    newcardShape<<std::endl;
-
-    // Normalization and double B scale factors
-    if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
-      // Boosted norms
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
-      newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
-      // In situ measurement of doubleB SF for ZLF, Zb, eff checked in kZllHFJPresel
-      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; 
-      newcardShape << "effDoubleB_Zb   param 0.20  0.02  " << std::endl;
-      newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
-      newcardShape << "effSFDoubleB_Zb  extArg 1.0 [0.1,10]" << std::endl;
-      if(ao.selection==kZllHHeavyFlavorFJCR || ao.selection==kZllHTT2bFJCR || ao.selection==kZllHFJSR) {
-        newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("passBB_Zb  rateParam * %s (@0*1.0) effSFDoubleB_Zb \n" ,plotBaseNames[kPlotZb].Data());
-      } else if(ao.selection==kZllHLightFlavorFJCR || ao.selection==kZllHTT1bFJCR) {
-        newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("failBB_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Zb,effDoubleB_Zb\n" ,plotBaseNames[kPlotZb].Data());
-      }
-      // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
-      newcardShape << Form("CMS_doubleB shape ");
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if(ic==kPlotZbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
-          newcardShape << "1.0 ";
-        else
-          newcardShape << "- ";
-      }
-      newcardShape<<Form("VjetsGluFrac shape ");
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if(ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
-          newcardShape << "1.0 ";
-        else
-          newcardShape << "- ";
-      }
-    } else {
-      newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
-      newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
-      newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
-      newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
-    }
-
-    newcardShape << Form("* autoMCStats 1\n");
-    newcardShape.close();
   }
-  
+
+  // Writing datacards - need to move this to separate function
+  if(!isBatchMode)
+    writeDatacards(ao, dataCardDir);
+
   // Write plots
   char regionName[128];
   for(unsigned lep=0; lep<nLepSel; lep++) {
     sprintf(regionName, "Z%sH%s",leptonStrings[lep].Data(),selectionNames[selection].Data());
-    TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s%s.root",dataCardDir.Data(),regionName,binZptSuffix.Data());
+    TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s%s%s.root",dataCardDir.Data(),regionName,binZptSuffix.Data(),batchSuffix.Data());
     TFile *outputPlots = new TFile(plotFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
     for(int p=0; p<nPlots; p++) {
       if(ao.histoNames[p]=="") continue;
       TDirectory *plotDir = outputPlots->mkdir(ao.histoNames[p]); plotDir->cd();
       for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) 
         ao.histos[lep][p][ic]->Write(Form("histo%d",ic));
-      
     }
     outputPlots->Close();
   }
@@ -2070,4 +1882,307 @@ void analyzeSample(
     }
        
   } // End Event Loop
+}
+
+void writeDatacards(analysisObjects &ao, TString dataCardDir) {  
+  TString binZptSuffix="";
+  if(ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
+    !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
+    binZptSuffix = Form("_ZptBin%d",ao.binZpt);
+
+  for(unsigned lep=0; lep<nLepSel; lep++) {
+    // avoiding unnecessary histograms
+    if(leptonStrings[lep]=="em" && !(ao.selection==kZllHSR||ao.selection==kZllHFJSR)) continue; 
+    ofstream newcardShape;
+    newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.txt",
+                      dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[ao.selection].Data(),binZptSuffix.Data()));
+    newcardShape << Form("imax * number of channels\n");
+    newcardShape << Form("jmax * number of background minus 1\n");
+    newcardShape << Form("kmax * number of nuisance parameters\n");
+
+    newcardShape << Form("shapes      *   * datacard_Z%sH%s%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[ao.selection].Data(),binZptSuffix.Data());
+    newcardShape << Form("shapes data_obs * datacard_Z%sH%s%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[ao.selection].Data(),binZptSuffix.Data(),plotBaseNames[kPlotData].Data());
+
+    newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][kPlotData]->GetSumOfWeights());
+
+    newcardShape << Form("bin   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("chZ%sH%s  ",leptonStrings[lep].Data(),selectionNames[ao.selection].Data());
+    newcardShape << Form("\n");
+
+    newcardShape << Form("process   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("%s  ",plotBaseNames[ic].Data());
+    newcardShape << Form("\n");
+ 
+    newcardShape << Form("process  ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
+        continue;
+      if(ic==kPlotZH)
+        newcardShape << Form("%d  ",0);
+      else if(ic==kPlotGGZH)
+        newcardShape << Form("%d  ",-1);
+      else
+        newcardShape << Form("%d  ",ic);
+    }
+    newcardShape << Form("\n");
+
+    newcardShape << Form("rate  ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("%f  ",ao.histo_Baseline[lep][ic]->GetSumOfWeights());
+    newcardShape << Form("\n");
+
+    newcardShape << Form("lumi_13TeV    lnN     ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+       newcardShape << Form("%6.3f ",1.025);
+    newcardShape << Form("\n");
+
+    newcardShape << Form("pileup    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    newcardShape << Form("VHCorr    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
+        continue;
+      if(ic!=kPlotZH && ic!=kPlotGGZH) 
+        newcardShape << Form("-  ");
+      else
+        newcardShape << Form("1.0  ");
+    }
+    newcardShape << Form("\n");
+
+    newcardShape << Form("eleSF    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    newcardShape << Form("muSF    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+      newcardShape << Form("QCDScale%s    shape   ",plotBaseNames[ic].Data());
+      for(unsigned ic2=kPlotVZbb; ic2!=nPlotCategories; ic2++) {
+        if(ao.histo_Baseline[lep][ic2]->GetSumOfWeights() > 0) {
+          if(ic==ic2) newcardShape << Form("1.0  ");
+          else        newcardShape << Form("-  ");
+        }
+      }
+      newcardShape << Form("\n");
+    }
+
+    for(unsigned iJES=0; iJES<NJES; iJES++) {
+      if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+      TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
+      if(!shiftName.EndsWith("Up")) continue;
+      TString nuisanceName = shiftName(0,shiftName.Length()-2);
+      newcardShape << Form("%s    shape   ",nuisanceName.Data());
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+        newcardShape << Form("1.0  ");
+      newcardShape << Form("\n");
+    }
+
+    GeneralTree gt; 
+    for(unsigned iPt=0; iPt<5; iPt++)
+    for(unsigned iEta=0; iEta<3; iEta++)
+    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+      GeneralTree::csvShift shift = gt.csvShifts[iShift];
+      if (shift==GeneralTree::csvCent) continue;
+      // Get the name of the nuisance only from the Up variations
+      TString shiftName(btagShiftName(shift));
+      if(!shiftName.EndsWith("Up")) continue;
+      TString nuisanceName = shiftName(0,shiftName.Length()-2);
+      newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && ao.selection==kZllH2TopCR) 
+          newcardShape << Form("-  ");
+        else
+          newcardShape << Form("1.0  ");
+      }
+      newcardShape << Form("\n");
+    }
+
+    newcardShape<<"pdf_qqbar lnN "; 
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
+        newcardShape<<pdfAcceptUncs[ic]<<" ";
+      else newcardShape<<"- ";
+    } 
+    newcardShape<<std::endl;
+
+    newcardShape<<"pdf_gg lnN ";
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      if(ic==kPlotTop||ic==kPlotTT|ic==kPlotGGZH)
+        newcardShape<<pdfAcceptUncs[ic]<<" "; 
+      else
+        newcardShape<<"- ";
+    }
+    newcardShape<<std::endl;
+
+    newcardShape<<Form("CMS_VH_TopNorm lnN ");
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
+    }
+    newcardShape<<std::endl;
+    
+    newcardShape<<Form("CMS_VH_VVNorm lnN ");
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
+    }
+    newcardShape<<std::endl;
+
+    // Normalization and double B scale factors
+    if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+      // Boosted norms
+      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
+      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
+      newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
+      // In situ measurement of doubleB SF for ZLF, Zb, eff checked in kZllHFJPresel
+      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; 
+      newcardShape << "effDoubleB_Zb   param 0.20  0.02  " << std::endl;
+      newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
+      newcardShape << "effSFDoubleB_Zb  extArg 1.0 [0.1,10]" << std::endl;
+      if(ao.selection==kZllHHeavyFlavorFJCR || ao.selection==kZllHTT2bFJCR || ao.selection==kZllHFJSR) {
+        newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
+        newcardShape << Form("passBB_Zb  rateParam * %s (@0*1.0) effSFDoubleB_Zb \n" ,plotBaseNames[kPlotZb].Data());
+      } else if(ao.selection==kZllHLightFlavorFJCR || ao.selection==kZllHTT1bFJCR) {
+        newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
+        newcardShape << Form("failBB_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Zb,effDoubleB_Zb\n" ,plotBaseNames[kPlotZb].Data());
+      }
+      // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
+      newcardShape << Form("CMS_doubleB shape ");
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotZbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
+          newcardShape << "1.0 ";
+        else
+          newcardShape << "- ";
+      }
+      newcardShape<<Form("VjetsGluFrac shape ");
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
+          newcardShape << "1.0 ";
+        else
+          newcardShape << "- ";
+      }
+    } else {
+      newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
+      newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
+      newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
+      newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
+    }
+
+    newcardShape << Form("* autoMCStats 1\n");
+    newcardShape.close();
+  }
+}
+
+
+void datacardsFromHistograms(
+  TString dataCardDir,
+  vhbbPlot::selectionType selection,
+  bool useBoostedCategory=false,
+  int MVAVarType=3,
+  char binZpt=-1, 
+  unsigned year=2016
+) {
+  struct analysisObjects ao;
+  ao.selection = selection;
+  GeneralTree gt;
+  TString binZptSuffix="";
+  if(binZpt>=0 && binZpt<nBinsZpt && 
+    !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
+    binZptSuffix = Form("_ZptBin%d",binZpt);
+  // Get shape histograms from file
+  for(unsigned lep=0; lep<nLepSel; lep++) {
+    // avoiding unnecessary histograms
+    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; 
+
+    char inFileDatacardsName[200];
+    sprintf(
+      inFileDatacardsName,
+      "MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.root",
+      dataCardDir.Data(),
+      leptonStrings[lep].Data(),
+      selectionNames[selection].Data(),
+      binZptSuffix.Data()
+    );
+    TFile* infile = new TFile(inFileDatacardsName,"read");
+
+    for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0 && ic!=kPlotData) continue;
+      ao.histo_Baseline    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s"                , plotBaseNames[ic].Data()));
+      ao.histo_Baseline    [lep][ic]->SetDirectory(0);
+      if(ic<kPlotVZbb) continue;
+      ao.histo_pileupUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupUp"       , plotBaseNames[ic].Data()));
+      ao.histo_pileupDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VHCorrUp"       , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VHCorrDown"     , plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale%sUp"   , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale%sDown" , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_eleSFUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"        , plotBaseNames[ic].Data()));                         
+      ao.histo_eleSFDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFDown"      , plotBaseNames[ic].Data()));                         
+      ao.histo_muSFUp      [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFUp"         , plotBaseNames[ic].Data()));                         
+      ao.histo_muSFDown    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFDown"       , plotBaseNames[ic].Data()));                         
+      ao.histo_pileupUp    [lep][ic]->SetDirectory(0);
+      ao.histo_pileupDown  [lep][ic]->SetDirectory(0);
+      ao.histo_VHCorrUp    [lep][ic]->SetDirectory(0);
+      ao.histo_VHCorrDown  [lep][ic]->SetDirectory(0);
+      ao.histo_QCDScaleUp  [lep][ic]->SetDirectory(0);
+      ao.histo_QCDScaleDown[lep][ic]->SetDirectory(0);
+      ao.histo_eleSFUp     [lep][ic]->SetDirectory(0);
+      ao.histo_eleSFDown   [lep][ic]->SetDirectory(0);
+      ao.histo_muSFUp      [lep][ic]->SetDirectory(0);
+      ao.histo_muSFDown    [lep][ic]->SetDirectory(0);
+      for(unsigned iJES=0; iJES<NJES; iJES++) { 
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        ao.histo_jes[iJES][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_%s", plotBaseNames[ic].Data(), jesName(static_cast<shiftjes>(iJES)).Data()));
+        ao.histo_jes[iJES][lep][ic]->SetDirectory(0);
+      }
+      for(unsigned iPt=0; iPt<5; iPt++)
+      for(unsigned iEta=0; iEta<3; iEta++)
+      for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+        GeneralTree::csvShift shift = gt.csvShifts[iShift];
+        if (shift==GeneralTree::csvCent) continue;
+        ao.histo_btag[iShift][iPt][iEta][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_VH_btag_pt%d_eta%d_%s",plotBaseNames[ic].Data(),iPt,iEta,btagShiftName(shift)));
+        ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetDirectory(0);
+      }
+      if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+        ao.histo_VGluUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VGluUp"         , plotBaseNames[ic].Data()));
+        ao.histo_VGluDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VGluDown"       , plotBaseNames[ic].Data()));
+        ao.histo_doubleBUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_doubleBUp"      , plotBaseNames[ic].Data()));
+        ao.histo_doubleBDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_doubleBDown"    , plotBaseNames[ic].Data()));
+        ao.histo_VGluUp     [lep][ic]->SetDirectory(0);
+        ao.histo_VGluDown   [lep][ic]->SetDirectory(0);
+        ao.histo_doubleBUp  [lep][ic]->SetDirectory(0);
+        ao.histo_doubleBDown[lep][ic]->SetDirectory(0);
+      }
+    }
+    infile->Close();
+  }
+  
+  writeDatacards(ao, dataCardDir);
 }
