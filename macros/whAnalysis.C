@@ -31,14 +31,17 @@
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
 
-// for sel in kWHSR kWHLightFlavorCR kWHHeavyFlavorCR kWH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/zllhAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
+// for sel in kWHSR kWHLightFlavorCR kWHHeavyFlavorCR kWH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/whAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
 
-const bool useHtBinnedVJetsKFactor=false;
+TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb1/monolepton/";
+TString ntupleDir2017 = "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb1/monolepton/";
+const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=2; // Number of lepton selections
 const int nPlots=50; // Max number of plots
 const int nThreads=10;
 float sf_training=1.4286;
+vector<TString> leptonStrings={"mn","en"};
 using namespace vhbbPlot;
 std::mutex mvaTreeMutex;
 
@@ -118,6 +121,7 @@ struct analysisObjects {
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
+void writeDatacards(analysisObjects &ao, TString dataCardDir);
 
 // useBoostedCategory:
 //   False means you will use all possible events to do the resolved Z(ll)H(bb)
@@ -127,14 +131,16 @@ void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, ana
 //   2 - multiclass BDT (not used)
 //   3 - simple BDT
 
-void zllhAnalysis(
+void whAnalysis(
   TString dataCardDir,
   vhbbPlot::selectionType selection,
   bool useBoostedCategory=false,
   int MVAVarType=3,
   unsigned year=2016,
   unsigned debug=0,
-  bool multithread=false
+  bool multithread=false,
+  TString batchSampleName="",
+  vhbbPlot::sampleType batchSampleType=vhbbPlot::kData
 ) {
   struct analysisObjects ao;
   ao.MVAVarType=MVAVarType;
@@ -143,29 +149,33 @@ void zllhAnalysis(
   ao.lumi=(year==2016)? 35900:41500;
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
-  ao.binZpt = binZpt;
-  TString ntupleDir = (year==2016)?
-    "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb1/monolepton/":
-    "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb1/monolepton/";
+  TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
   ao.cuts[kWHLightFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
-  ao.cuts[kWHHeavyFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","nJet_WHHF","tightBTag","mH_Flip","metSig"};
-  ao.cuts[kWH2TopCR         ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","nJet_WHTT","tightBTag","lowMET"};
-  ao.cuts[kWHSR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","nJet_WHSR","tightBTag","looseBTag2","mH_WHSR"};
+  ao.cuts[kWHHeavyFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSB","metSig"};
+  ao.cuts[kWH2TopCR         ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
+  ao.cuts[kWHSR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
+  ao.cuts[kWHLightFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
   ao.cuts[kWHLightFlavorFJCR] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
-  ao.cuts[kWHHeavyFlavorFJCR] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mH_WHHFCR"};
+  ao.cuts[kWHHeavyFlavorFJCR] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
   ao.cuts[kWHTT2bFJCR       ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
   ao.cuts[kWHTT1bFJCR       ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
-  ao.cuts[kWHFJSR           ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mH_WHFJSR"};
+  ao.cuts[kWHFJSR           ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
   ao.cuts[kWHFJPresel       ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ"                             };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
-  //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
-  //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
-  if(year==2016) {
+  bool isBatchMode= (batchSampleName!="");
+  TString batchSuffix="";
+  if(isBatchMode) {
+    // Handle batch mode for Condor
+    //multithread=false; // force single threading
+    dataCardDir = dataCardDir + "/split/"; // write output in a subdirectory
+    batchSuffix = "_"+batchSampleName; // add a suffix to the output with this sample's name
+    samples.emplace_back(batchSampleName, batchSampleType);
+  } else if(year==2016) {
     samples.emplace_back("SingleElectron"                 , vhbbPlot::kData   );
     samples.emplace_back("SingleMuon"                     , vhbbPlot::kData   );
     samples.emplace_back("QCD_ht100to200"                 , vhbbPlot::kQCD    );
@@ -199,10 +209,8 @@ void zllhAnalysis(
     samples.emplace_back("WJets_ht800to1200"              , vhbbPlot::kWjets  );
     samples.emplace_back("WJets_ht1200to2500"             , vhbbPlot::kWjets  );
     samples.emplace_back("WJets_ht2500toinf"              , vhbbPlot::kWjets  );
-    samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );
-    samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );
@@ -215,8 +223,9 @@ void zllhAnalysis(
     samples.emplace_back("WmLNuHbb"                       , vhbbPlot::kWH     );
     samples.emplace_back("WpLNuHbb"                       , vhbbPlot::kWH     );
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
-    samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kGGZH   );
+    samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
   } else if(year==2017) {
+    // no samples yet
   }
   if(multithread) std::random_shuffle(samples.begin(),samples.end());
   // End List of Samples
@@ -245,8 +254,6 @@ void zllhAnalysis(
 
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
-  vector<TString> leptonStrings={"mn","en"};
-  // Define the shape variable
   if(ao.MVAVarType==1) {
     // 1 - simple pT variable
     ao.MVAVarName="Higgs p_{T} classifier [GeV]";
@@ -286,10 +293,7 @@ void zllhAnalysis(
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kWHSR) {
-      if(binZpt==0)
-        ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
-      else
-        ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
+      ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kWHLightFlavorFJCR && selection<kWHFJSR) || selection==kWHFJPresel) {
@@ -317,6 +321,7 @@ void zllhAnalysis(
     ao.histoNames[p]="MVAVar"                  ; ao.histoTitles[p]=""                      ;                                                p++;
     ao.histoNames[p]="lepton1Pt"               ; ao.histoTitles[p]="Lepton p_{T} [GeV]"    ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
     ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton #eta"           ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
+    ao.histoNames[p]="lepton1Charge"           ; ao.histoTitles[p]="Lepton charge"         ; ao.nbins[p]=   3; ao.xmin[p]=    -1; ao.xmax[p]=     2; p++; 
     ao.histoNames[p]="WBosonPt"                ; ao.histoTitles[p]="W boson pT [GeV]"      ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
     ao.histoNames[p]="WBosonPhi"               ; ao.histoTitles[p]="W boson #eta"          ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
@@ -327,7 +332,8 @@ void zllhAnalysis(
       ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="Tau32SD"                 ; ao.histoTitles[p]="#tau_{3}/#tau_{2} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(W,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="deltaEtaLep1FJ"          ; ao.histoTitles[p]="#Delta#eta(lep,FJ)"    ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="deltaPhiWHFJ"            ; ao.histoTitles[p]="#Delta#phi(W,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
       ao.histoNames[p]="nIsojet"                 ; ao.histoTitles[p]="N isojets"             ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
       ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"       ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
     } else {
@@ -464,14 +470,14 @@ void zllhAnalysis(
   // Setup MVA training tree if applicable (Not implemented yet for boosted)
   if(selection==kWHSR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
-    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/WHSR_mvaTree%s.root",dataCardDir.Data(),binZptSuffix.Data()),"recreate");
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/WHSR_mvaTree%s.root",dataCardDir.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
     ao.mvaTree->Branch("category"    , &ao.mva_category    ); 
     ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
   } else if(selection==kWHFJSR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
-    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/WHFJSR_mvaTree.root",dataCardDir.Data()),"recreate");
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/WHFJSR_mvaTree%s.root",dataCardDir.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("weight"        , &ao.mva_weight         ); 
     ao.mvaTree->Branch("category"      , &ao.mva_category       ); 
@@ -483,11 +489,8 @@ void zllhAnalysis(
     TString bdtWeights="";
     if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) 
       bdtWeights = "";
-    else if(ao.binZpt==0)
+    else
       bdtWeights = "";
-    else if(ao.binZpt==1) 
-      bdtWeights = "";
-    else if(ao.binZpt==1) 
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
       // This object is never deleted, which is a small memory leak,
@@ -615,16 +618,16 @@ void zllhAnalysis(
     } // all bins in histograms
   }
 
-  // Writing datacards  
+  // Write shape histograms to file
   for(unsigned lep=0; lep<nLepSel; lep++) {
     char outFileDatacardsName[200];
     sprintf(
       outFileDatacardsName,
-      "MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.root",
+      "MitVHBBAnalysis/datacards/%s/datacard_W%sH%s%s.root",
       dataCardDir.Data(),
       leptonStrings[lep].Data(),
       selectionNames[selection].Data(),
-      binZptSuffix.Data()
+      batchSuffix.Data()
     );
     TFile* outFileDatacards = new TFile(outFileDatacardsName,"recreate");
     outFileDatacards->cd();
@@ -662,217 +665,17 @@ void zllhAnalysis(
       }
     }
     outFileDatacards->Close();
-
-    ofstream newcardShape;
-    newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.txt",
-                      dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data()));
-    newcardShape << Form("imax * number of channels\n");
-    newcardShape << Form("jmax * number of background minus 1\n");
-    newcardShape << Form("kmax * number of nuisance parameters\n");
-
-    newcardShape << Form("shapes      *   * datacard_Z%sH%s%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data());
-    newcardShape << Form("shapes data_obs * datacard_Z%sH%s%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[selection].Data(),binZptSuffix.Data(),plotBaseNames[kPlotData].Data());
-
-    newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][kPlotData]->GetSumOfWeights());
-
-    newcardShape << Form("bin   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("chZ%sH%s  ",leptonStrings[lep].Data(),selectionNames[selection].Data());
-    newcardShape << Form("\n");
-
-    newcardShape << Form("process   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("%s  ",plotBaseNames[ic].Data());
-    newcardShape << Form("\n");
- 
-    newcardShape << Form("process  ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
-        continue;
-      if(ic==kPlotZH)
-        newcardShape << Form("%d  ",0);
-      else if(ic==kPlotGGZH)
-        newcardShape << Form("%d  ",-1);
-      else
-        newcardShape << Form("%d  ",ic);
-    }
-    newcardShape << Form("\n");
-
-    newcardShape << Form("rate  ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("%f  ",ao.histo_Baseline[lep][ic]->GetSumOfWeights());
-    newcardShape << Form("\n");
-
-    newcardShape << Form("lumi_13TeV    lnN     ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-       newcardShape << Form("%6.3f ",1.025);
-    newcardShape << Form("\n");
-
-    newcardShape << Form("pileup    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
-    newcardShape << Form("\n");
-
-    newcardShape << Form("VHCorr    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
-        continue;
-      if(ic!=kPlotZH && ic!=kPlotGGZH) 
-        newcardShape << Form("-  ");
-      else
-        newcardShape << Form("1.0  ");
-    }
-    newcardShape << Form("\n");
-
-    newcardShape << Form("eleSF    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
-    newcardShape << Form("\n");
-
-    newcardShape << Form("muSF    shape   ");
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
-    newcardShape << Form("\n");
-
-    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-      newcardShape << Form("QCDScale%s    shape   ",plotBaseNames[ic].Data());
-      for(unsigned ic2=kPlotVZbb; ic2!=nPlotCategories; ic2++) {
-        if(ao.histo_Baseline[lep][ic2]->GetSumOfWeights() > 0) {
-          if(ic==ic2) newcardShape << Form("1.0  ");
-          else        newcardShape << Form("-  ");
-        }
-      }
-      newcardShape << Form("\n");
-    }
-
-    for(unsigned iJES=0; iJES<NJES; iJES++) {
-      if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
-      TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
-      if(!shiftName.EndsWith("Up")) continue;
-      TString nuisanceName = shiftName(0,shiftName.Length()-2);
-      newcardShape << Form("%s    shape   ",nuisanceName.Data());
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-        newcardShape << Form("1.0  ");
-      newcardShape << Form("\n");
-    }
-
-    for(unsigned iPt=0; iPt<5; iPt++)
-    for(unsigned iEta=0; iEta<3; iEta++)
-    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-      GeneralTree::csvShift shift = gt.csvShifts[iShift];
-      if (shift==GeneralTree::csvCent) continue;
-      // Get the name of the nuisance only from the Up variations
-      TString shiftName(btagShiftName(shift));
-      if(!shiftName.EndsWith("Up")) continue;
-      TString nuisanceName = shiftName(0,shiftName.Length()-2);
-      newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && selection==kWH2TopCR) 
-          newcardShape << Form("-  ");
-        else
-          newcardShape << Form("1.0  ");
-      }
-      newcardShape << Form("\n");
-    }
-
-    newcardShape<<"pdf_qqbar lnN "; 
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
-        newcardShape<<pdfAcceptUncs[ic]<<" ";
-      else newcardShape<<"- ";
-    } 
-    newcardShape<<std::endl;
-
-    newcardShape<<"pdf_gg lnN ";
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      if(ic==kPlotTop||ic==kPlotTT|ic==kPlotGGZH)
-        newcardShape<<pdfAcceptUncs[ic]<<" "; 
-      else
-        newcardShape<<"- ";
-    }
-    newcardShape<<std::endl;
-
-    newcardShape<<Form("CMS_VH_TopNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
-    }
-    newcardShape<<std::endl;
-    
-    newcardShape<<Form("CMS_VH_VVNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
-    }
-    newcardShape<<std::endl;
-    
-    // Normalization and double B scale factors
-    if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) {
-      // Boosted norms
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
-      newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
-      // In situ measurement of doubleB SF for ZLF, Zb, eff checked in kWHFJPresel
-      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; 
-      newcardShape << "effDoubleB_Zb   param 0.20  0.02  " << std::endl;
-      newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
-      newcardShape << "effSFDoubleB_Zb  extArg 1.0 [0.1,10]" << std::endl;
-      if(ao.selection==kWHHeavyFlavorFJCR || ao.selection==kWHTT2bFJCR || ao.selection==kWHFJSR) {
-        newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("passBB_Zb  rateParam * %s (@0*1.0) effSFDoubleB_Zb \n" ,plotBaseNames[kPlotZb].Data());
-      } else if(ao.selection==kWHLightFlavorFJCR || ao.selection==kWHTT1bFJCR) {
-        newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("failBB_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Zb,effDoubleB_Zb\n" ,plotBaseNames[kPlotZb].Data());
-      }
-      // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
-      newcardShape << Form("CMS_doubleB shape ");
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if(ic==kPlotZbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
-          newcardShape << "1.0 ";
-        else
-          newcardShape << "- ";
-      }
-      newcardShape<<Form("VjetsGluFrac shape ");
-      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if(ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
-          newcardShape << "1.0 ";
-        else
-          newcardShape << "- ";
-      }
-    } else {
-      newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
-      newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
-      newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
-      newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
-    }
-
-    newcardShape << Form("* autoMCStats 1\n");
-    newcardShape.close();
   }
+  
+  // Writing datacards
+  if(!isBatchMode)
+    writeDatacards(ao, dataCardDir);
   
   // Write plots
   char regionName[128];
   for(unsigned lep=0; lep<nLepSel; lep++) {
-    sprintf(regionName, "Z%sH%s",leptonStrings[lep].Data(),selectionNames[selection].Data());
-    TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s%s.root",dataCardDir.Data(),regionName,binZptSuffix.Data());
+    sprintf(regionName, "W%sH%s",leptonStrings[lep].Data(),selectionNames[selection].Data());
+    TString plotFileName = Form("MitVHBBAnalysis/datacards/%s/plots_%s%s.root",dataCardDir.Data(),regionName,batchSuffix.Data());
     TFile *outputPlots = new TFile(plotFileName,"RECREATE","",ROOT::CompressionSettings(ROOT::kZLIB,9));
     for(int p=0; p<nPlots; p++) {
       if(ao.histoNames[p]=="") continue;
@@ -1007,18 +810,11 @@ void analyzeSample(
     // Stitching Cuts/Weights
     float stitchWeight=1;
     if(ao.year==2016) {
-      if(isNLOZjets && !isLowMassZjets) { 
-        // for low pT M>50 NLO Z+jets in 2016
-        bLoad(b["lheHT"],ientry);
-        if(gt.lheHT>=100) continue;
-      }
       // B-enriched sample stitching
       // Let the b-enriched samples eat 90% of the XS where there are b quarks or status 2 b hadrons
-      if(type==kZjets) {
-        bLoad(b["trueGenBosonPt"],ientry); // LHE Z boson pT
+      if(type==kWjets||type==kZjets) {
         bLoad(b["nStatus2BHadrons"],ientry); // number of B hadrons at matrix element level
         bLoad(b["nB"],ientry); // number of B quarks
-        if(isInclusiveZjets && (isBQuarkEnriched||isBHadronEnriched) && gt.trueGenBosonPt>=100) continue;
         bool hasBQuarks  = gt.nB > 0;
         bool hasBHadrons = gt.nStatus2BHadrons>0 && gt.nB==0;
         // Orthogonalize        
@@ -1034,27 +830,12 @@ void analyzeSample(
         }
       }
     } else if(ao.year==2017) {
-      if(useNPNLOLookup) {
-        // Here, we perform the lookup of the NPNLO (number of NLO partons) for inclusive Z+jets
-        // This is not a quantity in Panda, we must use a lookup table. Can potentially add this to the ntuples as an extra tree later
-        bLoad(b["npnlo"],ientry);
-        bLoad(b["eventNumber"],ientry);
-        bLoad(b["trueGenBosonPt"],ientry); 
-        if(npnlo==255) {
-          printf("WARNING: NPNLO=255 for eventtNumber %llu\n", gt.eventNumber);
-          continue;
-        }
-        if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
-        else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
-        else stitchWeight=1;
-      } else if(isV12jets) {
-        stitchWeight=0.8;
-      }
+      // No stitching... yet :^)
     }
 
     //////////////////////
     // Clear variables
-    typeLepSel=99; // 0: Z(mm), 1: Z(ee), 2: e-mu
+    typeLepSel=99; // 0: W(mn), 1: W(en)
 
     // Clear the jet pts for the b tag decorrelation
     for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
@@ -1075,14 +856,16 @@ void analyzeSample(
     
     // Basic cuts
     bLoad(b["nLooseLep"],ientry);
-    if(gt.nLooseLep!=2) continue; 
+    if(gt.nLooseLep!=1) continue; 
     if(ao.debug) printf("  Passed lepton multiplicity\n");
 
     // Trigger
-    bLoad(b["trigger"],ientry);
-    bool passTrigger = (gt.trigger & ao.whichTriggers) !=0;
-    if(!passTrigger) continue;
-    if(ao.debug) printf("  Passed trigger\n");
+    if(type==kData) {
+      bLoad(b["trigger"],ientry);
+      bool passTrigger = (gt.trigger & ao.whichTriggers) !=0;
+      if(!passTrigger) continue;
+      if(ao.debug) printf("  Passed trigger\n");
+    }
 
     // Lepton ID and isolation
     bLoad(b["nLooseElectron"],ientry);
@@ -1092,53 +875,33 @@ void analyzeSample(
     bLoad(b["muonSelBit"],ientry);
     bLoad(b["muonPt"],ientry);
     bLoad(b["muonPdgId"],ientry);
+    bLoad(b["muonCombIso"],ientry);
     bLoad(b["electronSelBit"],ientry);
     bLoad(b["electronPt"],ientry);
     bLoad(b["electronPdgId"],ientry);
+    bLoad(b["electronCombIso"],ientry);
 
-    if(gt.nLooseMuon==2 && gt.nLooseElectron==0 &&
-      gt.muonPt[0]>25 && gt.muonPt[1]>10 && 
-      gt.muonPdgId[0]+gt.muonPdgId[1]==0 &&
+    if(gt.nLooseMuon==1 && 
+      gt.muonPt[0]>25 && 
       (gt.muonSelBit[0] & pa::kTight)!=0 &&
-      (gt.muonSelBit[1] & pa::kTight)!=0
+      gt.muonCombIso[0]/gt.muonPt[0] < 0.06
     ) typeLepSel=0;
-    else if(gt.nLooseElectron==2 && gt.nLooseMuon==0 &&
-      gt.electronPt[0]>25 && gt.electronPt[1]>15 && 
-      gt.electronPdgId[0]+gt.electronPdgId[1]==0 &&
-      (gt.electronSelBit[0] & pa::kEleMvaWP90)!=0 &&
-      (gt.electronSelBit[1] & pa::kEleMvaWP90)!=0
+    else if(gt.nLooseElectron==1 &&
+      gt.electronPt[0]>30 && 
+      (gt.electronSelBit[0] & pa::kEleMvaWP80)!=0 &&
+      gt.electronCombIso[0]/gt.electronPt[0] < 0.06
     ) typeLepSel=1;
-    else if(gt.nLooseMuon==1 && gt.nLooseElectron==1 &&
-      ((gt.muonPt[0]>25 && gt.electronPt[0]>15) || (gt.muonPt[0]>15 && gt.electronPt[0]>25)) && 
-      gt.muonPdgId[0]*gt.electronPdgId[0]<0 &&
-      (gt.muonSelBit[0]     & pa::kTight     )!=0 &&
-      (gt.electronSelBit[0] & pa::kEleMvaWP90)!=0
-    ) typeLepSel=2;
-    if(typeLepSel!=0 && typeLepSel!=1 && typeLepSel!=2) continue;
+    if(typeLepSel!=0 && typeLepSel!=1) continue;
     if(ao.debug) printf("  Passed lepton ID/iso multiplicity\n");
     
     // Z boson basics
-    bLoad(b["ZBosonPt"],ientry);
-    bLoad(b["ZBosonEta"],ientry);
-    bLoad(b["ZBosonPhi"],ientry);
-    bLoad(b["ZBosonM"],ientry);
-    // Apply the ZpT window for this pt bin if doing resolved, provided
-    // we have chosen to do so by choosing a non-negative value of binZpt
-    float preselMinZpt=30, preselMaxZpt=9999;
-    if(
-      ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
-      !(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel)
-    ) {
-      preselMinZpt = binsZpt[ao.binZpt];
-      preselMaxZpt = binsZpt[ao.binZpt+1];
-    }
-    if(gt.ZBosonPt<preselMinZpt || gt.ZBosonPt>=preselMaxZpt) continue;
-    if(gt.ZBosonM<10) continue;
-    if(ao.debug) printf("  Passed Z boson reconstruction\n");
+    bLoad(b["topWBosonPt"],ientry);
+    if(gt.topWBosonPt<90) continue;
+    if(ao.debug) printf("  Passed W boson reconstruction\n");
 
     // Lepton kinematics
-    float lepton1Pt,lepton1Eta,lepton1Phi,lepton1RelIso,lepton1D0,lepton1DZ,
-          lepton2Pt,lepton2Eta,lepton2Phi,lepton2RelIso,lepton2D0,lepton2DZ;
+    float lepton1Pt,lepton1Eta,lepton1Phi,lepton1RelIso,lepton1D0,lepton1DZ;
+    int lepton1Charge;
     if (typeLepSel==0) {
       bLoad(b["muonEta"],ientry);
       bLoad(b["muonPhi"],ientry);
@@ -1151,13 +914,8 @@ void analyzeSample(
       lepton1Phi    = gt.muonPhi[0]; 
       lepton1D0     = gt.muonD0[0];
       lepton1DZ     = gt.muonDZ[0];
+      lepton1Charge = gt.muonPdgId[0]>0? -1:1;
       lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
-      lepton2Pt     = gt.muonPt[1];
-      lepton2Eta    = gt.muonEta[1];
-      lepton2Phi    = gt.muonPhi[1]; 
-      lepton2D0     = gt.muonD0[1];
-      lepton2DZ     = gt.muonDZ[1];
-      lepton2RelIso = gt.muonCombIso[1]/gt.muonPt[1];
     } else if(typeLepSel==1) {
       bLoad(b["electronEta"],ientry);
       bLoad(b["electronPhi"],ientry);
@@ -1168,46 +926,16 @@ void analyzeSample(
       lepton1Pt     = gt.electronPt[0]; 
       lepton1Eta    = gt.electronEta[0];
       lepton1Phi    = gt.electronPhi[0];
-      lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
       lepton1D0     = gt.electronD0[0];
       lepton1DZ     = gt.electronDZ[0];
-      lepton2Pt     = gt.electronPt[1]; 
-      lepton2Eta    = gt.electronEta[1];
-      lepton2Phi    = gt.electronPhi[1];
-      lepton2RelIso = gt.electronCombIso[1]/gt.electronPt[1];
-      lepton2D0     = gt.electronD0[1];
-      lepton2DZ     = gt.electronDZ[1];
-    } else if (typeLepSel==2) {
-      bLoad(b["muonEta"],ientry);
-      bLoad(b["muonPhi"],ientry);
-      bLoad(b["muonD0"],ientry);
-      bLoad(b["muonDZ"],ientry);
-      bLoad(b["muonCombIso"],ientry);
-      bLoad(b["muonPdgId"],ientry);
-      bLoad(b["electronEta"],ientry);
-      bLoad(b["electronPhi"],ientry);
-      bLoad(b["electronD0"],ientry);
-      bLoad(b["electronDZ"],ientry);
-      bLoad(b["electronCombIso"],ientry);
-      bLoad(b["electronPdgId"],ientry);
-      lepton1Pt     = gt.muonPt[0];
-      lepton1Eta    = gt.muonEta[0];
-      lepton1Phi    = gt.muonPhi[0]; 
-      lepton1D0     = gt.muonD0[0];
-      lepton1DZ     = gt.muonDZ[0];
-      lepton1RelIso = gt.muonCombIso[0]/gt.muonPt[0];
-      lepton2Pt     = gt.electronPt[0]; 
-      lepton2Eta    = gt.electronEta[0];
-      lepton2Phi    = gt.electronPhi[0];
-      lepton2D0     = gt.electronD0[0];
-      lepton2DZ     = gt.electronDZ[0];
-      lepton2RelIso = gt.electronCombIso[0]/gt.electronPt[0];
+      lepton1Charge = gt.electronPdgId[0]>0? -1:1;
+      lepton1RelIso = gt.electronCombIso[0]/gt.electronPt[0];
     }
     if(ao.debug) printf("  Passed lepton kinematics\n");
 
     // Jet multiplicity
     bool isBoostedCategory=false;
-    float deltaPhiZHFJ=-1;
+    float deltaPhiWHFJ=-1;
     if(ao.useBoostedCategory) { 
       //bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
@@ -1215,14 +943,14 @@ void analyzeSample(
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
       if(gt.fjPt[0]>0) // protection against NaN values of fjPhi
-        deltaPhiZHFJ = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
+        deltaPhiWHFJ = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
       if(
         gt.fjPt[0] >= 250 && 
         //gt.fjMSD_corr[0] >= 40 &&
         gt.fjMSD[0] >= 40 && // TEMPORARY DGH
         fabs(gt.fjEta) < 2.4 &&
         gt.ZBosonPt >= 250 &&
-        deltaPhiZHFJ >= 2.5
+        deltaPhiWHFJ >= 2.5
       ) isBoostedCategory=true;
       // If we consider a boosted category splitting,
       // only put boosted (resolved) events in boosted (resolved) regions
@@ -1286,20 +1014,24 @@ void analyzeSample(
     //bLoad(b["pfmetphi"],ientry);
     
     // Jet B-tagging
-    bool bjet1IsLoose=false, bjet2IsLoose=false;
+    bool bjet1IsLoose=false, bjet1IsMedium=false, bjet1IsTight=false, bjet2IsLoose=false;
     float bjet1btag=-2, bjet2btag=-2;
     bLoad(b["jotCMVA"],ientry);
     bLoad(b["jotCSV"],ientry);
     if(ao.year==2016) {
       bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
-      bjet1IsLoose = bjet1btag > cmvaLoose;
-      bjet2IsLoose = bjet2btag > cmvaLoose;
+      bjet1IsLoose  = bjet1btag > cmvaLoose;
+      bjet1IsMedium = bjet1btag > cmvaMedium;
+      bjet1IsTight  = bjet1btag > cmvaTight;
+      bjet2IsLoose  = bjet2btag > cmvaLoose;
     } else if(ao.year==2017) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
-      bjet1IsLoose = bjet1btag > deepcsvLoose;
-      bjet2IsLoose = bjet2btag > deepcsvLoose;
+      bjet1IsLoose  = bjet1btag > deepcsvLoose;
+      bjet1IsMedium = bjet1btag > deepcsvMedium;
+      bjet1IsTight  = bjet1btag > deepcsvTight;
+      bjet2IsLoose  = bjet2btag > deepcsvLoose;
     }
 
     for(unsigned iJES=0; iJES<NJES; iJES++) {
@@ -1381,9 +1113,7 @@ void analyzeSample(
     
     // Load branches and calculate stuff for the cuts
     bLoad(b["eventNumber"],ientry);
-    bLoad(b["ZBosonPt"],ientry);
-    bLoad(b["ZBosonEta"],ientry);
-    bLoad(b["ZBosonPhi"],ientry);
+    bLoad(b["topWBosonPhi"],ientry);
     if(isBoostedCategory) {
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjPhi"],ientry);
@@ -1392,45 +1122,35 @@ void analyzeSample(
       bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
       bLoad(b["fjDoubleCSV"],ientry);
       bLoad(b["fjTau21SD"],ientry);
+      bLoad(b["fjTau32SD"],ientry);
     } else {
       bLoad(b["hbbpt_reg"],ientry);
       bLoad(b["hbbphi"],ientry);
       bLoad(b["hbbm_reg"],ientry);
+      bLoad(b["pfmet"],ientry);
+      bLoad(b["pfmetsig"],ientry);
     }
-    float deltaPhiZH    = -1;
-    float ptBalanceZH   = -1;
-    float ptBalanceZHFJ = -1;
+    float deltaPhiWH    = -1;
+    float deltaPhiLep1Met = -1;
+    float ptBalanceWH   = -1;
+    float ptBalanceWHFJ = -1;
     float dEtaBjets     = -1;
     float dPhiBjets     = -1;
     float dRBjets       = -1;
-    float dEtaZH        = -1;
-    float dRZH          = -1;
-    float ptBalanceL1L2 = -1;
-    float dRL1L2        = -1;
-    float mTZHFJ        = -1;
-    float dEtaZHFJ      = -1;
+    float dEtaLep1FJ    = -1;
     float deltaM        = -1;
-    TLorentzVector ZBosonP4, fjP4, ZHFJP4;
     if(isBoostedCategory) {
-      ZBosonP4.SetPtEtaPhiM(gt.ZBosonPt,gt.ZBosonEta,gt.ZBosonPhi,gt.ZBosonM);
-      fjP4.SetPtEtaPhiM(gt.fjPt[0],gt.fjEta,gt.fjPhi,gt.fjMSD[0]);  // TEMPORARY DGH
-      ZHFJP4 = ZBosonP4 + fjP4;
-      ptBalanceZHFJ = gt.fjPt[0] / gt.ZBosonPt;
-      mTZHFJ = ZHFJP4.Mt();
-      ptBalanceL1L2 = lepton1Pt/lepton2Pt;
-      dRL1L2 = sqrt(pow(lepton1Eta-lepton2Eta,2)+pow(TVector2::Phi_mpi_pi(lepton1Phi-lepton2Phi),2));
-      dEtaZHFJ = fabs(gt.fjEta - gt.ZBosonEta);
-      deltaM = fabs(gt.ZBosonM-91.1876);
+      ptBalanceWHFJ = gt.fjPt[0] / gt.topWBosonPt;
+      dEtaLep1FJ = fabs(lepton1Eta - gt.fjEta);
     } else {
-      deltaPhiZH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi));
-      ptBalanceZH   = gt.hbbpt_reg[0] /  gt.ZBosonPt;
+      deltaPhiWH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.topWBosonPhi));
+      deltaPhiLep1Met = fabs(TVector2::Phi_mpi_pi(gt.pfmet[0] - lepton1Phi));
+      ptBalanceWH   = gt.hbbpt_reg[0] /  gt.topWBosonPt;
       dEtaBjets     = fabs(gt.jotEta[gt.hbbjtidx[0][0]]-gt.jotEta[gt.hbbjtidx[0][1]]);
       dPhiBjets     = fabs(TVector2::Phi_mpi_pi(gt.jotPhi[gt.hbbjtidx[0][0]]-gt.jotPhi[gt.hbbjtidx[0][1]]));
       dRBjets       = sqrt(dEtaBjets*dEtaBjets + dPhiBjets*dPhiBjets);
-      dEtaZH        = fabs(gt.ZBosonEta - gt.hbbeta[0]);     
-      dRZH          = sqrt(dEtaZH*dEtaZH + deltaPhiZH*deltaPhiZH);
     }
-    // deltaPhiZHFJ computed already in Jet multiplicity section
+    // deltaPhiWHFJ computed already in Jet multiplicity section
     bool vetoTrainEvts = (
       ao.MVAVarType>1 &&
       ao.selection==kWHSR && 
@@ -1443,19 +1163,19 @@ void analyzeSample(
     for(unsigned iJES=0; iJES<NJES; iJES++) {
       if(iJES==0) {
         if(isBoostedCategory) {
-          cut["ZpTFJ"      ] = gt.ZBosonPt > 250;
-          cut["dPhiZHFJ"   ] = fabs(gt.fjPhi - gt.ZBosonPhi) > 2.5;
+          cut["WpTFJ"      ] = gt.topWBosonPt > 250;
+          cut["dPhiWHFJ"   ] = fabs(gt.fjPhi - gt.topWBosonPhi) > 2.5;
           cut["btagFJ"     ] = gt.fjDoubleCSV > doubleBCut;
           cut["bvetoFJ"    ] = gt.fjDoubleCSV < doubleBCut;
         } else {
-          cut["ZpT"        ] = gt.ZBosonPt > 50;
-          cut["btag"       ] = bjet1IsLoose && bjet2IsLoose;
-          cut["bveto"      ] = !bjet1IsLoose && !bjet2IsLoose;
+          cut["WpT"        ] = gt.topWBosonPt > 100;
+          cut["dPhiWH"     ] = fabs(gt.fjPhi - gt.topWBosonPhi) > 2.5;
+          cut["looseBTag"  ] = bjet1IsLoose;
+          cut["tightBTag"  ] = bjet1IsTight;
+          cut["mediumBVeto"] = !bjet1IsMedium;
+          cut["looseBTag2" ] = bjet2IsLoose;
         }
-        cut["Zmass"      ] = gt.ZBosonM >= 75 && gt.ZBosonM < 105;
-        cut["ZmassTight" ] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
-        cut["ZmassSB"    ] = (gt.ZBosonM >= 10 && gt.ZBosonM < 75) || (gt.ZBosonM >= 105 && gt.ZBosonM < 120);
-        cut["lowMET"     ] = gt.pfmet[0] < 60;
+        cut["lowMET"     ] = gt.pfmet[0] < 170;
         cut["boostedCat" ] = isBoostedCategory;
         cut["boostedVeto"] = !isBoostedCategory;
         cut["vetoTrain"  ] = (ao.MVAVarType==1 || (gt.eventNumber%10)>=3 || category==kPlotData);
@@ -1488,10 +1208,15 @@ void analyzeSample(
         cut["0ijb"    ] = isojetNBtags[iJES]==0; // not used in SR
         cut["1ijb"    ] = !cut["0ijb"];
       } else {
-        cut["dPhiZH"  ] = fabs(gt.hbbphi[iJES] - gt.ZBosonPhi) > 2.5;
-        cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 100; // not used
-        cut["mjj"     ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
-        cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
+        cut["dPhiWH"     ] = fabs(gt.hbbphi[iJES] - gt.topWBosonPhi) > 2.5;
+        cut["pTjj"       ] = gt.hbbpt_reg[iJES] > 100; 
+        cut["dPhiLep1Met"] = deltaPhiLep1Met < 2; 
+        cut["mjj"        ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
+        cut["mjjSB"      ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
+        cut["2jets"      ] = gt.nJet[iJES]==2;
+        cut["2-3jets"    ] = gt.nJet[iJES]<4;
+        cut["4+jets"     ] = gt.nJet[iJES]>=4;
+        cut["metSig"     ] = gt.pfmetsig<2;
       } 
       selectionBits[iJES]=0; nMinusOneBits=0;
       if(passAllCuts(cut, ao.cuts[ao.selection])) {
@@ -1526,10 +1251,16 @@ void analyzeSample(
         } else {
           bLoad(b["lheHT"],ientry);
           bLoad(b["trueGenBosonPt"],ientry);
-          gt.sf_qcdV=ao.kfactors_ZJets->GetBinContent(ao.kfactors_ZJets->FindBin(
-            TMath::Min(1.39,gt.trueGenBosonPt/1000.),
-            TMath::Min(1.39,gt.lheHT         /1000.)
-          ));
+          if(type==kZjets)
+            gt.sf_qcdV=ao.kfactors_ZJets->GetBinContent(ao.kfactors_ZJets->FindBin(
+              TMath::Min(1.39,gt.trueGenBosonPt/1000.),
+              TMath::Min(1.39,gt.lheHT         /1000.)
+            ));
+          else if(type==kWjets)
+            gt.sf_qcdV=ao.kfactors_WJets->GetBinContent(ao.kfactors_WJets->FindBin(
+              TMath::Min(1.39,gt.trueGenBosonPt/1000.),
+              TMath::Min(1.39,gt.lheHT         /1000.)
+            ));
         }
         weight *= gt.sf_qcdV * gt.sf_ewkV;
       }
@@ -1557,31 +1288,16 @@ void analyzeSample(
         bLoad(b["muonSfTight"],ientry);
         bLoad(b["muonSfUnc"],ientry);
         bLoad(b["sf_muTrig"],ientry);
-        weight *= 1.0; // gt.sf_muTrig; 
+        weight *= gt.sf_muTrig; 
         weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
-        weight *= gt.muonSfReco[1] * gt.muonSfTight[1];
-        weight_muSF = (1+gt.muonSfUnc[0]) * (1+gt.muonSfUnc[1]);
+        weight_muSF = (1+gt.muonSfUnc[0]);
       } else if(typeLepSel==1) {
         bLoad(b["electronSfReco"],ientry);
-        bLoad(b["electronSfMvaWP90"],ientry);
+        bLoad(b["electronSfMvaWP80"],ientry);
         bLoad(b["electronSfUnc"],ientry);
         bLoad(b["sf_eleTrig"],ientry);
-        weight *= 1.0; // gt.sf_eleTrig; 
-        weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
-        weight *= gt.electronSfReco[1] * gt.electronSfMvaWP90[1];
-        weight_elSF = (1+gt.electronSfUnc[0]) * (1+gt.electronSfUnc[1]);
-      } else if (typeLepSel==2) {
-        bLoad(b["muonSfReco"],ientry);
-        bLoad(b["muonSfTight"],ientry);
-        bLoad(b["muonSfUnc"],ientry);
-        bLoad(b["electronSfReco"],ientry);
-        bLoad(b["electronSfMvaWP90"],ientry);
-        bLoad(b["electronSfUnc"],ientry);
-        bLoad(b["sf_eleTrig"],ientry);
-        weight *= 1.0; // no trigger data/MC SF
-        weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
-        weight *= gt.electronSfReco[0] * gt.electronSfMvaWP90[0];
-        weight_muSF = (1+gt.muonSfUnc[0]);
+        weight *= gt.sf_eleTrig; 
+        weight *= gt.electronSfReco[0] * gt.electronSfMvaWP80[0];
         weight_elSF = (1+gt.electronSfUnc[0]);
       }
 
@@ -1590,22 +1306,18 @@ void analyzeSample(
         bLoad(b["sf_wz"],ientry);
         bLoad(b["sf_zz"],ientry);
         weight *= gt.sf_wz * gt.sf_zz;
-      } else if(type==kZH) {
+      } else if(type==kZH||type==kWH) {
         bLoad(b["sf_vh"],ientry);
         bLoad(b["sf_vhUp"],ientry);
         bLoad(b["sf_vhDown"],ientry);
-        //TString vhChannel=lepton1Charge>0?"WplusH":"WminusH";
-        recorrect_vhEWK     = vhEWKCorr("ZllH",gt.sf_vh    );
-        recorrect_vhEWKUp   = vhEWKCorr("ZllH",gt.sf_vhUp  );
-        recorrect_vhEWKDown = vhEWKCorr("ZllH",gt.sf_vhDown);
+        TString vhChannel= type==kWH? (lepton1Charge>0?"WplusH":"WminusH") : "ZllH";
+        recorrect_vhEWK     = vhEWKCorr(vhChannel,gt.sf_vh    );
+        recorrect_vhEWKUp   = vhEWKCorr(vhChannel,gt.sf_vhUp  );
+        recorrect_vhEWKDown = vhEWKCorr(vhChannel,gt.sf_vhDown);
         weight *= recorrect_vhEWK;
         weight_VHCorrUp = recorrect_vhEWKUp/recorrect_vhEWK;
         weight_VHCorrDown = recorrect_vhEWKDown/recorrect_vhEWK;
       }
-      
-      //bLoad(b["sf_cmvaWeight_Cent"],ientry);
-      //weight *= gt.sf_csvWeights[GeneralTree::csvCent];
-      // Reweight the events here if they were not used for training
       
       // Hack for the central Btag weights 
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
@@ -1672,7 +1384,7 @@ void analyzeSample(
           }
         }
       }
-      if(ao.selection>=kWHLightFlavorCR && ao.selection<=kWHPresel) { // Boosted only weighting
+      if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) { // Boosted only weighting
       bLoad(b["fjHighestPtGen"],ientry);
         if(gt.fjHighestPtGen==21 && (
           category==kPlotWbb || category==kPlotWb || category==kPlotWLF ||
@@ -1681,7 +1393,7 @@ void analyzeSample(
         
         bLoad(b["fjPt"],ientry);
         // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Boosted_event_topologies
-        if(category==kPlotZH || category==kPlotGGZH || category==kPlotZbb) {
+        if(category==kPlotZH || category==kPlotGGZH || category==kPlotWH || category==kPlotWbb) {
           bool passBB = ao.selection==kWHFJSR || ao.selection==kWHHeavyFlavorFJCR || ao.selection==kWHTT2bFJCR;
           float sf,sfUp,sfDown;
           float eff = 0.5; // empirical 
@@ -1707,45 +1419,44 @@ void analyzeSample(
 
     // Calculate the shape variable in all JES scenarios for all the regions
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
-    if(ao.MVAVarType>1) for(unsigned iJES=0; iJES<NJES; iJES++) {
-      if((iJES==0 && ao.selection>=kWHLightFlavorCR && ao.selection<=kWHPresel) || ao.selection==kWHSR) {
-        ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
-        ao.mvaInputs[nThread][ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
-        ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
-        ao.mvaInputs[nThread][ 3] = bjet1btag                                               ; //"bjet1btag"   
-        ao.mvaInputs[nThread][ 4] = bjet2btag                                               ; //"bjet2btag"   
-        ao.mvaInputs[nThread][ 5] = gt.ZBosonPt                                             ; //"ZBosonPt"    
-        ao.mvaInputs[nThread][ 6] = gt.ZBosonM                                              ; //"ZBosonM"     
-        ao.mvaInputs[nThread][ 7] = gt.ZBosonLep1CosThetaCS                                 ; //"CosThetaCS"  
-        ao.mvaInputs[nThread][ 8] = gt.ZBosonLep1CosThetaStar                               ; //"CosThetaStar"
-        ao.mvaInputs[nThread][ 9] = gt.hbbpt_reg[iJES]                                      ; //"hbbpt"       
-        ao.mvaInputs[nThread][10] = gt.hbbm_reg[iJES]                                       ; //"hbbm"        
-        ao.mvaInputs[nThread][11] = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[iJES]-gt.ZBosonPhi)); //"dPhiZH"      
-        ao.mvaInputs[nThread][12] = gt.hbbpt_reg[iJES]/gt.ZBosonPt                          ; //"ptBalanceZH" 
-        ao.mvaInputs[nThread][13] = dRBjets                                                 ; //"dRBjets"     
-        ao.mvaInputs[nThread][14] = dEtaBjets                                               ; //"dEtaBjets"   
-        ao.mvaInputs[nThread][15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
-        bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
-      } else if((iJES==0 && ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) || ao.selection==kWHFJSR) { 
-        TLorentzVector fjP4_jes, ZHFJP4_jes;
-        fjP4_jes.SetPtEtaPhiM(gt.fjPt[iJES],gt.fjEta,gt.fjPhi,gt.fjMSD[iJES]);  // TEMPORARY DGH
-        ZHFJP4_jes = ZBosonP4 + fjP4_jes;
-        ao.mvaInputs[nThread][ 0] = nIsojet[iJES]                   ; //"nIsojet"       
-        ao.mvaInputs[nThread][ 1] = gt.fjPt[iJES]                   ; //"fjPt"          
-        ao.mvaInputs[nThread][ 2] = gt.fjMSD[iJES]                  ; //"MSD"           
-        ao.mvaInputs[nThread][ 3] = gt.fjTau21SD                    ; //"Tau21SD"       
-        ao.mvaInputs[nThread][ 4] = gt.fjPt[iJES]/gt.ZBosonPt;      ; //"ptBalanceZHFJ" 
-        ao.mvaInputs[nThread][ 5] = dEtaZHFJ                        ; //"dEtaZHFJ"      
-        ao.mvaInputs[nThread][ 6] = deltaPhiZHFJ                    ; //"dPhiZHFJ"      
-        ao.mvaInputs[nThread][ 7] = ZHFJP4_jes.Mt()                 ; //"mTZHFJ"        
-        ao.mvaInputs[nThread][ 8] = ptBalanceL1L2                   ; //"ptBalanceL1L2" 
-        ao.mvaInputs[nThread][ 9] = dRL1L2                          ; //"dRL1L2"        
-        ao.mvaInputs[nThread][10] = gt.ZBosonPt                     ; //"ZBosonPt"      
-        ao.mvaInputs[nThread][11] = lepton1Pt                       ; //"lepton1Pt"     
-        ao.mvaInputs[nThread][12] = lepton2Pt                       ; //"lepton2Pt"     
-        ao.mvaInputs[nThread][13] = deltaM                          ; //"deltaM"        
-        ao.mvaInputs[nThread][14] = gt.ZBosonLep1CosThetaCS         ; //"CosThetaCS"        
-        bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
+    for(unsigned iJES=0; iJES<NJES; iJES++) {
+      if(ao.MVAVarType>1) {
+        if((iJES==0 && ao.selection>=kWHLightFlavorCR && ao.selection<=kWHPresel) || ao.selection==kWHSR) {
+          /*ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
+          ao.mvaInputs[nThread][ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
+          ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
+          ao.mvaInputs[nThread][ 3] = bjet1btag                                               ; //"bjet1btag"   
+          ao.mvaInputs[nThread][ 4] = bjet2btag                                               ; //"bjet2btag"   
+          ao.mvaInputs[nThread][ 5] = gt.ZBosonPt                                             ; //"ZBosonPt"    
+          ao.mvaInputs[nThread][ 6] = gt.ZBosonM                                              ; //"ZBosonM"     
+          ao.mvaInputs[nThread][ 7] = gt.ZBosonLep1CosThetaCS                                 ; //"CosThetaCS"  
+          ao.mvaInputs[nThread][ 8] = gt.ZBosonLep1CosThetaStar                               ; //"CosThetaStar"
+          ao.mvaInputs[nThread][ 9] = gt.hbbpt_reg[iJES]                                      ; //"hbbpt"       
+          ao.mvaInputs[nThread][10] = gt.hbbm_reg[iJES]                                       ; //"hbbm"        
+          ao.mvaInputs[nThread][11] = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[iJES]-gt.ZBosonPhi)); //"dPhiZH"      
+          ao.mvaInputs[nThread][12] = gt.hbbpt_reg[iJES]/gt.ZBosonPt                          ; //"ptBalanceZH" 
+          ao.mvaInputs[nThread][13] = dRBjets                                                 ; //"dRBjets"     
+          ao.mvaInputs[nThread][14] = dEtaBjets                                               ; //"dEtaBjets"   
+          ao.mvaInputs[nThread][15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
+          bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");*/
+        } else if((iJES==0 && ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) || ao.selection==kWHFJSR) { 
+          /*ao.mvaInputs[nThread][ 0] = nIsojet[iJES]                   ; //"nIsojet"       
+          ao.mvaInputs[nThread][ 1] = gt.fjPt[iJES]                   ; //"fjPt"          
+          ao.mvaInputs[nThread][ 2] = gt.fjMSD[iJES]                  ; //"MSD"           
+          ao.mvaInputs[nThread][ 3] = gt.fjTau21SD                    ; //"Tau21SD"       
+          ao.mvaInputs[nThread][ 4] = gt.fjPt[iJES]/gt.ZBosonPt;      ; //"ptBalanceZHFJ" 
+          ao.mvaInputs[nThread][ 5] = dEtaZHFJ                        ; //"dEtaZHFJ"      
+          ao.mvaInputs[nThread][ 6] = deltaPhiZHFJ                    ; //"dPhiZHFJ"      
+          ao.mvaInputs[nThread][ 7] = ZHFJP4_jes.Mt()                 ; //"mTZHFJ"        
+          ao.mvaInputs[nThread][ 8] = ptBalanceL1L2                   ; //"ptBalanceL1L2" 
+          ao.mvaInputs[nThread][ 9] = dRL1L2                          ; //"dRL1L2"        
+          ao.mvaInputs[nThread][10] = gt.ZBosonPt                     ; //"ZBosonPt"      
+          ao.mvaInputs[nThread][11] = lepton1Pt                       ; //"lepton1Pt"     
+          ao.mvaInputs[nThread][12] = lepton2Pt                       ; //"lepton2Pt"     
+          ao.mvaInputs[nThread][13] = deltaM                          ; //"deltaM"        
+          ao.mvaInputs[nThread][14] = gt.ZBosonLep1CosThetaCS         ; //"CosThetaCS"        
+          bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");*/
+        }
       }
       switch(ao.MVAVarType) {
         case 1:
@@ -1813,7 +1524,7 @@ void analyzeSample(
           if (shift==GeneralTree::csvCent) continue;
           ao.histo_btag[iShift][iPt][iEta][typeLepSel][category]->Fill(MVAVar[0], weight*weight_btag[iShift][iPt][iEta]);
         }
-        if(ao.selection>=kWHLightFlavorCR && ao.selection<=kWHPresel) { // Boosted only weighting
+        if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) { // Boosted only weighting
           ao.histo_VGluUp      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VGluUp);
           ao.histo_VGluDown    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VGluDown);
           ao.histo_doubleBUp   [typeLepSel][category]->Fill(MVAVar[0], weight*weight_doubleBUp);
@@ -1830,9 +1541,6 @@ void analyzeSample(
     // Fill the plotting histograms and MVA tree (if applicable)
     bool passFullSel = (selectionBits[0] & ao.selection) != 0;
     if(passFullSel && ao.debug>=3) printf("\tPassed this sel\n");
-    bLoad(b["ZBosonLep1CosThetaCS"],ientry);
-    bLoad(b["ZBosonLep1CosThetaStar"],ientry);
-    bLoad(b["ZBosonLep1CosThetaStarFJ"],ientry);
     bLoad(b["sumEtSoft1"],ientry);
     bLoad(b["nSoft2"],ientry);
     bLoad(b["nSoft5"],ientry);
@@ -1844,27 +1552,6 @@ void analyzeSample(
     // Lock the mutex and fill the MVA tree
     if(ao.selection==kWHSR && passFullSel && category!=kPlotData) {
       mvaTreeMutex.lock();
-      ao.mva_sumEtSoft1   = gt.sumEtSoft1            ; 
-      ao.mva_nSoft2       = gt.nSoft2                ; 
-      ao.mva_nSoft5       = gt.nSoft5                ; 
-      ao.mva_nSoft10      = gt.nSoft10               ; 
-      ao.mva_bjet1Pt      = bjet1Pt                  ; 
-      ao.mva_bjet2Pt      = bjet2Pt                  ; 
-      ao.mva_bjet1btag    = bjet1btag                ; 
-      ao.mva_bjet2btag    = bjet2btag                ; 
-      ao.mva_ZBosonPt     = gt.ZBosonPt              ; 
-      ao.mva_ZBosonM      = gt.ZBosonM               ; 
-      ao.mva_CosThetaCS   = gt.ZBosonLep1CosThetaCS  ; 
-      ao.mva_CosThetaStar = gt.ZBosonLep1CosThetaStar; 
-      ao.mva_hbbpt        = gt.hbbpt_reg[0]          ; 
-      ao.mva_hbbm         = gt.hbbm_reg[0]           ; 
-      ao.mva_dPhiZH       = deltaPhiZH               ; 
-      ao.mva_ptBalanceZH  = ptBalanceZH              ; 
-      ao.mva_dRBjets      = dRBjets                  ; 
-      ao.mva_dEtaBjets    = dEtaBjets                ; 
-      ao.mva_dRZH         = dRZH                     ; 
-      ao.mva_dEtaZH       = dEtaZH                   ; 
-      ao.mva_nAddJet      = gt.nJet[0]-2             ; 
       ao.mva_weight       = weight                   ; 
       ao.mva_category     = category                 ;
       ao.mva_eventNumber  = gt.eventNumber           ;
@@ -1872,24 +1559,9 @@ void analyzeSample(
       mvaTreeMutex.unlock();
     } else if(ao.selection==kWHFJSR && passFullSel && category!=kPlotData) {
       mvaTreeMutex.lock();
-      ao.mva_nIsojet       = nIsojet[0]      ; 
       //ao.mva_MSD           = fjMSD_corr[0]  ;
-      ao.mva_fjPt          = gt.fjPt[0]      ; 
       ao.mva_MSD           = gt.fjMSD[0]     ; // TEMPORARY DGH 
       ao.mva_Tau21SD       = gt.fjTau21SD    ; 
-      ao.mva_ptBalanceZHFJ = ptBalanceZHFJ   ; 
-      ao.mva_dEtaZHFJ      = dEtaZHFJ        ; 
-      ao.mva_dPhiZHFJ      = deltaPhiZHFJ    ; 
-      ao.mva_mTZHFJ        = mTZHFJ          ; 
-      ao.mva_ptBalanceL1L2 = ptBalanceL1L2   ; 
-      ao.mva_dRL1L2        = dRL1L2          ; 
-      ao.mva_ZBosonPt      = gt.ZBosonPt     ;
-      ao.mva_CosThetaCS    = gt.ZBosonLep1CosThetaCS;
-      ao.mva_lepton1Pt     = lepton1Pt       ; 
-      ao.mva_lepton2Pt     = lepton2Pt       ; 
-      ao.mva_lepton1Eta    = fabs(lepton1Eta);
-      ao.mva_lepton2Eta    = fabs(lepton2Eta);
-      ao.mva_deltaM        = deltaM          ;
       ao.mva_weight        = weight          ; 
       ao.mva_category      = category        ;
       ao.mva_eventNumber   = gt.eventNumber  ;
@@ -1902,23 +1574,18 @@ void analyzeSample(
       // Variables -- change the makePlot for n-1 later
       if      (ao.histoNames[p]=="MVAVar"                  ) { theVar = MVAVar[0]                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="lepton1Pt"               ) { theVar = lepton1Pt                  ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="lepton2Pt"               ) { theVar = lepton2Pt                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="lepton1Eta"              ) { theVar = lepton1Eta                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="lepton2Eta"              ) { theVar = lepton2Eta                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ZBosonPt"                ) { theVar = gt.ZBosonPt                ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ZBosonEta"               ) { theVar = gt.ZBosonEta               ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ZBosonPhi"               ) { theVar = gt.ZBosonPhi               ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ZBosonM"                 ) { theVar = gt.ZBosonM                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ZBosonLep1CosThetaCS"    ) { theVar = gt.ZBosonLep1CosThetaCS    ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ZBosonLep1CosThetaStar"  ) { theVar = gt.ZBosonLep1CosThetaStar  ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="lepton1Charge"           ) { theVar = lepton1Charge              ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="WBosonPt"                ) { theVar = gt.topWBosonPt             ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="WBosonPhi"               ) { theVar = gt.topWBosonPhi            ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Mjj"                     ) { theVar = gt.hbbm_reg[0]             ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="pTjj"                    ) { theVar = gt.hbbpt_reg[0]            ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet1Pt"                 ) { theVar = bjet1Pt                    ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet2Pt"                 ) { theVar = bjet2Pt                    ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet1btag"               ) { theVar = bjet1btag                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet2btag"               ) { theVar = bjet2btag                  ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="deltaPhiZH"              ) { theVar = deltaPhiZH                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ptBalanceZH"             ) { theVar = ptBalanceZH                ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaPhiWH"              ) { theVar = deltaPhiWH                 ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="ptBalanceWH"             ) { theVar = ptBalanceWH                ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nJet"                    ) { theVar = gt.nJet[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="sumEtSoft1"              ) { theVar = gt.sumEtSoft1              ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nSoft2"                  ) { theVar = gt.nSoft2                  ; makePlot = passFullSel; }
@@ -1930,14 +1597,11 @@ void analyzeSample(
       else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
       else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Tau21SD"                 ) { theVar = gt.fjTau21SD               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="Tau32SD"                 ) { theVar = gt.fjTau32SD               ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="doubleB"                 ) { theVar = gt.fjDoubleCSV             ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ZBosonLep1CosThetaStarFJ") { theVar = gt.ZBosonLep1CosThetaStarFJ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="deltaEtaZHFJ"            ) { theVar = dEtaZHFJ                   ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="deltaPhiZHFJ"            ) { theVar = deltaPhiZHFJ               ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="mTZHFJ"                  ) { theVar = mTZHFJ                     ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="dRL1L2"                  ) { theVar = dRL1L2                     ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ptBalanceZHFJ"           ) { theVar = ptBalanceZHFJ              ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ptBalanceL1L2"           ) { theVar = ptBalanceL1L2              ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaEtaLep1FJ"          ) { theVar = dEtaLep1FJ                 ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaPhiWHFJ"            ) { theVar = deltaPhiWHFJ               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="ptBalanceWHFJ"           ) { theVar = ptBalanceWHFJ              ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nIsojet"                 ) { theVar = nIsojet[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="isojetNBtags"            ) { theVar = isojetNBtags[0]            ; makePlot = passFullSel; }
       if(!makePlot) continue;
@@ -1950,4 +1614,213 @@ void analyzeSample(
     }
        
   } // End Event Loop
+}
+
+void writeDatacards(analysisObjects &ao, TString dataCardDir) {  
+  for(unsigned lep=0; lep<nLepSel; lep++) {
+    ofstream newcardShape;
+    newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_W%sH%s.txt",
+                      dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[ao.selection].Data()));
+    newcardShape << Form("imax * number of channels\n");
+    newcardShape << Form("jmax * number of background minus 1\n");
+    newcardShape << Form("kmax * number of nuisance parameters\n");
+
+    newcardShape << Form("shapes      *   * datacard_W%sH%s.root  histo_$PROCESS histo_$PROCESS_$SYSTEMATIC\n",leptonStrings[lep].Data(),selectionNames[ao.selection].Data());
+    newcardShape << Form("shapes data_obs * datacard_W%sH%s.root  histo_%s\n",leptonStrings[lep].Data(),selectionNames[ao.selection].Data(),plotBaseNames[kPlotData].Data());
+
+    newcardShape << Form("Observation %f\n",ao.histo_Baseline[lep][kPlotData]->GetSumOfWeights());
+
+    newcardShape << Form("bin   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("chW%sH%s  ",leptonStrings[lep].Data(),selectionNames[ao.selection].Data());
+    newcardShape << Form("\n");
+
+    newcardShape << Form("process   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("%s  ",plotBaseNames[ic].Data());
+    newcardShape << Form("\n");
+ 
+    newcardShape << Form("process  ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
+        continue;
+      if(ic==kPlotZH)
+        newcardShape << Form("%d  ",0);
+      else if(ic==kPlotGGZH)
+        newcardShape << Form("%d  ",-1);
+      else
+        newcardShape << Form("%d  ",ic);
+    }
+    newcardShape << Form("\n");
+
+    newcardShape << Form("rate  ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("%f  ",ao.histo_Baseline[lep][ic]->GetSumOfWeights());
+    newcardShape << Form("\n");
+
+    newcardShape << Form("lumi_13TeV    lnN     ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+       newcardShape << Form("%6.3f ",1.025);
+    newcardShape << Form("\n");
+
+    newcardShape << Form("pileup    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    newcardShape << Form("VHCorr    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
+        continue;
+      if(ic!=kPlotZH && ic!=kPlotGGZH) 
+        newcardShape << Form("-  ");
+      else
+        newcardShape << Form("1.0  ");
+    }
+    newcardShape << Form("\n");
+
+    newcardShape << Form("eleSF    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    newcardShape << Form("muSF    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      newcardShape << Form("1.0  ");
+    newcardShape << Form("\n");
+
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+      newcardShape << Form("QCDScale%s    shape   ",plotBaseNames[ic].Data());
+      for(unsigned ic2=kPlotVZbb; ic2!=nPlotCategories; ic2++) {
+        if(ao.histo_Baseline[lep][ic2]->GetSumOfWeights() > 0) {
+          if(ic==ic2) newcardShape << Form("1.0  ");
+          else        newcardShape << Form("-  ");
+        }
+      }
+      newcardShape << Form("\n");
+    }
+
+    for(unsigned iJES=0; iJES<NJES; iJES++) {
+      if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+      TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
+      if(!shiftName.EndsWith("Up")) continue;
+      TString nuisanceName = shiftName(0,shiftName.Length()-2);
+      newcardShape << Form("%s    shape   ",nuisanceName.Data());
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+        newcardShape << Form("1.0  ");
+      newcardShape << Form("\n");
+    }
+    
+    GeneralTree gt;
+    for(unsigned iPt=0; iPt<5; iPt++)
+    for(unsigned iEta=0; iEta<3; iEta++)
+    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+      GeneralTree::csvShift shift = gt.csvShifts[iShift];
+      if (shift==GeneralTree::csvCent) continue;
+      // Get the name of the nuisance only from the Up variations
+      TString shiftName(btagShiftName(shift));
+      if(!shiftName.EndsWith("Up")) continue;
+      TString nuisanceName = shiftName(0,shiftName.Length()-2);
+      newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && ao.selection==kWH2TopCR) 
+          newcardShape << Form("-  ");
+        else
+          newcardShape << Form("1.0  ");
+      }
+      newcardShape << Form("\n");
+    }
+
+    newcardShape<<"pdf_qqbar lnN "; 
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
+        newcardShape<<pdfAcceptUncs[ic]<<" ";
+      else newcardShape<<"- ";
+    } 
+    newcardShape<<std::endl;
+
+    newcardShape<<"pdf_gg lnN ";
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      if(ic==kPlotTop||ic==kPlotTT|ic==kPlotGGZH)
+        newcardShape<<pdfAcceptUncs[ic]<<" "; 
+      else
+        newcardShape<<"- ";
+    }
+    newcardShape<<std::endl;
+
+    newcardShape<<Form("CMS_VH_TopNorm lnN ");
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
+    }
+    newcardShape<<std::endl;
+    
+    newcardShape<<Form("CMS_VH_VVNorm lnN ");
+    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+        continue;
+      newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
+    }
+    newcardShape<<std::endl;
+    
+    // Normalization and double B scale factors
+    if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) {
+      // Boosted norms
+      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
+      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
+      newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
+      // In situ measurement of doubleB SF for ZLF, Zb, eff checked in kWHFJPresel
+      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; 
+      newcardShape << "effDoubleB_Zb   param 0.20  0.02  " << std::endl;
+      newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
+      newcardShape << "effSFDoubleB_Zb  extArg 1.0 [0.1,10]" << std::endl;
+      if(ao.selection==kWHHeavyFlavorFJCR || ao.selection==kWHTT2bFJCR || ao.selection==kWHFJSR) {
+        newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
+        newcardShape << Form("passBB_Zb  rateParam * %s (@0*1.0) effSFDoubleB_Zb \n" ,plotBaseNames[kPlotZb].Data());
+      } else if(ao.selection==kWHLightFlavorFJCR || ao.selection==kWHTT1bFJCR) {
+        newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
+        newcardShape << Form("failBB_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Zb,effDoubleB_Zb\n" ,plotBaseNames[kPlotZb].Data());
+      }
+      // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
+      newcardShape << Form("CMS_doubleB shape ");
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotZbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
+          newcardShape << "1.0 ";
+        else
+          newcardShape << "- ";
+      }
+      newcardShape<<Form("VjetsGluFrac shape ");
+      for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
+          newcardShape << "1.0 ";
+        else
+          newcardShape << "- ";
+      }
+    } else {
+      newcardShape << Form("SF_TT_Zll  rateParam * %s 1 [0.2,5]\n" ,plotBaseNames[kPlotTT].Data());
+      newcardShape << Form("SF_Wbb_Zll rateParam * %s 1 [0.2,5]\n" ,plotBaseNames[kPlotWbb].Data());
+      newcardShape << Form("SF_Wb_Zll  rateParam * %s 1 [0.2,5]\n" ,plotBaseNames[kPlotWb].Data());
+      newcardShape << Form("SF_WLF_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotWLF].Data());
+    }
+
+    newcardShape << Form("* autoMCStats 1\n");
+    newcardShape.close();
+  }
 }

@@ -7,5 +7,5 @@ NC='\033[0m' # No Color
 for token in $toMerge
 do
   echo -e "Merging into MitVHBBAnalysis/datacards/${dataCardDir}/${token}.root"
-  hadd -v 0 MitVHBBAnalysis/datacards/${dataCardDir}/${token}.root MitVHBBAnalysis/datacards/${dataCardDir}/split/${token}_*.root
+  hadd -ff MitVHBBAnalysis/datacards/${dataCardDir}/${token}.root MitVHBBAnalysis/datacards/${dataCardDir}/split/${token}_*.root
 done
