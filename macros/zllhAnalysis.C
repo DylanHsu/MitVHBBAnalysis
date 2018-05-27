@@ -314,11 +314,17 @@ void zllhAnalysis(
   } else if(ao.MVAVarType==3) {
     // 3 - normal BDT in SR, subleading CMVA in CR
     if(selection==kZllHLightFlavorCR) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667};
+      if(year==2016)
+        ao.MVAbins={-1.0000, -0.9000, -0.8000, -0.7000, -0.5500};
+      else
+        ao.MVAbins={ 0.0000,  0.0400,  0.0800,  0.1200,  0.1600};
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
-      ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+      if(year==2016)
+        ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+      else
+        ao.MVAbins={ 0.1500,  0.2500,  0.3500,  0.4500,  0.5500, 0.6000, 0.6500, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR) {
