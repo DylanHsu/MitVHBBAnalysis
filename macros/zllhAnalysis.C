@@ -32,8 +32,8 @@
 #include "PandaAnalysis/Flat/interface/Common.h"
 
 TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb1/dilepton";
-TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/dilepton";
-const bool useHtBinnedVJetsKFactor=false;
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb1/dilepton";
+const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
 const int nPlots=50; // Max number of plots
@@ -289,12 +289,18 @@ void zllhAnalysis(
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
     } else if(selection==kZllHLightFlavorCR) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667};
-      ao.MVAVarName="Subleading H(bb) CMVA";
+      if(year==2016)
+        ao.MVAbins={-1.0000, -0.9000, -0.8000, -0.7000, -0.5500};
+      else
+        ao.MVAbins={ 0.0000,  0.0400,  0.0800,  0.1200,  0.1600};
+      ao.MVAVarName="Subleading H(bb) BTAG";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
-      ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
-      ao.MVAVarName="Subleading H(bb) CMVA";
+      if(year==2016)
+        ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+      else
+        ao.MVAbins={ 0.1500,  0.2500,  0.3500,  0.4500,  0.5500, 0.6000, 0.6500, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
+      ao.MVAVarName="Subleading H(bb) BTAG";
       ao.shapeType="lesserCMVAShape";
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
       if(selection==kZllHHeavyFlavorFJCR)
@@ -422,26 +428,26 @@ void zllhAnalysis(
   for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
     ao.histo_Baseline     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s"                , plotBaseNames[ic].Data()));
     if(ic<kPlotVZbb) continue;
-    ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"       , plotBaseNames[ic].Data()));
-    ao.histo_pileupDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"       , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrDown"     , plotBaseNames[ic].Data()));
-    ao.histo_QCDr1f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f2"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr1f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f5"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr2f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f1"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr2f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f2"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr5f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f1"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr5f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f5"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sUp"   , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sDown" , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-    ao.histo_eleSFUp      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFUp"        , plotBaseNames[ic].Data()));
-    ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"      , plotBaseNames[ic].Data()));
-    ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"         , plotBaseNames[ic].Data()));
-    ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"       , plotBaseNames[ic].Data()));
-    ao.histo_VGluUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VGluUp"         , plotBaseNames[ic].Data()));
-    ao.histo_VGluDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VGluDown"       , plotBaseNames[ic].Data()));
-    ao.histo_doubleBUp    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_doubleBUp"      , plotBaseNames[ic].Data()));
-    ao.histo_doubleBDown  [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_doubleBDown"    , plotBaseNames[ic].Data()));
+    ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"        , plotBaseNames[ic].Data()));
+    ao.histo_pileupDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupDown"      , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"        , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrDown"      , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f2"         , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f5"         , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f1"         , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f2"         , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f1"         , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f5"         , plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sUp"    , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sDown"  , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_eleSFUp      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFUp"         , plotBaseNames[ic].Data()));
+    ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"       , plotBaseNames[ic].Data()));
+    ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"          , plotBaseNames[ic].Data()));
+    ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"        , plotBaseNames[ic].Data()));
+    ao.histo_VGluUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VjetsGluFracUp"  , plotBaseNames[ic].Data()));
+    ao.histo_VGluDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VjetsGluFracDown", plotBaseNames[ic].Data()));
+    ao.histo_doubleBUp    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_CMS_doubleBUp"   , plotBaseNames[ic].Data()));
+    ao.histo_doubleBDown  [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_CMS_doubleBDown" , plotBaseNames[ic].Data()));
     for(unsigned iJES=0; iJES<NJES; iJES++)
       ao.histo_jes[iJES][lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(
         Form("histo_%s_%s", plotBaseNames[ic].Data(), jesName(static_cast<shiftjes>(iJES)).Data())
@@ -453,8 +459,8 @@ void zllhAnalysis(
       if (shift==GeneralTree::csvCent) continue;
       ao.histo_btag[iShift][iPt][iEta][lep][ic] =
         (TH1F*)ao.histos[lep][0][ic]->Clone(
-          Form("histo_%s_CMS_VH_btag_pt%d_eta%d_%s",
-          plotBaseNames[ic].Data(),iPt,iEta,btagShiftName(shift))
+          Form("histo_%s_CMS_VH_btag%d_pt%d_eta%d_%s",
+          plotBaseNames[ic].Data(),ao.year,iPt,iEta,btagShiftName(shift))
         );
     }
   }
@@ -762,11 +768,11 @@ void zllhAnalysis(
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         // Special symmetrization procedure
         TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
-        if(shiftName.EndsWith("Down")){
+        if(shiftName.EndsWith("Down") && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
           for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
-            double diff = ao.histo_jes[iJES-1][lep][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][ic]->GetBinContent(nb);
-            double mean = ao.histo_Baseline[lep][ic]->GetBinContent(nb);
-            ao.histo_jes[iJES][lep][ic]->SetBinContent(nb,mean-diff);
+            float diff = ao.histo_jes[iJES-1][lep][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            float mean = ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            ao.histo_jes[iJES][lep][ic]->SetBinContent(nb,TMath::Max(mean-diff,1e-7f));
           }
         }
         ao.histo_jes[iJES][lep][ic]->Write();
@@ -778,11 +784,11 @@ void zllhAnalysis(
         if (shift==GeneralTree::csvCent) continue;
         // Special symmetrization procedure
         TString shiftName(btagShiftName(shift));
-        if(shiftName.EndsWith("Down")){
+        if(shiftName.EndsWith("Down") && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
           for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
-            double diff = ao.histo_btag[iShift-1][iPt][iEta][lep][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][ic]->GetBinContent(nb);
-            double mean = ao.histo_Baseline[lep][ic]->GetBinContent(nb);
-            ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb,mean-diff);
+            float diff = ao.histo_btag[iShift-1][iPt][iEta][lep][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            float mean = ao.histo_Baseline[lep][ic]->GetBinContent(nb);
+            ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb,TMath::Max(mean-diff,1e-7f));
           }
         }
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->Write();
@@ -1587,6 +1593,7 @@ void analyzeSample(
           // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
           for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
             GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+	    weight_btag[iShift][iPt][iEta] = 1.0;
             for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
               unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
               BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
@@ -1598,8 +1605,8 @@ void analyzeSample(
                 jetPts[iPt][iEta][iJ],
                 jetBtags[iPt][iEta][iJ]
               );
-              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] = reshapeFactor/weight_btag[0][iPt][iEta];
-              else                    weight_btag[iShift][iPt][iEta] = 1;
+              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor/weight_btag[0][iPt][iEta];
+              else                    weight_btag[iShift][iPt][iEta] *= 1;
             }
           }
         }
@@ -1609,7 +1616,7 @@ void analyzeSample(
         if(gt.fjHighestPtGen==21 && (
           category==kPlotWbb || category==kPlotWb || category==kPlotWLF ||
           category==kPlotZbb || category==kPlotZb || category==kPlotZLF)
-        ) { weight_VGluUp *= 1.2; weight_VGluDown *= 0.8; }
+        ) { weight_VGluUp = 1.2; weight_VGluDown = 0.8; }
         
         bLoad(b["fjPt"],ientry);
         // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Boosted_event_topologies
@@ -1688,10 +1695,11 @@ void analyzeSample(
             MVAVar[iJES]=gt.hbbpt_reg[iJES];
           else if(ao.selection==kZllHFJSR)
             MVAVar[iJES]=gt.fjPt[iJES];
-          else if(ao.selection==kZllHLightFlavorCR ||
-            ao.selection==kZllHHeavyFlavorCR       || 
+          else if(ao.selection==kZllHHeavyFlavorCR   || 
             ao.selection==kZllH2TopCR)
             MVAVar[iJES]=bjet2btag;
+          else if(ao.selection==kZllHLightFlavorCR)
+            MVAVar[iJES]=bjet1btag;
           else if(ao.selection==kZllHLightFlavorFJCR ||
             ao.selection==kZllHHeavyFlavorFJCR       ||
             ao.selection==kZllHTT2bFJCR              ||
@@ -1702,10 +1710,11 @@ void analyzeSample(
         case 3:
           if(ao.selection==kZllHSR || ao.selection==kZllHFJSR)
             MVAVar[iJES] = bdtValue[iJES];
-          else if(ao.selection==kZllHLightFlavorCR ||
-            ao.selection==kZllHHeavyFlavorCR       || 
+          else if(ao.selection==kZllHHeavyFlavorCR || 
             ao.selection==kZllH2TopCR)
             MVAVar[iJES]=bjet2btag;
+          else if(ao.selection==kZllHLightFlavorCR)
+            MVAVar[iJES]=bjet1btag;
           else if(ao.selection==kZllHLightFlavorFJCR ||
             ao.selection==kZllHHeavyFlavorFJCR       ||
             ao.selection==kZllHTT2bFJCR              ||
@@ -2009,7 +2018,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       TString shiftName(btagShiftName(shift));
       if(!shiftName.EndsWith("Up")) continue;
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
-      newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
+      newcardShape << Form("CMS_VH_btag%d_pt%d_eta%d_%s    shape   ",ao.year,iPt,iEta,nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
         if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && ao.selection==kZllH2TopCR) 
@@ -2060,20 +2069,24 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     // Normalization and double B scale factors
     if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
       // Boosted norms
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
-      newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
+      newcardShape << Form("SF%d_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotZbb].Data());
+      newcardShape << Form("SF%d_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotZb].Data());
+      newcardShape << Form("SF%d_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotZLF].Data());
       // In situ measurement of doubleB SF for ZLF, Zb, eff checked in kZllHFJPresel
-      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; 
-      newcardShape << "effDoubleB_Zb   param 0.20  0.02  " << std::endl;
-      newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
-      newcardShape << "effSFDoubleB_Zb  extArg 1.0 [0.1,10]" << std::endl;
+      newcardShape << Form("eff%dDoubleB_ZLF  param 0.024 0.0060\n",ao.year);
+      newcardShape << Form("eff%dDoubleB_Zb   param 0.20  0.05\n",ao.year);
+      newcardShape << Form("eff%dSFDoubleB_ZLF param 1.0 0.5\n",ao.year);
+      newcardShape << Form("eff%dSFDoubleB_Zb  param 1.0 0.5\n",ao.year);
+      //newcardShape << Form("eff%dDoubleB_ZLF  param 0.024 0.0024\n",ao.year);
+      //newcardShape << Form("eff%dDoubleB_Zb   param 0.20  0.02\n",ao.year);
+      //newcardShape << Form("eff%dSFDoubleB_ZLF extArg 1.0 [0.1,10]\n",ao.year);
+      //newcardShape << Form("eff%dSFDoubleB_Zb  extArg 1.0 [0.1,10]\n",ao.year);
       if(ao.selection==kZllHHeavyFlavorFJCR || ao.selection==kZllHTT2bFJCR || ao.selection==kZllHFJSR) {
-        newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("passBB_Zb  rateParam * %s (@0*1.0) effSFDoubleB_Zb \n" ,plotBaseNames[kPlotZb].Data());
+        newcardShape << Form("passBB%d_ZLF rateParam * %s (@0*1.0) eff%dSFDoubleB_ZLF\n",ao.year,plotBaseNames[kPlotZLF].Data(),ao.year);
+        newcardShape << Form("passBB%d_Zb  rateParam * %s (@0*1.0) eff%dSFDoubleB_Zb \n",ao.year,plotBaseNames[kPlotZb].Data(),ao.year);
       } else if(ao.selection==kZllHLightFlavorFJCR || ao.selection==kZllHTT1bFJCR) {
-        newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("failBB_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Zb,effDoubleB_Zb\n" ,plotBaseNames[kPlotZb].Data());
+        newcardShape << Form("failBB%d_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) eff%dSFDoubleB_ZLF,eff%dDoubleB_ZLF\n",ao.year,plotBaseNames[kPlotZLF].Data(),ao.year,ao.year);
+        newcardShape << Form("failBB%d_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) eff%dSFDoubleB_Zb,eff%dDoubleB_Zb\n"  ,ao.year,plotBaseNames[kPlotZb].Data(),ao.year,ao.year);
       }
       // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
       newcardShape << Form("CMS_doubleB shape ");
@@ -2095,10 +2108,10 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       }
       newcardShape<<std::endl;
     } else {
-      newcardShape << Form("SF_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
-      newcardShape << Form("SF_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
-      newcardShape << Form("SF_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
-      newcardShape << Form("SF_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
+      newcardShape << Form("SF%d_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,ao.year,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
+      newcardShape << Form("SF%d_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,ao.year,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
+      newcardShape << Form("SF%d_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,ao.year,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
+      newcardShape << Form("SF%d_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",ao.year,binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());
     }
 
     newcardShape << Form("* autoMCStats 1\n");
