@@ -1946,19 +1946,19 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape << Form("bin   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
       newcardShape << Form("chZ%sH%s  ",leptonStrings[lep].Data(),selectionNames[ao.selection].Data());
     newcardShape << Form("\n");
 
     newcardShape << Form("process   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
       newcardShape << Form("%s  ",plotBaseNames[ic].Data());
     newcardShape << Form("\n");
  
     newcardShape << Form("process  ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
+      if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
       if(ic==kPlotZH)
         newcardShape << Form("%d  ",0);
@@ -1971,14 +1971,14 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape << Form("rate  ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
       newcardShape << Form("%f  ",ao.histo_Baseline[lep][ic]->GetSumOfWeights());
     newcardShape << Form("\n");
 
     newcardShape << Form("lumi_13TeV    lnN     ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
-      if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotZbb&&ic!=kPlotZb&&ic==kPlotZLF)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
+      if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotZbb&&ic!=kPlotZb&&ic!=kPlotZLF)
        newcardShape << Form("%6.3f ",1.025);
       else
         newcardShape << Form("-  ");
@@ -1987,13 +1987,13 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape << Form("pileup    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
       newcardShape << Form("1.0  ");
     newcardShape << Form("\n");
 
     newcardShape << Form("VHCorr    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
+      if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
       if(ic!=kPlotZH && ic!=kPlotGGZH) 
         newcardShape << Form("-  ");
@@ -2004,21 +2004,21 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape << Form("eleSF    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
       newcardShape << Form("1.0  ");
     newcardShape << Form("\n");
 
     newcardShape << Form("muSF    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
       newcardShape << Form("1.0  ");
     newcardShape << Form("\n");
 
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
       newcardShape << Form("QCDScale%s    shape   ",plotBaseNames[ic].Data());
       for(unsigned ic2=kPlotVZbb; ic2!=nPlotCategories; ic2++) {
-        if(ao.histo_Baseline[lep][ic2]->GetSumOfWeights() > 0) {
+        if(ao.histo_Baseline[lep][ic2] && ao.histo_Baseline[lep][ic2]->GetSumOfWeights() > 0) {
           if(ic==ic2) newcardShape << Form("1.0  ");
           else        newcardShape << Form("-  ");
         }
@@ -2033,7 +2033,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
       newcardShape << Form("%s    shape   ",nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+      if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
         newcardShape << Form("1.0  ");
       newcardShape << Form("\n");
     }
@@ -2050,7 +2050,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
       newcardShape << Form("CMS_VH_btag%d_pt%d_eta%d_%s    shape   ",ao.year,iPt,iEta,nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+      if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
         if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && ao.selection==kZllH2TopCR) 
           newcardShape << Form("-  ");
         else
@@ -2061,7 +2061,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape<<"pdf_qqbar lnN "; 
     for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+      if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
         continue;
       if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
         newcardShape<<pdfAcceptUncs[ic]<<" ";
@@ -2071,7 +2071,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape<<"pdf_gg lnN ";
     for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+      if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
         continue;
       if(ic==kPlotTop||ic==kPlotTT|ic==kPlotGGZH)
         newcardShape<<pdfAcceptUncs[ic]<<" "; 
@@ -2082,7 +2082,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape<<Form("CMS_VH_TopNorm lnN ");
     for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+      if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
         continue;
       newcardShape<< (ic==kPlotTop? "1.05 ":"- ");
     }
@@ -2090,7 +2090,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     
     //newcardShape<<Form("CMS_VH_VVNorm lnN ");
     //for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-    //  if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+    //  if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
     //    continue;
     //  newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
     //}
@@ -2121,7 +2121,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
       newcardShape << Form("CMS_doubleB shape ");
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+      if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
         if(ic==kPlotZbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
           newcardShape << "1.0 ";
         else
@@ -2130,7 +2130,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       newcardShape<<std::endl;
       newcardShape<<Form("VjetsGluFrac shape ");
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+      if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
         if(ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
           newcardShape << "1.0 ";
         else
@@ -2183,9 +2183,10 @@ void datacardsFromHistograms(
     TFile* infile = new TFile(inFileDatacardsName,"read");
 
     for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0 && ic!=kPlotData) continue;
       ao.histo_Baseline    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s"                , plotBaseNames[ic].Data()));
+      if(!ao.histo_Baseline[lep][ic]) continue;
       ao.histo_Baseline    [lep][ic]->SetDirectory(0);
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0 && ic!=kPlotData) continue;
       if(ic<kPlotVZbb) continue;
       ao.histo_pileupUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupUp"       , plotBaseNames[ic].Data()));
       ao.histo_pileupDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
@@ -2217,7 +2218,7 @@ void datacardsFromHistograms(
       for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
         GeneralTree::csvShift shift = gt.csvShifts[iShift];
         if (shift==GeneralTree::csvCent) continue;
-        ao.histo_btag[iShift][iPt][iEta][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_VH_btag_pt%d_eta%d_%s",plotBaseNames[ic].Data(),iPt,iEta,btagShiftName(shift)));
+        ao.histo_btag[iShift][iPt][iEta][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_VH_btag%d_pt%d_eta%d_%s",plotBaseNames[ic].Data(),year,iPt,iEta,btagShiftName(shift)));
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetDirectory(0);
       }
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
