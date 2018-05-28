@@ -2222,10 +2222,10 @@ void datacardsFromHistograms(
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetDirectory(0);
       }
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
-        ao.histo_VGluUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VGluUp"         , plotBaseNames[ic].Data()));
-        ao.histo_VGluDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VGluDown"       , plotBaseNames[ic].Data()));
-        ao.histo_doubleBUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_doubleBUp"      , plotBaseNames[ic].Data()));
-        ao.histo_doubleBDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_doubleBDown"    , plotBaseNames[ic].Data()));
+        ao.histo_VGluUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VjetsGluFracUp"    , plotBaseNames[ic].Data()));
+        ao.histo_VGluDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VjetsGluFracDown"  , plotBaseNames[ic].Data()));
+        ao.histo_doubleBUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_doubleBUp"     , plotBaseNames[ic].Data()));
+        ao.histo_doubleBDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_doubleBDown"   , plotBaseNames[ic].Data()));
         ao.histo_VGluUp     [lep][ic]->SetDirectory(0);
         ao.histo_VGluDown   [lep][ic]->SetDirectory(0);
         ao.histo_doubleBUp  [lep][ic]->SetDirectory(0);
