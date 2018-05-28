@@ -27,7 +27,7 @@ void zhbbMVA(
   
   // Initialize the factory
   TString trainName="BDT_"+TString(useMulticlass?"multiClass_":"singleClass_")+TString(isBoosted?"boosted":"resolved")+(extraString == "" ? "" : "_"+extraString);
-  output_file=TFile::Open("/data/t3home000/dhsu/mva/zhbb/trainingResult_zllhbb_"+trainName+".root", "RECREATE");
+  output_file=TFile::Open(trainName+".root", "RECREATE");
   //factory = new TMVA::Factory("bdt", output_file, "!V:!Silent:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Multiclass");
   TString factoryOptions="!V:!Silent:DrawProgressBar";
   //TString factoryOptions="!V:!Silent:!DrawProgressBar";

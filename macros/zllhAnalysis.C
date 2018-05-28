@@ -329,9 +329,9 @@ void zllhAnalysis(
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR) {
       if(binZpt==0)
-        ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
+        ao.MVAbins={-1.00,-0.40,-0.25,-0.10,0.05,0.20,0.35,0.50,0.65,1.00};
       else
-        ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
+        ao.MVAbins={-1.00,-0.40,-0.25,-0.10,0.05,0.20,0.35,0.50,0.65,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -342,7 +342,7 @@ void zllhAnalysis(
       ao.MVAVarName="Fatjet soft drop mass [GeV]";
       ao.shapeType="softDropMassShape";
     } else if(selection==kZllHFJSR) {
-      ao.MVAbins={-0.8,-0.4,0,0.4,0.8};
+      ao.MVAbins={-1.00,-0.10,0.05,0.20,0.35,0.50,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
@@ -573,14 +573,16 @@ void zllhAnalysis(
   if(MVAVarType>1) {
     TString bdtWeights="";
     if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) 
-      bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_may24.weights.xml";
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2017.weights.xml";
     else if(ao.binZpt==0)
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2016.weights.xml":
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2017.weights.xml";
     else if(ao.binZpt==1) 
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1_2016.weights.xml":
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1_2017.weights.xml";
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
@@ -694,7 +696,7 @@ void zllhAnalysis(
        TMath::Abs(ao.histo_QCDr5f5[lep][ic]->GetBinContent(nb)-ao.histo_Baseline[lep][ic]->GetBinContent(nb))};
 
       double systQCDScale = diffQCDScale[0];
-      for(int nqcd=0; nqcd<6; nqcd++) {
+      for(int nqcd=1; nqcd<6; nqcd++) {
         if(diffQCDScale[nqcd] > systQCDScale) systQCDScale = diffQCDScale[nqcd];
       }
 
@@ -736,7 +738,23 @@ void zllhAnalysis(
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_btag[iShift][iPt][iEta][lep][ic]->GetBinContent(nb),1e-7f));
       }
     } // all bins in histograms
-  }
+    // Renormalize QCD scale uncertainties
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 &&
+       (ic!=kPlotVZbb&&ic!=kPlotVVLF)) {
+      ao.histo_QCDScaleUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_QCDScaleUp  [lep][ic]->GetSumOfWeights());
+      ao.histo_QCDScaleDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_QCDScaleDown[lep][ic]->GetSumOfWeights());
+    }
+    // Renormalize lepton SF and pileup uncertainties
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 &&
+       (ic==kPlotTop||ic==kPlotTT||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)) {
+      ao.histo_pileupUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupUp  [lep][ic]->GetSumOfWeights());
+      ao.histo_pileupDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupDown[lep][ic]->GetSumOfWeights());
+      ao.histo_eleSFUp   [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFUp   [lep][ic]->GetSumOfWeights());
+      ao.histo_eleSFDown [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFDown [lep][ic]->GetSumOfWeights());
+      ao.histo_muSFUp	 [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFUp    [lep][ic]->GetSumOfWeights());
+      ao.histo_muSFDown  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFDown  [lep][ic]->GetSumOfWeights());
+    }
+  } // all final states and categories
   
   // Write shape histograms to file
   for(unsigned lep=0; lep<nLepSel; lep++) {
@@ -1731,6 +1749,8 @@ void analyzeSample(
       }
       // Handle overflow
       MVAVar[iJES] = TMath::Min((ao.MVAbins[ao.MVAbins.size()-1]-0.00001f), (float)MVAVar[iJES]);
+      // Handle underflow
+      MVAVar[iJES] = TMath::Max((ao.MVAbins[0]+0.00001f), (float)MVAVar[iJES]);
     }
 
     // Fill the uncertainty histograms
@@ -1957,8 +1977,12 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape << Form("lumi_13TeV    lnN     ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
+      if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotZbb&&ic!=kPlotZb&&ic==kPlotZLF)
        newcardShape << Form("%6.3f ",1.025);
+      else
+        newcardShape << Form("-  ");
+    }
     newcardShape << Form("\n");
 
     newcardShape << Form("pileup    shape   ");
@@ -2060,17 +2084,17 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
         continue;
-      newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
+      newcardShape<< (ic==kPlotTop? "1.05 ":"- ");
     }
     newcardShape<<std::endl;
     
-    newcardShape<<Form("CMS_VH_VVNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
-    }
-    newcardShape<<std::endl;
+    //newcardShape<<Form("CMS_VH_VVNorm lnN ");
+    //for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+    //  if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+    //    continue;
+    //  newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
+    //}
+    //newcardShape<<std::endl;
 
     // Normalization and double B scale factors
     if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
@@ -2115,6 +2139,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       newcardShape<<std::endl;
     } else {
       newcardShape << Form("SF%d_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,ao.year,binZptSuffix.Data(),plotBaseNames[kPlotTT].Data());
+      newcardShape << Form("SF%d_TT%s_Zll  rateParam * %s 1 [0.2,5]\n" ,ao.year,binZptSuffix.Data(),plotBaseNames[kPlotTop].Data());
       newcardShape << Form("SF%d_Zbb%s_Zll rateParam * %s 1 [0.2,5]\n" ,ao.year,binZptSuffix.Data(),plotBaseNames[kPlotZbb].Data());
       newcardShape << Form("SF%d_Zb%s_Zll  rateParam * %s 1 [0.2,5]\n" ,ao.year,binZptSuffix.Data(),plotBaseNames[kPlotZb].Data());
       newcardShape << Form("SF%d_ZLF%s_Zll  rateParam * %s 1 [0.2,5]\n",ao.year,binZptSuffix.Data(),plotBaseNames[kPlotZLF].Data());

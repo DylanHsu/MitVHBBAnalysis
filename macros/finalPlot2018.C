@@ -29,11 +29,16 @@ void finalPlot2018(
   TString mlfitResult=""
 ) {
   // Bkg only SF
-  float SF_TT_Wln         = 1;
-  float SF_WLF_Wln        = 1;
-  float SF_Wb_Wln         = 1;
-  float SF_Wbb_Wln        = 1;
-  float SF_Top_Wln        = 1;
+  float SF_Top  = 1;
+  float SF_TT   = 1;
+  float SF_WLF  = 1;
+  float SF_Wb   = 1;
+  float SF_Wbb  = 1;
+  float SF_ZLF  = 1;
+  float SF_Zb   = 1;
+  float SF_Zbb  = 1;
+  float SF_VVLF = 1;
+  float SF_VZbb = 1;
 
   int primarySignal = (selType>=kWHLightFlavorCR && selType<=kWHFJPresel)? kPlotWH:kPlotZH;
 
@@ -54,22 +59,32 @@ void finalPlot2018(
     RooArgSet *norm_postfit  = (RooArgSet*)mlfit->Get("norm_fit_s" );
     inputFile->cd();
     //RooArgSet *norm_postfit  = (RooArgSet*)mlfit->Get("norm_fit_s" );
-    SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()));
-    SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()));
-    SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()));
-    SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()));
-    SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop ].Data()))) SF_Top  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT  ].Data()))) SF_TT   = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT  ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT  ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF ].Data()))) SF_WLF  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb  ].Data()))) SF_Wb   = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb  ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb  ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb ].Data()))) SF_Wbb  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZLF ].Data()))) SF_ZLF  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZLF ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZLF ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZb  ].Data()))) SF_Zb   = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZb  ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZb  ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZbb ].Data()))) SF_Zbb  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZbb ].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotZbb ].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotVVLF].Data()))) SF_VVLF = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotVVLF].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotVVLF].Data()));
+    if(norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotVZbb].Data()))) SF_VZbb = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotVZbb].Data()))/norm_prefit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotVZbb].Data()));
     //SF_TT_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTT ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTT )))->Integral();
     //SF_WLF_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWLF].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWLF)))->Integral();
     //SF_Wb_Wln  = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWb ].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWb )))->Integral();
     //SF_Wbb_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotWbb].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotWbb)))->Integral();
     //SF_Top_Wln = norm_postfit->getRealValue(Form("%s/%s",regionName.c_str(),plotBaseNames[kPlotTop].Data()))/((TH1F*)inputFile->Get(Form("MVAVar/histo%d",kPlotTop)))->Integral();
     printf("Renorm. from mlfit:\n");
-    printf("k_TT_Wln  = %.3f\n", SF_TT_Wln  );
-    printf("k_WLF_Wln = %.3f\n", SF_WLF_Wln );
-    printf("k_Wb_Wln  = %.3f\n", SF_Wb_Wln  );
-    printf("k_Wbb_Wln = %.3f\n", SF_Wbb_Wln );
-    printf("k_Top_Wln = %.3f\n", SF_Top_Wln );
+    printf("k_SF_Top  = %.3f\n", SF_Top );
+    printf("k_SF_TT   = %.3f\n", SF_TT  );
+    printf("k_SF_WLF  = %.3f\n", SF_WLF );
+    printf("k_SF_Wb   = %.3f\n", SF_Wb  );
+    printf("k_SF_Wbb  = %.3f\n", SF_Wbb );
+    printf("k_SF_ZLF  = %.3f\n", SF_ZLF );
+    printf("k_SF_Zb   = %.3f\n", SF_Zb  );
+    printf("k_SF_Zbb  = %.3f\n", SF_Zbb );
+    printf("k_SF_VVLF = %.3f\n", SF_VVLF);
+    printf("k_SF_VZbb = %.3f\n", SF_VZbb);
   }
 
   TList *listOfHistoNames=inputFile->GetListOfKeys();
@@ -131,11 +146,16 @@ void finalPlot2018(
       if(iCat==kPlotData ||iCat==kPlotQCD || iCat==kPlotWH || iCat==kPlotZH) {
         // do nothing currently
       } else if(!isFitShape || !mlfit) {
-        if     (i==kPlotTT  ) histos[i]->Scale( SF_TT_Wln);
-        else if(i==kPlotWLF ) histos[i]->Scale(SF_WLF_Wln);
-        else if(i==kPlotWb  ) histos[i]->Scale( SF_Wb_Wln);
-        else if(i==kPlotWbb ) histos[i]->Scale(SF_Wbb_Wln);
-        else if(i==kPlotTop ) histos[i]->Scale(SF_Top_Wln);
+        if     (i==kPlotTop ) histos[i]->Scale(SF_Top );
+        else if(i==kPlotTT  ) histos[i]->Scale(SF_TT  );
+        else if(i==kPlotWLF ) histos[i]->Scale(SF_WLF );
+        else if(i==kPlotWb  ) histos[i]->Scale(SF_Wb  );
+        else if(i==kPlotWbb ) histos[i]->Scale(SF_Wbb );
+        else if(i==kPlotZLF ) histos[i]->Scale(SF_ZLF );
+        else if(i==kPlotZb  ) histos[i]->Scale(SF_Zb  );
+        else if(i==kPlotZbb ) histos[i]->Scale(SF_Zbb );
+        else if(i==kPlotVVLF) histos[i]->Scale(SF_VVLF);
+        else if(i==kPlotVZbb) histos[i]->Scale(SF_VZbb);
       } else {
         // If we have a MLF result, and this is the shape variable,
         // use the shape from background only postfit
