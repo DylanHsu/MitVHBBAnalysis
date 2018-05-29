@@ -369,34 +369,36 @@ void zllhAnalysis(
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
       // fatjet only plots
-      ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
-      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
-      ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="deltaEtaZHFJ"            ; ao.histoTitles[p]="|#Delta#eta(Z,FJ)|"    ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
-      ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
-      ao.histoNames[p]="mTZHFJ"                  ; ao.histoTitles[p]="m_{T} (Z+FJ) [GeV]"    ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++; 
-      ao.histoNames[p]="dRL1L2"                  ; ao.histoTitles[p]="#DeltaR(l1,l2)"        ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
-      ao.histoNames[p]="ptBalanceZHFJ"           ; ao.histoTitles[p]="|FJ pT / Z pT|"        ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
-      ao.histoNames[p]="ptBalanceL1L2"           ; ao.histoTitles[p]="p_{T}^{l1}/p_{T}^{l2}" ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
-      ao.histoNames[p]="nIsojet"                 ; ao.histoTitles[p]="N isojets"             ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-      ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"       ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
+      ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"         ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
+      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"          ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
+      ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"     ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"      ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"      ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="deltaEtaZHFJ"            ; ao.histoTitles[p]="|#Delta#eta(Z,FJ)|"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ) [Rad]"   ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="mTZHFJ"                  ; ao.histoTitles[p]="m_{T} (Z+FJ) [GeV]"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++; 
+      ao.histoNames[p]="dRL1L2"                  ; ao.histoTitles[p]="#DeltaR(l1,l2)"           ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="ptBalanceZHFJ"           ; ao.histoTitles[p]="|FJ pT / Z pT|"           ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="ptBalanceL1L2"           ; ao.histoTitles[p]="p_{T}^{l1}/p_{T}^{l2}"    ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="nIsojet"                 ; ao.histoTitles[p]="N isojets"                ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"          ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
+      ao.histoNames[p]="mSD_rescaled"            ; ao.histoTitles[p]="Rescaled Fatjet mSD [GeV]"; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
     } else {
-      ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"      ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
-      ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"        ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
-      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets" ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-      ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H) [Rad]" ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
-      ao.histoNames[p]="ptBalanceZH"             ; ao.histoTitles[p]="|H pT / Z pT|"         ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
-      ao.histoNames[p]="sumEtSoft1"              ; ao.histoTitles[p]="#sum E_{T}(soft 1)"    ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
-      ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"          ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
-      ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"          ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
-      ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"         ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-      ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"   ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"         ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
+      ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
+      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets"    ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H) [Rad]"    ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="ptBalanceZH"             ; ao.histoTitles[p]="|H pT / Z pT|"            ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="sumEtSoft1"              ; ao.histoTitles[p]="#sum E_{T}(soft 1)"       ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
+      ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"             ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
+      ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"             ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
+      ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"            ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"      ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="Mjj_rescaled"            ; ao.histoTitles[p]="Rescaled Dijet mass [GeV]"; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
     }
   }
   
@@ -1375,6 +1377,7 @@ void analyzeSample(
     float mTZHFJ        = -1;
     float dEtaZHFJ      = -1;
     float deltaM        = -1;
+    float mH_rescaled   = -1;
     TLorentzVector ZBosonP4, fjP4, ZHFJP4;
     if(isBoostedCategory) {
       ZBosonP4.SetPtEtaPhiM(gt.ZBosonPt,gt.ZBosonEta,gt.ZBosonPhi,gt.ZBosonM);
@@ -1386,6 +1389,7 @@ void analyzeSample(
       dRL1L2 = sqrt(pow(lepton1Eta-lepton2Eta,2)+pow(TVector2::Phi_mpi_pi(lepton1Phi-lepton2Phi),2));
       dEtaZHFJ = fabs(gt.fjEta - gt.ZBosonEta);
       deltaM = fabs(gt.ZBosonM-91.1876);
+      mH_rescaled = gt.fjMSD[0] / ptBalanceZHFJ;
     } else {
       deltaPhiZH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi));
       ptBalanceZH   = gt.hbbpt_reg[0] /  gt.ZBosonPt;
@@ -1394,6 +1398,7 @@ void analyzeSample(
       dRBjets       = sqrt(dEtaBjets*dEtaBjets + dPhiBjets*dPhiBjets);
       dEtaZH        = fabs(gt.ZBosonEta - gt.hbbeta[0]);     
       dRZH          = sqrt(dEtaZH*dEtaZH + deltaPhiZH*deltaPhiZH);
+      mH_rescaled   = gt.hbbm_reg[0] / ptBalanceZH;
     }
     // deltaPhiZHFJ computed already in Jet multiplicity section
     bool vetoTrainEvts = (
@@ -1901,9 +1906,11 @@ void analyzeSample(
       else if (ao.histoNames[p]=="nSoft5"                  ) { theVar = gt.nSoft5                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nSoft10"                 ) { theVar = gt.nSoft10                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="Mjj_rescaled"            ) { theVar = mH_rescaled                ; makePlot = passFullSel; }
       // fatjet
       //else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
+      else if (ao.histoNames[p]=="mSD_rescaled"            ) { theVar = mH_rescaled                ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Tau21SD"                 ) { theVar = gt.fjTau21SD               ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="doubleB"                 ) { theVar = gt.fjDoubleCSV             ; makePlot = passFullSel; }
