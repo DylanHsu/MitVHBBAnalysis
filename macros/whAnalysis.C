@@ -158,12 +158,12 @@ void whAnalysis(
   ao.cuts[kWH2TopCR         ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
   ao.cuts[kWHSR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
   ao.cuts[kWHLightFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
-  ao.cuts[kWHLightFlavorFJCR] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
-  ao.cuts[kWHHeavyFlavorFJCR] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
-  ao.cuts[kWHTT2bFJCR       ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
-  ao.cuts[kWHTT1bFJCR       ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
-  ao.cuts[kWHFJSR           ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
-  ao.cuts[kWHFJPresel       ] ={"boostedCat" ,"WpT","pTFJ","dPhiWHFJ"                             };
+  ao.cuts[kWHLightFlavorFJCR] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
+  ao.cuts[kWHHeavyFlavorFJCR] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
+  ao.cuts[kWHTT2bFJCR       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
+  ao.cuts[kWHTT1bFJCR       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
+  ao.cuts[kWHFJSR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
+  ao.cuts[kWHFJPresel       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ"                             };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -200,7 +200,7 @@ void whAnalysis(
     samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );
     samples.emplace_back("WJets_bHadrons_pt100to200"      , vhbbPlot::kWjets  );
     samples.emplace_back("WJets_bHadrons_pt200toinf"      , vhbbPlot::kWjets  );
-    samples.emplace_back("WJets_bQuarks_pt100to200"       , vhbbPlot::kWjets  );
+    samples.emplace_back("WJets_else00"       , vhbbPlot::kWjets  );
     samples.emplace_back("WJets_bQuarks_pt200toinf"       , vhbbPlot::kWjets  );
     samples.emplace_back("WJets_ht100to200"               , vhbbPlot::kWjets  );
     samples.emplace_back("WJets_ht200to400"               , vhbbPlot::kWjets  );
@@ -254,61 +254,56 @@ void whAnalysis(
 
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
-  if(ao.MVAVarType==1) {
     // 1 - simple pT variable
-    ao.MVAVarName="Higgs p_{T} classifier [GeV]";
-    if(selection==kWHSR) {
+  if(selection==kWHSR) {
+    if(ao.MVAVarType==1) {
       ao.MVAbins={100,120,140,160,180,200,250,300,350};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
-    } else if(selection==kWHFJSR) {
-      ao.MVAbins={250,300,350,400,450,500,550,600};
-      ao.MVAVarName="H(bb) pT";
-      ao.shapeType="ptShape";
-    } else if(selection==kWHLightFlavorCR) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667};
-      ao.MVAVarName="Subleading H(bb) CMVA";
-      ao.shapeType="lesserCMVAShape";
-    } else if(selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHPresel) {
-      ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
-      ao.MVAVarName="Subleading H(bb) CMVA";
-      ao.shapeType="lesserCMVAShape";
-    } else if((selection>=kWHLightFlavorFJCR && selection<kWHFJSR) || selection==kWHFJPresel) {
-      if(selection==kWHHeavyFlavorFJCR)
-        ao.MVAbins={40,45,50,55,60,65,70,75,80};
-      else
-        ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
-      ao.MVAVarName="Fatjet soft drop mass [GeV]";
-      ao.shapeType="softDropMassShape";
-    }
-    // 2 - multiclass BDT in SR, subleading CMVA in CR (not implemented)
-  } else if(ao.MVAVarType==3) {
-    // 3 - normal BDT in SR, subleading CMVA in CR
-    if(selection==kWHLightFlavorCR) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667};
-      ao.MVAVarName="Subleading H(bb) CMVA";
-      ao.shapeType="lesserCMVAShape";
-    } else if(selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHPresel) {
-      ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
-      ao.MVAVarName="Subleading H(bb) CMVA";
-      ao.shapeType="lesserCMVAShape";
-    } else if(selection==kWHSR) {
+    } else if(ao.MVAVarType==3) {
       ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
-    } else if((selection>=kWHLightFlavorFJCR && selection<kWHFJSR) || selection==kWHFJPresel) {
-      if(selection==kWHHeavyFlavorFJCR)
-        ao.MVAbins={40,45,50,55,60,65,70,75,80};
-      else
-        ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
-      ao.MVAVarName="Fatjet soft drop mass [GeV]";
-      ao.shapeType="softDropMassShape";
-    } else if(selection==kWHFJSR) {
+    }
+  } else if(selection==kWHFJSR) {
+    if(ao.MVAVarType==1) {
+      ao.MVAbins={250,300,350,400,450,500,550,600};
+      ao.MVAVarName="H(bb) pT";
+      ao.shapeType="ptShape";
+    } else if(ao.MVAVarType==3) {
       ao.MVAbins={-0.8,-0.4,0,0.4,0.8};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
-  } else throw std::runtime_error("bad ao.MVAVarType");
+  } else if(selection==kWHLightFlavorCR) {
+    if(year==2016) {
+      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667};
+      ao.MVAVarName="Subleading H(bb) CMVA";
+      ao.shapeType="lesserCMVAShape";
+    } else {
+      ao.MVAbins={0, 0.1, 0.2, 0.3, 0.4, 0.5};
+      ao.MVAVarName="Subleading H(bb) DeepCSV";
+      ao.shapeType="lesserCSVShape";
+    }
+  } else if(selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHPresel) {
+    if(year==2016) {
+      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+      ao.MVAVarName="Subleading H(bb) CMVA";
+      ao.shapeType="lesserCMVAShape";
+    } else {
+      ao.MVAbins={0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1};
+      ao.MVAVarName="Subleading H(bb) DeepCSV";
+      ao.shapeType="lesserCSVShape";
+    }
+  } else if((selection>=kWHLightFlavorFJCR && selection<kWHFJSR) || selection==kWHFJPresel) {
+    if(selection==kWHHeavyFlavorFJCR)
+      ao.MVAbins={40,45,50,55,60,65,70,75,80};
+    else
+      ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
+    ao.MVAVarName="Fatjet soft drop mass [GeV]";
+    ao.shapeType="softDropMassShape";
+  }
+  // 2 - multiclass BDT in SR, subleading CMVA in CR (not implemented)
   
   // Declare histograms for plotting
   printf("Building plotting histograms, please wait...\n");
@@ -385,28 +380,28 @@ void whAnalysis(
   printf("Building uncertainty histograms, please wait...\n");
   for(unsigned lep=0; lep<nLepSel; lep++) 
   for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
-    ao.histo_Baseline     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s"                , plotBaseNames[ic].Data()));
+    ao.histo_Baseline     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s"                  , plotBaseNames[ic].Data()));
     if(ic<kPlotVZbb) continue;
-    ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"       , plotBaseNames[ic].Data()));
-    ao.histo_pileupDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"       , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrDown"     , plotBaseNames[ic].Data()));
-    ao.histo_QCDr1f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f2"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr1f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f5"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr2f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f1"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr2f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f2"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr5f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f1"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDr5f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f5"        , plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sUp"   , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sDown" , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-    ao.histo_eleSFUp      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFUp"        , plotBaseNames[ic].Data()));
-    ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"      , plotBaseNames[ic].Data()));
-    ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"         , plotBaseNames[ic].Data()));
-    ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"       , plotBaseNames[ic].Data()));
-    ao.histo_VGluUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VGluUp"         , plotBaseNames[ic].Data()));
-    ao.histo_VGluDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VGluDown"       , plotBaseNames[ic].Data()));
-    ao.histo_doubleBUp    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_doubleBUp"      , plotBaseNames[ic].Data()));
-    ao.histo_doubleBDown  [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_doubleBDown"    , plotBaseNames[ic].Data()));
+    ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"         , plotBaseNames[ic].Data()));
+    ao.histo_pileupDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupDown"       , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"         , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrDown"       , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f2"          , plotBaseNames[ic].Data()));
+    ao.histo_QCDr1f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f5"          , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f1"          , plotBaseNames[ic].Data()));
+    ao.histo_QCDr2f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f2"          , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f1"          , plotBaseNames[ic].Data()));
+    ao.histo_QCDr5f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f5"          , plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sUp"     , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale%sDown"   , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_eleSFUp      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFUp"          , plotBaseNames[ic].Data()));
+    ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"        , plotBaseNames[ic].Data()));
+    ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"           , plotBaseNames[ic].Data()));
+    ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"         , plotBaseNames[ic].Data()));
+    ao.histo_VGluUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VjetsGluFracUp"   , plotBaseNames[ic].Data()));
+    ao.histo_VGluDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VjetsGluFracDown" , plotBaseNames[ic].Data()));
+    ao.histo_doubleBUp    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_CMS_doubleBUp"    , plotBaseNames[ic].Data()));
+    ao.histo_doubleBDown  [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_CMS_doubleBDown"  , plotBaseNames[ic].Data()));
     for(unsigned iJES=0; iJES<NJES; iJES++)
       ao.histo_jes[iJES][lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(
         Form("histo_%s_%s", plotBaseNames[ic].Data(), jesName(static_cast<shiftjes>(iJES)).Data())
@@ -418,8 +413,8 @@ void whAnalysis(
       if (shift==GeneralTree::csvCent) continue;
       ao.histo_btag[iShift][iPt][iEta][lep][ic] =
         (TH1F*)ao.histos[lep][0][ic]->Clone(
-          Form("histo_%s_CMS_VH_btag_pt%d_eta%d_%s",
-          plotBaseNames[ic].Data(),iPt,iEta,btagShiftName(shift))
+          Form("histo_%s_CMS_VH_btag%d_pt%d_eta%d_%s",
+          plotBaseNames[ic].Data(),ao.year,iPt,iEta,btagShiftName(shift))
         );
     }
   }
@@ -456,6 +451,7 @@ void whAnalysis(
     
   }
   ao.ZjetsEWKCorr = EWKCorrPars(kZjets);
+  ao.WjetsEWKCorr = EWKCorrPars(kWjets);
   if(!useHtBinnedVJetsKFactor) {
     TFile *kfactorsFile = TFile::Open("PandaAnalysis/data/higgs/hbb_kfactors.root","read");
     ao.kfactors_ZJets = (TH2D*) kfactorsFile->Get("h_ZJets");
@@ -874,22 +870,35 @@ void analyzeSample(
     bLoad(b["nTightMuon"],ientry);
     bLoad(b["muonSelBit"],ientry);
     bLoad(b["muonPt"],ientry);
+    bLoad(b["muonEta"],ientry);
     bLoad(b["muonPdgId"],ientry);
     bLoad(b["muonCombIso"],ientry);
     bLoad(b["electronSelBit"],ientry);
     bLoad(b["electronPt"],ientry);
+    bLoad(b["electronEta"],ientry);
     bLoad(b["electronPdgId"],ientry);
     bLoad(b["electronCombIso"],ientry);
+    bLoad(b["muonD0"],ientry);
+    bLoad(b["muonDZ"],ientry);
+    bLoad(b["electronD0"],ientry);
+    bLoad(b["electronDZ"],ientry);
 
-    if(gt.nLooseMuon==1 && 
-      gt.muonPt[0]>25 && 
-      (gt.muonSelBit[0] & pa::kTight)!=0 &&
-      gt.muonCombIso[0]/gt.muonPt[0] < 0.06
+    if(
+      gt.nLooseMuon==1                       && 
+      gt.muonPt[0]>25                        && 
+      (gt.muonSelBit[0] & pa::kTight)!=0     &&
+      gt.muonCombIso[0]/gt.muonPt[0] < 0.06  &&
+      gt.muonD0[0]<0.20 && gt.muonDZ[0]<0.50
     ) typeLepSel=0;
-    else if(gt.nLooseElectron==1 &&
-      gt.electronPt[0]>30 && 
-      (gt.electronSelBit[0] & pa::kEleMvaWP80)!=0 &&
-      gt.electronCombIso[0]/gt.electronPt[0] < 0.06
+    else if(
+      gt.nLooseElectron==1 &&
+      gt.electronPt[0]>30                           && 
+      (gt.electronSelBit[0] & pa::kEleMvaWP80)!=0   &&
+      gt.electronCombIso[0]/gt.electronPt[0] < 0.06 &&
+      (
+        (fabs(gt.electronEta[0])<1.479  && gt.electronD0[0]<0.05 && gt.electronDZ[0]<0.10) || 
+        (fabs(gt.electronEta[0])>=1.479 && gt.electronD0[0]<0.10 && gt.electronDZ[0]<0.20)
+      )
     ) typeLepSel=1;
     if(typeLepSel!=0 && typeLepSel!=1) continue;
     if(ao.debug) printf("  Passed lepton ID/iso multiplicity\n");
@@ -905,8 +914,6 @@ void analyzeSample(
     if (typeLepSel==0) {
       bLoad(b["muonEta"],ientry);
       bLoad(b["muonPhi"],ientry);
-      bLoad(b["muonD0"],ientry);
-      bLoad(b["muonDZ"],ientry);
       bLoad(b["muonCombIso"],ientry);
       bLoad(b["muonPdgId"],ientry);
       lepton1Pt     = gt.muonPt[0];
@@ -919,8 +926,6 @@ void analyzeSample(
     } else if(typeLepSel==1) {
       bLoad(b["electronEta"],ientry);
       bLoad(b["electronPhi"],ientry);
-      bLoad(b["electronD0"],ientry);
-      bLoad(b["electronDZ"],ientry);
       bLoad(b["electronCombIso"],ientry);
       bLoad(b["electronPdgId"],ientry);
       lepton1Pt     = gt.electronPt[0]; 
@@ -942,18 +947,21 @@ void analyzeSample(
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
+      bLoad(b["topWBosonPt"],ientry);
+      bLoad(b["topWBosonPhi"],ientry);
       if(gt.fjPt[0]>0) // protection against NaN values of fjPhi
-        deltaPhiWHFJ = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
+        deltaPhiWHFJ = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.fjPhi));
       if(
         gt.fjPt[0] >= 250 && 
         //gt.fjMSD_corr[0] >= 40 &&
         gt.fjMSD[0] >= 40 && // TEMPORARY DGH
         fabs(gt.fjEta) < 2.4 &&
-        gt.ZBosonPt >= 250 &&
+        gt.topWBosonPt >= 250 &&
         deltaPhiWHFJ >= 2.5
       ) isBoostedCategory=true;
       // If we consider a boosted category splitting,
       // only put boosted (resolved) events in boosted (resolved) regions
+      //printf("isBoostedCategory=%d (fjPt=%.1f, fjMSD=%.1f, topWBosonPt=%.1f, deltaPhiWHFJ=%.2f)\n", isBoostedCategory,gt.fjPt[0], gt.fjMSD[0], gt.topWBosonPt, deltaPhiWHFJ);
       if(isBoostedCategory ^ (ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel))
         continue;
     }
@@ -999,12 +1007,15 @@ void analyzeSample(
       bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
       bLoad(b["hbbpt"],ientry);
       bLoad(b["hbbm_reg"],ientry);
+      bLoad(b["jotPt"],ientry);
       if(
         gt.nJet[0]<2 || 
         gt.hbbpt[0]<50 || 
         gt.hbbm_reg[0]<0 ||
-        gt.hbbm_reg[0]>250) 
-        continue;
+        gt.hbbm_reg[0]>250 ||
+        gt.jotPt[0][gt.hbbjtidx[0][0]]<25 ||
+        gt.jotPt[0][gt.hbbjtidx[0][1]]<25   
+      ) continue;
     }
     if(ao.debug) printf("  Passed jet kinematics\n");
     if(ao.debug) printf("Passed preselection!\n");
@@ -1100,9 +1111,9 @@ void analyzeSample(
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
-        if(ao.debug>=3) printf("jet with (pt,|eta|)=(%.2f,%.3f) => (iPt,iEta) = (%d,%d)\n",gt.jotPt[0][iJ],jetAbsEta,iPt,iEta);
+        float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+        if(ao.debug>=3) printf("jet with (pt,|eta|,flav,btag)=(%.2f,%.3f,%d,%.4f) => (iPt,iEta) = (%d,%d)\n",gt.jotPt[0][iJ],jetAbsEta,gt.jotFlav[iJ],btag,iPt,iEta);
         if(iPt>=0 && iEta>=0) {
-          float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
           jetPts    [iPt][iEta].push_back(gt.jotPt[0][iJ]);
           jetEtas   [iPt][iEta].push_back(gt.jotEta[iJ]);
           jetFlavors[iPt][iEta].push_back(gt.jotFlav[iJ]);
@@ -1125,6 +1136,7 @@ void analyzeSample(
       bLoad(b["fjTau32SD"],ientry);
     } else {
       bLoad(b["hbbpt_reg"],ientry);
+      bLoad(b["hbbeta"],ientry);
       bLoad(b["hbbphi"],ientry);
       bLoad(b["hbbm_reg"],ientry);
       bLoad(b["pfmet"],ientry);
@@ -1194,7 +1206,7 @@ void analyzeSample(
       if(iJES==(int)shiftjes::kJESTotalUp ||
          iJES==(int)shiftjes::kJESTotalDown) {
         bLoad(b[Form("pfmet_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-        cut["lowMET"] = gt.pfmet[iJES] < 60;
+        cut["lowMET"] = gt.pfmet[iJES] < 170;
       }
       if(isBoostedCategory) {
         //cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
@@ -1205,7 +1217,7 @@ void analyzeSample(
         cut["mSD_SR"  ] = gt.fjMSD[iJES] >= 80 && gt.fjMSD[iJES]<150;
         cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD[iJES]<80;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
-        cut["0ijb"    ] = isojetNBtags[iJES]==0; // not used in SR
+        cut["0ijb"    ] = isojetNBtags[iJES]==0;
         cut["1ijb"    ] = !cut["0ijb"];
       } else {
         cut["dPhiWH"     ] = fabs(gt.hbbphi[iJES] - gt.topWBosonPhi) > 2.5;
@@ -1216,7 +1228,7 @@ void analyzeSample(
         cut["2jets"      ] = gt.nJet[iJES]==2;
         cut["2-3jets"    ] = gt.nJet[iJES]<4;
         cut["4+jets"     ] = gt.nJet[iJES]>=4;
-        cut["metSig"     ] = gt.pfmetsig<2;
+        cut["metSig"     ] = gt.pfmetsig>2;
       } 
       selectionBits[iJES]=0; nMinusOneBits=0;
       if(passAllCuts(cut, ao.cuts[ao.selection])) {
@@ -1241,8 +1253,12 @@ void analyzeSample(
       
       if(type==kWjets || type==kZjets) {
         bLoad(b["trueGenBosonPt"],ientry);
-        gt.sf_ewkV=ao.ZjetsEWKCorr[0]+ao.ZjetsEWKCorr[1]*
-          (TMath::Power((gt.trueGenBosonPt+ao.ZjetsEWKCorr[2]),ao.ZjetsEWKCorr[3]));
+        if(type==kZjets)
+          gt.sf_ewkV=ao.ZjetsEWKCorr[0]+ao.ZjetsEWKCorr[1]*
+            (TMath::Power((gt.trueGenBosonPt+ao.ZjetsEWKCorr[2]),ao.ZjetsEWKCorr[3]));
+        else
+          gt.sf_ewkV=ao.WjetsEWKCorr[0]+ao.WjetsEWKCorr[1]*
+            (TMath::Power((gt.trueGenBosonPt+ao.WjetsEWKCorr[2]),ao.WjetsEWKCorr[3]));
         if(isNLOZjets || isLowMassZjets) {
           gt.sf_qcdV=1;
         } else if(useHtBinnedVJetsKFactor) {
@@ -1324,7 +1340,9 @@ void analyzeSample(
         if(ao.year==2016) {
           // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
           double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          weight *= ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+          weight_btag[0][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
+          weight *= weight_btag[0][iPt][iEta];
+          if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, weight_btag[0][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),weight_btag[0][iPt][iEta]);
         } else if(ao.year==2017) {
           // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
           unsigned iShift=0;
@@ -1353,20 +1371,20 @@ void analyzeSample(
         if(ao.year==2016) {
           // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
           double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          double centralWeight = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
           for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
             GeneralTree::csvShift theShift = gt.csvShifts[iShift];
             weight_btag[iShift][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(
               jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
               theShift,
               cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
-            )/centralWeight; 
+            )/weight_btag[0][iPt][iEta];
             if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
           }
         } else if(ao.year==2017) {
           // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
           for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
             GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+            weight_btag[iShift][iPt][iEta] = 1.0;
             for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
               unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
               BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
@@ -1378,8 +1396,8 @@ void analyzeSample(
                 jetPts[iPt][iEta][iJ],
                 jetBtags[iPt][iEta][iJ]
               );
-              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] = reshapeFactor/weight_btag[0][iPt][iEta];
-              else                    weight_btag[iShift][iPt][iEta] = 1;
+              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor/weight_btag[0][iPt][iEta];
+              else                    weight_btag[iShift][iPt][iEta] *= 1;
             }
           }
         }
@@ -1389,7 +1407,7 @@ void analyzeSample(
         if(gt.fjHighestPtGen==21 && (
           category==kPlotWbb || category==kPlotWb || category==kPlotWLF ||
           category==kPlotZbb || category==kPlotZb || category==kPlotZLF)
-        ) { weight_VGluUp *= 1.2; weight_VGluDown *= 0.8; }
+        ) { weight_VGluUp = 1.2; weight_VGluDown = 0.8; }
         
         bLoad(b["fjPt"],ientry);
         // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation80XReReco#Boosted_event_topologies
@@ -1730,10 +1748,10 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       TString shiftName(btagShiftName(shift));
       if(!shiftName.EndsWith("Up")) continue;
       TString nuisanceName = shiftName(0,shiftName.Length()-2);
-      newcardShape << Form("CMS_VH_btag_pt%d_eta%d_%s    shape   ",iPt,iEta,nuisanceName.Data());
+      newcardShape << Form("CMS_VH_btag%d_pt%d_eta%d_%s    shape   ",ao.year,   iPt,iEta,nuisanceName.Data());
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if((ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF) && ao.selection==kWH2TopCR) 
+        if((ic==kPlotWbb||ic==kPlotWb||ic==kPlotWLF) && ao.selection==kWH2TopCR) 
           newcardShape << Form("-  ");
         else
           newcardShape << Form("1.0  ");
@@ -1745,7 +1763,8 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
         continue;
-      if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
+      if(ic==kPlotVZbb||ic==kPlotVVLF||ic==kPlotWbb||ic==kPlotWb||ic==kPlotWLF||
+         ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF||ic==kPlotZH)
         newcardShape<<pdfAcceptUncs[ic]<<" ";
       else newcardShape<<"- ";
     } 
@@ -1762,65 +1781,153 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     }
     newcardShape<<std::endl;
 
-    newcardShape<<Form("CMS_VH_TopNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
-    }
-    newcardShape<<std::endl;
-    
-    newcardShape<<Form("CMS_VH_VVNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
-    }
-    newcardShape<<std::endl;
+    //newcardShape<<Form("CMS_VH_TopNorm lnN ");
+    //for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+    //  if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+    //    continue;
+    //  newcardShape<< (ic==kPlotTop? "1.15 ":"- ");
+    //}
+    //newcardShape<<std::endl;
+    //
+    //newcardShape<<Form("CMS_VH_VVNorm lnN ");
+    //for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+    //  if(ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+    //    continue;
+    //  newcardShape<< ((ic==kPlotVZbb||ic==kPlotVVLF)? "1.15 ":"- ");
+    //}
+    //newcardShape<<std::endl;
     
     // Normalization and double B scale factors
     if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) {
       // Boosted norms
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZbb].Data());
-      newcardShape << Form("SF_ZHFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZb].Data());
-      newcardShape << Form("SF_ZLFFJ_Zll rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotZLF].Data());
-      // In situ measurement of doubleB SF for ZLF, Zb, eff checked in kWHFJPresel
-      newcardShape << "effDoubleB_ZLF  param 0.024 0.0024" << std::endl; 
-      newcardShape << "effDoubleB_Zb   param 0.20  0.02  " << std::endl;
-      newcardShape << "effSFDoubleB_ZLF extArg 1.0 [0.1,10]" << std::endl;
-      newcardShape << "effSFDoubleB_Zb  extArg 1.0 [0.1,10]" << std::endl;
+      newcardShape << Form("SF%d_ZHFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWbb].Data());
+      newcardShape << Form("SF%d_ZHFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWb].Data());
+      newcardShape << Form("SF%d_ZLFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWLF].Data());
+      newcardShape << Form("SF%d_TTFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotTop].Data());
+      newcardShape << Form("SF%d_TTFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotTT].Data());
+      // In situ measurement of doubleB SF for WLF, Wb, eff checked in kWHFJPresel
+      newcardShape << Form("eff%dDoubleB_WLF  param 0.024 0.0060\n",ao.year);
+      newcardShape << Form("eff%dDoubleB_Wb   param 0.20  0.05\n",ao.year);
+      newcardShape << Form("eff%dSFDoubleB_WLF param 1.0 0.5\n",ao.year);
+      newcardShape << Form("eff%dSFDoubleB_Wb  param 1.0 0.5\n",ao.year);
+      //newcardShape << Form("eff%dSFDoubleB_WLF extArg 1.0 [0.1,10]\n",ao.year);
+      //newcardShape << Form("eff%dSFDoubleB_Wb  extArg 1.0 [0.1,10]\n",ao.year);
       if(ao.selection==kWHHeavyFlavorFJCR || ao.selection==kWHTT2bFJCR || ao.selection==kWHFJSR) {
-        newcardShape << Form("passBB_ZLF rateParam * %s (@0*1.0) effSFDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("passBB_Zb  rateParam * %s (@0*1.0) effSFDoubleB_Zb \n" ,plotBaseNames[kPlotZb].Data());
+        newcardShape << Form("passBB%d_WLF rateParam * %s (@0*1.0) eff%dSFDoubleB_WLF\n",ao.year,plotBaseNames[kPlotWLF].Data(),ao.year);
+        newcardShape << Form("passBB%d_Wb  rateParam * %s (@0*1.0) eff%dSFDoubleB_Wb \n",ao.year,plotBaseNames[kPlotWb].Data(),ao.year);
       } else if(ao.selection==kWHLightFlavorFJCR || ao.selection==kWHTT1bFJCR) {
-        newcardShape << Form("failBB_ZLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_ZLF,effDoubleB_ZLF\n" ,plotBaseNames[kPlotZLF].Data());
-        newcardShape << Form("failBB_Zb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) effSFDoubleB_Zb,effDoubleB_Zb\n" ,plotBaseNames[kPlotZb].Data());
+        newcardShape << Form("failBB%d_WLF rateParam * %s ((1.0-@0*@1)/(1.0-@1)) eff%dSFDoubleB_WLF,eff%dDoubleB_WLF\n",ao.year,plotBaseNames[kPlotWLF].Data(),ao.year,ao.year);
+        newcardShape << Form("failBB%d_Wb  rateParam * %s ((1.0-@0*@1)/(1.0-@1)) eff%dSFDoubleB_Wb,eff%dDoubleB_Wb\n"  ,ao.year,plotBaseNames[kPlotWb].Data(),ao.year,ao.year);
       }
       // Shape uncertainty using BTV doubleB SF for Zbb, VZ(bb), ZH
       newcardShape << Form("CMS_doubleB shape ");
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if(ic==kPlotZbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
+      if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotWbb||ic==kPlotVZbb||ic==kPlotZH||ic==kPlotGGZH)
           newcardShape << "1.0 ";
         else
           newcardShape << "- ";
       }
+      newcardShape<<std::endl;
       newcardShape<<Form("VjetsGluFrac shape ");
       for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-        if(ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)
+      if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
+        if(ic==kPlotWbb||ic==kPlotWb||ic==kPlotWLF)
           newcardShape << "1.0 ";
         else
           newcardShape << "- ";
       }
+      newcardShape<<std::endl;
     } else {
-      newcardShape << Form("SF_TT_Zll  rateParam * %s 1 [0.2,5]\n" ,plotBaseNames[kPlotTT].Data());
-      newcardShape << Form("SF_Wbb_Zll rateParam * %s 1 [0.2,5]\n" ,plotBaseNames[kPlotWbb].Data());
-      newcardShape << Form("SF_Wb_Zll  rateParam * %s 1 [0.2,5]\n" ,plotBaseNames[kPlotWb].Data());
-      newcardShape << Form("SF_WLF_Zll  rateParam * %s 1 [0.2,5]\n",plotBaseNames[kPlotWLF].Data());
+      newcardShape << Form("SF%d_TT_Wln  rateParam * %s 1 [0.2,5]\n" ,ao.year,plotBaseNames[kPlotTT].Data());
+      newcardShape << Form("SF%d_TT_Wln  rateParam * %s 1 [0.2,5]\n" ,ao.year,plotBaseNames[kPlotTop].Data());
+      newcardShape << Form("SF%d_Wbb_Wln rateParam * %s 1 [0.2,5]\n" ,ao.year,plotBaseNames[kPlotWbb].Data());
+      newcardShape << Form("SF%d_Wb_Wln  rateParam * %s 1 [0.2,5]\n" ,ao.year,plotBaseNames[kPlotWb].Data());
+      newcardShape << Form("SF%d_WLF_Wln  rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWLF].Data());
     }
 
     newcardShape << Form("* autoMCStats 1\n");
     newcardShape.close();
   }
+}
+
+void datacardsFromHistograms(
+  TString dataCardDir,
+  vhbbPlot::selectionType selection,
+  bool useBoostedCategory=false,
+  int MVAVarType=3,
+  unsigned year=2016
+) {
+  struct analysisObjects ao;
+  ao.useBoostedCategory=useBoostedCategory;
+  ao.selection = selection;
+  ao.year = year;
+  GeneralTree gt;
+  // Get shape histograms from file
+  for(unsigned lep=0; lep<nLepSel; lep++) {
+
+    char inFileDatacardsName[200];
+    sprintf(
+      inFileDatacardsName,
+      "MitVHBBAnalysis/datacards/%s/datacard_W%sH%s.root",
+      dataCardDir.Data(),
+      leptonStrings[lep].Data(),
+      selectionNames[selection].Data()
+    );
+    TFile* infile = new TFile(inFileDatacardsName,"read");
+
+    for(unsigned ic=kPlotData; ic!=nPlotCategories; ic++) {
+      ao.histo_Baseline    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s"                , plotBaseNames[ic].Data()));
+      if(!ao.histo_Baseline[lep][ic]) continue;
+      ao.histo_Baseline    [lep][ic]->SetDirectory(0);
+      if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0 && ic!=kPlotData) continue;
+      if(ic<kPlotVZbb) continue;
+      ao.histo_pileupUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupUp"       , plotBaseNames[ic].Data()));
+      ao.histo_pileupDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VHCorrUp"       , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VHCorrDown"     , plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale%sUp"   , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale%sDown" , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_eleSFUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"        , plotBaseNames[ic].Data()));                         
+      ao.histo_eleSFDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFDown"      , plotBaseNames[ic].Data()));                         
+      ao.histo_muSFUp      [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFUp"         , plotBaseNames[ic].Data()));                         
+      ao.histo_muSFDown    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFDown"       , plotBaseNames[ic].Data()));                         
+      ao.histo_pileupUp    [lep][ic]->SetDirectory(0);
+      ao.histo_pileupDown  [lep][ic]->SetDirectory(0);
+      ao.histo_VHCorrUp    [lep][ic]->SetDirectory(0);
+      ao.histo_VHCorrDown  [lep][ic]->SetDirectory(0);
+      ao.histo_QCDScaleUp  [lep][ic]->SetDirectory(0);
+      ao.histo_QCDScaleDown[lep][ic]->SetDirectory(0);
+      ao.histo_eleSFUp     [lep][ic]->SetDirectory(0);
+      ao.histo_eleSFDown   [lep][ic]->SetDirectory(0);
+      ao.histo_muSFUp      [lep][ic]->SetDirectory(0);
+      ao.histo_muSFDown    [lep][ic]->SetDirectory(0);
+      for(unsigned iJES=0; iJES<NJES; iJES++) { 
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        ao.histo_jes[iJES][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_%s", plotBaseNames[ic].Data(), jesName(static_cast<shiftjes>(iJES)).Data()));
+        ao.histo_jes[iJES][lep][ic]->SetDirectory(0);
+      }
+      for(unsigned iPt=0; iPt<5; iPt++)
+      for(unsigned iEta=0; iEta<3; iEta++)
+      for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+        GeneralTree::csvShift shift = gt.csvShifts[iShift];
+        if (shift==GeneralTree::csvCent) continue;
+        ao.histo_btag[iShift][iPt][iEta][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_VH_btag%d_pt%d_eta%d_%s",plotBaseNames[ic].Data(),year,iPt,iEta,btagShiftName(shift)));
+        ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetDirectory(0);
+      }
+      if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
+        ao.histo_VGluUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VjetsGluFracUp"    , plotBaseNames[ic].Data()));
+        ao.histo_VGluDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VjetsGluFracDown"  , plotBaseNames[ic].Data()));
+        ao.histo_doubleBUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_doubleBUp"     , plotBaseNames[ic].Data()));
+        ao.histo_doubleBDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_doubleBDown"   , plotBaseNames[ic].Data()));
+        ao.histo_VGluUp     [lep][ic]->SetDirectory(0);
+        ao.histo_VGluDown   [lep][ic]->SetDirectory(0);
+        ao.histo_doubleBUp  [lep][ic]->SetDirectory(0);
+        ao.histo_doubleBDown[lep][ic]->SetDirectory(0);
+      }
+    }
+    infile->Close();
+  }
+  
+  writeDatacards(ao, dataCardDir);
 }
