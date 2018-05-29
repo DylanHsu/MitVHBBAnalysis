@@ -114,7 +114,7 @@ struct analysisObjects {
   float mva_nIsojet, mva_MSD, mva_Tau21SD, mva_fjPt;
   float mva_ptBalanceZHFJ, mva_dEtaZHFJ, mva_dPhiZHFJ, mva_mTZHFJ;
   float mva_ptBalanceL1L2, mva_dRL1L2;
-  float mva_lepton1Pt, mva_lepton2Pt, mva_lepton1Eta, mva_lepton2Eta, mva_deltaM;
+  float mva_lepton1Pt, mva_lepton2Pt, mva_lepton1Eta, mva_lepton2Eta, mva_deltaM, mva_nIsoBjet;
   // MVA output
   vector<TMVA::Reader*> reader;
   float mvaInputs[nThreads][16];
@@ -548,6 +548,7 @@ void zllhAnalysis(
       dataCardDir.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("nIsojet"       , &ao.mva_nIsojet        ); 
+    ao.mvaTree->Branch("nIsoBjet"      , &ao.mva_nIsoBjet       ); 
     ao.mvaTree->Branch("MSD"           , &ao.mva_MSD            ); 
     ao.mvaTree->Branch("fjPt"          , &ao.mva_fjPt           ); 
     ao.mvaTree->Branch("Tau21SD"       , &ao.mva_Tau21SD        ); 
@@ -606,6 +607,7 @@ void zllhAnalysis(
         theReader->AddVariable("lepton2Pt"     , &ao.mvaInputs[nThread][12]); 
         theReader->AddVariable("deltaM"        , &ao.mvaInputs[nThread][13]); 
         theReader->AddVariable("CosThetaCS"    , &ao.mvaInputs[nThread][14]);
+        theReader->AddVariable("nIsoBjet"      , &ao.mvaInputs[nThread][15]); 
       } else {
         theReader->AddVariable("sumEtSoft1"  , &ao.mvaInputs[nThread][ 0]);
         theReader->AddVariable("bjet1Pt"     , &ao.mvaInputs[nThread][ 1]);
@@ -740,7 +742,7 @@ void zllhAnalysis(
     } // all bins in histograms
     // Renormalize QCD scale uncertainties
     if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 &&
-       (ic!=kPlotVZbb&&ic!=kPlotVVLF)) {
+       (ic!=kPlotVZbb&&ic!=kPlotVVLF&&ic!=kPlotTop)) {
       ao.histo_QCDScaleUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_QCDScaleUp  [lep][ic]->GetSumOfWeights());
       ao.histo_QCDScaleDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_QCDScaleDown[lep][ic]->GetSumOfWeights());
     }
@@ -1709,6 +1711,7 @@ void analyzeSample(
           ao.mvaInputs[nThread][12] = lepton2Pt                       ; //"lepton2Pt"     
           ao.mvaInputs[nThread][13] = deltaM                          ; //"deltaM"        
           ao.mvaInputs[nThread][14] = gt.ZBosonLep1CosThetaCS         ; //"CosThetaCS"        
+          ao.mvaInputs[nThread][15] = isojetNBtags[iJES]              ; //"nIsoBjet"       
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
         }
       }
@@ -1844,6 +1847,7 @@ void analyzeSample(
     } else if(ao.selection==kZllHFJSR && passFullSel && category!=kPlotData) {
       mvaTreeMutex.lock();
       ao.mva_nIsojet       = nIsojet[0]      ; 
+      ao.mva_nIsoBjet      = isojetNBtags[0] ; 
       //ao.mva_MSD           = fjMSD_corr[0]  ;
       ao.mva_fjPt          = gt.fjPt[0]      ; 
       ao.mva_MSD           = gt.fjMSD[0]     ; // TEMPORARY DGH 
@@ -2080,13 +2084,13 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     }
     newcardShape<<std::endl;
 
-    newcardShape<<Form("CMS_VH_TopNorm lnN ");
-    for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-      if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
-        continue;
-      newcardShape<< (ic==kPlotTop? "1.05 ":"- ");
-    }
-    newcardShape<<std::endl;
+    //newcardShape<<Form("CMS_VH_TopNorm lnN ");
+    //for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
+    //  if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights()<=0)
+    //    continue;
+    //  newcardShape<< (ic==kPlotTop? "1.05 ":"- ");
+    //}
+    //newcardShape<<std::endl;
     
     //newcardShape<<Form("CMS_VH_VVNorm lnN ");
     //for(int ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
@@ -2160,7 +2164,10 @@ void datacardsFromHistograms(
   unsigned year=2016
 ) {
   struct analysisObjects ao;
+  ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
+  ao.binZpt = binZpt;
+  ao.year = year;
   GeneralTree gt;
   TString binZptSuffix="";
   if(binZpt>=0 && binZpt<nBinsZpt && 

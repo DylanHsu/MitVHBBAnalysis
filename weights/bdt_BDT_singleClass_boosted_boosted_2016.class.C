@@ -10,7 +10,7 @@ Method         : BDT::BDT_singleClass_boosted_boosted_2016
 TMVA Release   : 4.2.1         [262657]
 ROOT Release   : 6.10/09       [395785]
 Creator        : ceballos
-Date           : Sun May 27 15:40:52 2018
+Date           : Tue May 29 06:16:26 2018
 Host           : Linux cmsbuild20.cern.ch 2.6.32-696.23.1.el6.x86_64 #1 SMP Wed Mar 14 11:28:37 CET 2018 x86_64 x86_64 x86_64 GNU/Linux
 Dir            : /home/ceballos/cms/cmssw/048/CMSSW_9_4_6/src
 Training events: 10137
@@ -70,7 +70,7 @@ NNodesMax: "0" [deprecated: Use MaxDepth instead to limit the tree size]
 
 #VAR -*-*-*-*-*-*-*-*-*-*-*-* variables *-*-*-*-*-*-*-*-*-*-*-*-
 
-NVar 15
+NVar 16
 nIsojet                       nIsojet                       nIsojet                       nIsojet                                                         'F'    [0,8]
 fjPt                          fjPt                          fjPt                          fjPt                                                            'F'    [250.057342529,2875.41601562]
 MSD                           MSD                           MSD                           MSD                                                             'F'    [80.0081253052,149.567260742]
@@ -86,6 +86,7 @@ lepton1Pt                     lepton1Pt                     lepton1Pt           
 lepton2Pt                     lepton2Pt                     lepton2Pt                     lepton2Pt                                                       'F'    [10.028927803,871.733703613]
 deltaM                        deltaM                        deltaM                        deltaM                                                          'F'    [0.000809533696156,16.168548584]
 CosThetaCS                    CosThetaCS                    CosThetaCS                    CosThetaCS                                                      'F'    [-0.999962806702,0.999942421913]
+nIsoBjet                      nIsoBjet                      nIsoBjet                      nIsoBjet                                                        'F'    [0,4]
 NSpec 0
 
 
@@ -207,11 +208,11 @@ class ReadBDT_singleClass_boosted_boosted_2016 : public IClassifierReader {
    ReadBDT_singleClass_boosted_boosted_2016( std::vector<std::string>& theInputVars ) 
       : IClassifierReader(),
         fClassName( "ReadBDT_singleClass_boosted_boosted_2016" ),
-        fNvars( 15 ),
+        fNvars( 16 ),
         fIsNormalised( false )
    {      
       // the training input variables
-      const char* inputVars[] = { "nIsojet", "fjPt", "MSD", "Tau21SD", "ptBalanceZHFJ", "dEtaZHFJ", "dPhiZHFJ", "mTZHFJ", "ptBalanceL1L2", "dRL1L2", "ZBosonPt", "lepton1Pt", "lepton2Pt", "deltaM", "CosThetaCS" };
+      const char* inputVars[] = { "nIsojet", "fjPt", "MSD", "Tau21SD", "ptBalanceZHFJ", "dEtaZHFJ", "dPhiZHFJ", "mTZHFJ", "ptBalanceL1L2", "dRL1L2", "ZBosonPt", "lepton1Pt", "lepton2Pt", "deltaM", "CosThetaCS", "nIsoBjet" };
 
       // sanity checks
       if (theInputVars.size() <= 0) {
@@ -265,6 +266,8 @@ class ReadBDT_singleClass_boosted_boosted_2016 : public IClassifierReader {
       fVmax[13] = 0;
       fVmin[14] = 0;
       fVmax[14] = 0;
+      fVmin[15] = 0;
+      fVmax[15] = 0;
 
       // initialize input variable types
       fType[0] = 'F';
@@ -282,6 +285,7 @@ class ReadBDT_singleClass_boosted_boosted_2016 : public IClassifierReader {
       fType[12] = 'F';
       fType[13] = 'F';
       fType[14] = 'F';
+      fType[15] = 'F';
 
       // initialize constants
       Initialize();
@@ -313,15 +317,15 @@ class ReadBDT_singleClass_boosted_boosted_2016 : public IClassifierReader {
    // normalisation of input variables
    const bool fIsNormalised;
    bool IsNormalised() const { return fIsNormalised; }
-   double fVmin[15];
-   double fVmax[15];
+   double fVmin[16];
+   double fVmax[16];
    double NormVariable( double x, double xmin, double xmax ) const {
       // normalise to output range: [-1, 1]
       return 2*(x - xmin)/(xmax - xmin) - 1.0;
    }
 
    // type of input variable: 'F' or 'I'
-   char   fType[15];
+   char   fType[16];
 
    // initialize internal variables
    void Initialize();
@@ -351,7 +355,7 @@ double ReadBDT_singleClass_boosted_boosted_2016::GetMvaValue__( const std::vecto
 void ReadBDT_singleClass_boosted_boosted_2016::Initialize()
 {
   // itree = 0
-  fBoostWeights.push_back(0.0797801621177364);
+  fBoostWeights.push_back(0.0797801621177365);
   fForest.push_back( 
 NN(
 NN(

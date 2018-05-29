@@ -70,7 +70,8 @@ void zhbbMVA(
     //dataloader->AddVariable("lepton1Eta"    , "lepton1Eta"    , "", 'F');
     //dataloader->AddVariable("lepton2Eta"    , "lepton2Eta"    , "", 'F');
     dataloader->AddVariable("deltaM"        , "deltaM"        , "", 'F');
-    dataloader->AddVariable("CosThetaCS"  ,"CosThetaCS"  , "", 'F'); 
+    dataloader->AddVariable("CosThetaCS"    ,"CosThetaCS"  , "", 'F'); 
+    dataloader->AddVariable("nIsoBjet"      , "nIsoBjet"       , "", 'F');
   } else {
     dataloader->AddVariable("sumEtSoft1"  ,"sumEtSoft1"  , "", 'F'); 
     //dataloader->AddVariable("nSoft2"      ,"nSoft2"      , "", 'F'); 

@@ -4,7 +4,7 @@ year=$3        # 2016|2017
 useBoosted=$4  # true|false
 
 resolvedSelections="kZllHLightFlavorCR kZllHHeavyFlavorCR kZllH2TopCR kZllHSR kZllHPresel"
-boostedSelections="kZllHLightFlavorFJCR kZllHHeavyFlavorFJCR kZllHFJSR kZllHFJPresel"
+boostedSelections="kZllHLightFlavorFJCR kZllHHeavyFlavorFJCR kZllHFJSR kZllHTT1bFJCR kZllHFJPresel"
 zptBins="0 1"
 
 mkdir -p "MitVHBBAnalysis/datacards/${dataCardDir}"
