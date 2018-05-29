@@ -1359,6 +1359,7 @@ void analyzeSample(
     } else {
       bLoad(b["hbbpt_reg"],ientry);
       bLoad(b["hbbphi"],ientry);
+      bLoad(b["hbbeta"],ientry);
       bLoad(b["hbbm_reg"],ientry);
     }
     float deltaPhiZH    = -1;
