@@ -281,6 +281,11 @@ namespace vhbbPlot {
     if(shift==GeneralTree::csvCErr2down    ) return "CErr2Down"    ; 
     printf("Warning: unknown btag shift\n"); return "Unknown";
   }
-
+  void allocatePsi(std::map<TString, float> &psi) {
+    // to do
+  }
+  void calculatePsi(std::map<TString, float> &psi, std::map<TString, float> &fjECFN) {
+    // to do
+  }
 }
 #endif

@@ -103,17 +103,20 @@ struct analysisObjects {
   float mva_weight;
   unsigned char mva_category;
   ULong64_t mva_eventNumber;
+  float mva_lepton1Pt, mva_lepton1Eta, mva_lepton1Charge;
+  float mva_mT, mva_WBosonPt, mva_dPhil1W;
   // Resolved only vars
   float mva_sumEtSoft1, mva_nSoft2, mva_nSoft5, mva_nSoft10;
   float mva_bjet1Pt, mva_bjet2Pt, mva_bjet1btag, mva_bjet2btag;
-  float mva_hbbpt, mva_hbbm, mva_dPhiZH, mva_ptBalanceZH;
-  float mva_dRBjets, mva_dEtaBjets, mva_dRZH, mva_dEtaZH;
+  float mva_hbbpt, mva_hbbm, mva_dPhiWH, mva_ptBalanceWH;
+  float mva_dPhiLep1Met, mva_topMass, mva_pfmet;
+  float mva_dRBjets, mva_dEtaBjets, mva_dEtaLep1H;
   float mva_nAddJet;
   // Boosted only vars
-  float mva_nIsojet, mva_MSD, mva_Tau21SD, mva_fjPt;
-  float mva_ptBalanceZHFJ, mva_dEtaZHFJ, mva_dPhiZHFJ, mva_mTZHFJ;
-  float mva_ptBalanceL1L2, mva_dRL1L2;
-  float mva_lepton1Pt, mva_lepton2Pt, mva_lepton1Eta, mva_lepton2Eta, mva_deltaM;
+  float mva_nIsojet, mva_MSD, mva_Tau21SD, mva_Tau32SD, mva_fjPt;
+  float mva_psi022004031003, mva_psi022004022003, mva_psi022004030503;
+  float mva_ptBalanceWHFJ, mva_dEtaLep1FJ, mva_dPhiWHFJ;
+  float mva_HTTFRec;
   // MVA output
   vector<TMVA::Reader*> reader;
   float mvaInputs[nThreads][16];
@@ -313,38 +316,63 @@ void whAnalysis(
   ao.histoNames.resize(nPlots); 
   ao.histoTitles.resize(nPlots);
   { int p=0;
-    ao.histoNames[p]="MVAVar"                  ; ao.histoTitles[p]=""                      ;                                                p++;
-    ao.histoNames[p]="lepton1Pt"               ; ao.histoTitles[p]="Lepton p_{T} [GeV]"    ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
-    ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton #eta"           ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
-    ao.histoNames[p]="lepton1Charge"           ; ao.histoTitles[p]="Lepton charge"         ; ao.nbins[p]=   3; ao.xmin[p]=    -1; ao.xmax[p]=     2; p++; 
-    ao.histoNames[p]="WBosonPt"                ; ao.histoTitles[p]="W boson pT [GeV]"      ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
-    ao.histoNames[p]="WBosonPhi"               ; ao.histoTitles[p]="W boson #eta"          ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
-    ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+    ao.histoNames[p]="MVAVar"                  ; ao.histoTitles[p]=""                         ;                                                p++;
+    ao.histoNames[p]="lepton1Pt"               ; ao.histoTitles[p]="Lepton p_{T} [GeV]"       ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
+    ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton #eta"              ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
+    ao.histoNames[p]="lepton1Charge"           ; ao.histoTitles[p]="Lepton charge"            ; ao.nbins[p]=   3; ao.xmin[p]=    -1; ao.xmax[p]=     2; p++; 
+    ao.histoNames[p]="WBosonPt"                ; ao.histoTitles[p]="W boson pT [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
+    ao.histoNames[p]="WBosonPhi"               ; ao.histoTitles[p]="W boson #eta"             ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
+    ao.histoNames[p]="mT"                      ; ao.histoTitles[p]="W boson m_{T} [GeV]"      ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++;
+    ao.histoNames[p]="pfmet"                   ; ao.histoTitles[p]="E_{T}^{miss} [GeV]"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  500.; p++;
+    ao.histoNames[p]="pfmetsig"                ; ao.histoTitles[p]="E_{T}^{miss} significance"; ao.nbins[p]=  30; ao.xmin[p]=     0; ao.xmax[p]=    30; p++; 
+    ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"               ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
       // fatjet only plots
-      ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
-      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
-      ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="Tau32SD"                 ; ao.histoTitles[p]="#tau_{3}/#tau_{2} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="deltaEtaLep1FJ"          ; ao.histoTitles[p]="#Delta#eta(lep,FJ)"    ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
-      ao.histoNames[p]="deltaPhiWHFJ"            ; ao.histoTitles[p]="#Delta#phi(W,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
-      ao.histoNames[p]="nIsojet"                 ; ao.histoTitles[p]="N isojets"             ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-      ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"       ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
+      ao.histoNames[p]="mSD"                ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
+      ao.histoNames[p]="pTFJ"               ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
+      ao.histoNames[p]="Tau21SD"            ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="Tau32SD"            ; ao.histoTitles[p]="#tau_{3}/#tau_{2} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="doubleB"            ; ao.histoTitles[p]="Fatjet double b-tag"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="deltaEtaLep1FJ"     ; ao.histoTitles[p]="#Delta#eta(lep,FJ)"    ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="deltaPhiWHFJ"       ; ao.histoTitles[p]="#Delta#phi(W,FJ) [Rad]"; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="ptBalanceWHFJ"      ; ao.histoTitles[p]="|Fatjet pT / W pT|"    ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="nIsojet"            ; ao.histoTitles[p]="N isojets"             ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="isojetNBtags"       ; ao.histoTitles[p]="N isojet b-tags"       ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
+      ao.histoNames[p]="fjHTTFRec"          ; ao.histoTitles[p]="FJ HTT f_{rec}"        ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=   0.4; p++;
+      ao.histoNames[p]="fjHTTMass"          ; ao.histoTitles[p]="FJ HTT mass [GeV]"     ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++;
+      ao.histoNames[p]="psi022004031003"    ; ao.histoTitles[p]="#psi(2,2.0,4,3,1.0,3)" ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]= 0.05 ; p++;
+      ao.histoNames[p]="psi022004022003"    ; ao.histoTitles[p]="#psi(2,2.0,4,2,2.0,3)" ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]= 0.04 ; p++;
+      ao.histoNames[p]="psi022004030503"    ; ao.histoTitles[p]="#psi(2,2.0,4,3,0.5,3)" ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]= 2    ; p++;
     } else {
-      ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"      ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
-      ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"        ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
-      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"      ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets" ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-      ao.histoNames[p]="deltaPhiWH"              ; ao.histoTitles[p]="#Delta#phi(W,H) [Rad]" ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
-      ao.histoNames[p]="ptBalanceWH"             ; ao.histoTitles[p]="|H pT / W pT|"         ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
-      ao.histoNames[p]="sumEtSoft1"              ; ao.histoTitles[p]="#sum E_{T}(soft 1)"    ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
-      ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"          ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
-      ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"          ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
-      ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"         ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="Mjj"                ; ao.histoTitles[p]="Dijet mass [GeV]"        ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
+      ao.histoNames[p]="pTjj"               ; ao.histoTitles[p]="Dijet pT [GeV]"          ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
+      ao.histoNames[p]="bjet1Pt"            ; ao.histoTitles[p]="B-jet 1 pT [GeV]"        ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet2Pt"            ; ao.histoTitles[p]="B-jet 2 pT [GeV]"        ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet1btag"          ; ao.histoTitles[p]="B-jet 1 btag"            ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"          ; ao.histoTitles[p]="B-jet 2 btag"            ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="nJet"               ; ao.histoTitles[p]="N central AK4CHS jets"   ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="deltaPhiWH"         ; ao.histoTitles[p]="#Delta#phi(W,H) [Rad]"   ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="ptBalanceWH"        ; ao.histoTitles[p]="|H pT / W pT|"           ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
+      ao.histoNames[p]="sumEtSoft1"         ; ao.histoTitles[p]="#sum E_{T}(soft 1)"      ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
+      ao.histoNames[p]="nSoft2"             ; ao.histoTitles[p]="N^{soft}_{2}"            ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
+      ao.histoNames[p]="nSoft5"             ; ao.histoTitles[p]="N^{soft}_{5}"            ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
+      ao.histoNames[p]="nSoft10"            ; ao.histoTitles[p]="N^{soft}_{10}"           ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
+      ao.histoNames[p]="topWBosonCosThetaCS"; ao.histoTitles[p]="W boson cos #theta^{CS}" ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="hbbCosThetaJJ"      ; ao.histoTitles[p]="cos #theta(bb)"          ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="hbbCosThetaCSJ1"    ; ao.histoTitles[p]="cos #theta^{CS} bjet1"   ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="deltaEtaLep1H"      ; ao.histoTitles[p]="#Delta#eta(lep,jj)"      ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="dPhil1W"            ; ao.histoTitles[p]="#Delta#phi(lep,W)"       ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="dPhil1b1"           ; ao.histoTitles[p]="#Delta#phi(lep,b1)"      ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="dPhil1b2"           ; ao.histoTitles[p]="#Delta#phi(lep,b2)"      ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="dPhiWb1"            ; ao.histoTitles[p]="#Delta#phi(W,b1)"        ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="dPhiWb2"            ; ao.histoTitles[p]="#Delta#phi(W,b2)"        ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="dPhib1b2"           ; ao.histoTitles[p]="#Delta#phi(b1,b2)"       ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="dEtal1W"            ; ao.histoTitles[p]="|#Delta#eta(lep,W)|"     ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="dEtal1b1"           ; ao.histoTitles[p]="|#Delta#eta(lep,b1)|"    ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="dEtal1b2"           ; ao.histoTitles[p]="|#Delta#eta(lep,b2)|"    ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="dEtaWb1"            ; ao.histoTitles[p]="|#Delta#eta(W,b1)|"      ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="dEtaWb2"            ; ao.histoTitles[p]="|#Delta#eta(W,b2)|"      ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
+      ao.histoNames[p]="dEtab1b2"           ; ao.histoTitles[p]="|#Delta#eta(b1,b2)|"     ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
     }
   }
   
@@ -468,16 +496,62 @@ void whAnalysis(
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
     ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/WHSR_mvaTree%s.root",dataCardDir.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
-    ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
-    ao.mvaTree->Branch("category"    , &ao.mva_category    ); 
-    ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
+    ao.mvaTree->Branch("weight"              , &ao.mva_weight             ); 
+    ao.mvaTree->Branch("category"            , &ao.mva_category           ); 
+    ao.mvaTree->Branch("eventNumber"         , &ao.mva_eventNumber        ); 
+    ao.mvaTree->Branch("mT"                  , &ao.mva_mT                 ); 
+    ao.mvaTree->Branch("dPhil1W"             , &ao.mva_dPhil1W            ); 
+    ao.mvaTree->Branch("WBosonPt"            , &ao.mva_WBosonPt           ); 
+    ao.mvaTree->Branch("dPhiLep1Met"         , &ao.mva_dPhiLep1Met        ); 
+    ao.mvaTree->Branch("lepton1Pt"           , &ao.mva_lepton1Pt          ); 
+    ao.mvaTree->Branch("lepton1Eta"          , &ao.mva_lepton1Eta         ); 
+    ao.mvaTree->Branch("lepton1Charge"       , &ao.mva_lepton1Charge      ); 
+    ao.mvaTree->Branch("pfmet"               , &ao.mva_pfmet              ); 
+    
+    ao.mvaTree->Branch("sumEtSoft1"          , &ao.mva_sumEtSoft1         ); 
+    ao.mvaTree->Branch("nSoft2"              , &ao.mva_nSoft2             ); 
+    ao.mvaTree->Branch("nSoft5"              , &ao.mva_nSoft5             ); 
+    ao.mvaTree->Branch("nSoft10"             , &ao.mva_nSoft10            ); 
+    ao.mvaTree->Branch("bjet1Pt"             , &ao.mva_bjet1Pt            ); 
+    ao.mvaTree->Branch("bjet1btag"           , &ao.mva_bjet1btag          ); 
+    ao.mvaTree->Branch("bjet2Pt"             , &ao.mva_bjet2Pt            ); 
+    ao.mvaTree->Branch("bjet2btag"           , &ao.mva_bjet2btag          ); 
+    ao.mvaTree->Branch("hbbpt"               , &ao.mva_hbbpt              ); 
+    ao.mvaTree->Branch("hbbm"                , &ao.mva_hbbm               ); 
+    ao.mvaTree->Branch("dPhiWH"              , &ao.mva_dPhiWH             ); 
+    ao.mvaTree->Branch("ptBalanceWH"         , &ao.mva_ptBalanceWH        ); 
+    ao.mvaTree->Branch("topMass"             , &ao.mva_topMass            ); 
+    ao.mvaTree->Branch("dRBjets"             , &ao.mva_dRBjets            ); 
+    ao.mvaTree->Branch("dEtaLep1H"           , &ao.mva_dEtaLep1H          ); 
+    ao.mvaTree->Branch("nAddJet"             , &ao.mva_nAddJet            ); 
   } else if(selection==kWHFJSR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
     ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/WHFJSR_mvaTree%s.root",dataCardDir.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
-    ao.mvaTree->Branch("weight"        , &ao.mva_weight         ); 
-    ao.mvaTree->Branch("category"      , &ao.mva_category       ); 
-    ao.mvaTree->Branch("eventNumber"   , &ao.mva_eventNumber    ); 
+    ao.mvaTree->Branch("weight"              , &ao.mva_weight             ); 
+    ao.mvaTree->Branch("category"            , &ao.mva_category           ); 
+    ao.mvaTree->Branch("eventNumber"         , &ao.mva_eventNumber        ); 
+    ao.mvaTree->Branch("mT"                  , &ao.mva_mT                 ); 
+    ao.mvaTree->Branch("dPhil1W"             , &ao.mva_dPhil1W            ); 
+    ao.mvaTree->Branch("WBosonPt"            , &ao.mva_WBosonPt           ); 
+    ao.mvaTree->Branch("dPhiLep1Met"         , &ao.mva_dPhiLep1Met        ); 
+    ao.mvaTree->Branch("lepton1Pt"           , &ao.mva_lepton1Pt          ); 
+    ao.mvaTree->Branch("lepton1Eta"          , &ao.mva_lepton1Eta         ); 
+    ao.mvaTree->Branch("lepton1Charge"       , &ao.mva_lepton1Charge      ); 
+    ao.mvaTree->Branch("pfmet"               , &ao.mva_pfmet              ); 
+    
+    ao.mvaTree->Branch("nIsojet"             , &ao.mva_nIsojet            ); 
+    ao.mvaTree->Branch("MSD"                 , &ao.mva_MSD                ); 
+    ao.mvaTree->Branch("Tau21SD"             , &ao.mva_Tau21SD            ); 
+    ao.mvaTree->Branch("Tau32SD"             , &ao.mva_Tau32SD            ); 
+    ao.mvaTree->Branch("fjPt"                , &ao.mva_fjPt               ); 
+    ao.mvaTree->Branch("psi022004031003"     , &ao.mva_psi022004031003    ); 
+    ao.mvaTree->Branch("psi022004022003"     , &ao.mva_psi022004022003    ); 
+    ao.mvaTree->Branch("psi022004030503"     , &ao.mva_psi022004030503    ); 
+    ao.mvaTree->Branch("ptBalanceWHFJ"       , &ao.mva_ptBalanceWHFJ      ); 
+    ao.mvaTree->Branch("dEtaLep1FJ"          , &ao.mva_dEtaLep1FJ         ); 
+    ao.mvaTree->Branch("dPhiWHFJ"            , &ao.mva_dPhiWHFJ           ); 
+    ao.mvaTree->Branch("HTTFRec"             , &ao.mva_HTTFRec            ); 
   }
   
   // Instantiate TMVA reader
@@ -612,7 +686,23 @@ void whAnalysis(
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_btag[iShift][iPt][iEta][lep][ic]->GetBinContent(nb),1e-7f));
       }
     } // all bins in histograms
-  }
+    // Renormalize QCD scale uncertainties
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 &&
+       (ic!=kPlotVZbb&&ic!=kPlotVVLF&&ic!=kPlotTop)) {
+      ao.histo_QCDScaleUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_QCDScaleUp  [lep][ic]->GetSumOfWeights());
+      ao.histo_QCDScaleDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_QCDScaleDown[lep][ic]->GetSumOfWeights());
+    }
+    // Renormalize lepton SF and pileup uncertainties
+    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 &&
+       (ic==kPlotTop||ic==kPlotTT||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)) {
+      ao.histo_pileupUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupUp  [lep][ic]->GetSumOfWeights());
+      ao.histo_pileupDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupDown[lep][ic]->GetSumOfWeights());
+      ao.histo_eleSFUp   [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFUp   [lep][ic]->GetSumOfWeights());
+      ao.histo_eleSFDown [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFDown [lep][ic]->GetSumOfWeights());
+      ao.histo_muSFUp	 [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFUp    [lep][ic]->GetSumOfWeights());
+      ao.histo_muSFDown  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFDown  [lep][ic]->GetSumOfWeights());
+    }
+  } // all final states and categories
 
   // Write shape histograms to file
   for(unsigned lep=0; lep<nLepSel; lep++) {
@@ -1054,8 +1144,12 @@ void analyzeSample(
     bLoad(b["jotEta"],ientry);
     bLoad(b["jotPhi"],ientry);
     bLoad(b["jotFlav"],ientry);
-    float bjet1Pt = gt.jotPt[0][gt.hbbjtidx[0][0]];
-    float bjet2Pt = gt.jotPt[0][gt.hbbjtidx[0][1]];
+    float bjet1Pt  = gt.jotPt[0][gt.hbbjtidx[0][0]];
+    float bjet2Pt  = gt.jotPt[0][gt.hbbjtidx[0][1]];
+    float bjet1Eta = gt.jotEta[gt.hbbjtidx[0][0]];
+    float bjet2Eta = gt.jotEta[gt.hbbjtidx[0][1]];
+    float bjet1Phi = gt.jotPhi[gt.hbbjtidx[0][0]];
+    float bjet2Phi = gt.jotPhi[gt.hbbjtidx[0][1]];
     
     if(isBoostedCategory) {
       // Isojets for boosted category
@@ -1150,7 +1244,26 @@ void analyzeSample(
     float dPhiBjets     = -1;
     float dRBjets       = -1;
     float dEtaLep1FJ    = -1;
-    float deltaM        = -1;
+    float dEtaLep1H     = -1;
+    float fjECFN_2_4_20 = -1;
+    float fjECFN_3_3_10 = -1;
+    float fjECFN_2_3_20 = -1;
+    float fjECFN_3_3_05 = -1;
+    float psi022004031003 = -1;
+    float psi022004022003 = -1;
+    float psi022004030503 = -1;
+    float dPhil1W  = -1;
+    float dPhil1b1 = -1;
+    float dPhil1b2 = -1;
+    float dPhiWb1  = -1;
+    float dPhiWb2  = -1;
+    float dPhib1b2 = -1;
+    float dEtal1W  = -1;
+    float dEtal1b1 = -1;
+    float dEtal1b2 = -1;
+    float dEtaWb1  = -1;
+    float dEtaWb2  = -1;
+    float dEtab1b2 = -1;
     if(isBoostedCategory) {
       ptBalanceWHFJ = gt.fjPt[0] / gt.topWBosonPt;
       dEtaLep1FJ = fabs(lepton1Eta - gt.fjEta);
@@ -1161,6 +1274,7 @@ void analyzeSample(
       dEtaBjets     = fabs(gt.jotEta[gt.hbbjtidx[0][0]]-gt.jotEta[gt.hbbjtidx[0][1]]);
       dPhiBjets     = fabs(TVector2::Phi_mpi_pi(gt.jotPhi[gt.hbbjtidx[0][0]]-gt.jotPhi[gt.hbbjtidx[0][1]]));
       dRBjets       = sqrt(dEtaBjets*dEtaBjets + dPhiBjets*dPhiBjets);
+      dEtaLep1H = fabs(lepton1Eta - gt.hbbeta[0]);
     }
     // deltaPhiWHFJ computed already in Jet multiplicity section
     bool vetoTrainEvts = (
@@ -1558,44 +1672,148 @@ void analyzeSample(
 
     // Fill the plotting histograms and MVA tree (if applicable)
     bool passFullSel = (selectionBits[0] & ao.selection) != 0;
-    if(passFullSel && ao.debug>=3) printf("\tPassed this sel\n");
-    bLoad(b["sumEtSoft1"],ientry);
-    bLoad(b["nSoft2"],ientry);
-    bLoad(b["nSoft5"],ientry);
-    bLoad(b["nSoft10"],ientry);
-    //bLoad(b["fjMSD_corr"],ientry);
-    bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
-    bLoad(b["fjPt"],ientry);
-    bLoad(b["fjDoubleCSV"],ientry);
-    // Lock the mutex and fill the MVA tree
-    if(ao.selection==kWHSR && passFullSel && category!=kPlotData) {
-      mvaTreeMutex.lock();
-      ao.mva_weight       = weight                   ; 
-      ao.mva_category     = category                 ;
-      ao.mva_eventNumber  = gt.eventNumber           ;
-      ao.mvaTree->Fill();
-      mvaTreeMutex.unlock();
-    } else if(ao.selection==kWHFJSR && passFullSel && category!=kPlotData) {
-      mvaTreeMutex.lock();
-      //ao.mva_MSD           = fjMSD_corr[0]  ;
-      ao.mva_MSD           = gt.fjMSD[0]     ; // TEMPORARY DGH 
-      ao.mva_Tau21SD       = gt.fjTau21SD    ; 
-      ao.mva_weight        = weight          ; 
-      ao.mva_category      = category        ;
-      ao.mva_eventNumber   = gt.eventNumber  ;
-      ao.mvaTree->Fill();
-      mvaTreeMutex.unlock();
+    if(passFullSel) {
+      if(ao.debug>=3) printf("\tPassed this sel\n");
+      bLoad(b["mT"],ientry);
+      bLoad(b["pfmet"],ientry);
+      bLoad(b["pfmetsig"],ientry);
+      if(isBoostedCategory) {
+        //bLoad(b["fjMSD_corr"],ientry);
+        bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+        bLoad(b["fjPt"],ientry);
+        bLoad(b["fjDoubleCSV"],ientry);
+        bLoad(b["fjHTTFRec"],ientry);
+        bLoad(b["fjHTTMass"],ientry);
+        // Need to handle these ECFs better for a more general case, long term to-do list
+        bLoad(b["fjECFN_2_4_20"],ientry);
+        bLoad(b["fjECFN_3_3_10"],ientry);
+        bLoad(b["fjECFN_2_3_20"],ientry);
+        bLoad(b["fjECFN_3_3_05"],ientry);
+        fjECFN_2_4_20 = *((float*)b["fjECFN_2_4_20"]->GetAddress());
+        fjECFN_3_3_10 = *((float*)b["fjECFN_3_3_10"]->GetAddress());
+        fjECFN_2_3_20 = *((float*)b["fjECFN_2_3_20"]->GetAddress());
+        fjECFN_3_3_05 = *((float*)b["fjECFN_3_3_05"]->GetAddress());
+        psi022004031003 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_3_3_10),1.33);
+        psi022004022003 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_2_3_20),1.00);
+        psi022004030503 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_3_3_05),2.67);
+      } else {
+        bLoad(b["sumEtSoft1"],ientry);
+        bLoad(b["nSoft2"],ientry);
+        bLoad(b["nSoft5"],ientry);
+        bLoad(b["nSoft10"],ientry);
+        bLoad(b["topWBosonEta"],ientry);
+        bLoad(b["topWBosonPhi"],ientry);
+        bLoad(b["topWBosonCosThetaCS"],ientry);
+        bLoad(b["hbbCosThetaJJ"],ientry);
+        bLoad(b["hbbCosThetaCSJ1"],ientry);
+        dPhil1W  = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - gt.topWBosonPhi));
+        dPhil1b1 = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - bjet1Phi       ));
+        dPhil1b2 = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - bjet2Phi       ));
+        dPhiWb1  = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi - bjet1Phi       ));
+        dPhiWb2  = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi - bjet2Phi       ));
+        dPhib1b2 = fabs(TVector2::Phi_mpi_pi(bjet1Phi        - bjet2Phi       ));
+        dEtal1W  = fabs(lepton1Eta      - gt.topWBosonEta);
+        dEtal1b1 = fabs(lepton1Eta      - bjet1Eta       );
+        dEtal1b2 = fabs(lepton1Eta      - bjet2Eta       );
+        dEtaWb1  = fabs(gt.topWBosonEta - bjet1Eta       );
+        dEtaWb2  = fabs(gt.topWBosonEta - bjet2Eta       );
+        dEtab1b2 = fabs(bjet1Eta        - bjet2Eta       );
+      }
+      // Lock the mutex and fill the MVA tree
+      if(ao.selection==kWHSR && passFullSel && category!=kPlotData) {
+        mvaTreeMutex.lock();
+        ao.mva_weight        = weight                   ; 
+        ao.mva_category      = category                 ;
+        ao.mva_eventNumber   = gt.eventNumber           ;
+        ao.mva_mT            = gt.mT[0]                 ;
+        ao.mva_dPhil1W       = dPhil1W                  ;
+        ao.mva_WBosonPt      = gt.topWBosonPt           ;
+        ao.mva_dPhiLep1Met   = deltaPhiLep1Met          ;
+        ao.mva_lepton1Pt     = lepton1Pt                ;
+        ao.mva_lepton1Eta    = lepton1Eta               ;
+        ao.mva_lepton1Charge = lepton1Charge            ;
+        ao.mva_pfmet         = gt.pfmet[0]              ;
+        ao.mva_sumEtSoft1    = gt.sumEtSoft1            ;
+        ao.mva_nSoft2        = gt.nSoft2                ;
+        ao.mva_nSoft5        = gt.nSoft5                ;
+        ao.mva_nSoft10       = gt.nSoft10               ;
+        ao.mva_bjet1Pt       = bjet1Pt                  ;
+        ao.mva_bjet1btag     = bjet1btag                ;
+        ao.mva_bjet2Pt       = bjet2Pt                  ;
+        ao.mva_bjet2btag     = bjet2btag                ;
+        ao.mva_hbbpt         = gt.hbbpt_reg[0]          ;
+        ao.mva_hbbm          = gt.hbbm_reg[0]           ;
+        ao.mva_dPhiWH        = deltaPhiWH               ;
+        ao.mva_ptBalanceWH   = ptBalanceWH              ;
+        ao.mva_topMass       = gt.topMassLep1Met[0]     ;
+        ao.mva_dRBjets       = dRBjets                  ;
+        ao.mva_dEtaLep1H     = dEtaLep1H                ;
+        ao.mva_nAddJet       = gt.nJet[0]-2             ;
+        ao.mvaTree->Fill();
+        mvaTreeMutex.unlock();
+      } else if(ao.selection==kWHFJSR && passFullSel && category!=kPlotData) {
+        mvaTreeMutex.lock();
+        ao.mva_weight           = weight                   ; 
+        ao.mva_category         = category                 ;
+        ao.mva_eventNumber      = gt.eventNumber           ;
+        ao.mva_mT               = gt.mT[0]                 ;
+        ao.mva_dPhil1W          = dPhil1W                  ;
+        ao.mva_WBosonPt         = gt.topWBosonPt           ;
+        ao.mva_dPhiLep1Met      = deltaPhiLep1Met          ;
+        ao.mva_lepton1Pt        = lepton1Pt                ;
+        ao.mva_lepton1Eta       = lepton1Eta               ;
+        ao.mva_lepton1Charge    = lepton1Charge            ;
+        ao.mva_pfmet            = gt.pfmet[0]              ;
+        //ao.mva_MSD              = fjMSD_corr[0]            ;
+        ao.mva_MSD              = gt.fjMSD[0]              ; // TEMPORARY DGH 
+        ao.mva_nIsojet          = nIsojet[0]               ; 
+        ao.mva_Tau21SD          = gt.fjTau21SD             ; 
+        ao.mva_Tau32SD          = gt.fjTau32SD             ; 
+        ao.mva_fjPt             = gt.fjPt[0]               ; 
+        ao.mva_psi022004031003  = psi022004031003          ; 
+        ao.mva_psi022004022003  = psi022004022003          ; 
+        ao.mva_psi022004030503  = psi022004030503          ; 
+        ao.mva_ptBalanceWHFJ    = ptBalanceWHFJ            ; 
+        ao.mva_dEtaLep1FJ       = dEtaLep1FJ               ; 
+        ao.mva_dPhiWHFJ         = deltaPhiWHFJ             ; 
+        ao.mva_HTTFRec          = gt.fjHTTFRec             ; 
+        ao.mvaTree->Fill();
+        mvaTreeMutex.unlock();
+      }
     }
     float theVar;
     for(int p=0; p<nPlots; p++) { 
       bool makePlot=false;
       // Variables -- change the makePlot for n-1 later
+      // common
       if      (ao.histoNames[p]=="MVAVar"                  ) { theVar = MVAVar[0]                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="lepton1Pt"               ) { theVar = lepton1Pt                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="lepton1Eta"              ) { theVar = lepton1Eta                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="lepton1Charge"           ) { theVar = lepton1Charge              ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="WBosonPt"                ) { theVar = gt.topWBosonPt             ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="WBosonPhi"               ) { theVar = gt.topWBosonPhi            ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="mT"                      ) { theVar = gt.mT[0]                   ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="pfmet"                   ) { theVar = gt.pfmet[0]                ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="pfmetsig"                ) { theVar = gt.pfmetsig                ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
+      // boosted
+      //else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
+      else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="Tau21SD"                 ) { theVar = gt.fjTau21SD               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="Tau32SD"                 ) { theVar = gt.fjTau32SD               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="doubleB"                 ) { theVar = gt.fjDoubleCSV             ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaEtaLep1FJ"          ) { theVar = dEtaLep1FJ                 ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaPhiWHFJ"            ) { theVar = deltaPhiWHFJ               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="ptBalanceWHFJ"           ) { theVar = ptBalanceWHFJ              ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="nIsojet"                 ) { theVar = nIsojet[0]                 ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="isojetNBtags"            ) { theVar = isojetNBtags[0]            ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="fjHTTFRec"               ) { theVar = gt.fjHTTFRec               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="fjHTTMass"               ) { theVar = gt.fjHTTMass               ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="psi022004031003"         ) { theVar = psi022004031003            ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="psi022004022003"         ) { theVar = psi022004022003            ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="psi022004030503"         ) { theVar = psi022004030503            ; makePlot = passFullSel; }
+      // resolved
       else if (ao.histoNames[p]=="Mjj"                     ) { theVar = gt.hbbm_reg[0]             ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="pTjj"                    ) { theVar = gt.hbbpt_reg[0]            ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet1Pt"                 ) { theVar = bjet1Pt                    ; makePlot = passFullSel; }
@@ -1609,19 +1827,22 @@ void analyzeSample(
       else if (ao.histoNames[p]=="nSoft2"                  ) { theVar = gt.nSoft2                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nSoft5"                  ) { theVar = gt.nSoft5                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nSoft10"                 ) { theVar = gt.nSoft10                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
-      // fatjet
-      //else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
-      else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="Tau21SD"                 ) { theVar = gt.fjTau21SD               ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="Tau32SD"                 ) { theVar = gt.fjTau32SD               ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="doubleB"                 ) { theVar = gt.fjDoubleCSV             ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="deltaEtaLep1FJ"          ) { theVar = dEtaLep1FJ                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="deltaPhiWHFJ"            ) { theVar = deltaPhiWHFJ               ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="ptBalanceWHFJ"           ) { theVar = ptBalanceWHFJ              ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="nIsojet"                 ) { theVar = nIsojet[0]                 ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="isojetNBtags"            ) { theVar = isojetNBtags[0]            ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="topWBosonCosThetaCS"     ) { theVar = gt.topWBosonCosThetaCS[0]  ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="hbbCosThetaJJ"           ) { theVar = gt.hbbCosThetaJJ[0]        ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="hbbCosThetaCSJ1"         ) { theVar = gt.hbbCosThetaCSJ1[0]      ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaEtaLep1H"           ) { theVar = dEtaLep1H                  ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dPhil1W"                 ) { theVar = dPhil1W                    ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dPhil1b1"                ) { theVar = dPhil1b1                   ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dPhil1b2"                ) { theVar = dPhil1b2                   ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dPhiWb1"                 ) { theVar = dPhiWb1                    ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dPhiWb2"                 ) { theVar = dPhiWb2                    ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dPhib1b2"                ) { theVar = dPhib1b2                   ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dEtal1W"                 ) { theVar = dEtal1W                    ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dEtal1b1"                ) { theVar = dEtal1b1                   ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dEtal1b2"                ) { theVar = dEtal1b2                   ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dEtaWb1"                 ) { theVar = dEtaWb1                    ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dEtaWb2"                 ) { theVar = dEtaWb2                    ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dEtab1b2"                ) { theVar = dEtab1b2                   ; makePlot = passFullSel; }
       if(!makePlot) continue;
       if(ao.histoNames[p]=="MVAVar")
         theVar = TMath::Min((float)(ao.MVAbins[ao.MVAbins.size()-1]-0.00001), (float)theVar);
