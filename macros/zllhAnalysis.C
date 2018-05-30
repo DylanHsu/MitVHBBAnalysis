@@ -159,11 +159,12 @@ void zllhAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto"             };
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"             };
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"             };
-  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"};
-  ao.cuts[kZllHPresel         ] = {"ZpT"                                               , "boostedVeto"             };
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto"                      };
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"                      };
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"                      };
+  ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"ZmassTight"         ,"dPhiZH"        , "boostedVeto"              , "drBB"};
+  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"         };
+  ao.cuts[kZllHPresel         ] = {"ZpT"                                               , "boostedVeto"                      };
   ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"             };
   ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"             };
@@ -187,10 +188,10 @@ void zllhAnalysis(
     samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
     samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
     samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
-    samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );       
+    samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );
     samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
     samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
-    samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_ht200to400"               , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_ht400to600"               , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_ht600to800"               , vhbbPlot::kZjets  );       
@@ -208,7 +209,7 @@ void zllhAnalysis(
     samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );       
-    samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
   } else if(year==2017) {
@@ -280,7 +281,7 @@ void zllhAnalysis(
   if(ao.MVAVarType==1) {
     // 1 - simple pT variable
     ao.MVAVarName="Higgs p_{T} classifier [GeV]";
-    if(selection==kZllHSR) {
+    if(selection==kZllHSR || selection==kZllHVZbbCR) {
       ao.MVAbins={100,120,140,160,180,200,250,300,350};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
@@ -309,7 +310,7 @@ void zllhAnalysis(
         ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
       ao.MVAVarName="Fatjet soft drop mass [GeV]";
       ao.shapeType="softDropMassShape";
-    }
+    } else throw std::runtime_error("bad selection");
     // 2 - multiclass BDT in SR, subleading CMVA in CR (not implemented)
   } else if(ao.MVAVarType==3) {
     // 3 - normal BDT in SR, subleading CMVA in CR
@@ -327,7 +328,7 @@ void zllhAnalysis(
         ao.MVAbins={ 0.1500,  0.2500,  0.3500,  0.4500,  0.5500, 0.6000, 0.6500, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
-    } else if(selection==kZllHSR) {
+    } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
       if(binZpt==0)
         ao.MVAbins={-1.00,-0.40,-0.25,-0.10,0.05,0.20,0.35,0.50,0.65,1.00};
       else
@@ -345,7 +346,7 @@ void zllhAnalysis(
       ao.MVAbins={-1.00,-0.10,0.05,0.20,0.35,0.50,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
-    }
+    } else throw std::runtime_error("bad selection");
   } else throw std::runtime_error("bad ao.MVAVarType");
   
   // Declare histograms for plotting
@@ -398,6 +399,7 @@ void zllhAnalysis(
       ao.histoNames[p]="nSoft5"                  ; ao.histoTitles[p]="N^{soft}_{5}"             ; ao.nbins[p]=  12; ao.xmin[p]=    0.; ao.xmax[p]=   12.; p++; 
       ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"            ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
       ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"      ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="dRJ1J2"                  ; ao.histoTitles[p]="#DeltaR(j1,j2)"           ; ao.nbins[p]=  50; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
       ao.histoNames[p]="Mjj_rescaled"            ; ao.histoTitles[p]="Rescaled Dijet mass [GeV]"; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
     }
   }
@@ -1259,13 +1261,13 @@ void analyzeSample(
     if(ao.year==2016) {
       bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
-      bjet1IsLoose = bjet1btag > cmvaLoose;
-      bjet2IsLoose = bjet2btag > cmvaLoose;
+      bjet1IsLoose = bjet1btag > cmvaMedium;
+      bjet2IsLoose = bjet2btag > cmvaMedium;
     } else if(ao.year==2017) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
-      bjet1IsLoose = bjet1btag > deepcsvLoose;
-      bjet2IsLoose = bjet2btag > deepcsvLoose;
+      bjet1IsLoose = bjet1btag > deepcsvMedium;
+      bjet2IsLoose = bjet2btag > deepcsvMedium;
     }
 
     for(unsigned iJES=0; iJES<NJES; iJES++) {
@@ -1426,6 +1428,7 @@ void analyzeSample(
         cut["ZmassTight" ] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
         cut["ZmassSB"    ] = (gt.ZBosonM >= 10 && gt.ZBosonM < 75) || (gt.ZBosonM >= 105 && gt.ZBosonM < 120);
         cut["lowMET"     ] = gt.pfmet[0] < 60;
+        cut["drBB"       ] = (ao.binZpt==0)? dRBjets < 2.8: dRBjets < 1.8;
         cut["boostedCat" ] = isBoostedCategory;
         cut["boostedVeto"] = !isBoostedCategory;
         cut["vetoTrain"  ] = (ao.MVAVarType==1 || (gt.eventNumber%10)>=3 || category==kPlotData);
@@ -1892,6 +1895,7 @@ void analyzeSample(
       else if (ao.histoNames[p]=="ZBosonM"                 ) { theVar = gt.ZBosonM                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonLep1CosThetaCS"    ) { theVar = gt.ZBosonLep1CosThetaCS    ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonLep1CosThetaStar"  ) { theVar = gt.ZBosonLep1CosThetaStar  ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="dRJ1J2"                  ) { theVar = dRBjets                    ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Mjj"                     ) { theVar = gt.hbbm_reg[0]             ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="pTjj"                    ) { theVar = gt.hbbpt_reg[0]            ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet1Pt"                 ) { theVar = bjet1Pt                    ; makePlot = passFullSel; }
