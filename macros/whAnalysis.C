@@ -34,7 +34,8 @@
 // for sel in kWHSR kWHLightFlavorCR kWHHeavyFlavorCR kWH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/whAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
 
 TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh";
-TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh";
+//TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh";
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/";
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=2; // Number of lepton selections
@@ -156,17 +157,18 @@ void whAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
-  ao.cuts[kWHLightFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
-  ao.cuts[kWHHeavyFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSB","metSig"};
-  ao.cuts[kWH2TopCR         ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
-  ao.cuts[kWHSR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
-  ao.cuts[kWHLightFlavorCR  ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
-  ao.cuts[kWHLightFlavorFJCR] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
-  ao.cuts[kWHHeavyFlavorFJCR] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
-  ao.cuts[kWHTT2bFJCR       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
-  ao.cuts[kWHTT1bFJCR       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
-  ao.cuts[kWHFJSR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
-  ao.cuts[kWHFJPresel       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ"                             };
+  ao.cuts[kWHLightFlavorCR      ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
+  ao.cuts[kWHHeavyFlavorLoMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBLo","metSig"};
+  ao.cuts[kWHHeavyFlavorHiMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBHi","metSig"};
+  ao.cuts[kWH2TopCR             ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
+  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
+  ao.cuts[kWHLightFlavorCR      ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
+  ao.cuts[kWHLightFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
+  ao.cuts[kWHHeavyFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
+  ao.cuts[kWHTT2bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
+  ao.cuts[kWHTT1bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
+  ao.cuts[kWHFJSR               ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
+  ao.cuts[kWHFJPresel           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ"                             };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -332,7 +334,7 @@ void whAnalysis(
       ao.MVAVarName="Subleading H(bb) DeepCSV";
       ao.shapeType="lesserCSVShape";
     }
-  } else if(selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHPresel) {
+  } else if(selection==kWHHeavyFlavorLoMassCR || selection==kWHHeavyFlavorHiMassCR || selection==kWH2TopCR || selection==kWHPresel) {
     if(year==2016) {
       ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
       ao.MVAVarName="Subleading H(bb) CMVA";
@@ -361,7 +363,7 @@ void whAnalysis(
   ao.histoTitles.resize(nPlots);
   { int p=0;
     ao.histoNames[p]="MVAVar"                  ; ao.histoTitles[p]=""                         ;                                                p++;
-    ao.histoNames[p]="lepton1Pt"               ; ao.histoTitles[p]="Lepton p_{T} [GeV]"       ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
+    ao.histoNames[p]="lepton1Pt"               ; ao.histoTitles[p]="Lepton p_{T} [GeV]"       ; ao.nbins[p]=  33; ao.xmin[p]=    20; ao.xmax[p]=   350; p++; 
     ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton #eta"              ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="lepton1Charge"           ; ao.histoTitles[p]="Lepton charge"            ; ao.nbins[p]=   3; ao.xmin[p]=    -1; ao.xmax[p]=     2; p++; 
     ao.histoNames[p]="WBosonPt"                ; ao.histoTitles[p]="W boson pT [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
@@ -629,7 +631,7 @@ void whAnalysis(
   vector<TFile*> files;
   for(auto const &sample: samples) {
     printf("### Opening sample %s ###\n",sample.first.Data());
-    TString inputFileName = Form("%s%s.root",ntupleDir.Data(),sample.first.Data());
+    TString inputFileName = Form("%s/%s.root",ntupleDir.Data(),sample.first.Data());
     
     if(multithread) {
       // Spawn nThreads threads to process that many identical pointers to this file
@@ -958,7 +960,7 @@ void analyzeSample(
         }
       }
     } else if(ao.year==2017) {
-      if(isW2Jets) {
+      if(isW2jets) {
         // Handle the overlap of the samples W2JetsToLNu_WpT100to150_CP5, W2JetsToLNu_WpT50to150_CP5
         bLoad(b["trueGenBosonPt"],ientry);
         if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
@@ -1385,7 +1387,8 @@ void analyzeSample(
         cut["pTjj"       ] = gt.hbbpt_reg[iJES] > 100; 
         cut["dPhiLep1Met"] = deltaPhiLep1Met < 2; 
         cut["mjj"        ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
-        cut["mjjSB"      ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
+        cut["mjjSBLo"    ] = gt.hbbm_reg[iJES] < 90;
+        cut["mjjSBHi"    ] = gt.hbbm_reg[iJES] >= 150 && gt.hbbm_reg[iJES] < 250;
         cut["2jets"      ] = gt.nJet[iJES]==2;
         cut["2-3jets"    ] = gt.nJet[iJES]<4;
         cut["4+jets"     ] = gt.nJet[iJES]>=4;
@@ -1645,7 +1648,8 @@ void analyzeSample(
           else if(ao.selection==kWHFJSR)
             MVAVar[iJES]=gt.fjPt[iJES];
           else if(ao.selection==kWHLightFlavorCR ||
-            ao.selection==kWHHeavyFlavorCR       || 
+            ao.selection==kWHHeavyFlavorLoMassCR || 
+            ao.selection==kWHHeavyFlavorHiMassCR || 
             ao.selection==kWH2TopCR)
             MVAVar[iJES]=bjet2btag;
           else if(ao.selection==kWHLightFlavorFJCR ||
@@ -1659,7 +1663,8 @@ void analyzeSample(
           if(ao.selection==kWHSR || ao.selection==kWHFJSR)
             MVAVar[iJES]=bdtValue[iJES];
           else if(ao.selection==kWHLightFlavorCR ||
-            ao.selection==kWHHeavyFlavorCR       || 
+            ao.selection==kWHHeavyFlavorLoMassCR || 
+            ao.selection==kWHHeavyFlavorHiMassCR || 
             ao.selection==kWH2TopCR)
             MVAVar[iJES]=bjet2btag;
           else if(ao.selection==kWHLightFlavorFJCR ||
