@@ -33,8 +33,8 @@
 
 // for sel in kWHSR kWHLightFlavorCR kWHHeavyFlavorCR kWH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/whAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
 
-TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb1/monolepton/";
-TString ntupleDir2017 = "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb1/monolepton/";
+TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh";
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh";
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=2; // Number of lepton selections
@@ -228,7 +228,51 @@ void whAnalysis(
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
   } else if(year==2017) {
-    // no samples yet
+    samples.emplace_back("SingleElectron"                 , vhbbPlot::kData   ); 
+    samples.emplace_back("SingleMuon"                     , vhbbPlot::kData   );
+    samples.emplace_back("Diboson_ww_CP5"                 , vhbbPlot::kWW     );
+    samples.emplace_back("WZTo1L1Nu2Q"                    , vhbbPlot::kVZ     );
+    samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );
+    samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );
+    samples.emplace_back("QCD_ht1000to1500_CP5"           , vhbbPlot::kQCD    );
+    samples.emplace_back("QCD_ht1500to2000_CP5"           , vhbbPlot::kQCD    );
+    samples.emplace_back("QCD_ht2000toinf_CP5"            , vhbbPlot::kQCD    );
+    samples.emplace_back("QCD_ht200to300_CP5"             , vhbbPlot::kQCD    );
+    samples.emplace_back("QCD_ht300to500_CP5"             , vhbbPlot::kQCD    );
+    samples.emplace_back("QCD_ht500to700_CP5"             , vhbbPlot::kQCD    );
+    samples.emplace_back("QCD_ht700to1000_CP5"            , vhbbPlot::kQCD    );
+    samples.emplace_back("SingleTop_tT_CP5"               , vhbbPlot::kTop    );
+    samples.emplace_back("SingleTop_tTbar_CP5"            , vhbbPlot::kTop    );
+    samples.emplace_back("SingleTop_tW_CP5"               , vhbbPlot::kTop    );
+    samples.emplace_back("SingleTop_tbarW_CP5"            , vhbbPlot::kTop    );
+    samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
+    samples.emplace_back("TTToSemiLeptonic_CP5"           , vhbbPlot::kTT     );
+    samples.emplace_back("W1JetsToLNu_WpT100to150_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W1JetsToLNu_WpT150to250_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W1JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W1JetsToLNu_WpT400toinf_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT50to150_CP5"     , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT100to150_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT150to250_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT400toinf_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("WmLNuHbb"                       , vhbbPlot::kWH     );
+    samples.emplace_back("WpLNuHbb"                       , vhbbPlot::kWH     );
+    samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  ); 
+    samples.emplace_back("Z1Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  ); 
+    samples.emplace_back("Z1Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  ); 
+    samples.emplace_back("Z1Jets_ZpT50to150_CP5"          , vhbbPlot::kZjets  ); 
+    samples.emplace_back("Z2Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  ); 
+    samples.emplace_back("Z2Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  ); 
+    samples.emplace_back("Z2Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  ); 
+    samples.emplace_back("Z2Jets_ZpT50to150_CP5"          , vhbbPlot::kZjets  ); 
+    samples.emplace_back("ZJets_m4_ht100to200_CP5"        , vhbbPlot::kZjets  ); 
+    samples.emplace_back("ZJets_m4_ht200to400_CP5"        , vhbbPlot::kZjets  ); 
+    samples.emplace_back("ZJets_m4_ht400to600_CP5"        , vhbbPlot::kZjets  ); 
+    samples.emplace_back("ZJets_m4_ht600toinf_CP5"        , vhbbPlot::kZjets  ); 
+    samples.emplace_back("ZJets_m4_ht70to100_CP5"         , vhbbPlot::kZjets  ); 
+    samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
+    samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
   }
   if(multithread) std::random_shuffle(samples.begin(),samples.end());
   // End List of Samples
@@ -790,8 +834,8 @@ void analyzeSample(
   bool isBQuarkEnriched = sampleName.Contains("bQuarks");
   bool isBHadronEnriched = sampleName.Contains("bHadrons");
   bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
-  bool useNPNLOLookup = (ao.year==2017 && sampleName=="ZJets_inclNLO_CP5");
   bool isV12jets = sampleName.Contains("Z1Jets") || sampleName.Contains("Z2Jets");
+  bool isW2jets = sampleName.Contains("W2Jets"); 
   bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
 
   unsigned nThread = split>=0? split:0;
@@ -842,8 +886,6 @@ void analyzeSample(
   std::map<TString, void*> extraAddresses;
   float normalizedWeight; unsigned char npnlo;
   extraAddresses["normalizedWeight"] = &normalizedWeight;
-  if(useNPNLOLookup)
-    extraAddresses["npnlo"] = &npnlo;
     
   // Map of the branches
   std::map<TString, TBranch*> b;
@@ -916,7 +958,12 @@ void analyzeSample(
         }
       }
     } else if(ao.year==2017) {
-      // No stitching... yet :^)
+      if(isW2Jets) {
+        // Handle the overlap of the samples W2JetsToLNu_WpT100to150_CP5, W2JetsToLNu_WpT50to150_CP5
+        bLoad(b["trueGenBosonPt"],ientry);
+        if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
+          stitchWeight = 0.5;
+      }
     }
 
     //////////////////////
