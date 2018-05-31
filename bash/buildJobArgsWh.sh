@@ -29,30 +29,36 @@ root -b -l << EOF
 EOF
   
 #Resolved category
-for sel in $resolvedSelections
+while read -r line
 do
+  a=( $line )
+  batchSampleName=${a[0]}
+  batchSampleType=${a[1]}
+  for idx in `seq 0 9`
+  do
+    for sel in $resolvedSelections
+    do
+      echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
+    done
+  done
+done < $config
+
+#Boosted category
+if [ "$useBoosted" == 'true' ]
+then
   while read -r line
   do
     a=( $line )
     batchSampleName=${a[0]}
     batchSampleType=${a[1]}
-    echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} ${batchSampleName} ${batchSampleType}" >> $jobArgsFile
-  done < $config
-done
-
-#Boosted category
-if [ "$useBoosted" == 'true' ]
-then
-  for sel in $boostedSelections
-  do
-    while read -r line
+    for idx in `seq 0 9`
     do
-      a=( $line )
-      batchSampleName=${a[0]}
-      batchSampleType=${a[1]}
-      echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} ${batchSampleName} ${batchSampleType}" >> $jobArgsFile
-    done < $config
-  done
+      for sel in $boostedSelections
+      do
+        echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
+      done
+    done
+  done < $config
 fi
 
 echo "Done building the job arguments for \"$dataCardDir\" area"
