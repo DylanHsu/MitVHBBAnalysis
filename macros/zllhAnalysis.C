@@ -31,8 +31,8 @@
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
 
-TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb1/dilepton";
-TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb1/dilepton";
+TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/dilepton";
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/dilepton";
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
@@ -164,13 +164,13 @@ void zllhAnalysis(
   ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"                      };
   ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"ZmassTight"         ,"dPhiZH"        , "boostedVeto"              , "drBB"};
   ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"         };
-  ao.cuts[kZllHPresel         ] = {"ZpT"                                               , "boostedVeto"                      };
+  ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto"                      };
   ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"             };
   ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"             };
   ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR",         "Zmass"     , "btagFJ" , "vetoTrain"};
-  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                                                       };
+  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                 , "Zmass"                             };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -216,8 +216,8 @@ void zllhAnalysis(
     //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
     //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
     samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
-    samples.emplace_back("Diboson_wz_CP5"                 , vhbbPlot::kVZ     );
-    samples.emplace_back("Diboson_zz_CP5"                 , vhbbPlot::kVZ     );
+    samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );
+    samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );
     samples.emplace_back("Diboson_ww_CP5"                 , vhbbPlot::kWW     );
     samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
     samples.emplace_back("SingleTop_tW_CP5"               , vhbbPlot::kTop    );
@@ -385,7 +385,7 @@ void zllhAnalysis(
       ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"          ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
       ao.histoNames[p]="mSD_rescaled"            ; ao.histoTitles[p]="Rescaled Fatjet mSD [GeV]"; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
     } else {
-      ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"         ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
+      ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
       ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
       ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
@@ -400,7 +400,7 @@ void zllhAnalysis(
       ao.histoNames[p]="nSoft10"                 ; ao.histoTitles[p]="N^{soft}_{10}"            ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
       ao.histoNames[p]="ZBosonLep1CosThetaStar"  ; ao.histoTitles[p]="cos#theta* Z(ll)+jj"      ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="dRJ1J2"                  ; ao.histoTitles[p]="#DeltaR(j1,j2)"           ; ao.nbins[p]=  50; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
-      ao.histoNames[p]="Mjj_rescaled"            ; ao.histoTitles[p]="Rescaled Dijet mass [GeV]"; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
+      ao.histoNames[p]="Mjj_rescaled"            ; ao.histoTitles[p]="Rescaled Dijet mass [GeV]"; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
     }
   }
   
@@ -917,6 +917,7 @@ void analyzeSample(
   gt.btagWeights    = true;
   gt.useCMVA        = true;
   gt.is_breg        = false;
+  if(ao.year==2017) gt.useCMVA = false;
   // Branches not in GeneralTree;
   std::map<TString, void*> extraAddresses;
   float normalizedWeight; unsigned char npnlo;
@@ -1261,8 +1262,8 @@ void analyzeSample(
     if(ao.year==2016) {
       bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
       bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
-      bjet1IsLoose = bjet1btag > cmvaMedium;
-      bjet2IsLoose = bjet2btag > cmvaMedium;
+      bjet1IsLoose = bjet1btag > cmvaLoose;
+      bjet2IsLoose = bjet2btag > cmvaLoose;
     } else if(ao.year==2017) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
@@ -1486,6 +1487,7 @@ void analyzeSample(
       weight_pileupDown = nPUScaleFactor(ao.puWeightsDown, gt.pu)/puWeight;
       
       weight = normalizedWeight * ao.lumi * puWeight * stitchWeight; 
+      if(ao.year==2016 && type==vhbbPlot::kTT) weight = weight * 1.159; // HACK!!!
       
       if(type==kWjets || type==kZjets) {
         bLoad(b["trueGenBosonPt"],ientry);
