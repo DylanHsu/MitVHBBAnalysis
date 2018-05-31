@@ -648,7 +648,7 @@ void whAnalysis(
       if(ao.year==2016)
         bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_wh2016.weights.xml";
       else
-        bdtWeights = "";
+        bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_wh2017.weights.xml";
       bdtWeights = "";
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
