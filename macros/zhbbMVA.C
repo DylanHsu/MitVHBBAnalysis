@@ -48,8 +48,8 @@ void zhbbMVA(
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTrainSignal, "train");
     dataloader->AddTree(mvaTree, "Background", 1.0, cutTestBkg   , "test");
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTestSignal, "test");
-    dataloader->SetWeightExpression("weight", "Signal");
-    dataloader->SetWeightExpression("weight", "Background");
+    dataloader->SetWeightExpression("abs(weight)", "Signal");
+    dataloader->SetWeightExpression("abs(weight)", "Background");
   } 
   
   TCut preselectionCut;
@@ -99,18 +99,20 @@ void zhbbMVA(
     prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
     prepareOptions+=":MixMode=Random";
   dataloader->PrepareTrainingAndTestTree("", prepareOptions);
-  
+
+  //Pray/IgnoreNegWeightsInTraining
+
   // for resolved
   TString hyperparameters=
   isBoosted?
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=400:MaxDepth=2:AdaBoostBeta=0.10:nCuts=10000":
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=400:MaxDepth=2:AdaBoostBeta=0.10:nCuts=10000":
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
 
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
-  //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=Pray:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
+  //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=IgnoreNegWeightsInTraining:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
   // for boosted
-  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=Pray:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.05:nCuts=1000";
-  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=Pray:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=AdaBoost:AdaBoostBeta=0.12:nCuts=1000";
+  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.05:nCuts=1000";
+  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=AdaBoost:AdaBoostBeta=0.12:nCuts=1000";
   //if(useGaussDeco) hyperparameters += ":VarTransform=G,D";
   factory->BookMethod(dataloader, TMVA::Types::kBDT, trainName, hyperparameters);
   factory->TrainAllMethods();

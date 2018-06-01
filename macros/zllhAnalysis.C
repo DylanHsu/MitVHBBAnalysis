@@ -163,13 +163,13 @@ void zllhAnalysis(
   ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"                      };
   ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"                      };
   ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"ZmassTight"         ,"dPhiZH"        , "boostedVeto"              , "drBB"};
-  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "vetoTrain"         };
+  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"                      };
   ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto"                      };
   ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"             };
   ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"             };
   ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ"              };
-  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR",         "Zmass"     , "btagFJ" , "vetoTrain"};
+  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR",         "Zmass"     , "btagFJ"              };
   ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                 , "Zmass"                             };
   /////////////////////////////
   // List of Samples
@@ -365,8 +365,9 @@ void zllhAnalysis(
     ao.histoNames[p]="ZBosonPt"                ; ao.histoTitles[p]="Z boson pT [GeV]"      ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
     ao.histoNames[p]="ZBosonEta"               ; ao.histoTitles[p]="Z boson #eta"          ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="ZBosonPhi"               ; ao.histoTitles[p]="Z boson phi"           ; ao.nbins[p]=  32; ao.xmin[p]=     0; ao.xmax[p]= 3.142; p++; 
-    ao.histoNames[p]="ZBosonM"                 ; ao.histoTitles[p]="Z boson mass"          ; ao.nbins[p]=  60; ao.xmin[p]=     0; ao.xmax[p]=   120; p++; 
+    ao.histoNames[p]="ZBosonM"                 ; ao.histoTitles[p]="Z boson mass [GeV]"    ; ao.nbins[p]=  60; ao.xmin[p]=     0; ao.xmax[p]=   120; p++; 
     ao.histoNames[p]="ZBosonLep1CosThetaCS"    ; ao.histoTitles[p]="Z(ll) cos#theta^{CS}"  ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+    ao.histoNames[p]="deltaPhiZL"              ; ao.histoTitles[p]="Max(#Delta#phi(Z,l))"  ; ao.nbins[p]=  40; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
       // fatjet only plots
@@ -376,7 +377,7 @@ void zllhAnalysis(
       ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"      ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"      ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="deltaEtaZHFJ"            ; ao.histoTitles[p]="|#Delta#eta(Z,FJ)|"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
-      ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ) [Rad]"   ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ)"         ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
       ao.histoNames[p]="mTZHFJ"                  ; ao.histoTitles[p]="m_{T} (Z+FJ) [GeV]"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++; 
       ao.histoNames[p]="dRL1L2"                  ; ao.histoTitles[p]="#DeltaR(l1,l2)"           ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
       ao.histoNames[p]="ptBalanceZHFJ"           ; ao.histoTitles[p]="|FJ pT / Z pT|"           ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
@@ -392,7 +393,7 @@ void zllhAnalysis(
       ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets"    ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
-      ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H) [Rad]"    ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
+      ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H)"          ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
       ao.histoNames[p]="ptBalanceZH"             ; ao.histoTitles[p]="|H pT / Z pT|"            ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
       ao.histoNames[p]="sumEtSoft1"              ; ao.histoTitles[p]="#sum E_{T}(soft 1)"       ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=  300.; p++; 
       ao.histoNames[p]="nSoft2"                  ; ao.histoTitles[p]="N^{soft}_{2}"             ; ao.nbins[p]=  25; ao.xmin[p]=    0.; ao.xmax[p]=   25.; p++; 
@@ -1381,6 +1382,8 @@ void analyzeSample(
     float dEtaZHFJ      = -1;
     float deltaM        = -1;
     float mH_rescaled   = -1;
+    float deltaPhiZL = TMath::Max(fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-lepton1Phi)),
+                                  fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-lepton2Phi)));
     TLorentzVector ZBosonP4, fjP4, ZHFJP4;
     if(isBoostedCategory) {
       ZBosonP4.SetPtEtaPhiM(gt.ZBosonPt,gt.ZBosonEta,gt.ZBosonPhi,gt.ZBosonM);
@@ -1609,8 +1612,8 @@ void analyzeSample(
           }
         }
       }
-      if((ao.selection==kZllHSR || ao.selection==kZllHFJSR) && ao.MVAVarType>1)
-        weight *= sf_training;
+      //if((ao.selection==kZllHSR || ao.selection==kZllHFJSR) && ao.MVAVarType>1)
+      //  weight *= sf_training;
     
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
         if(ao.year==2016) {
@@ -1895,6 +1898,7 @@ void analyzeSample(
       else if (ao.histoNames[p]=="ZBosonEta"               ) { theVar = gt.ZBosonEta               ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonPhi"               ) { theVar = gt.ZBosonPhi               ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonM"                 ) { theVar = gt.ZBosonM                 ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="deltaPhiZL"              ) { theVar = deltaPhiZL                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonLep1CosThetaCS"    ) { theVar = gt.ZBosonLep1CosThetaCS    ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ZBosonLep1CosThetaStar"  ) { theVar = gt.ZBosonLep1CosThetaStar  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="dRJ1J2"                  ) { theVar = dRBjets                    ; makePlot = passFullSel; }
@@ -2005,8 +2009,12 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape << Form("pileup    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
+      if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotZbb&&ic!=kPlotZb&&ic!=kPlotZLF)
+        newcardShape << Form("1.0  ");
+      else
+        newcardShape << Form("-  ");
+    }
     newcardShape << Form("\n");
 
     newcardShape << Form("VHCorr    shape   ");
@@ -2022,14 +2030,22 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
     newcardShape << Form("eleSF    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
+      if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotZbb&&ic!=kPlotZb&&ic!=kPlotZLF)
+        newcardShape << Form("1.0  ");
+      else
+        newcardShape << Form("-  ");
+    }
     newcardShape << Form("\n");
 
     newcardShape << Form("muSF    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
-      newcardShape << Form("1.0  ");
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
+      if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotZbb&&ic!=kPlotZb&&ic!=kPlotZLF)
+        newcardShape << Form("1.0  ");
+      else
+        newcardShape << Form("-  ");
+    }
     newcardShape << Form("\n");
 
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
