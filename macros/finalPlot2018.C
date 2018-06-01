@@ -373,9 +373,11 @@ void finalPlot2018(
     TLegend *legend1,*legend2;
     float x1=.59,x2=.77,x3=.95;
     if(!doRatioPad) { x1=.4; x2=.64; x3=.88;}
-    if(plotQCD && histos[ kPlotQCD  ]->GetSumOfWeights() > 0) legend1=new TLegend(x1,0.50 ,x2,0.88);
-    else                                                      legend1=new TLegend(x1,0.555,x2,0.88); 
-    legend2=new TLegend(x2,0.555,x3,.88);
+    //if(plotQCD && histos[ kPlotQCD  ]->GetSumOfWeights() > 0) legend1=new TLegend(x1,0.50 ,x2,0.88);
+    //else                                                      legend1=new TLegend(x1,0.555,x2,0.88); 
+    //legend2=new TLegend(x2,0.555,x3,.88);
+    legend1=new TLegend(x1,.50,x3,.88);
+    legend1->SetNColumns(2);
     legend1->AddEntry(histos[ kPlotData ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotData)] ,"lp");
     if(plotQCD && 
        histos[ kPlotQCD  ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotQCD  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotQCD )] ,"f");
@@ -384,15 +386,15 @@ void finalPlot2018(
     if(histos[ kPlotWbb  ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotWbb  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotWbb )] ,"f");
     if(histos[ kPlotWb   ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotWb   ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotWb  )] ,"f");
     if(histos[ kPlotWLF  ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotWLF  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotWLF )] ,"f");
-    if(histos[ kPlotZbb  ]->GetSumOfWeights() > 0) legend2->AddEntry(histos[ kPlotZbb  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZbb )] ,"f");
-    if(histos[ kPlotZb   ]->GetSumOfWeights() > 0) legend2->AddEntry(histos[ kPlotZb   ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZb  )] ,"f");
-    if(histos[ kPlotZLF  ]->GetSumOfWeights() > 0) legend2->AddEntry(histos[ kPlotZLF  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZLF )] ,"f");
+    if(histos[ kPlotZbb  ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotZbb  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZbb )] ,"f");
+    if(histos[ kPlotZb   ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotZb   ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZb  )] ,"f");
+    if(histos[ kPlotZLF  ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotZLF  ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotZLF )] ,"f");
     if(histos[ kPlotVVLF ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotVVLF ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotVVLF)] ,"f");
     if(histos[ kPlotVZbb ]->GetSumOfWeights() > 0) legend1->AddEntry(histos[ kPlotVZbb ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotVZbb)] ,"f");
-    legend2->AddEntry(histos[primarySignal], histos[primarySignal]->GetName(), stackSignal?"f":"lp");
-    legend1->SetFillColorAlpha(kWhite, .5); legend2->SetFillColorAlpha(kWhite, 0.5);
-    legend1->SetBorderSize(0); legend2->SetBorderSize(0);
-    legend1->Draw("same"); legend2->Draw("SAME");
+    legend1->AddEntry(histos[primarySignal], histos[primarySignal]->GetName(), stackSignal?"f":"lp");
+    legend1->SetFillColorAlpha(kWhite, .5); //legend2->SetFillColorAlpha(kWhite, 0.5);
+    legend1->SetBorderSize(0); //legend2->SetBorderSize(0);
+    legend1->Draw("same"); //legend2->Draw("SAME");
     if(doRatioPad) {
       canvas->cd();
       pad2 = new TPad("pad2", "pad2", 0, 0.05, 1, 0.3);
