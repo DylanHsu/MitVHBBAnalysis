@@ -1,12 +1,12 @@
 
-Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test2016/ZllHSR_mvaTree_ZptBin0.root", "ZptBin0_2016", false,false,false)...
+Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test2016/ZllHSR_mvaTree_ZptBin0.root", "ZptBin0_2016", true,false,false,false)...
 (int) 50
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Background"
-                         : Add Tree mvaTree of type Background with 590659 events
+                         : Add Tree mvaTree of type Background with 800234 events
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Signal"
-                         : Add Tree mvaTree of type Signal with 590659 events
-                         : Add Tree mvaTree of type Background with 590659 events
-                         : Add Tree mvaTree of type Signal with 590659 events
+                         : Add Tree mvaTree of type Signal with 800234 events
+                         : Add Tree mvaTree of type Background with 800234 events
+                         : Add Tree mvaTree of type Signal with 800234 events
                          : Dataset[MitVHBBAnalysis] : Class index : 0  name : Background
                          : Dataset[MitVHBBAnalysis] : Class index : 1  name : Signal
 <HEADER> Factory                  : Booking method: BDT_singleClass_resolved_ZptBin0_2016
@@ -126,22 +126,22 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : #events: (unweighted) sig: 85526 bkg: 91129
                          : Training 200 Decision Trees ... patience please
 0%, time left: unknown
-7%, time left: 50 sec
-13%, time left: 47 sec
-19%, time left: 43 sec
-25%, time left: 41 sec
-32%, time left: 37 sec
-38%, time left: 33 sec
-44%, time left: 29 sec
-50%, time left: 26 sec
-57%, time left: 22 sec
-63%, time left: 19 sec
-69%, time left: 15 sec
-75%, time left: 12 sec
-82%, time left: 9 sec
-88%, time left: 6 sec
-94%, time left: 2 sec
-                         : Elapsed time for training with 176659 events: 49.9 sec         
+7%, time left: 65 sec
+13%, time left: 59 sec
+19%, time left: 54 sec
+25%, time left: 50 sec
+32%, time left: 45 sec
+38%, time left: 40 sec
+44%, time left: 35 sec
+50%, time left: 31 sec
+57%, time left: 26 sec
+63%, time left: 22 sec
+69%, time left: 18 sec
+75%, time left: 14 sec
+82%, time left: 10 sec
+88%, time left: 7 sec
+94%, time left: 3 sec
+                         : Elapsed time for training with 176659 events: 58.1 sec         
 <HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_resolved_ZptBin0_2016 on training sample (176659 events)
 0%, time left: unknown
 6%, time left: 1 sec
@@ -149,7 +149,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 18%, time left: 1 sec
 25%, time left: 1 sec
 31%, time left: 1 sec
-37%, time left: 0 sec
+37%, time left: 1 sec
 43%, time left: 0 sec
 50%, time left: 0 sec
 56%, time left: 0 sec
@@ -159,7 +159,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 81%, time left: 0 sec
 87%, time left: 0 sec
 93%, time left: 0 sec
-                         : Elapsed time for evaluation of 176659 events: 1.53 sec       
+                         : Elapsed time for evaluation of 176659 events: 1.76 sec       
                          : Creating xml weight file: MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2016.weights.xml
                          : Creating standalone class: MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2016.class.C
 <HEADER> Factory                  : Training finished
@@ -195,20 +195,20 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 0%, time left: unknown
 7%, time left: 3 sec
 13%, time left: 3 sec
-19%, time left: 2 sec
-25%, time left: 2 sec
+19%, time left: 3 sec
+25%, time left: 3 sec
 32%, time left: 2 sec
 38%, time left: 2 sec
 44%, time left: 2 sec
-50%, time left: 1 sec
+50%, time left: 2 sec
 57%, time left: 1 sec
 63%, time left: 1 sec
 69%, time left: 1 sec
-75%, time left: 0 sec
+75%, time left: 1 sec
 82%, time left: 0 sec
 88%, time left: 0 sec
 94%, time left: 0 sec
-                         : Elapsed time for evaluation of 414000 events: 3.61 sec       
+                         : Elapsed time for evaluation of 414000 events: 4.07 sec       
 <HEADER> Factory                  : Evaluate all methods
 <HEADER> Factory                  : Evaluate classifier: BDT_singleClass_resolved_ZptBin0_2016
                          : 

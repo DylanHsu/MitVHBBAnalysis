@@ -73,8 +73,9 @@ namespace vhbbPlot {
     kZllHHeavyFlavorFJCR   = 0x1 << 19,
     kZllHTT2bFJCR          = 0x1 << 20,
     kZllHTT1bFJCR          = 0x1 << 21,
-    kZllHFJSR              = 0x1 << 22,
-    kZllHFJPresel          = 0x1 << 23,
+    kZllHVZbbFJCR          = 0x1 << 22,
+    kZllHFJSR              = 0x1 << 23,
+    kZllHFJPresel          = 0x1 << 24,
     
   };
   enum sampleType {
@@ -183,6 +184,7 @@ namespace vhbbPlot {
     { kZllHHeavyFlavorFJCR      , "HeavyFlavorFJCR"  },
     { kZllHTT2bFJCR             , "TT2bFJCR"         },
     { kZllHTT1bFJCR             , "TT1bFJCR"         },
+    { kZllHVZbbFJCR             , "VZbbFJCR"         },
     { kZllHFJSR                 , "FJSR"             },
     { kZllHFJPresel             , "FJPresel"         }
   };

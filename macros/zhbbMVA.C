@@ -11,7 +11,8 @@
 using namespace vhbbPlot;
 void zhbbMVA(
   TString inputFileName, 
-  TString extraString="", 
+  TString extraString="",
+  bool isZHSel=true,
   bool isBoosted=false, 
   bool useGaussDeco=false,
   bool useMulticlass=true,
@@ -20,7 +21,7 @@ void zhbbMVA(
   gROOT->ProcessLine("TMVA::gConfig().GetVariablePlotting().fMaxNumOfAllowedVariablesForScatterPlots = 50");
   TFile *output_file;
   TMVA::Factory *factory;
-  
+
   // Determine the input trees
   TFile *inputFile = TFile::Open(inputFileName,"READ");
   TTree *mvaTree = (TTree*)inputFile->Get("mvaTree");
@@ -40,17 +41,40 @@ void zhbbMVA(
   if(useMulticlass) {
     return;
   } else {
-    TCut cutTrainSignal = Form("%s && (category==%d || category==%d)",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    TCut cutTrainBkg    = Form("%s && (category!=%d && category!=%d)",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    TCut cutTestSignal = Form("%s && (category==%d || category==%d)",testTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    TCut cutTestBkg    = Form("%s && (category!=%d && category!=%d)",testTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTrainSignal = Form("%s && (category==%d || category==%d) && MSD >= 80 && MSD < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTrainBkg    = Form("%s && (category!=%d && category!=%d) && MSD >= 80 && MSD < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestSignal  = Form("%s && (category==%d || category==%d) && MSD >= 80 && MSD < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestBkg     = Form("%s && (category!=%d && category!=%d) && MSD >= 80 && MSD < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    if     ( isBoosted &&  isZHSel) {
+      // nothing to do
+    }
+    else if( isBoosted && !isZHSel) {
+      cutTrainSignal = Form("%s && (category==%d) && MSD >= 50 && MSD < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTrainBkg    = Form("%s && (category!=%d) && MSD >= 50 && MSD < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTestSignal  = Form("%s && (category==%d) && MSD >= 50 && MSD < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+      cutTestBkg     = Form("%s && (category!=%d) && MSD >= 50 && MSD < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+    }
+    else if(!isBoosted &&  isZHSel) {
+      cutTrainSignal = Form("%s && (category==%d || category==%d) && hbbm >= 90 && hbbm < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+      cutTrainBkg    = Form("%s && (category!=%d && category!=%d) && hbbm >= 90 && hbbm < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+      cutTestSignal  = Form("%s && (category==%d || category==%d) && hbbm >= 90 && hbbm < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+      cutTestBkg     = Form("%s && (category!=%d && category!=%d) && hbbm >= 90 && hbbm < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    
+    }
+    else if(!isBoosted && !isZHSel) {
+      cutTrainSignal = Form("%s && (category==%d) && hbbm >= 60 && hbbm < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTrainBkg    = Form("%s && (category!=%d) && hbbm >= 60 && hbbm < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTestSignal  = Form("%s && (category==%d) && hbbm >= 60 && hbbm < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+      cutTestBkg     = Form("%s && (category!=%d) && hbbm >= 60 && hbbm < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+    
+    }
     dataloader->AddTree(mvaTree, "Background", 1.0, cutTrainBkg   , "train");
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTrainSignal, "train");
     dataloader->AddTree(mvaTree, "Background", 1.0, cutTestBkg   , "test");
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTestSignal, "test");
     dataloader->SetWeightExpression("abs(weight)", "Signal");
     dataloader->SetWeightExpression("abs(weight)", "Background");
-  } 
+  }
   
   TCut preselectionCut;
   if(isBoosted) {

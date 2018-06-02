@@ -1,12 +1,12 @@
 
-Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test2017/ZllHFJSR_mvaTree.root",       "boosted_2017", true ,false,false)...
+Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test2017/ZllHFJSR_mvaTree.root",       "boosted_2017", true,true ,false,false)...
 (int) 50
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Background"
-                         : Add Tree mvaTree of type Background with 35511 events
+                         : Add Tree mvaTree of type Background with 70372 events
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Signal"
-                         : Add Tree mvaTree of type Signal with 35511 events
-                         : Add Tree mvaTree of type Background with 35511 events
-                         : Add Tree mvaTree of type Signal with 35511 events
+                         : Add Tree mvaTree of type Signal with 70372 events
+                         : Add Tree mvaTree of type Background with 70372 events
+                         : Add Tree mvaTree of type Signal with 70372 events
                          : Dataset[MitVHBBAnalysis] : Class index : 0  name : Background
                          : Dataset[MitVHBBAnalysis] : Class index : 1  name : Signal
 <HEADER> Factory                  : Booking method: BDT_singleClass_boosted_boosted_2017
@@ -125,22 +125,22 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : #events: (unweighted) sig: 5448 bkg: 5198
                          : Training 400 Decision Trees ... patience please
 0%, time left: unknown
-6%, time left: 5 sec
-12%, time left: 5 sec
-19%, time left: 5 sec
-25%, time left: 4 sec
-31%, time left: 4 sec
-37%, time left: 3 sec
-44%, time left: 3 sec
+6%, time left: 6 sec
+12%, time left: 7 sec
+19%, time left: 6 sec
+25%, time left: 6 sec
+31%, time left: 5 sec
+37%, time left: 4 sec
+44%, time left: 4 sec
 50%, time left: 3 sec
-56%, time left: 2 sec
+56%, time left: 3 sec
 62%, time left: 2 sec
-69%, time left: 1 sec
+69%, time left: 2 sec
 75%, time left: 1 sec
 81%, time left: 1 sec
 87%, time left: 0 sec
 94%, time left: 0 sec
-                         : Elapsed time for training with 10646 events: 6.29 sec         
+                         : Elapsed time for training with 10646 events: 7.69 sec         
 <HEADER> BDT_singleClass_booste...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_boosted_boosted_2017 on training sample (10646 events)
 0%, time left: unknown
 6%, time left: 0 sec
@@ -158,7 +158,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 81%, time left: 0 sec
 87%, time left: 0 sec
 94%, time left: 0 sec
-                         : Elapsed time for evaluation of 10646 events: 0.184 sec       
+                         : Elapsed time for evaluation of 10646 events: 0.207 sec       
                          : Creating xml weight file: MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2017.weights.xml
                          : Creating standalone class: MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2017.class.C
 <HEADER> Factory                  : Training finished
@@ -207,7 +207,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 81%, time left: 0 sec
 87%, time left: 0 sec
 93%, time left: 0 sec
-                         : Elapsed time for evaluation of 24865 events: 0.373 sec       
+                         : Elapsed time for evaluation of 24865 events: 0.417 sec       
 <HEADER> Factory                  : Evaluate all methods
 <HEADER> Factory                  : Evaluate classifier: BDT_singleClass_boosted_boosted_2017
                          : 

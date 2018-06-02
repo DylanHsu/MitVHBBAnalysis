@@ -159,18 +159,19 @@ void zllhAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto"                      };
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"                      };
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"                      };
-  ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"ZmassTight"         ,"dPhiZH"        , "boostedVeto"              , "drBB"};
-  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"                      };
-  ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto"                      };
-  ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"             };
-  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ"              };
-  ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"             };
-  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ"              };
-  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR",         "Zmass"     , "btagFJ"              };
-  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                 , "Zmass"                             };
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto"};
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"};
+  ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjjVZ", "boostedVeto"};
+  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"};
+  ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto"};
+  ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"};
+  ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"};
+  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHVZbbFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSDVZ_SR",       "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR",         "Zmass"     , "btagFJ" };
+  ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                 , "Zmass"                };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -285,7 +286,7 @@ void zllhAnalysis(
       ao.MVAbins={100,120,140,160,180,200,250,300,350};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
-    } else if(selection==kZllHFJSR) {
+    } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
       ao.MVAbins={250,300,350,400,450,500,550,600};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
@@ -335,6 +336,10 @@ void zllhAnalysis(
         ao.MVAbins={-1.00,-0.40,-0.25,-0.10,0.05,0.20,0.35,0.50,0.65,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
+    } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
+      ao.MVAbins={-1.00,-0.10,0.05,0.20,0.35,0.50,1.00};
+      ao.MVAVarName="BDT Output";
+      ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
       if(selection==kZllHHeavyFlavorFJCR)
         ao.MVAbins={40,45,50,55,60,65,70,75,80};
@@ -342,10 +347,6 @@ void zllhAnalysis(
         ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
       ao.MVAVarName="Fatjet soft drop mass [GeV]";
       ao.shapeType="softDropMassShape";
-    } else if(selection==kZllHFJSR) {
-      ao.MVAbins={-1.00,-0.10,0.05,0.20,0.35,0.50,1.00};
-      ao.MVAVarName="BDT Output";
-      ao.shapeType="singleClassBDTShape"; 
     } else throw std::runtime_error("bad selection");
   } else throw std::runtime_error("bad ao.MVAVarType");
   
@@ -578,10 +579,22 @@ void zllhAnalysis(
   // Instantiate TMVA reader
   if(MVAVarType>1) {
     TString bdtWeights="";
-    if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) 
+    if(ao.selection==kZllHVZbbFJCR) 
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_VZ_boosted_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_VZ_boosted_2017.weights.xml";
+    else if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) 
       bdtWeights = (ao.year==2016)?
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2016.weights.xml":
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2017.weights.xml";
+    else if(ao.binZpt==0 && ao.selection==kZllHVZbbCR)
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin0_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin0_2017.weights.xml";
+    else if(ao.binZpt==1 && ao.selection==kZllHVZbbCR) 
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin1_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin1_2017.weights.xml";
     else if(ao.binZpt==0)
       bdtWeights = (ao.year==2016)?
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2016.weights.xml":
@@ -691,7 +704,7 @@ void zllhAnalysis(
   // Compute some uncertainties once event by events weights are filled
   for(unsigned lep=0; lep<nLepSel; lep++) 
   for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; // avoiding unnecessary histograms
+    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR||selection==kZllHVZbbCR||selection==kZllHVZbbFJCR)) continue; // avoiding unnecessary histograms
     for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
       // compute QCD scale uncertainties bin-by-bin
       double diffQCDScale[6] = {
@@ -766,7 +779,7 @@ void zllhAnalysis(
   // Write shape histograms to file
   for(unsigned lep=0; lep<nLepSel; lep++) {
     // avoiding unnecessary histograms
-    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; 
+    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR||selection==kZllHVZbbCR||selection==kZllHVZbbFJCR)) continue; 
 
     char outFileDatacardsName[200];
     sprintf(
@@ -1229,7 +1242,7 @@ void analyzeSample(
       else if(countB>0) category=kPlotZb;
       else category=kPlotZLF;
     } else if(type==kVZ) {
-      if(countB>1) category=kPlotVZbb;
+      if(countB>=1) category=kPlotVZbb;
       else category=kPlotVVLF;
     } else throw std::runtime_error("category problem!");
 
@@ -1432,7 +1445,6 @@ void analyzeSample(
         cut["ZmassTight" ] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
         cut["ZmassSB"    ] = (gt.ZBosonM >= 10 && gt.ZBosonM < 75) || (gt.ZBosonM >= 105 && gt.ZBosonM < 120);
         cut["lowMET"     ] = gt.pfmet[0] < 60;
-        cut["drBB"       ] = (ao.binZpt==0)? dRBjets < 2.8: dRBjets < 1.8;
         cut["boostedCat" ] = isBoostedCategory;
         cut["boostedVeto"] = !isBoostedCategory;
         cut["vetoTrain"  ] = (ao.MVAVarType==1 || (gt.eventNumber%10)>=3 || category==kPlotData);
@@ -1456,10 +1468,14 @@ void analyzeSample(
       if(isBoostedCategory) {
         //cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
         //cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
+	//if(ao.MVAVarType == 1) cut["mSD_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<150;
+        //cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
         //cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
         // TEMPORARY DGH
         cut["mSD"     ] = gt.fjMSD[iJES] >= 40;
         cut["mSD_SR"  ] = gt.fjMSD[iJES] >= 80 && gt.fjMSD[iJES]<150;
+	if(ao.MVAVarType == 1) cut["mSD_SR"] = gt.fjMSD[iJES] >= 50 && gt.fjMSD[iJES]<150;
+        cut["mSDVZ_SR"] = gt.fjMSD[iJES] >= 50 && gt.fjMSD[iJES]<120;
         cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD[iJES]<80;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
         cut["0ijb"    ] = isojetNBtags[iJES]==0; // not used in SR
@@ -1468,6 +1484,8 @@ void analyzeSample(
         cut["dPhiZH"  ] = fabs(gt.hbbphi[iJES] - gt.ZBosonPhi) > 2.5;
         cut["pTjj"    ] = gt.hbbpt_reg[iJES] > 100; // not used
         cut["mjj"     ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
+        if(ao.MVAVarType == 1) cut["mjj"] = gt.hbbm_reg[iJES] >= 60 && gt.hbbm_reg[iJES] < 150;
+        cut["mjjVZ"   ] = gt.hbbm_reg[iJES] >= 60 && gt.hbbm_reg[iJES] < 120;
         cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
       } 
       selectionBits[iJES]=0; nMinusOneBits=0;
@@ -1612,7 +1630,7 @@ void analyzeSample(
           }
         }
       }
-      //if((ao.selection==kZllHSR || ao.selection==kZllHFJSR) && ao.MVAVarType>1)
+      //if((ao.selection==kZllHSR || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbCR || ao.selection==kZllHVZbbFJCR) && ao.MVAVarType>1)
       //  weight *= sf_training;
     
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
@@ -1688,7 +1706,7 @@ void analyzeSample(
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
     for(unsigned iJES=0; iJES<NJES; iJES++) {
       if(ao.MVAVarType>1) {
-        if((iJES==0 && ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) || ao.selection==kZllHSR) {
+        if((iJES==0 && ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) || ao.selection==kZllHSR || ao.selection==kZllHVZbbCR) {
           ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
           ao.mvaInputs[nThread][ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
           ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
@@ -1706,7 +1724,7 @@ void analyzeSample(
           ao.mvaInputs[nThread][14] = dEtaBjets                                               ; //"dEtaBjets"   
           ao.mvaInputs[nThread][15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
-        } else if((iJES==0 && ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) || ao.selection==kZllHFJSR) { 
+        } else if((iJES==0 && ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbFJCR) { 
           TLorentzVector fjP4_jes, ZHFJP4_jes;
           fjP4_jes.SetPtEtaPhiM(gt.fjPt[iJES],gt.fjEta,gt.fjPhi,gt.fjMSD[iJES]);  // TEMPORARY DGH
           ZHFJP4_jes = ZBosonP4 + fjP4_jes;
@@ -1732,9 +1750,9 @@ void analyzeSample(
       switch(ao.MVAVarType) {
         case 1:
         default:
-          if(ao.selection==kZllHSR)
+          if(ao.selection==kZllHSR || ao.selection==kZllHVZbbCR)
             MVAVar[iJES]=gt.hbbpt_reg[iJES];
-          else if(ao.selection==kZllHFJSR)
+          else if(ao.selection==kZllHFJSR || ao.selection==kZllHVZbbFJCR)
             MVAVar[iJES]=gt.fjPt[iJES];
           else if(ao.selection==kZllHHeavyFlavorCR   || 
             ao.selection==kZllH2TopCR)
@@ -1749,7 +1767,7 @@ void analyzeSample(
             MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
           break;
         case 3:
-          if(ao.selection==kZllHSR || ao.selection==kZllHFJSR)
+          if(ao.selection==kZllHSR || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbCR || ao.selection==kZllHVZbbFJCR)
             MVAVar[iJES] = bdtValue[iJES];
           else if(ao.selection==kZllHHeavyFlavorCR || 
             ao.selection==kZllH2TopCR)
@@ -1953,7 +1971,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
 
   for(unsigned lep=0; lep<nLepSel; lep++) {
     // avoiding unnecessary histograms
-    if(leptonStrings[lep]=="em" && !(ao.selection==kZllHSR||ao.selection==kZllHFJSR)) continue; 
+    if(leptonStrings[lep]=="em" && !(ao.selection==kZllHSR||ao.selection==kZllHFJSR||ao.selection==kZllHVZbbCR||ao.selection==kZllHVZbbFJCR)) continue; 
     ofstream newcardShape;
     newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_Z%sH%s%s.txt",
                       dataCardDir.Data(),leptonStrings[lep].Data(),selectionNames[ao.selection].Data(),binZptSuffix.Data()));
@@ -2206,7 +2224,7 @@ void datacardsFromHistograms(
   // Get shape histograms from file
   for(unsigned lep=0; lep<nLepSel; lep++) {
     // avoiding unnecessary histograms
-    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR)) continue; 
+    if(leptonStrings[lep]=="em" && !(selection==kZllHSR||selection==kZllHFJSR||selection==kZllHVZbbCR||selection==kZllHVZbbFJCR)) continue; 
 
     char inFileDatacardsName[200];
     sprintf(
