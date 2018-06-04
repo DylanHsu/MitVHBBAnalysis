@@ -11,7 +11,8 @@
 using namespace vhbbPlot;
 void zhbbMVA(
   TString inputFileName, 
-  TString extraString="", 
+  TString extraString="",
+  bool isZHSel=true,
   bool isBoosted=false, 
   bool useGaussDeco=false,
   bool useMulticlass=true,
@@ -20,7 +21,7 @@ void zhbbMVA(
   gROOT->ProcessLine("TMVA::gConfig().GetVariablePlotting().fMaxNumOfAllowedVariablesForScatterPlots = 50");
   TFile *output_file;
   TMVA::Factory *factory;
-  
+
   // Determine the input trees
   TFile *inputFile = TFile::Open(inputFileName,"READ");
   TTree *mvaTree = (TTree*)inputFile->Get("mvaTree");
@@ -40,17 +41,40 @@ void zhbbMVA(
   if(useMulticlass) {
     return;
   } else {
-    TCut cutTrainSignal = Form("%s && (category==%d || category==%d)",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    TCut cutTrainBkg    = Form("%s && (category!=%d && category!=%d)",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    TCut cutTestSignal = Form("%s && (category==%d || category==%d)",testTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
-    TCut cutTestBkg    = Form("%s && (category!=%d && category!=%d)",testTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTrainSignal = Form("%s && (category==%d || category==%d) && MSD >= 80 && MSD < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTrainBkg    = Form("%s && (category!=%d && category!=%d) && MSD >= 80 && MSD < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestSignal  = Form("%s && (category==%d || category==%d) && MSD >= 80 && MSD < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestBkg     = Form("%s && (category!=%d && category!=%d) && MSD >= 80 && MSD < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    if     ( isBoosted &&  isZHSel) {
+      // nothing to do
+    }
+    else if( isBoosted && !isZHSel) {
+      cutTrainSignal = Form("%s && (category==%d) && MSD >= 50 && MSD < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTrainBkg    = Form("%s && (category!=%d) && MSD >= 50 && MSD < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTestSignal  = Form("%s && (category==%d) && MSD >= 50 && MSD < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+      cutTestBkg     = Form("%s && (category!=%d) && MSD >= 50 && MSD < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+    }
+    else if(!isBoosted &&  isZHSel) {
+      cutTrainSignal = Form("%s && (category==%d || category==%d) && hbbm >= 90 && hbbm < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+      cutTrainBkg    = Form("%s && (category!=%d && category!=%d) && hbbm >= 90 && hbbm < 150",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+      cutTestSignal  = Form("%s && (category==%d || category==%d) && hbbm >= 90 && hbbm < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+      cutTestBkg     = Form("%s && (category!=%d && category!=%d) && hbbm >= 90 && hbbm < 150",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    
+    }
+    else if(!isBoosted && !isZHSel) {
+      cutTrainSignal = Form("%s && (category==%d) && hbbm >= 60 && hbbm < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTrainBkg    = Form("%s && (category!=%d) && hbbm >= 60 && hbbm < 120",trainTreeEventSplitStr.Data(),(int)vhbbPlot::kPlotVZbb);
+      cutTestSignal  = Form("%s && (category==%d) && hbbm >= 60 && hbbm < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+      cutTestBkg     = Form("%s && (category!=%d) && hbbm >= 60 && hbbm < 120",testTreeEventSplitStr.Data(), (int)vhbbPlot::kPlotVZbb);
+    
+    }
     dataloader->AddTree(mvaTree, "Background", 1.0, cutTrainBkg   , "train");
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTrainSignal, "train");
     dataloader->AddTree(mvaTree, "Background", 1.0, cutTestBkg   , "test");
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTestSignal, "test");
-    dataloader->SetWeightExpression("weight", "Signal");
-    dataloader->SetWeightExpression("weight", "Background");
-  } 
+    dataloader->SetWeightExpression("abs(weight)", "Signal");
+    dataloader->SetWeightExpression("abs(weight)", "Background");
+  }
   
   TCut preselectionCut;
   if(isBoosted) {
@@ -99,18 +123,20 @@ void zhbbMVA(
     prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
     prepareOptions+=":MixMode=Random";
   dataloader->PrepareTrainingAndTestTree("", prepareOptions);
-  
+
+  //Pray/IgnoreNegWeightsInTraining
+
   // for resolved
   TString hyperparameters=
   isBoosted?
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=400:MaxDepth=2:AdaBoostBeta=0.10:nCuts=10000":
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=400:MaxDepth=2:AdaBoostBeta=0.10:nCuts=10000":
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
 
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
-  //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=Pray:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
+  //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=IgnoreNegWeightsInTraining:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";
   // for boosted
-  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=Pray:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.05:nCuts=1000";
-  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=Pray:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=AdaBoost:AdaBoostBeta=0.12:nCuts=1000";
+  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.05:nCuts=1000";
+  //TString hyperparameters="!H:!V:NTrees=1000:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:MinNodeSize=5%:MaxDepth=2:BoostType=AdaBoost:AdaBoostBeta=0.12:nCuts=1000";
   //if(useGaussDeco) hyperparameters += ":VarTransform=G,D";
   factory->BookMethod(dataloader, TMVA::Types::kBDT, trainName, hyperparameters);
   factory->TrainAllMethods();
