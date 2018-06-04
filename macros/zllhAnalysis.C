@@ -292,17 +292,17 @@ void zllhAnalysis(
       ao.shapeType="ptShape";
     } else if(selection==kZllHLightFlavorCR) {
       if(year==2016)
-        ao.MVAbins={-1.0000, -0.9000, -0.8000, -0.7000, -0.5500};
+        ao.MVAbins={-1.00, -0.80, -0.60, -0.40, -0.20, 0.00, 0.20, 0.40, 0.60, 0.80, 0.90, 1.00};
       else
-        ao.MVAbins={ 0.0000,  0.0400,  0.0800,  0.1200,  0.1600};
-      ao.MVAVarName="Subleading H(bb) BTAG";
+        ao.MVAbins={ 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
+      ao.MVAVarName="Leading H(bb) BTAG";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
       if(year==2016)
-        ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+        ao.MVAbins={-0.6000, -0.4500, -0.3000,-0.1500, 0.0000, 0.2000, 0.4000, 0.6000, 0.7500, 0.9000, 1.0000};
       else
-        ao.MVAbins={ 0.1500,  0.2500,  0.3500,  0.4500,  0.5500, 0.6000, 0.6500, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
-      ao.MVAVarName="Subleading H(bb) BTAG";
+        ao.MVAbins={ 0.4500,  0.6000,  0.6500, 0.7000, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
+       ao.MVAVarName="Subleading H(bb) BTAG";
       ao.shapeType="lesserCMVAShape";
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
       if(selection==kZllHHeavyFlavorFJCR)
@@ -317,27 +317,30 @@ void zllhAnalysis(
     // 3 - normal BDT in SR, subleading CMVA in CR
     if(selection==kZllHLightFlavorCR) {
       if(year==2016)
-        ao.MVAbins={-1.0000, -0.9000, -0.8000, -0.7000, -0.5500};
+        ao.MVAbins={-1.00, -0.80, -0.60, -0.40, -0.20, 0.00, 0.20, 0.40, 0.60, 0.80, 0.90, 1.00};
       else
-        ao.MVAbins={ 0.0000,  0.0400,  0.0800,  0.1200,  0.1600};
-      ao.MVAVarName="Subleading H(bb) CMVA";
+        ao.MVAbins={ 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
+      ao.MVAVarName="Leading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
       if(year==2016)
-        ao.MVAbins={-0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
+        ao.MVAbins={-0.6000, -0.4500, -0.3000,-0.1500, 0.0000, 0.2000, 0.4000, 0.6000, 0.7500, 0.9000, 1.0000};
       else
-        ao.MVAbins={ 0.1500,  0.2500,  0.3500,  0.4500,  0.5500, 0.6000, 0.6500, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
+        ao.MVAbins={ 0.4500,  0.6000,  0.6500, 0.7000, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
-      if(binZpt==0)
-        ao.MVAbins={-1.00,-0.40,-0.25,-0.10,0.05,0.20,0.35,0.50,0.65,1.00};
+      if(year==2016)
+        ao.MVAbins={-1.00,-0.14, 0.05,0.18,0.29,0.39,0.50,0.62,1.00};
       else
-        ao.MVAbins={-1.00,-0.40,-0.25,-0.10,0.05,0.20,0.35,0.50,0.65,1.00};
+        ao.MVAbins={-1.00,-0.19,-0.01,0.12,0.23,0.34,0.45,0.59,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
-      ao.MVAbins={-1.00,-0.10,0.05,0.20,0.35,0.50,1.00};
+      if(year==2016)
+         ao.MVAbins={-1.00,-0.03,0.12,0.23,0.33,0.45,1.00};
+      else
+         ao.MVAbins={-1.00,-0.01,0.15,0.27,0.39,0.52,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -391,8 +394,13 @@ void zllhAnalysis(
       ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
       ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      if(year==2016) {
+      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      } else {
+      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   0.2; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   0.2; ao.xmax[p]=    1.; p++; 
+      }
       ao.histoNames[p]="nJet"                    ; ao.histoTitles[p]="N central AK4CHS jets"    ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
       ao.histoNames[p]="deltaPhiZH"              ; ao.histoTitles[p]="#Delta#phi(Z,H)"          ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
       ao.histoNames[p]="ptBalanceZH"             ; ao.histoTitles[p]="|H pT / Z pT|"            ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
@@ -1269,7 +1277,7 @@ void analyzeSample(
     //bLoad(b["pfmetphi"],ientry);
     
     // Jet B-tagging
-    bool bjet1IsLoose=false, bjet2IsLoose=false;
+    bool bjet1IsLoose=false, bjet2IsLoose=false, bjetIsMinimum=true;
     float bjet1btag=-2, bjet2btag=-2;
     bLoad(b["jotCMVA"],ientry);
     bLoad(b["jotCSV"],ientry);
@@ -1283,6 +1291,7 @@ void analyzeSample(
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet1IsLoose = bjet1btag > deepcsvMedium;
       bjet2IsLoose = bjet2btag > deepcsvMedium;
+      bjetIsMinimum = bjet1btag > 0.2 && bjet2btag > 0.2;
     }
 
     for(unsigned iJES=0; iJES<NJES; iJES++) {
@@ -1439,7 +1448,7 @@ void analyzeSample(
         } else {
           cut["ZpT"        ] = gt.ZBosonPt > 50;
           cut["btag"       ] = bjet1IsLoose && bjet2IsLoose;
-          cut["bveto"      ] = !bjet1IsLoose && !bjet2IsLoose;
+          cut["bveto"      ] = (!bjet1IsLoose || !bjet2IsLoose) && bjetIsMinimum;
         }
         cut["Zmass"      ] = gt.ZBosonM >= 75 && gt.ZBosonM < 105;
         cut["ZmassTight" ] = gt.ZBosonM >= 85 && gt.ZBosonM < 97;
