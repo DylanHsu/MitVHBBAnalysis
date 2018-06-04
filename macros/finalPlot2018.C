@@ -53,7 +53,7 @@ void finalPlot2018(
     regionName = string(inputFileName).substr(lastSlash+7, lastDot-lastSlash-7);
   }
   
-  if(!mlfitResult.CompareTo("")) {
+  if(mlfitResult!="") {
     mlfit=TFile::Open(mlfitResult); assert(mlfit);
     RooArgSet *norm_prefit   = (RooArgSet*)mlfit->Get("norm_prefit");
     RooArgSet *norm_postfit  = (RooArgSet*)mlfit->Get("norm_fit_s" );
