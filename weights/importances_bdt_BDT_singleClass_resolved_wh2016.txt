@@ -1,19 +1,20 @@
                          : ---------------------------------------------
                          : Rank : Variable    : Variable Importance
                          : ---------------------------------------------
-                         :    1 : dPhil1W     : 1.525e-01
-                         :    2 : bjet2btag   : 1.031e-01
-                         :    3 : nSoft5      : 1.008e-01
-                         :    4 : hbbm        : 8.721e-02
-                         :    5 : dEtaLep1H   : 8.381e-02
-                         :    6 : topMass     : 6.681e-02
-                         :    7 : bjet2Pt     : 6.492e-02
-                         :    8 : ptBalanceWH : 6.312e-02
-                         :    9 : nAddJet     : 6.293e-02
-                         :   10 : hbbpt       : 5.744e-02
-                         :   11 : dPhiWH      : 5.003e-02
-                         :   12 : WBosonPt    : 4.644e-02
-                         :   13 : bjet1Pt     : 3.973e-02
-                         :   14 : dRBjets     : 2.112e-02
+                         :    1 : nSoft5      : 1.510e-01
+                         :    2 : nAddJet     : 1.142e-01
+                         :    3 : bjet2btag   : 1.007e-01
+                         :    4 : dEtaLep1H   : 9.894e-02
+                         :    5 : dPhiWH      : 9.720e-02
+                         :    6 : hbbm        : 7.962e-02
+                         :    7 : topMass     : 6.596e-02
+                         :    8 : dRBjets     : 6.094e-02
+                         :    9 : ptBalanceWH : 5.491e-02
+                         :   10 : dPhil1W     : 5.409e-02
+                         :   11 : bjet1Pt     : 4.350e-02
+                         :   12 : hbbpt       : 3.285e-02
+                         :   13 : bjet2Pt     : 2.789e-02
+                         :   14 : WBosonPt    : 1.823e-02
                          : ---------------------------------------------
+
 

@@ -34,7 +34,7 @@ do
   a=( $line )
   batchSampleName=${a[0]}
   batchSampleType=${a[1]}
-  for idx in `seq 0 9`
+  for idx in -1 #`seq 0 9`
   do
     for sel in $resolvedSelections
     do
@@ -51,7 +51,7 @@ then
     a=( $line )
     batchSampleName=${a[0]}
     batchSampleType=${a[1]}
-    for idx in `seq 0 9`
+    for idx in -1 #`seq 0 9`
     do
       for sel in $boostedSelections
       do

@@ -37,8 +37,6 @@
 
 // for sel in kWHSR kWHLightFlavorCR kWHHeavyFlavorCR kWH2TopCR; do for i in 0 1; do root -b -l -q MitVHBBAnalysis/macros/nwhAnalysis.C+\(\"zhbb/test\",${sel},false,3,${i},2016,0,true\) & done; done
 
-TString ntupleDir2016 = "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh";
-TString ntupleDir2017 = "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh";    
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=2; // Number of lepton selections
@@ -160,6 +158,12 @@ void whAnalysis(
   ao.lumi=(year==2016)? 35900:41500;
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
+  TString ntupleDir2016 = multithread?
+    "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh"    :
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh";
+  TString ntupleDir2017 = multithread?
+    "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh"    :    
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh";    
   TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
 
   // Analysis Cuts
@@ -168,13 +172,13 @@ void whAnalysis(
   ao.cuts[kWHHeavyFlavorLoMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBLo","metSig"};
   ao.cuts[kWHHeavyFlavorHiMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBHi","metSig"};
   ao.cuts[kWH2TopCR             ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
-  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
+  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj","vetoTrain"};
   ao.cuts[kWHLightFlavorCR      ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
   ao.cuts[kWHLightFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
   ao.cuts[kWHHeavyFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
   ao.cuts[kWHTT2bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
   ao.cuts[kWHTT1bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
-  ao.cuts[kWHFJSR               ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
+  ao.cuts[kWHFJSR               ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR","vetoTrain"};
   ao.cuts[kWHFJPresel           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ"                             };
   /////////////////////////////
   // List of Samples
@@ -263,10 +267,20 @@ void whAnalysis(
     samples.emplace_back("W1JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
     samples.emplace_back("W1JetsToLNu_WpT400toinf_CP5"    , vhbbPlot::kWjets  ); 
     samples.emplace_back("W2JetsToLNu_WpT50to150_CP5"     , vhbbPlot::kWjets  ); 
-    samples.emplace_back("W2JetsToLNu_WpT100to150_CP5"    , vhbbPlot::kWjets  ); 
-    samples.emplace_back("W2JetsToLNu_WpT150to250_CP5"    , vhbbPlot::kWjets  ); 
-    samples.emplace_back("W2JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("W2JetsToLNu_WpT100to150_CP5"    , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("W2JetsToLNu_WpT150to250_CP5"    , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("W2JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT150to250_CP5_notTruncated"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT250to400_CP5_notTruncated"    , vhbbPlot::kWjets  ); 
     samples.emplace_back("W2JetsToLNu_WpT400toinf_CP5"    , vhbbPlot::kWjets  ); 
+    
+    //samples.emplace_back("WJets_ht100to200_CP5"           , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("WJets_ht200to400_CP5"           , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("WJets_ht400to600_CP5"           , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("WJets_ht600to800_CP5"           , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("WJets_ht800to1200_CP5"          , vhbbPlot::kWjets  ); 
+    //samples.emplace_back("WJets_ht1200to2500_CP5"         , vhbbPlot::kWjets  ); 
+
     samples.emplace_back("WmLNuHbb"                       , vhbbPlot::kWH     );
     samples.emplace_back("WpLNuHbb"                       , vhbbPlot::kWH     );
     samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  ); 
@@ -311,10 +325,10 @@ void whAnalysis(
   // Done Loading Pileup Weights
 
   // Load JEC Uncertainties
-  TString ak4JecUncPath = (year=2016)? 
+  TString ak4JecUncPath = (year==2016)? 
     "PandaAnalysis/data/jec/23Sep2016V4/Summer16_23Sep2016V4_MC_UncertaintySources_AK4PFchs.txt":
     "PandaAnalysis/data/jec/17Nov2017_V8//Fall17_17Nov2017_V8_MC_UncertaintySources_AK4PFchs.txt";
-  TString ak8JecUncPath = (year=2016)? 
+  TString ak8JecUncPath = (year==2016)? 
     "PandaAnalysis/data/jec/23Sep2016V4/Summer16_23Sep2016V4_MC_UncertaintySources_AK8PFPuppi.txt":
     "PandaAnalysis/data/jec/17Nov2017_V8//Fall17_17Nov2017_V8_MC_UncertaintySources_AK8PFPuppi.txt";
   ao.jecUncsAK4.reserve(NJES);
@@ -346,7 +360,7 @@ void whAnalysis(
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
     } else if(ao.MVAVarType==3) {
-      ao.MVAbins={-1,0,0.4,0.5,0.6,0.7,0.8,1};
+      ao.MVAbins={-1,0,0.4,0.6,0.8,0.9,1};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
@@ -356,7 +370,7 @@ void whAnalysis(
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
     } else if(ao.MVAVarType==3) {
-      ao.MVAbins={-0.8,-0.4,0,0.4,0.8};
+      ao.MVAbins={-0.8,-0.4,0,0.4,0.5,0.6};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
@@ -402,7 +416,6 @@ void whAnalysis(
     ao.histoNames[p]="lepton1Pt"               ; ao.histoTitles[p]="Lepton p_{T} [GeV]"       ; ao.nbins[p]=  33; ao.xmin[p]=    20; ao.xmax[p]=   350; p++; 
     ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton #eta"              ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="lepton1Charge"           ; ao.histoTitles[p]="Lepton charge"            ; ao.nbins[p]=   3; ao.xmin[p]=    -1; ao.xmax[p]=     2; p++; 
-    ao.histoNames[p]="WBosonPt"                ; ao.histoTitles[p]="W boson pT [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
     ao.histoNames[p]="WBosonPhi"               ; ao.histoTitles[p]="W boson #eta"             ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="mT"                      ; ao.histoTitles[p]="W boson m_{T} [GeV]"      ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++;
     ao.histoNames[p]="pfmet"                   ; ao.histoTitles[p]="E_{T}^{miss} [GeV]"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  500.; p++;
@@ -410,6 +423,7 @@ void whAnalysis(
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"               ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
       // fatjet only plots
+      ao.histoNames[p]="WBosonPt"           ; ao.histoTitles[p]="W boson pT [GeV]"      ; ao.nbins[p]=  55; ao.xmin[p]=   250; ao.xmax[p]=   700; p++; 
       ao.histoNames[p]="mSD"                ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
       ao.histoNames[p]="pTFJ"               ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
       ao.histoNames[p]="Tau21SD"            ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
@@ -425,7 +439,9 @@ void whAnalysis(
       ao.histoNames[p]="psi022004031003"    ; ao.histoTitles[p]="#psi(2,2.0,4,3,1.0,3)" ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]= 0.05 ; p++;
       ao.histoNames[p]="psi022004022003"    ; ao.histoTitles[p]="#psi(2,2.0,4,2,2.0,3)" ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]= 0.04 ; p++;
       ao.histoNames[p]="psi022004030503"    ; ao.histoTitles[p]="#psi(2,2.0,4,3,0.5,3)" ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]= 2    ; p++;
+      ao.histoNames[p]="dPhil1W"            ; ao.histoTitles[p]="#Delta#phi(lep,W)"       ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
     } else {
+      ao.histoNames[p]="WBosonPt"           ; ao.histoTitles[p]="W boson pT [GeV]"        ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
       ao.histoNames[p]="Mjj"                ; ao.histoTitles[p]="Dijet mass [GeV]"        ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
       ao.histoNames[p]="pTjj"               ; ao.histoTitles[p]="Dijet pT [GeV]"          ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
       ao.histoNames[p]="bjet1Pt"            ; ao.histoTitles[p]="B-jet 1 pT [GeV]"        ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
@@ -649,7 +665,6 @@ void whAnalysis(
         bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_wh2016.weights.xml";
       else
         bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_wh2017.weights.xml";
-      bdtWeights = "";
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
       // This object is never deleted, which is a small memory leak,
@@ -917,10 +932,11 @@ void analyzeSample(
   bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
   bool isV12jets = sampleName.Contains("Z1Jets") || sampleName.Contains("Z2Jets");
   bool isW2jets = sampleName.Contains("W2Jets"); 
+  bool isNLOWjets = sampleName.Contains("W2Jets") || sampleName.Contains("W1Jets");
   bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
 
-  bool truncateSf1 = sampleName.Contains("W2JetsToLNu_WpT100to150_CP5");
-  bool truncateSf2 = sampleName.Contains("W2JetsToLNu_WpT250to400_CP5");
+  bool truncateSf1 = false;//sampleName.Contains("W2JetsToLNu_WpT100to150_CP5");
+  bool truncateSf2 = false;//sampleName.Contains("W2JetsToLNu_WpT250to400_CP5");
 
   unsigned nThread = split>=0? split:0;
   // End sample properties
@@ -1048,17 +1064,17 @@ void analyzeSample(
       if(type==vhbbPlot::kTT)
         stitchWeight*=1.061; // hack because of bug in ntuple production, remove this
     } else if(ao.year==2017) {
-      if(isW2jets) {
-        // Handle the overlap of the samples W2JetsToLNu_WpT100to150_CP5, W2JetsToLNu_WpT50to150_CP5
-        bLoad(b["trueGenBosonPt"],ientry);
-        if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
-          stitchWeight = 0.5;
-      }
+      //if(isW2jets) {
+      //  // Handle the overlap of the samples W2JetsToLNu_WpT100to150_CP5, W2JetsToLNu_WpT50to150_CP5
+      //  bLoad(b["trueGenBosonPt"],ientry);
+      //  if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
+      //    stitchWeight = 0.5;
+      //}
       // hack because of bug in ntuple production, remove this
-      if(truncateSf1) //W2JetsToLNu_WpT100to150_CP5
-        stitchWeight*=2.540;
-      if(truncateSf2) //W2JetsToLNu_WpT250to400_CP5
-        stitchWeight*=2.816;
+      //if(truncateSf1) //W2JetsToLNu_WpT100to150_CP5
+      //  stitchWeight*=2.540;
+      //if(truncateSf2) //W2JetsToLNu_WpT250to400_CP5
+      //  stitchWeight*=2.816;
     }
 
     //////////////////////
@@ -1094,6 +1110,9 @@ void analyzeSample(
       if(!passTrigger) continue;
       if(ao.debug) printf("  Passed trigger\n");
     }
+    bLoad(b["metFilter"],ientry);
+    if(gt.metFilter!=1) continue;
+    if(ao.debug) printf("  Passed MET filters\n");
 
     // Lepton ID and isolation
     bLoad(b["nLooseElectron"],ientry);
@@ -1382,7 +1401,7 @@ void analyzeSample(
       bLoad(b["fjDoubleCSV"],ientry);
       bLoad(b["fjTau21SD"],ientry);
       bLoad(b["fjTau32SD"],ientry);
-      for(unsigned iJES=1; iJES<NJES; iJES++) {
+      if(type!=vhbbPlot::kData) for(unsigned iJES=1; iJES<NJES; iJES++) {
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         jecAk8UncMutex.lock();
         bool isUp = !(iJES%2==0);
@@ -1405,7 +1424,7 @@ void analyzeSample(
       bLoad(b["hbbm"],ientry);
       bLoad(b["pfmet"],ientry);
       bLoad(b["pfmetsig"],ientry);
-      for(unsigned iJES=1; iJES<NJES; iJES++) {
+      if(type!=vhbbPlot::kData) for(unsigned iJES=1; iJES<NJES; iJES++) {
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         jecAk4UncMutex.lock();
         bool isUp = !(iJES%2==0);
@@ -1468,6 +1487,21 @@ void analyzeSample(
     if(isBoostedCategory) {
       ptBalanceWHFJ = gt.fjPt[0] / gt.topWBosonPt;
       dEtaLep1FJ = fabs(lepton1Eta - gt.fjEta);
+      bLoad(b["fjHTTFRec"],ientry);
+      bLoad(b["fjHTTMass"],ientry);
+      // Need to handle these ECFs better for a more general case, long term to-do list
+      bLoad(b["fjECFN_2_4_20"],ientry);
+      bLoad(b["fjECFN_3_3_10"],ientry);
+      bLoad(b["fjECFN_2_3_20"],ientry);
+      bLoad(b["fjECFN_3_3_05"],ientry);
+      fjECFN_2_4_20 = *((float*)b["fjECFN_2_4_20"]->GetAddress());
+      fjECFN_3_3_10 = *((float*)b["fjECFN_3_3_10"]->GetAddress());
+      fjECFN_2_3_20 = *((float*)b["fjECFN_2_3_20"]->GetAddress());
+      fjECFN_3_3_05 = *((float*)b["fjECFN_3_3_05"]->GetAddress());
+      psi022004031003 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_3_3_10),1.33);
+      psi022004022003 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_2_3_20),1.00);
+      psi022004030503 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_3_3_05),2.67);
+      dPhil1W  = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - gt.topWBosonPhi));
     } else {
       deltaPhiWH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.topWBosonPhi));
       ptBalanceWH   = gt.hbbpt_reg[0] /  gt.topWBosonPt;
@@ -1475,15 +1509,29 @@ void analyzeSample(
       dPhiBjets     = fabs(TVector2::Phi_mpi_pi(gt.jotPhi[gt.hbbjtidx[0][0]]-gt.jotPhi[gt.hbbjtidx[0][1]]));
       dRBjets       = sqrt(dEtaBjets*dEtaBjets + dPhiBjets*dPhiBjets);
       dEtaLep1H = fabs(lepton1Eta - gt.hbbeta[0]);
+      bLoad(b["sumEtSoft1"],ientry);
+      bLoad(b["nSoft2"],ientry);
+      bLoad(b["nSoft5"],ientry);
+      bLoad(b["nSoft10"],ientry);
+      bLoad(b["topMassLep1Met"],ientry);
+      bLoad(b["topWBosonEta"],ientry);
+      bLoad(b["topWBosonCosThetaCS"],ientry);
+      bLoad(b["hbbCosThetaJJ"],ientry);
+      bLoad(b["hbbCosThetaCSJ1"],ientry);
+      dPhil1W  = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - gt.topWBosonPhi));
+      dPhil1b1 = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - bjet1Phi       ));
+      dPhil1b2 = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - bjet2Phi       ));
+      dPhiWb1  = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi - bjet1Phi       ));
+      dPhiWb2  = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi - bjet2Phi       ));
+      dPhib1b2 = fabs(TVector2::Phi_mpi_pi(bjet1Phi        - bjet2Phi       ));
+      dEtal1W  = fabs(lepton1Eta      - gt.topWBosonEta);
+      dEtal1b1 = fabs(lepton1Eta      - bjet1Eta       );
+      dEtal1b2 = fabs(lepton1Eta      - bjet2Eta       );
+      dEtaWb1  = fabs(gt.topWBosonEta - bjet1Eta       );
+      dEtaWb2  = fabs(gt.topWBosonEta - bjet2Eta       );
+      dEtab1b2 = fabs(bjet1Eta        - bjet2Eta       );
     }
     // deltaPhiWHFJ computed already in Jet multiplicity section
-    bool vetoTrainEvts = (
-      ao.MVAVarType>1 &&
-      ao.selection==kWHSR && 
-      category!=kPlotData &&
-      (gt.eventNumber%10)<3
-    );
-
     // Set Selection Bits
     std::map<TString, bool> cut;
     for(unsigned iJES=0; iJES<NJES; iJES++) {
@@ -1560,7 +1608,7 @@ void analyzeSample(
         else
           gt.sf_ewkV=ao.WjetsEWKCorr[0]+ao.WjetsEWKCorr[1]*
             (TMath::Power((gt.trueGenBosonPt+ao.WjetsEWKCorr[2]),ao.WjetsEWKCorr[3]));
-        if(isNLOZjets || isLowMassZjets) {
+        if(isNLOWjets || isNLOZjets || isLowMassZjets) {
           gt.sf_qcdV=1;
         } else if(useHtBinnedVJetsKFactor) {
           bLoad(b["lheHT"],ientry);
@@ -1579,6 +1627,7 @@ void analyzeSample(
               TMath::Min(1.39,gt.lheHT         /1000.)
             ));
         }
+        if(ao.year==2017) { gt.sf_ewkV=1; } // hack
         weight *= gt.sf_qcdV * gt.sf_ewkV;
       }
       bLoad(b["scale"],ientry);
@@ -1773,6 +1822,24 @@ void analyzeSample(
           ao.mvaInputs[nThread][13] = deltaPhiWHFJ                   ; //"dPhiWHFJ"       
           ao.mvaInputs[nThread][14] = gt.fjHTTFRec                   ; //"HTTFRec"        
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
+          if(false) if(iJES==0) {
+            printf("ao.mvaInputs[nThread][ 0] = %.3f\n",ao.mvaInputs[nThread][ 0]); 
+            printf("ao.mvaInputs[nThread][ 1] = %.3f\n",ao.mvaInputs[nThread][ 1]); 
+            printf("ao.mvaInputs[nThread][ 2] = %.3f\n",ao.mvaInputs[nThread][ 2]); 
+            printf("ao.mvaInputs[nThread][ 3] = %.3f\n",ao.mvaInputs[nThread][ 3]); 
+            printf("ao.mvaInputs[nThread][ 4] = %.3f\n",ao.mvaInputs[nThread][ 4]); 
+            printf("ao.mvaInputs[nThread][ 5] = %.3f\n",ao.mvaInputs[nThread][ 5]); 
+            printf("ao.mvaInputs[nThread][ 6] = %.3f\n",ao.mvaInputs[nThread][ 6]); 
+            printf("ao.mvaInputs[nThread][ 7] = %.3f\n",ao.mvaInputs[nThread][ 7]); 
+            printf("ao.mvaInputs[nThread][ 8] = %.3f\n",ao.mvaInputs[nThread][ 8]); 
+            printf("ao.mvaInputs[nThread][ 9] = %.3f\n",ao.mvaInputs[nThread][ 9]); 
+            printf("ao.mvaInputs[nThread][10] = %.3f\n",ao.mvaInputs[nThread][10]); 
+            printf("ao.mvaInputs[nThread][11] = %.3f\n",ao.mvaInputs[nThread][11]); 
+            printf("ao.mvaInputs[nThread][12] = %.3f\n",ao.mvaInputs[nThread][12]); 
+            printf("ao.mvaInputs[nThread][13] = %.3f\n",ao.mvaInputs[nThread][13]); 
+            printf("ao.mvaInputs[nThread][14] = %.3f\n",ao.mvaInputs[nThread][14]); 
+            printf("bdtValue[iJES]            = %.3f\n",bdtValue[iJES]           ); 
+          }
         }
       }
       switch(ao.MVAVarType) {
@@ -1870,43 +1937,7 @@ void analyzeSample(
         bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
         bLoad(b["fjPt"],ientry);
         bLoad(b["fjDoubleCSV"],ientry);
-        bLoad(b["fjHTTFRec"],ientry);
-        bLoad(b["fjHTTMass"],ientry);
-        // Need to handle these ECFs better for a more general case, long term to-do list
-        bLoad(b["fjECFN_2_4_20"],ientry);
-        bLoad(b["fjECFN_3_3_10"],ientry);
-        bLoad(b["fjECFN_2_3_20"],ientry);
-        bLoad(b["fjECFN_3_3_05"],ientry);
-        fjECFN_2_4_20 = *((float*)b["fjECFN_2_4_20"]->GetAddress());
-        fjECFN_3_3_10 = *((float*)b["fjECFN_3_3_10"]->GetAddress());
-        fjECFN_2_3_20 = *((float*)b["fjECFN_2_3_20"]->GetAddress());
-        fjECFN_3_3_05 = *((float*)b["fjECFN_3_3_05"]->GetAddress());
-        psi022004031003 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_3_3_10),1.33);
-        psi022004022003 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_2_3_20),1.00);
-        psi022004030503 = fjECFN_2_4_20/pow(TMath::Max(0.0f,fjECFN_3_3_05),2.67);
-        dPhil1W  = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - gt.topWBosonPhi));
       } else {
-        bLoad(b["sumEtSoft1"],ientry);
-        bLoad(b["nSoft2"],ientry);
-        bLoad(b["nSoft5"],ientry);
-        bLoad(b["nSoft10"],ientry);
-        bLoad(b["topMassLep1Met"],ientry);
-        bLoad(b["topWBosonEta"],ientry);
-        bLoad(b["topWBosonCosThetaCS"],ientry);
-        bLoad(b["hbbCosThetaJJ"],ientry);
-        bLoad(b["hbbCosThetaCSJ1"],ientry);
-        dPhil1W  = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - gt.topWBosonPhi));
-        dPhil1b1 = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - bjet1Phi       ));
-        dPhil1b2 = fabs(TVector2::Phi_mpi_pi(lepton1Phi      - bjet2Phi       ));
-        dPhiWb1  = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi - bjet1Phi       ));
-        dPhiWb2  = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi - bjet2Phi       ));
-        dPhib1b2 = fabs(TVector2::Phi_mpi_pi(bjet1Phi        - bjet2Phi       ));
-        dEtal1W  = fabs(lepton1Eta      - gt.topWBosonEta);
-        dEtal1b1 = fabs(lepton1Eta      - bjet1Eta       );
-        dEtal1b2 = fabs(lepton1Eta      - bjet2Eta       );
-        dEtaWb1  = fabs(gt.topWBosonEta - bjet1Eta       );
-        dEtaWb2  = fabs(gt.topWBosonEta - bjet2Eta       );
-        dEtab1b2 = fabs(bjet1Eta        - bjet2Eta       );
       }
       // Lock the mutex and fill the MVA tree
       if(ao.selection==kWHSR && passFullSel && category!=kPlotData) {
@@ -2074,10 +2105,12 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
-      if(ic==kPlotZH)
+      if(ic==kPlotWH)
         newcardShape << Form("%d  ",0);
-      else if(ic==kPlotGGZH)
+      else if(ic==kPlotZH)
         newcardShape << Form("%d  ",-1);
+      else if(ic==kPlotGGZH)
+        newcardShape << Form("%d  ",-2);
       else
         newcardShape << Form("%d  ",ic);
     }
@@ -2210,9 +2243,9 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     // Normalization and double B scale factors
     if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) {
       // Boosted norms
-      newcardShape << Form("SF%d_ZHFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWbb].Data());
-      newcardShape << Form("SF%d_ZHFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWb].Data());
-      newcardShape << Form("SF%d_ZLFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWLF].Data());
+      newcardShape << Form("SF%d_WHFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWbb].Data());
+      newcardShape << Form("SF%d_WHFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWb].Data());
+      newcardShape << Form("SF%d_WLFFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotWLF].Data());
       newcardShape << Form("SF%d_TTFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotTop].Data());
       newcardShape << Form("SF%d_TTFJ_Wln rateParam * %s 1 [0.2,5]\n",ao.year,plotBaseNames[kPlotTT].Data());
       // In situ measurement of doubleB SF for WLF, Wb, eff checked in kWHFJPresel
