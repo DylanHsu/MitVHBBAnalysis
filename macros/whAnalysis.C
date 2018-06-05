@@ -148,8 +148,7 @@ void whAnalysis(
   unsigned debug=0,
   bool multithread=false,
   TString batchSampleName="",
-  vhbbPlot::sampleType batchSampleType=vhbbPlot::kData,
-  int modSplitIndex=-1
+  vhbbPlot::sampleType batchSampleType=vhbbPlot::kData
 ) {
   struct analysisObjects ao;
   ao.MVAVarType=MVAVarType;
@@ -190,7 +189,6 @@ void whAnalysis(
     //multithread=false; // force single threading
     dataCardDir = dataCardDir + "/split/"; // write output in a subdirectory
     batchSuffix = "_"+batchSampleName; // add a suffix to the output with this sample's name
-    if(modSplitIndex>=0) batchSuffix += Form("_%d",modSplitIndex);
     samples.emplace_back(batchSampleName, batchSampleType);
   } else if(year==2016) {
     samples.emplace_back("SingleElectron"                 , vhbbPlot::kData   );
@@ -736,7 +734,7 @@ void whAnalysis(
     } else {
       TFile *inputFile = TFile::Open(inputFileName,"READ"); assert(inputFile);
       TTree *events = (TTree*)inputFile->Get("events"); assert(events);
-      analyzeSample(sample, events, std::ref(ao), modSplitIndex);
+      analyzeSample(sample, events, std::ref(ao), -1);
       inputFile->Close();
     }
   } // End Chain Loop
@@ -1301,6 +1299,7 @@ void analyzeSample(
     //  bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
     //}
     bLoad(b["nJot"],ientry);
+    bLoad(b["nJotMax"],ientry);
     bLoad(b["jotPt"],ientry);
     bLoad(b["jotEta"],ientry);
     bLoad(b["jotPhi"],ientry);
@@ -1318,7 +1317,7 @@ void analyzeSample(
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
       for(unsigned iJES=0; iJES<NJES; iJES++) 
-      for(unsigned char iJ=0; iJ<gt.nJot[0]; iJ++) {
+      for(unsigned char iJ=0; iJ<gt.nJotMax; iJ++) {
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         if(fabs(gt.jotEta[iJ])>2.4) continue;
         float dR2JetFatjet=pow(gt.jotEta[iJ]-gt.fjEta,2)+pow(TVector2::Phi_mpi_pi(gt.jotPhi[iJ]-gt.fjPhi),2);
@@ -1454,6 +1453,26 @@ void analyzeSample(
         gt.hbbpt_reg[iJES] = gt.hbbpt_reg[0] * hbbsystem.Pt()/gt.hbbpt[0];
         gt.hbbm_reg[iJES]  = gt.hbbm_reg[0]  * hbbsystem.M() /gt.hbbm[0];
       }
+      // Handle the NJET variations
+      for(unsigned iJES=1; iJES<NJES; iJES++) {
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        gt.nJet[iJES]=0;
+        gt.nJot[iJES]=0;
+        for(unsigned char iJ=0; iJ<gt.nJotMax; iJ++) {
+          jecAk4UncMutex.lock();
+          bool isUp = !(iJES%2==0);
+          ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt[0][iJ]);
+          ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta  [iJ]);
+          float relUnc = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+          jecAk4UncMutex.unlock();
+          if(!isUp) relUnc*=-1;
+          gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
+          if(gt.jotPt[iJES][iJ] < 25) continue;
+          gt.nJot[iJES]++;
+          if(fabs(gt.jotEta[iJ])<2.4)
+            gt.nJet[iJES]++;
+        }
+      }
     }
     float deltaPhiWH    = -1;
     float deltaPhiLep1Met = -1;
@@ -1574,9 +1593,9 @@ void analyzeSample(
         cut["mjjSBLo"    ] = gt.hbbm_reg[iJES] < 90;
         cut["mjjSBHi"    ] = gt.hbbm_reg[iJES] >= 150 && gt.hbbm_reg[iJES] < 250;
         // Need a looser jet definition in the ntuples if we want to use this
-        cut["2jets"      ] = gt.nJet[0]==2;
-        cut["2-3jets"    ] = gt.nJet[0]<4;
-        cut["4+jets"     ] = gt.nJet[0]>=4;
+        cut["2jets"      ] = gt.nJet[iJES]==2;
+        cut["2-3jets"    ] = gt.nJet[iJES]<4;
+        cut["4+jets"     ] = gt.nJet[iJES]>=4;
         cut["metSig"     ] = gt.pfmetsig>2;
       } 
       selectionBits[iJES]=0; nMinusOneBits=0;
