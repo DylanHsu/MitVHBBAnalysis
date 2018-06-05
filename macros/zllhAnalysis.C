@@ -2025,11 +2025,13 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       newcardShape << Form("%f  ",ao.histo_Baseline[lep][ic]->GetSumOfWeights());
     newcardShape << Form("\n");
 
+    float lumiE = 1.025;
+    if(ao.year==2017) lumiE = 1.023;
     newcardShape << Form("lumi_13TeV    lnN     ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
     if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
       if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotZbb&&ic!=kPlotZb&&ic!=kPlotZLF)
-       newcardShape << Form("%6.3f ",1.025);
+       newcardShape << Form("%6.3f ",lumiE);
       else
         newcardShape << Form("-  ");
     }
