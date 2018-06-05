@@ -200,8 +200,12 @@ namespace vhbbPlot {
     { kPlotZb   , 1.03  },
     { kPlotZLF  , 1.05  },
     { kPlotWH   , 1.01  },
-    { kPlotZH   , 1.023 },
-    { kPlotGGZH , 1.18  }
+    { kPlotZH   , 1.019 },
+    { kPlotGGZH , 1.024 }
+  };
+  std::map<int, float> QCDXSUncs={
+    { kPlotZH   , 1.006 },
+    { kPlotGGZH , 1.220 }
   };
   // This function loads the ith entry of the branch, only if it has not already been loaded
   int bLoad(TBranch *branch, Long64_t ientry) {
