@@ -26,7 +26,7 @@
 
 #include "formulas.h"
 #include "TMVA/Reader.h"
-#include "MitAnalysisRunII/panda/macros/80x/auxiliar.h"
+#include "MitAnalysisRunII/panda/macros/9x/trigger_auxiliar.h"
 #include "MitAnalysisRunII/panda/macros/80x/common.h"
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
@@ -84,6 +84,8 @@ struct analysisObjects {
   TH1F *histo_eleSFDown                          [nLepSel][nPlotCategories];
   TH1F *histo_muSFUp                             [nLepSel][nPlotCategories];
   TH1F *histo_muSFDown                           [nLepSel][nPlotCategories];
+  TH1F *histo_triggerSFUp                        [nLepSel][nPlotCategories];
+  TH1F *histo_triggerSFDown                      [nLepSel][nPlotCategories];
   TH1F *histo_btag[GeneralTree::nCsvShifts][5][3][nLepSel][nPlotCategories];
   TH1F *histo_VGluUp                             [nLepSel][nPlotCategories];
   TH1F *histo_VGluDown                           [nLepSel][nPlotCategories];
@@ -118,6 +120,9 @@ struct analysisObjects {
   // MVA output
   vector<TMVA::Reader*> reader;
   float mvaInputs[nThreads][16];
+  // Trigger efficiency SFs
+  double trgEff [3][nTrgBinPt1][nTrgBinPt2][nTrgBinEta1][nTrgBinEta2];
+  double trgEffE[3][nTrgBinPt1][nTrgBinPt2][nTrgBinEta1][nTrgBinEta2];
   
 };
 
@@ -156,6 +161,8 @@ void zllhAnalysis(
   ao.selection = selection;
   ao.binZpt = binZpt;
   TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
+
+  initialize_trgEff(ao.trgEff, ao.trgEffE, ao.year);
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
@@ -464,6 +471,8 @@ void zllhAnalysis(
     ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"             , plotBaseNames[ic].Data()));
     ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"                , plotBaseNames[ic].Data()));
     ao.histo_muSFDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFDown"              , plotBaseNames[ic].Data()));
+    ao.histo_triggerSFUp  [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_triggerSFUp"           , plotBaseNames[ic].Data()));
+    ao.histo_triggerSFDown[lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_triggerSFDown"         , plotBaseNames[ic].Data()));
     ao.histo_VGluUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VjetsGluFracUp"        , plotBaseNames[ic].Data()));
     ao.histo_VGluDown     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VjetsGluFracDown"      , plotBaseNames[ic].Data()));
     ao.histo_doubleBUp    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_CMS_doubleBUp"         , plotBaseNames[ic].Data()));
@@ -738,16 +747,18 @@ void zllhAnalysis(
       // Force positive bin yields
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
         ao.histo_Baseline    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_Baseline[lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_pileupUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupUp    [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_pileupDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupDown  [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_VHCorrUp    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrUp    [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_VHCorrDown  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrDown  [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_QCDScaleUp  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleUp  [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_QCDScaleDown[lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleDown[lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_eleSFUp     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFUp     [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_eleSFDown   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFDown   [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_muSFUp      [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFUp      [lep][ic]->GetBinContent(nb),1e-7f));
-      ao.histo_muSFDown    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFDown    [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_pileupUp     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupUp     [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_pileupDown   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_pileupDown   [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_VHCorrUp     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrUp     [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_VHCorrDown   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VHCorrDown   [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_QCDScaleUp   [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleUp   [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_QCDScaleDown [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_QCDScaleDown [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_eleSFUp      [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFUp      [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_eleSFDown    [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_eleSFDown    [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_muSFUp       [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFUp       [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_muSFDown     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_muSFDown     [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_triggerSFUp  [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_triggerSFUp  [lep][ic]->GetBinContent(nb),1e-7f));
+      ao.histo_triggerSFDown[lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_triggerSFDown[lep][ic]->GetBinContent(nb),1e-7f));
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
         ao.histo_VGluUp       [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VGluUp       [lep][ic]->GetBinContent(nb),1e-7f));
         ao.histo_VGluDown     [lep][ic]->SetBinContent(nb, TMath::Max((float)ao.histo_VGluDown     [lep][ic]->GetBinContent(nb),1e-7f));
@@ -775,12 +786,14 @@ void zllhAnalysis(
     // Renormalize lepton SF and pileup uncertainties
     if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0 &&
        (ic==kPlotTop||ic==kPlotTT||ic==kPlotZbb||ic==kPlotZb||ic==kPlotZLF)) {
-      ao.histo_pileupUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupUp  [lep][ic]->GetSumOfWeights());
-      ao.histo_pileupDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupDown[lep][ic]->GetSumOfWeights());
-      ao.histo_eleSFUp   [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFUp   [lep][ic]->GetSumOfWeights());
-      ao.histo_eleSFDown [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFDown [lep][ic]->GetSumOfWeights());
-      ao.histo_muSFUp	 [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFUp    [lep][ic]->GetSumOfWeights());
-      ao.histo_muSFDown  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFDown  [lep][ic]->GetSumOfWeights());
+      ao.histo_pileupUp     [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupUp     [lep][ic]->GetSumOfWeights());
+      ao.histo_pileupDown   [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_pileupDown   [lep][ic]->GetSumOfWeights());
+      ao.histo_eleSFUp      [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFUp      [lep][ic]->GetSumOfWeights());
+      ao.histo_eleSFDown    [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_eleSFDown    [lep][ic]->GetSumOfWeights());
+      ao.histo_muSFUp       [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFUp       [lep][ic]->GetSumOfWeights());
+      ao.histo_muSFDown     [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_muSFDown     [lep][ic]->GetSumOfWeights());
+      ao.histo_triggerSFUp  [lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_triggerSFUp  [lep][ic]->GetSumOfWeights());
+      ao.histo_triggerSFDown[lep][ic]->Scale(ao.histo_Baseline[lep][ic]->GetSumOfWeights()/ao.histo_triggerSFDown[lep][ic]->GetSumOfWeights());
     }
   } // all final states and categories
   
@@ -806,16 +819,18 @@ void zllhAnalysis(
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0 && ic!=kPlotData) continue;
       ao.histo_Baseline    [lep][ic]->Write();
       if(ic<kPlotVZbb) continue;
-      ao.histo_pileupUp    [lep][ic]->Write();
-      ao.histo_pileupDown  [lep][ic]->Write();
-      ao.histo_VHCorrUp    [lep][ic]->Write();
-      ao.histo_VHCorrDown  [lep][ic]->Write();
-      ao.histo_QCDScaleUp  [lep][ic]->Write();
-      ao.histo_QCDScaleDown[lep][ic]->Write();
-      ao.histo_eleSFUp     [lep][ic]->Write();
-      ao.histo_eleSFDown   [lep][ic]->Write();
-      ao.histo_muSFUp      [lep][ic]->Write();
-      ao.histo_muSFDown    [lep][ic]->Write();
+      ao.histo_pileupUp     [lep][ic]->Write();
+      ao.histo_pileupDown   [lep][ic]->Write();
+      ao.histo_VHCorrUp     [lep][ic]->Write();
+      ao.histo_VHCorrDown   [lep][ic]->Write();
+      ao.histo_QCDScaleUp   [lep][ic]->Write();
+      ao.histo_QCDScaleDown [lep][ic]->Write();
+      ao.histo_eleSFUp      [lep][ic]->Write();
+      ao.histo_eleSFDown    [lep][ic]->Write();
+      ao.histo_muSFUp       [lep][ic]->Write();
+      ao.histo_muSFDown     [lep][ic]->Write();
+      ao.histo_triggerSFUp  [lep][ic]->Write();
+      ao.histo_triggerSFDown[lep][ic]->Write();
       for(unsigned iJES=0; iJES<NJES; iJES++) { 
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         // Special symmetrization procedure
@@ -910,7 +925,7 @@ void analyzeSample(
   // Declare variables for the variations of the weights
   float weight;
   float weight_QCDr1f2 = 1, weight_QCDr1f5 = 1, weight_QCDr2f1 = 1, weight_QCDr2f2 = 1, weight_QCDr5f1 = 1, weight_QCDr5f5 = 1;
-  float weight_muSF = 1, weight_elSF = 1;
+  float weight_muSF = 1, weight_elSF = 1, weight_triggerSF = 1;
   float weight_btag[GeneralTree::nCsvShifts][5][3];
   float weight_pileupUp = 1, weight_pileupDown = 1;
   float weight_VHCorrUp = 1, weight_VHCorrDown = 1;
@@ -1591,6 +1606,11 @@ void analyzeSample(
         weight_elSF = (1+gt.electronSfUnc[0]);
       }
 
+      double triggerWeights[2];
+      trigger_sf(triggerWeights, ao.trgEff, ao.trgEffE, typeLepSel, lepton1Pt, TMath::Abs(lepton1Eta), lepton2Pt, TMath::Abs(lepton2Eta));
+      weight *= triggerWeights[0];
+      weight_triggerSF = 1+triggerWeights[1];
+
       float recorrect_vhEWK=1, recorrect_vhEWKUp=1, recorrect_vhEWKDown=1;
       if(type==kVZ) {
         bLoad(b["sf_wz"],ientry);
@@ -1807,21 +1827,23 @@ void analyzeSample(
     } else if(category>=kPlotVZbb)  {
       bool passFullSel = (selectionBits[0] & ao.selection) != 0;
       if(passFullSel) {
-        ao.histo_Baseline    [typeLepSel][category]->Fill(MVAVar[0], weight);
-        ao.histo_pileupUp    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_pileupUp);
-        ao.histo_pileupDown  [typeLepSel][category]->Fill(MVAVar[0], weight*weight_pileupDown);
-        ao.histo_VHCorrUp    [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrUp);
-        ao.histo_VHCorrDown  [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrDown);
-        ao.histo_QCDr1f2     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f2);
-        ao.histo_QCDr1f5     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f5);
-        ao.histo_QCDr2f1     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr2f1);
-        ao.histo_QCDr2f2     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr2f2);
-        ao.histo_QCDr5f1     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr5f1);
-        ao.histo_QCDr5f5     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr5f5);
-        ao.histo_eleSFUp     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_elSF);
-        ao.histo_eleSFDown   [typeLepSel][category]->Fill(MVAVar[0], weight/weight_elSF);
-        ao.histo_muSFUp      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_muSF);
-        ao.histo_muSFDown    [typeLepSel][category]->Fill(MVAVar[0], weight/weight_muSF);
+        ao.histo_Baseline     [typeLepSel][category]->Fill(MVAVar[0], weight);
+        ao.histo_pileupUp     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_pileupUp);
+        ao.histo_pileupDown   [typeLepSel][category]->Fill(MVAVar[0], weight*weight_pileupDown);
+        ao.histo_VHCorrUp     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrUp);
+        ao.histo_VHCorrDown   [typeLepSel][category]->Fill(MVAVar[0], weight*weight_VHCorrDown);
+        ao.histo_QCDr1f2      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f2);
+        ao.histo_QCDr1f5      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr1f5);
+        ao.histo_QCDr2f1      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr2f1);
+        ao.histo_QCDr2f2      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr2f2);
+        ao.histo_QCDr5f1      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr5f1);
+        ao.histo_QCDr5f5      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_QCDr5f5);
+        ao.histo_eleSFUp      [typeLepSel][category]->Fill(MVAVar[0], weight*weight_elSF);
+        ao.histo_eleSFDown    [typeLepSel][category]->Fill(MVAVar[0], weight/weight_elSF);
+        ao.histo_muSFUp       [typeLepSel][category]->Fill(MVAVar[0], weight*weight_muSF);
+        ao.histo_muSFDown     [typeLepSel][category]->Fill(MVAVar[0], weight/weight_muSF);
+        ao.histo_triggerSFUp  [typeLepSel][category]->Fill(MVAVar[0], weight*weight_triggerSF);
+        ao.histo_triggerSFDown[typeLepSel][category]->Fill(MVAVar[0], weight/weight_triggerSF);
         for(unsigned iPt=0; iPt<5; iPt++)
         for(unsigned iEta=0; iEta<3; iEta++)
         for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
@@ -2069,6 +2091,13 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     }
     newcardShape << Form("\n");
 
+    newcardShape << Form("triggerSF    shape   ");
+    for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
+      newcardShape << Form("1.0  ");
+    }
+    newcardShape << Form("\n");
+
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
     if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
       newcardShape << Form("QCDScale_%s_ACCEPT    shape   ",plotBaseNames[ic].Data());
@@ -2268,26 +2297,30 @@ void datacardsFromHistograms(
       ao.histo_Baseline    [lep][ic]->SetDirectory(0);
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0 && ic!=kPlotData) continue;
       if(ic<kPlotVZbb) continue;
-      ao.histo_pileupUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupUp"              , plotBaseNames[ic].Data()));
-      ao.histo_pileupDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupDown"            , plotBaseNames[ic].Data()));
-      ao.histo_VHCorrUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrUp"          , plotBaseNames[ic].Data()));
-      ao.histo_VHCorrDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrDown"        , plotBaseNames[ic].Data()));
-      ao.histo_QCDScaleUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTUp"  , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-      ao.histo_QCDScaleDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTDown", plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-      ao.histo_eleSFUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"               , plotBaseNames[ic].Data()));			     
-      ao.histo_eleSFDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFDown"             , plotBaseNames[ic].Data()));			     
-      ao.histo_muSFUp      [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFUp"                , plotBaseNames[ic].Data()));			     
-      ao.histo_muSFDown    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFDown"              , plotBaseNames[ic].Data()));			     
-      ao.histo_pileupUp    [lep][ic]->SetDirectory(0);
-      ao.histo_pileupDown  [lep][ic]->SetDirectory(0);
-      ao.histo_VHCorrUp    [lep][ic]->SetDirectory(0);
-      ao.histo_VHCorrDown  [lep][ic]->SetDirectory(0);
-      ao.histo_QCDScaleUp  [lep][ic]->SetDirectory(0);
-      ao.histo_QCDScaleDown[lep][ic]->SetDirectory(0);
-      ao.histo_eleSFUp     [lep][ic]->SetDirectory(0);
-      ao.histo_eleSFDown   [lep][ic]->SetDirectory(0);
-      ao.histo_muSFUp      [lep][ic]->SetDirectory(0);
-      ao.histo_muSFDown    [lep][ic]->SetDirectory(0);
+      ao.histo_pileupUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupUp"              , plotBaseNames[ic].Data()));
+      ao.histo_pileupDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupDown"            , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrUp"          , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrDown"        , plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTUp"  , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleDown [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTDown", plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_eleSFUp      [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"               , plotBaseNames[ic].Data()));			     
+      ao.histo_eleSFDown    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFDown"             , plotBaseNames[ic].Data()));			     
+      ao.histo_muSFUp       [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFUp"                , plotBaseNames[ic].Data()));			     
+      ao.histo_muSFDown     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFDown"              , plotBaseNames[ic].Data()));			     
+      ao.histo_triggerSFUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_triggerSFUp"           , plotBaseNames[ic].Data()));  		    
+      ao.histo_triggerSFDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_triggerSFDown"         , plotBaseNames[ic].Data()));  		    
+      ao.histo_pileupUp     [lep][ic]->SetDirectory(0);
+      ao.histo_pileupDown   [lep][ic]->SetDirectory(0);
+      ao.histo_VHCorrUp     [lep][ic]->SetDirectory(0);
+      ao.histo_VHCorrDown   [lep][ic]->SetDirectory(0);
+      ao.histo_QCDScaleUp   [lep][ic]->SetDirectory(0);
+      ao.histo_QCDScaleDown [lep][ic]->SetDirectory(0);
+      ao.histo_eleSFUp      [lep][ic]->SetDirectory(0);
+      ao.histo_eleSFDown    [lep][ic]->SetDirectory(0);
+      ao.histo_muSFUp       [lep][ic]->SetDirectory(0);
+      ao.histo_muSFDown     [lep][ic]->SetDirectory(0);
+      ao.histo_triggerSFUp  [lep][ic]->SetDirectory(0);
+      ao.histo_triggerSFDown[lep][ic]->SetDirectory(0);
       for(unsigned iJES=0; iJES<NJES; iJES++) { 
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         ao.histo_jes[iJES][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_%s", plotBaseNames[ic].Data(), jesName(static_cast<shiftjes>(iJES)).Data()));
