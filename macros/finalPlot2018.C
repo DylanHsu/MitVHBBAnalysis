@@ -10,6 +10,8 @@
 #include <TSystem.h>
 #include <TTree.h>
 #include <TList.h>
+#include <TPaveText.h>
+#include <TText.h>
 #include <cassert>
 #include "RooArgSet.h"
 
@@ -26,7 +28,8 @@ void finalPlot2018(
   bool isBlinded=false,
   bool normSignalToBkg=false,
   TString plotDir="MitVHBBAnalysis/plots",
-  TString mlfitResult=""
+  TString mlfitResult="",
+  int year=2016
 ) {
   // Bkg only SF
   float SF_Top  = 1;
@@ -307,7 +310,7 @@ void finalPlot2018(
         hRatioBandPrefit->SetBinError(nb, hTotalBkgPrefit->GetBinError(nb) / hTotalBkgPrefit->GetBinContent(nb));
       }
     }
-    THStack *hs = new THStack("hs",plotTitle!=""?plotTitle:selectionNames[selType]); assert(hs);
+    THStack *hs = new THStack("hs",plotTitle/*!=""?plotTitle:selectionNames[selType]*/); assert(hs);
     hs->Add(histos[ kPlotVZbb ] );   
     hs->Add(histos[ kPlotVVLF ] );   
     hs->Add(histos[ kPlotZLF  ] );    
@@ -362,7 +365,7 @@ void finalPlot2018(
       else hs->SetMinimum(0.1);
       float span=hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin())-hTotalBkg->GetBinContent(hTotalBkg->GetMinimumBin());
       //float span=hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin());
-      hs->SetMaximum(TMath::Max((float)50.0,float(hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin())+pow(span,1.5))));
+      hs->SetMaximum(TMath::Max((float)50.0,float(hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin())+pow(span,2.0))));
     } else {
       hs->SetMaximum( plotMax*theMax);
     }
@@ -372,11 +375,16 @@ void finalPlot2018(
     histos[kPlotData]->Draw("P E0 SAME");
     TLegend *legend1,*legend2;
     float x1=.59,x2=.77,x3=.95;
-    if(!doRatioPad) { x1=.4; x2=.64; x3=.88;}
+    float y1=0.5, y2=0.88;
+    if(!doRatioPad) { 
+      x1=.5; x2=.69; x3=.88;
+      y1=0.6;
+    }
     //if(plotQCD && histos[ kPlotQCD  ]->GetSumOfWeights() > 0) legend1=new TLegend(x1,0.50 ,x2,0.88);
     //else                                                      legend1=new TLegend(x1,0.555,x2,0.88); 
     //legend2=new TLegend(x2,0.555,x3,.88);
-    legend1=new TLegend(x1,.50,x3,.88);
+
+    legend1=new TLegend(x1,y1,x3,y2);
     legend1->SetNColumns(2);
     legend1->AddEntry(histos[ kPlotData ], vhbbPlot::plotNames[static_cast<plotCategory>(kPlotData)] ,"lp");
     if(plotQCD && 
@@ -395,6 +403,18 @@ void finalPlot2018(
     legend1->SetFillColorAlpha(kWhite, .5); //legend2->SetFillColorAlpha(kWhite, 0.5);
     legend1->SetBorderSize(0); //legend2->SetBorderSize(0);
     legend1->Draw("same"); //legend2->Draw("SAME");
+    TPaveText *cmsText;
+    if(doRatioPad) cmsText=new TPaveText(.19,.65,.39,.85,"nbNDC");
+    else           cmsText=new TPaveText(.14,.7,.35,.85,"nbNDC");
+    //cmsText->AddText("#splitline{#font[62]{CMS}}{#font[52]{Preliminary}}");
+    TText *cmsTextL1 = cmsText->AddText("#font[62]{CMS}");
+    TText *cmsTextL2 = cmsText->AddText("#font[52]{Preliminary}");
+    TText *cmsTextL3 = cmsText->AddText(year==2016? "#font[42]{35.9 fb^{-1} (2016)}":"#font[42]{41.5 fb^{-1} (2017)}");
+    cmsTextL1->SetTextAlign(11);
+    cmsTextL2->SetTextAlign(11);
+    cmsTextL3->SetTextAlign(11);
+    cmsText->SetFillColorAlpha(0,0);
+    cmsText->Draw("same");
     if(doRatioPad) {
       canvas->cd();
       pad2 = new TPad("pad2", "pad2", 0, 0.05, 1, 0.3);

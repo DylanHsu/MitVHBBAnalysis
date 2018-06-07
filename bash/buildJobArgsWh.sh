@@ -5,8 +5,10 @@ useBoosted=$4  # true|false
 
 resolvedSelections="kWHLightFlavorCR kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWH2TopCR kWHSR"
 boostedSelections="kWHLightFlavorFJCR kWHHeavyFlavorFJCR kWHTT1bFJCR kWHTT2bFJCR kWHFJSR"
+resolvedSelectionsVZ="kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWHVZbbCR"
+boostedSelectionsVZ="kWHHeavyFlavorFJCR kWHVZbbFJCR"
 
-mkdir -p "MitVHBBAnalysis/datacards/${dataCardDir}"
+mkdir -p "MitVHBBAnalysis/datacards/${dataCardDir}/VZbb"
 jobArgsFile="MitVHBBAnalysis/datacards/${dataCardDir}/jobArgs.txt"
 rm $jobArgsFile 2>/dev/null
 config="MitVHBBAnalysis/config/whSamples${year}.cfg"
@@ -34,12 +36,13 @@ do
   a=( $line )
   batchSampleName=${a[0]}
   batchSampleType=${a[1]}
-  for idx in -1 #`seq 0 9`
+  for sel in $resolvedSelections
   do
-    for sel in $resolvedSelections
-    do
-      echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
-    done
+    echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} false ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
+  done
+  for sel in $resolvedSelectionsVZ
+  do
+    echo "${dataCardDir}/VZbb ${sel} ${useBoosted} ${MVAVarType} ${year} true ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
   done
 done < $config
 
@@ -51,12 +54,13 @@ then
     a=( $line )
     batchSampleName=${a[0]}
     batchSampleType=${a[1]}
-    for idx in -1 #`seq 0 9`
+    for sel in $boostedSelections
     do
-      for sel in $boostedSelections
-      do
-        echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
-      done
+      echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} false ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
+    done
+    for sel in $boostedSelectionsVZ
+    do
+      echo "${dataCardDir}/VZbb ${sel} ${useBoosted} ${MVAVarType} ${year} true ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
     done
   done < $config
 fi

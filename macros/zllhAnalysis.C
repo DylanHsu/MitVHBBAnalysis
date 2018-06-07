@@ -1736,7 +1736,11 @@ void analyzeSample(
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
     for(unsigned iJES=0; iJES<NJES; iJES++) {
       if(ao.MVAVarType>1) {
-        if((iJES==0 && ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) || ao.selection==kZllHSR || ao.selection==kZllHVZbbCR) {
+        // Only calculate it if we need to, it's expensive
+        if((selectionBits[iJES] & ao.selection) != 0 && (
+          (iJES==0 && ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) || 
+          ao.selection==kZllHSR || ao.selection==kZllHVZbbCR
+        )) {
           ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
           ao.mvaInputs[nThread][ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
           ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
@@ -1754,7 +1758,10 @@ void analyzeSample(
           ao.mvaInputs[nThread][14] = dEtaBjets                                               ; //"dEtaBjets"   
           ao.mvaInputs[nThread][15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
-        } else if((iJES==0 && ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbFJCR) { 
+        } else if((selectionBits[iJES] & ao.selection) != 0 && (
+          (iJES==0 && ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) || 
+          ao.selection==kZllHFJSR || ao.selection==kZllHVZbbFJCR
+        )) { 
           TLorentzVector fjP4_jes, ZHFJP4_jes;
           fjP4_jes.SetPtEtaPhiM(gt.fjPt[iJES],gt.fjEta,gt.fjPhi,gt.fjMSD[iJES]);  // TEMPORARY DGH
           ZHFJP4_jes = ZBosonP4 + fjP4_jes;

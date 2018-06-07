@@ -53,7 +53,7 @@ struct analysisObjects {
   std::map<selectionType,vector<TString>> cuts;
   float isojetBtagCut;
   // Configuration parameters
-  bool useBoostedCategory;
+  bool useBoostedCategory, vzbbMode;
   int MVAVarType; 
   unsigned year;
   unsigned debug;
@@ -147,6 +147,7 @@ void whAnalysis(
   unsigned year=2016,
   unsigned debug=0,
   bool multithread=false,
+  bool vzbbMode=false,
   TString batchSampleName="",
   vhbbPlot::sampleType batchSampleType=vhbbPlot::kData
 ) {
@@ -157,6 +158,7 @@ void whAnalysis(
   ao.lumi=(year==2016)? 35900:41500;
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
+  ao.vzbbMode = vzbbMode;
   TString ntupleDir2016 = multithread?
     "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh"    :
     "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh";
@@ -171,12 +173,14 @@ void whAnalysis(
   ao.cuts[kWHHeavyFlavorLoMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBLo","metSig"};
   ao.cuts[kWHHeavyFlavorHiMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBHi","metSig"};
   ao.cuts[kWH2TopCR             ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
-  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj","vetoTrain"};
+  ao.cuts[kWHVZbbCR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj","vetoTrain"};
+  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjjVZ","vetoTrain"};
   ao.cuts[kWHLightFlavorCR      ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
   ao.cuts[kWHLightFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
   ao.cuts[kWHHeavyFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
   ao.cuts[kWHTT2bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
   ao.cuts[kWHTT1bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
+  ao.cuts[kWHVZbbFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSDVZ_SR","vetoTrain"};
   ao.cuts[kWHFJSR               ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR","vetoTrain"};
   ao.cuts[kWHFJPresel           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ"                             };
   /////////////////////////////
@@ -352,27 +356,29 @@ void whAnalysis(
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
     // 1 - simple pT variable
-  if(selection==kWHSR) {
-    if(ao.MVAVarType==1) {
+  if(ao.MVAVarType==1) {
+    if(selection==kWHSR || selection==kWHVZbbCR) {
       ao.MVAbins={100,120,140,160,180,200,250,300,350};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
-    } else if(ao.MVAVarType==3) {
-      ao.MVAbins={-1,0,0.4,0.6,0.8,0.9,1};
-      ao.MVAVarName="BDT Output";
-      ao.shapeType="singleClassBDTShape"; 
-    }
-  } else if(selection==kWHFJSR) {
-    if(ao.MVAVarType==1) {
+    } else if(selection==kWHFJSR || selection==kWHVZbbFJCR) {
       ao.MVAbins={250,300,350,400,450,500,550,600};
       ao.MVAVarName="H(bb) pT";
       ao.shapeType="ptShape";
-    } else if(ao.MVAVarType==3) {
+    }
+  } else if(ao.MVAVarType==3) {
+    if(selection==kWHSR || selection==kWHVZbbCR) {
+      ao.MVAbins={-1,0,0.4,0.6,0.8,0.9,1};
+      ao.MVAVarName="BDT Output";
+      ao.shapeType="singleClassBDTShape"; 
+    } else if(selection==kWHFJSR || selection==kWHVZbbFJCR) {
       ao.MVAbins={-0.8,-0.4,0,0.4,0.5,0.6};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
-  } else if(selection==kWHLightFlavorCR) {
+  }
+  // 2 - multiclass BDT, not implemented
+  if(selection==kWHLightFlavorCR) {
     if(year==2016) {
       ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667};
       ao.MVAVarName="Subleading H(bb) CMVA";
@@ -393,14 +399,16 @@ void whAnalysis(
       ao.shapeType="lesserCSVShape";
     }
   } else if((selection>=kWHLightFlavorFJCR && selection<kWHFJSR) || selection==kWHFJPresel) {
-    if(selection==kWHHeavyFlavorFJCR)
-      ao.MVAbins={40,45,50,55,60,65,70,75,80};
-    else
+    if(selection==kWHHeavyFlavorFJCR) {
+      if(ao.vzbbMode) ao.MVAbins={40,45,50,55,60,65,70,75,80};
+      else            ao.MVAbins={120,130,140,160,180,200};
+    } else {
       ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
+    }
     ao.MVAVarName="Fatjet soft drop mass [GeV]";
     ao.shapeType="softDropMassShape";
   }
-  // 2 - multiclass BDT in SR, subleading CMVA in CR (not implemented)
+  // Done choosing shape variable
   
   // Declare histograms for plotting
   printf("Building plotting histograms, please wait...\n");
@@ -770,7 +778,6 @@ void whAnalysis(
   // Compute some uncertainties once event by events weights are filled
   for(unsigned lep=0; lep<nLepSel; lep++) 
   for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
-    if(leptonStrings[lep]=="em" && !(selection==kWHSR||selection==kWHFJSR)) continue; // avoiding unnecessary histograms
     for(int nb=1; nb<=ao.histo_Baseline[lep][ic]->GetNbinsX(); nb++){
       // compute QCD scale uncertainties bin-by-bin
       double diffQCDScale[6] = {
@@ -921,7 +928,12 @@ void analyzeSample(
   int split
 ) {
   TString sampleName = sample.first; sampleType type = sample.second;
-  
+  // Mass windows  
+  float mjjLo=90, mjjHi=150, mSDLo=80, mSDHi=150;
+  if(ao.vzbbMode) {
+    mjjLo=60; mjjHi=120;
+    mSDLo=50; mSDHi=120;
+  }
   // Sample properties
   // Only use events with HT<100 for NLO pt binned samples in 2016
   bool isLowMassZjets = sampleName.Contains("ZJets_m10") || sampleName.Contains("ZJets_m4");
@@ -932,9 +944,6 @@ void analyzeSample(
   bool isW2jets = sampleName.Contains("W2Jets"); 
   bool isNLOWjets = sampleName.Contains("W2Jets") || sampleName.Contains("W1Jets");
   bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
-
-  bool truncateSf1 = false;//sampleName.Contains("W2JetsToLNu_WpT100to150_CP5");
-  bool truncateSf2 = false;//sampleName.Contains("W2JetsToLNu_WpT250to400_CP5");
 
   unsigned nThread = split>=0? split:0;
   // End sample properties
@@ -1068,11 +1077,6 @@ void analyzeSample(
       //  if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
       //    stitchWeight = 0.5;
       //}
-      // hack because of bug in ntuple production, remove this
-      //if(truncateSf1) //W2JetsToLNu_WpT100to150_CP5
-      //  stitchWeight*=2.540;
-      //if(truncateSf2) //W2JetsToLNu_WpT250to400_CP5
-      //  stitchWeight*=2.816;
     }
 
     //////////////////////
@@ -1577,11 +1581,13 @@ void analyzeSample(
       if(isBoostedCategory) {
         //cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
         //cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
+        //cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
         //cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
         // TEMPORARY DGH
         cut["mSD"     ] = gt.fjMSD[iJES] >= 40;
         cut["mSD_SR"  ] = gt.fjMSD[iJES] >= 80 && gt.fjMSD[iJES]<150;
         cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD[iJES]<80;
+        cut["mSDVZ_SR"] = gt.fjMSD[iJES] >= 50 && gt.fjMSD[iJES]<120;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
         cut["0ijb"    ] = isojetNBtags[iJES]==0;
         cut["1ijb"    ] = !cut["0ijb"];
@@ -1589,10 +1595,13 @@ void analyzeSample(
         cut["dPhiWH"     ] = fabs(gt.hbbphi[iJES] - gt.topWBosonPhi) > 2.5;
         cut["pTjj"       ] = gt.hbbpt_reg[iJES] > 100; 
         cut["dPhiLep1Met"] = deltaPhiLep1Met < 2; 
-        cut["mjj"        ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150;
-        cut["mjjSBLo"    ] = gt.hbbm_reg[iJES] < 90;
-        cut["mjjSBHi"    ] = gt.hbbm_reg[iJES] >= 150 && gt.hbbm_reg[iJES] < 250;
-        // Need a looser jet definition in the ntuples if we want to use this
+        // Hardcoded Higgs(bb) mass window
+        cut["mjj"        ] = gt.hbbm_reg[iJES] >= 90 && gt.hbbm_reg[iJES] < 150; 
+        // Hardcoded Z(bb) mass window
+        cut["mjjVZ"      ] = gt.hbbm_reg[iJES] >= 60 && gt.hbbm_reg[iJES] < 120; 
+        // Sideband mass windows, can be changed with the ao.vzbbMode switch
+        cut["mjjSBLo"    ] = gt.hbbm_reg[iJES] < mjjLo; 
+        cut["mjjSBHi"    ] = gt.hbbm_reg[iJES] >= mjjHi && gt.hbbm_reg[iJES] < 250;
         cut["2jets"      ] = gt.nJet[iJES]==2;
         cut["2-3jets"    ] = gt.nJet[iJES]<4;
         cut["4+jets"     ] = gt.nJet[iJES]>=4;
@@ -1733,7 +1742,7 @@ void analyzeSample(
           }
         }
       }
-      if((ao.selection==kWHSR || ao.selection==kWHFJSR) && ao.MVAVarType>1)
+      if((ao.selection==kWHSR || ao.selection==kWHVZbbCR || ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR) && ao.MVAVarType>1)
         weight *= sf_training;
     
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
@@ -1808,7 +1817,11 @@ void analyzeSample(
     float MVAVar[(int)shiftjes::N], bdtValue[(int)shiftjes::N];
     for(unsigned iJES=0; iJES<NJES; iJES++) {
       if(ao.MVAVarType>1) {
-        if((iJES==0 && ao.selection>=kWHLightFlavorCR && ao.selection<=kWHPresel) || ao.selection==kWHSR) {
+        // Only calculate it if we need to, it's expensive
+        if((selectionBits[iJES] & ao.selection) != 0 && (
+          (iJES==0 && ao.selection>=kWHLightFlavorCR && ao.selection<=kWHPresel) || 
+          ao.selection==kWHSR || ao.selection==kWHVZbbCR
+        )) {
           ao.mvaInputs[nThread][ 0] = gt.topWBosonPt                   ; // "WBosonPt"   
           ao.mvaInputs[nThread][ 1] = dPhil1W                          ; // "dPhil1W"    
           ao.mvaInputs[nThread][ 2] = gt.nSoft5                        ; // "nSoft5"     
@@ -1824,7 +1837,10 @@ void analyzeSample(
           ao.mvaInputs[nThread][12] = dEtaLep1H                        ; // "dEtaLep1H"  
           ao.mvaInputs[nThread][13] = gt.nJet[0]-2                     ; // "nAddJet"    
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
-        } else if((iJES==0 && ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) || ao.selection==kWHFJSR) { 
+        } else if((selectionBits[iJES] & ao.selection) != 0 && (
+          (iJES==0 && ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) || 
+          ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR
+        )) { 
           ao.mvaInputs[nThread][ 0] = dPhil1W                        ; //"dPhil1W"        
           ao.mvaInputs[nThread][ 1] = gt.topWBosonPt                 ; //"WBosonPt"       
           ao.mvaInputs[nThread][ 2] = lepton1Charge                  ; //"lepton1Charge"  
@@ -1841,32 +1857,14 @@ void analyzeSample(
           ao.mvaInputs[nThread][13] = deltaPhiWHFJ                   ; //"dPhiWHFJ"       
           ao.mvaInputs[nThread][14] = gt.fjHTTFRec                   ; //"HTTFRec"        
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
-          if(false) if(iJES==0) {
-            printf("ao.mvaInputs[nThread][ 0] = %.3f\n",ao.mvaInputs[nThread][ 0]); 
-            printf("ao.mvaInputs[nThread][ 1] = %.3f\n",ao.mvaInputs[nThread][ 1]); 
-            printf("ao.mvaInputs[nThread][ 2] = %.3f\n",ao.mvaInputs[nThread][ 2]); 
-            printf("ao.mvaInputs[nThread][ 3] = %.3f\n",ao.mvaInputs[nThread][ 3]); 
-            printf("ao.mvaInputs[nThread][ 4] = %.3f\n",ao.mvaInputs[nThread][ 4]); 
-            printf("ao.mvaInputs[nThread][ 5] = %.3f\n",ao.mvaInputs[nThread][ 5]); 
-            printf("ao.mvaInputs[nThread][ 6] = %.3f\n",ao.mvaInputs[nThread][ 6]); 
-            printf("ao.mvaInputs[nThread][ 7] = %.3f\n",ao.mvaInputs[nThread][ 7]); 
-            printf("ao.mvaInputs[nThread][ 8] = %.3f\n",ao.mvaInputs[nThread][ 8]); 
-            printf("ao.mvaInputs[nThread][ 9] = %.3f\n",ao.mvaInputs[nThread][ 9]); 
-            printf("ao.mvaInputs[nThread][10] = %.3f\n",ao.mvaInputs[nThread][10]); 
-            printf("ao.mvaInputs[nThread][11] = %.3f\n",ao.mvaInputs[nThread][11]); 
-            printf("ao.mvaInputs[nThread][12] = %.3f\n",ao.mvaInputs[nThread][12]); 
-            printf("ao.mvaInputs[nThread][13] = %.3f\n",ao.mvaInputs[nThread][13]); 
-            printf("ao.mvaInputs[nThread][14] = %.3f\n",ao.mvaInputs[nThread][14]); 
-            printf("bdtValue[iJES]            = %.3f\n",bdtValue[iJES]           ); 
-          }
         }
       }
       switch(ao.MVAVarType) {
         case 1:
         default:
-          if(ao.selection==kWHSR)
+          if(ao.selection==kWHSR || ao.selection==kWHVZbbCR)
             MVAVar[iJES]=gt.hbbpt_reg[iJES];
-          else if(ao.selection==kWHFJSR)
+          else if(ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR)
             MVAVar[iJES]=gt.fjPt[iJES];
           else if(ao.selection==kWHLightFlavorCR ||
             ao.selection==kWHHeavyFlavorLoMassCR || 
@@ -1881,7 +1879,7 @@ void analyzeSample(
             MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
           break;
         case 3:
-          if(ao.selection==kWHSR || ao.selection==kWHFJSR)
+          if(ao.selection==kWHSR || ao.selection==kWHVZbbCR || ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR)
             MVAVar[iJES]=bdtValue[iJES];
           else if(ao.selection==kWHLightFlavorCR ||
             ao.selection==kWHHeavyFlavorLoMassCR || 
