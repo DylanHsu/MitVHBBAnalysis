@@ -26,7 +26,6 @@
 
 #include "formulas.h"
 #include "TMVA/Reader.h"
-#include "MitAnalysisRunII/panda/macros/80x/auxiliar.h"
 #include "MitAnalysisRunII/panda/macros/80x/common.h"
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
@@ -161,7 +160,7 @@ void whAnalysis(
   ao.vzbbMode = vzbbMode;
   TString ntupleDir2016 = multithread?
     "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh"    :
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh";
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh/split";
   TString ntupleDir2017 = multithread?
     "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh"    :    
     "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh";    
@@ -173,8 +172,8 @@ void whAnalysis(
   ao.cuts[kWHHeavyFlavorLoMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBLo","metSig"};
   ao.cuts[kWHHeavyFlavorHiMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBHi","metSig"};
   ao.cuts[kWH2TopCR             ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
-  ao.cuts[kWHVZbbCR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
-  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjjVZ"};
+  ao.cuts[kWHVZbbCR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjjVZ"};
+  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
   ao.cuts[kWHLightFlavorCR      ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
   ao.cuts[kWHLightFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
   ao.cuts[kWHHeavyFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
@@ -188,10 +187,12 @@ void whAnalysis(
   vector<pair<TString,vhbbPlot::sampleType>> samples;
   bool isBatchMode= (batchSampleName!="");
   TString batchSuffix="";
+  if(vzbbMode) 
+    dataCardDir = dataCardDir + "/VZbb";
   if(isBatchMode) {
     // Handle batch mode for Condor
     //multithread=false; // force single threading
-    dataCardDir = dataCardDir + "/split/"; // write output in a subdirectory
+    dataCardDir = dataCardDir + "/split"; // write output in a subdirectory
     batchSuffix = "_"+batchSampleName; // add a suffix to the output with this sample's name
     samples.emplace_back(batchSampleName, batchSampleType);
   } else if(year==2016) {
@@ -748,7 +749,7 @@ void whAnalysis(
     }
   } // End Chain Loop
   // Finish writing the MVA tree (if applicable)
-  if(selection==kWHSR || selection==kWHFJSR) {
+  if(selection==kWHSR || selection==kWHVZbbCR || selection==kWHFJSR || selection==kWHVZbbFJCR) {
     ao.mvaFile->cd();
     ao.mvaTree->Write();
     ao.mvaFile->Close();

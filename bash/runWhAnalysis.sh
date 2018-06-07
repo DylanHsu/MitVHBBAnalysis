@@ -13,7 +13,7 @@ cd $cmsswDir
 eval `scramv1 runtime -sh`
 root -b -l <<EOF
 gSystem->Load("MitVHBBAnalysis/macros/whAnalysis_C.so");
-whAnalysis("${dataCardDir}",${selection},${useBoosted},${MVAVarType},${year},0,false,${vzbbMode},"${batchSampleName}",${batchSampleType},${modSplitIndex})
+whAnalysis("${dataCardDir}",${selection},${useBoosted},${MVAVarType},${year},0,false,${vzbbMode},"${batchSampleName}",${batchSampleType})
 EOF
 #whAnalysis("${dataCardDir}",${selection},${useBoosted},${MVAVarType},${year},0,false,"${batchSampleName}",${batchSampleType})
 

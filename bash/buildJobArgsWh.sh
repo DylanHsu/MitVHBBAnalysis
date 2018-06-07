@@ -5,8 +5,8 @@ useBoosted=$4  # true|false
 
 resolvedSelections="kWHLightFlavorCR kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWH2TopCR kWHSR"
 boostedSelections="kWHLightFlavorFJCR kWHHeavyFlavorFJCR kWHTT1bFJCR kWHTT2bFJCR kWHFJSR"
-resolvedSelectionsVZ="kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWHVZbbCR"
-boostedSelectionsVZ="kWHHeavyFlavorFJCR kWHVZbbFJCR"
+resolvedSelectionsVZ="kWHLightFlavorCR kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWH2TopCR kWHVZbbCR"
+boostedSelectionsVZ="kWHLightFlavorFJCR kWHHeavyFlavorFJCR kWHTT1bFJCR kWHTT2bFJCR kWHVZbbFJCR"
 
 mkdir -p "MitVHBBAnalysis/datacards/${dataCardDir}/VZbb"
 jobArgsFile="MitVHBBAnalysis/datacards/${dataCardDir}/jobArgs.txt"
@@ -42,7 +42,7 @@ do
   done
   for sel in $resolvedSelectionsVZ
   do
-    echo "${dataCardDir}/VZbb ${sel} ${useBoosted} ${MVAVarType} ${year} true ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
+    echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} true ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
   done
 done < $config
 
@@ -60,15 +60,15 @@ then
     done
     for sel in $boostedSelectionsVZ
     do
-      echo "${dataCardDir}/VZbb ${sel} ${useBoosted} ${MVAVarType} ${year} true ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
+      echo "${dataCardDir} ${sel} ${useBoosted} ${MVAVarType} ${year} true ${batchSampleName} ${batchSampleType} ${idx}" >> $jobArgsFile
     done
   done < $config
 fi
 
-echo "Done building the job arguments for \"$dataCardDir\" area"
-echo -e "Remove any jobs you don't want from the file \"${PURPLE}${jobArgsFile}${NC}\""
+echo "Done building the job arguments for $dataCardDir area"
+echo -e "Remove any jobs you don't want from the file ${PURPLE}${jobArgsFile}${NC}"
 echo "When you're ready to submit, do"
-echo -e "  ${RED}PandaCore/bin/submit --exec MitVHBBAnalysis/bash/runWhAnalysis.sh --arglist $jobArgsFile --cache /data/t3serv014/$USER/submit/${dataCardDir}${NC}"
+echo -e "  ${RED}PandaCore/bin/submit --exec MitVHBBAnalysis/bash/runWhAnalysis.sh --arglist $jobArgsFile --cache /data/t3serv014/$USER/submit/${dataCardDir}${NC} --njobs 1000"
 echo "You can check on your jobs using"
 echo -e "  ${RED}PandaCore/bin/check --cache /data/t3serv014/$USER/submit/${dataCardDir}${NC}"
-echo -e "Plots and histograms output will arrive at \"${PURPLE}MitVHBBAnalysis/datacards/${dataCardDir}/split${NC}\""
+echo -e "Plots and histograms output will arrive at ${PURPLE}MitVHBBAnalysis/datacards/${dataCardDir}/split${NC}"

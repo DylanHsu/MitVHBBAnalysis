@@ -699,7 +699,7 @@ void zllhAnalysis(
     }
   } // End Chain Loop
   // Finish writing the MVA tree (if applicable)
-  if(selection==kZllHSR || selection==kZllHFJSR) {
+  if(selection==kZllHSR || selection==kZllHVZbbCR || selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
     ao.mvaFile->cd();
     ao.mvaTree->Write();
     ao.mvaFile->Close();
