@@ -536,10 +536,10 @@ void zllhAnalysis(
   // Done loading offline corrections
   ////////////////////////////////////////////////////////////////////////
   // Setup MVA training tree if applicable (Not implemented yet for boosted)
-  if(selection==kZllHSR) {
+  if(selection==kZllHSR||selection==kZllHVZbbCR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
-    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHSR_mvaTree%s%s.root",
-      dataCardDir.Data(),binZptSuffix.Data(),batchSuffix.Data()),"recreate");
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllH%s_mvaTree%s%s.root",
+      dataCardDir.Data(),selectionNames[selection].Data(),binZptSuffix.Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("sumEtSoft1"  , &ao.mva_sumEtSoft1  ); 
     ao.mvaTree->Branch("nSoft2"      , &ao.mva_nSoft2      ); 
@@ -565,10 +565,10 @@ void zllhAnalysis(
     ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
     ao.mvaTree->Branch("category"    , &ao.mva_category    ); 
     ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
-  } else if(selection==kZllHFJSR) {
+  } else if(selection==kZllHFJSR||selection==kZllHVZbbFJCR) {
     system(Form("mkdir -p MitVHBBAnalysis/mva/%s",dataCardDir.Data()));
-    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllHFJSR_mvaTree%s.root",
-      dataCardDir.Data(),batchSuffix.Data()),"recreate");
+    ao.mvaFile = new TFile(Form("MitVHBBAnalysis/mva/%s/ZllH%s_mvaTree%s.root",
+      dataCardDir.Data(),selectionNames[selection].Data(),batchSuffix.Data()),"recreate");
     ao.mvaTree = new TTree("mvaTree","mvaTree");
     ao.mvaTree->Branch("nIsojet"       , &ao.mva_nIsojet        ); 
     ao.mvaTree->Branch("nIsoBjet"      , &ao.mva_nIsoBjet       ); 
@@ -1444,12 +1444,6 @@ void analyzeSample(
       mH_rescaled   = gt.hbbm_reg[0] / ptBalanceZH;
     }
     // deltaPhiZHFJ computed already in Jet multiplicity section
-    bool vetoTrainEvts = (
-      ao.MVAVarType>1 &&
-      ao.selection==kZllHSR && 
-      category!=kPlotData &&
-      (gt.eventNumber%10)<3
-    );
 
     // Set Selection Bits
     std::map<TString, bool> cut;
@@ -1471,7 +1465,6 @@ void analyzeSample(
         cut["lowMET"     ] = gt.pfmet[0] < 60;
         cut["boostedCat" ] = isBoostedCategory;
         cut["boostedVeto"] = !isBoostedCategory;
-        cut["vetoTrain"  ] = (ao.MVAVarType==1 || (gt.eventNumber%10)>=3 || category==kPlotData);
       } else {
         if(isBoostedCategory) {
           bLoad(b[Form("fjPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
@@ -1660,8 +1653,8 @@ void analyzeSample(
           }
         }
       }
-      //if((ao.selection==kZllHSR || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbCR || ao.selection==kZllHVZbbFJCR) && ao.MVAVarType>1)
-      //  weight *= sf_training;
+      if((ao.selection==kZllHSR || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbCR || ao.selection==kZllHVZbbFJCR) && ao.MVAVarType>1)
+        weight *= sf_training;
     
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
         if(ao.year==2016) {
@@ -1824,15 +1817,21 @@ void analyzeSample(
       // Handle underflow
       MVAVar[iJES] = TMath::Max((ao.MVAbins[0]+0.00001f), (float)MVAVar[iJES]);
     }
+    
+    bool trainingVeto = (
+      ao.MVAVarType==1 || 
+      (gt.eventNumber%10)>=3 || 
+      category==kPlotData || 
+      !(ao.selection==kZllHVZbbCR || ao.selection==kZllHSR || ao.selection==kZllHVZbbFJCR || ao.selection==kZllHFJSR)); 
+    bool passFullSelNoTrainVeto = (selectionBits[0] & ao.selection) != 0;
+    bool passFullSel = passFullSelNoTrainVeto && trainingVeto;
 
-    // Fill the uncertainty histograms
+    // Fill the nominal histo and the shape uncertainty histos
     if(category==kData)  {
-      bool passFullSel = (selectionBits[0] & ao.selection) != 0;
       if(passFullSel) {
         ao.histo_Baseline    [typeLepSel][category]->Fill(MVAVar[0], weight);
       }
     } else if(category>=kPlotVZbb)  {
-      bool passFullSel = (selectionBits[0] & ao.selection) != 0;
       if(passFullSel) {
         ao.histo_Baseline     [typeLepSel][category]->Fill(MVAVar[0], weight);
         ao.histo_pileupUp     [typeLepSel][category]->Fill(MVAVar[0], weight*weight_pileupUp);
@@ -1866,81 +1865,86 @@ void analyzeSample(
         }
       }
       for(unsigned iJES=0; iJES<NJES; iJES++) {
-        bool passFullSelJES = (selectionBits[iJES] & ao.selection) != 0;
+        bool passFullSelJES = (selectionBits[iJES] & ao.selection) != 0 && trainingVeto;
         if(!passFullSelJES) continue;
         ao.histo_jes[iJES][typeLepSel][category]->Fill(MVAVar[iJES], weight);
       }
     }
 
     // Fill the plotting histograms and MVA tree (if applicable)
-    bool passFullSel = (selectionBits[0] & ao.selection) != 0;
-    if(passFullSel && ao.debug>=3) printf("\tPassed this sel\n");
     bLoad(b["ZBosonLep1CosThetaCS"],ientry);
     bLoad(b["ZBosonLep1CosThetaStar"],ientry);
     bLoad(b["ZBosonLep1CosThetaStarFJ"],ientry);
-    bLoad(b["sumEtSoft1"],ientry);
-    bLoad(b["nSoft2"],ientry);
-    bLoad(b["nSoft5"],ientry);
-    bLoad(b["nSoft10"],ientry);
-    //bLoad(b["fjMSD_corr"],ientry);
-    bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
-    bLoad(b["fjPt"],ientry);
-    bLoad(b["fjDoubleCSV"],ientry);
-    // Lock the mutex and fill the MVA tree
-    if(ao.selection==kZllHSR && passFullSel && category!=kPlotData) {
-      mvaTreeMutex.lock();
-      ao.mva_sumEtSoft1   = gt.sumEtSoft1            ; 
-      ao.mva_nSoft2       = gt.nSoft2                ; 
-      ao.mva_nSoft5       = gt.nSoft5                ; 
-      ao.mva_nSoft10      = gt.nSoft10               ; 
-      ao.mva_bjet1Pt      = bjet1Pt                  ; 
-      ao.mva_bjet2Pt      = bjet2Pt                  ; 
-      ao.mva_bjet1btag    = bjet1btag                ; 
-      ao.mva_bjet2btag    = bjet2btag                ; 
-      ao.mva_ZBosonPt     = gt.ZBosonPt              ; 
-      ao.mva_ZBosonM      = gt.ZBosonM               ; 
-      ao.mva_CosThetaCS   = gt.ZBosonLep1CosThetaCS  ; 
-      ao.mva_CosThetaStar = gt.ZBosonLep1CosThetaStar; 
-      ao.mva_hbbpt        = gt.hbbpt_reg[0]          ; 
-      ao.mva_hbbm         = gt.hbbm_reg[0]           ; 
-      ao.mva_dPhiZH       = deltaPhiZH               ; 
-      ao.mva_ptBalanceZH  = ptBalanceZH              ; 
-      ao.mva_dRBjets      = dRBjets                  ; 
-      ao.mva_dEtaBjets    = dEtaBjets                ; 
-      ao.mva_dRZH         = dRZH                     ; 
-      ao.mva_dEtaZH       = dEtaZH                   ; 
-      ao.mva_nAddJet      = gt.nJet[0]-2             ; 
-      ao.mva_weight       = weight                   ; 
-      ao.mva_category     = category                 ;
-      ao.mva_eventNumber  = gt.eventNumber           ;
-      ao.mvaTree->Fill();
-      mvaTreeMutex.unlock();
-    } else if(ao.selection==kZllHFJSR && passFullSel && category!=kPlotData) {
-      mvaTreeMutex.lock();
-      ao.mva_nIsojet       = nIsojet[0]      ; 
-      ao.mva_nIsoBjet      = isojetNBtags[0] ; 
-      //ao.mva_MSD           = fjMSD_corr[0]  ;
-      ao.mva_fjPt          = gt.fjPt[0]      ; 
-      ao.mva_MSD           = gt.fjMSD[0]     ; // TEMPORARY DGH 
-      ao.mva_Tau21SD       = gt.fjTau21SD    ; 
-      ao.mva_ptBalanceZHFJ = ptBalanceZHFJ   ; 
-      ao.mva_dEtaZHFJ      = dEtaZHFJ        ; 
-      ao.mva_dPhiZHFJ      = deltaPhiZHFJ    ; 
-      ao.mva_mTZHFJ        = mTZHFJ          ; 
-      ao.mva_ptBalanceL1L2 = ptBalanceL1L2   ; 
-      ao.mva_dRL1L2        = dRL1L2          ; 
-      ao.mva_ZBosonPt      = gt.ZBosonPt     ;
-      ao.mva_CosThetaCS    = gt.ZBosonLep1CosThetaCS;
-      ao.mva_lepton1Pt     = lepton1Pt       ; 
-      ao.mva_lepton2Pt     = lepton2Pt       ; 
-      ao.mva_lepton1Eta    = fabs(lepton1Eta);
-      ao.mva_lepton2Eta    = fabs(lepton2Eta);
-      ao.mva_deltaM        = deltaM          ;
-      ao.mva_weight        = weight          ; 
-      ao.mva_category      = category        ;
-      ao.mva_eventNumber   = gt.eventNumber  ;
-      ao.mvaTree->Fill();
-      mvaTreeMutex.unlock();
+    if(isBoostedCategory) {
+      //bLoad(b["fjMSD_corr"],ientry);
+      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+      bLoad(b["fjPt"],ientry);
+      bLoad(b["fjDoubleCSV"],ientry);
+    } else {
+      bLoad(b["sumEtSoft1"],ientry);
+      bLoad(b["nSoft2"],ientry);
+      bLoad(b["nSoft5"],ientry);
+      bLoad(b["nSoft10"],ientry);
+    }
+
+    if(passFullSelNoTrainVeto) {
+      if(ao.debug>=3) printf("\tPassed this sel\n");
+      // Lock the mutex and fill the MVA tree
+      if((ao.selection==kZllHSR || ao.selection==kZllHVZbbCR) && category!=kPlotData) {
+        mvaTreeMutex.lock();
+        ao.mva_sumEtSoft1   = gt.sumEtSoft1            ; 
+        ao.mva_nSoft2       = gt.nSoft2                ; 
+        ao.mva_nSoft5       = gt.nSoft5                ; 
+        ao.mva_nSoft10      = gt.nSoft10               ; 
+        ao.mva_bjet1Pt      = bjet1Pt                  ; 
+        ao.mva_bjet2Pt      = bjet2Pt                  ; 
+        ao.mva_bjet1btag    = bjet1btag                ; 
+        ao.mva_bjet2btag    = bjet2btag                ; 
+        ao.mva_ZBosonPt     = gt.ZBosonPt              ; 
+        ao.mva_ZBosonM      = gt.ZBosonM               ; 
+        ao.mva_CosThetaCS   = gt.ZBosonLep1CosThetaCS  ; 
+        ao.mva_CosThetaStar = gt.ZBosonLep1CosThetaStar; 
+        ao.mva_hbbpt        = gt.hbbpt_reg[0]          ; 
+        ao.mva_hbbm         = gt.hbbm_reg[0]           ; 
+        ao.mva_dPhiZH       = deltaPhiZH               ; 
+        ao.mva_ptBalanceZH  = ptBalanceZH              ; 
+        ao.mva_dRBjets      = dRBjets                  ; 
+        ao.mva_dEtaBjets    = dEtaBjets                ; 
+        ao.mva_dRZH         = dRZH                     ; 
+        ao.mva_dEtaZH       = dEtaZH                   ; 
+        ao.mva_nAddJet      = gt.nJet[0]-2             ; 
+        ao.mva_weight       = weight                   ; 
+        ao.mva_category     = category                 ;
+        ao.mva_eventNumber  = gt.eventNumber           ;
+        ao.mvaTree->Fill();
+        mvaTreeMutex.unlock();
+      } else if((ao.selection==kZllHFJSR || ao.selection==kZllHVZbbFJCR) && category!=kPlotData) {
+        mvaTreeMutex.lock();
+        ao.mva_nIsojet       = nIsojet[0]      ; 
+        ao.mva_nIsoBjet      = isojetNBtags[0] ; 
+        //ao.mva_MSD           = fjMSD_corr[0]  ;
+        ao.mva_fjPt          = gt.fjPt[0]      ; 
+        ao.mva_MSD           = gt.fjMSD[0]     ; // TEMPORARY DGH 
+        ao.mva_Tau21SD       = gt.fjTau21SD    ; 
+        ao.mva_ptBalanceZHFJ = ptBalanceZHFJ   ; 
+        ao.mva_dEtaZHFJ      = dEtaZHFJ        ; 
+        ao.mva_dPhiZHFJ      = deltaPhiZHFJ    ; 
+        ao.mva_mTZHFJ        = mTZHFJ          ; 
+        ao.mva_ptBalanceL1L2 = ptBalanceL1L2   ; 
+        ao.mva_dRL1L2        = dRL1L2          ; 
+        ao.mva_ZBosonPt      = gt.ZBosonPt     ;
+        ao.mva_CosThetaCS    = gt.ZBosonLep1CosThetaCS;
+        ao.mva_lepton1Pt     = lepton1Pt       ; 
+        ao.mva_lepton2Pt     = lepton2Pt       ; 
+        ao.mva_lepton1Eta    = fabs(lepton1Eta);
+        ao.mva_lepton2Eta    = fabs(lepton2Eta);
+        ao.mva_deltaM        = deltaM          ;
+        ao.mva_weight        = weight          ; 
+        ao.mva_category      = category        ;
+        ao.mva_eventNumber   = gt.eventNumber  ;
+        ao.mvaTree->Fill();
+        mvaTreeMutex.unlock();
+      }
     }
     float theVar;
     for(int p=0; p<nPlots; p++) { 
