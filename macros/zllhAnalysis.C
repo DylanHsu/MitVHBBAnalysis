@@ -385,7 +385,7 @@ void zllhAnalysis(
       ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"         ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
       ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"          ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
       ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"     ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"      ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"      ; ao.nbins[p]=  34; ao.xmin[p]=  -0.7; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"      ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="deltaEtaZHFJ"            ; ao.histoTitles[p]="|#Delta#eta(Z,FJ)|"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
       ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ)"         ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
@@ -1453,7 +1453,7 @@ void analyzeSample(
           cut["ZpTFJ"      ] = gt.ZBosonPt > 250;
           cut["dPhiZHFJ"   ] = fabs(gt.fjPhi - gt.ZBosonPhi) > 2.5;
           cut["btagFJ"     ] = gt.fjDoubleCSV > doubleBCut;
-          cut["bvetoFJ"    ] = gt.fjDoubleCSV < doubleBCut;
+          cut["bvetoFJ"    ] = gt.fjDoubleCSV < doubleBCut && gt.fjDoubleCSV > -0.7;
         } else {
           cut["ZpT"        ] = gt.ZBosonPt > 50;
           cut["btag"       ] = bjet1IsLoose && bjet2IsLoose;
