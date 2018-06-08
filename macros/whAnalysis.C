@@ -163,7 +163,7 @@ void whAnalysis(
     "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh/split";
   TString ntupleDir2017 = multithread?
     "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh"    :    
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh";    
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh/split";    
   TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
 
   // Analysis Cuts
@@ -1961,7 +1961,7 @@ void analyzeSample(
     if(passFullSelNoTrainVeto) {
       if(ao.debug>=3) printf("\tPassed this sel\n");
       // Lock the mutex and fill the MVA tree
-      if(ao.selection==kWHSR && category!=kPlotData) {
+      if((ao.selection==kWHSR || ao.selection==kWHVZbbCR) && category!=kPlotData) {
         mvaTreeMutex.lock();
         ao.mva_weight        = weight                   ; 
         ao.mva_category      = category                 ;
@@ -1992,7 +1992,7 @@ void analyzeSample(
         ao.mva_nAddJet       = gt.nJet[0]-2             ;
         ao.mvaTree->Fill();
         mvaTreeMutex.unlock();
-      } else if(ao.selection==kWHFJSR && category!=kPlotData) {
+      } else if((ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR) && category!=kPlotData) {
         mvaTreeMutex.lock();
         ao.mva_weight           = weight                   ; 
         ao.mva_category         = category                 ;
