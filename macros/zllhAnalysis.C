@@ -31,8 +31,12 @@
 #include "vhbbPlot.h"
 #include "PandaAnalysis/Flat/interface/Common.h"
 
-TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/dilepton";
-TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/dilepton";
+#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
+#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
+
+TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb3";
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb3";
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
@@ -43,7 +47,7 @@ vector<float> binsZpt = {50,150,3000};
 vector<TString> leptonStrings={"mm","ee","em"};
 float sf_training=1.4286;
 using namespace vhbbPlot;
-std::mutex mvaTreeMutex;
+std::mutex mvaTreeMutex, jecAk4UncMutex, jecAk8UncMutex;
 
 struct analysisObjects {
   // Physics
@@ -99,6 +103,10 @@ struct analysisObjects {
   BTagCalibration *deepcsvCalib=0; 
   CSVHelper *cmvaReweighter=0;
   vector<double> ZjetsEWKCorr;
+  
+  vector<JetCorrectionUncertainty*> jecUncsAK4, jecUncsAK8;
+  std::map<TString, JetCorrectionUncertainty*> jecUncSourcesAK4, jecUncSourcesAK8;
+  
   // MVA training tree
   TTree *mvaTree=0; TFile *mvaFile=0;
   // Common vars
@@ -127,7 +135,7 @@ struct analysisObjects {
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
-void writeDatacards(analysisObjects &ao, TString dataCardDir);
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna);
 
 // useBoostedCategory:
 //   False means you will use all possible events to do the resolved Z(ll)H(bb)
@@ -279,6 +287,33 @@ void zllhAnalysis(
   delete fPUFile;
   // Done Loading Pileup Weights
 
+  // Load JEC Uncertainties
+  TString ak4JecUncPath = (year==2016)? 
+    "PandaAnalysis/data/jec/23Sep2016V4/Summer16_23Sep2016V4_MC_UncertaintySources_AK4PFchs.txt":
+    "PandaAnalysis/data/jec/17Nov2017_V8//Fall17_17Nov2017_V8_MC_UncertaintySources_AK4PFchs.txt";
+  TString ak8JecUncPath = (year==2016)? 
+    "PandaAnalysis/data/jec/23Sep2016V4/Summer16_23Sep2016V4_MC_UncertaintySources_AK8PFPuppi.txt":
+    "PandaAnalysis/data/jec/17Nov2017_V8//Fall17_17Nov2017_V8_MC_UncertaintySources_AK8PFPuppi.txt";
+  ao.jecUncsAK4.reserve(NJES);
+  ao.jecUncsAK8.reserve(NJES);
+  for(unsigned iJES=1; iJES<NJES-1; iJES++) {
+    if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+    TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
+    if(!shiftName.EndsWith("Up")) continue;
+    TString jecUncName = shiftName(3,shiftName.Length()-5);//JES*Up
+    JetCorrectionUncertainty *theAK4Unc = new JetCorrectionUncertainty(
+      JetCorrectorParameters(ak4JecUncPath.Data(), jecUncName.Data()));
+    JetCorrectionUncertainty *theAK8Unc = new JetCorrectionUncertainty(
+      JetCorrectorParameters(ak8JecUncPath.Data(), jecUncName.Data()));
+    ao.jecUncSourcesAK4[jecUncName] = theAK4Unc;
+    ao.jecUncSourcesAK8[jecUncName] = theAK8Unc;
+    ao.jecUncsAK4[iJES  ] = theAK4Unc;
+    ao.jecUncsAK4[iJES+1] = theAK4Unc;
+    ao.jecUncsAK8[iJES  ] = theAK8Unc;
+    ao.jecUncsAK8[iJES+1] = theAK8Unc;
+  }
+  // Done Loading JEC Uncertainties
+
   // Choice of the MVA variable type, binning, and the name
   // This can be different for each control region
   TString binZptSuffix="";
@@ -402,8 +437,8 @@ void zllhAnalysis(
       ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       if(year==2016) {
-      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   0.0; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   0.0; ao.xmax[p]=    1.; p++; 
       } else {
       ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   0.2; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   0.2; ao.xmax[p]=    1.; p++; 
@@ -707,6 +742,15 @@ void zllhAnalysis(
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
   if(ao.cmvaReweighter) delete ao.cmvaReweighter;
+  
+  // Clean up JES
+  for(unsigned iJES=0; iJES<NJES; iJES++) {
+    if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+    TString shiftName(jesName(static_cast<shiftjes>(iJES)).Data());
+    if(!shiftName.EndsWith("Up")) continue;
+    delete ao.jecUncSourcesAK4[shiftName];
+    delete ao.jecUncSourcesAK8[shiftName];
+  }
 
   // renormalize V+Glu shapes to the nominal norm
   if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel)
@@ -872,7 +916,7 @@ void zllhAnalysis(
 
   // Writing datacards - need to move this to separate function
   if(!isBatchMode)
-    writeDatacards(ao, dataCardDir);
+    writeDatacards(ao, dataCardDir, false);
 
   // Write plots
   char regionName[128];
@@ -952,9 +996,8 @@ void analyzeSample(
   gt.is_fatjet      = true;
   gt.is_leptonic    = true;
   gt.btagWeights    = true;
-  gt.useCMVA        = true;
+  gt.useCMVA        = false;
   gt.is_breg        = false;
-  if(ao.year==2017) gt.useCMVA = false;
   // Branches not in GeneralTree;
   std::map<TString, void*> extraAddresses;
   float normalizedWeight; unsigned char npnlo;
@@ -1215,8 +1258,7 @@ void analyzeSample(
     bool isBoostedCategory=false;
     float deltaPhiZHFJ=-1;
     if(ao.useBoostedCategory) { 
-      //bLoad(b["fjMSD_corr"],ientry);
-      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+      bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
@@ -1224,8 +1266,7 @@ void analyzeSample(
         deltaPhiZHFJ = fabs(TVector2::Phi_mpi_pi(gt.ZBosonPhi-gt.fjPhi));
       if(
         gt.fjPt[0] >= 250 && 
-        //gt.fjMSD_corr[0] >= 40 &&
-        gt.fjMSD[0] >= 40 && // TEMPORARY DGH
+        gt.fjMSD_corr[0] >= 40 &&
         fabs(gt.fjEta) < 2.4 &&
         gt.ZBosonPt >= 250 &&
         deltaPhiZHFJ >= 2.5
@@ -1273,6 +1314,7 @@ void analyzeSample(
     if(isBoostedCategory) {
       // No checks here? 
     } else { 
+      bLoad(b["jotPt"],ientry);
       bLoad(b["nJet"],ientry);
       bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
       bLoad(b["hbbpt"],ientry);
@@ -1281,8 +1323,10 @@ void analyzeSample(
         gt.nJet[0]<2 || 
         gt.hbbpt[0]<50 || 
         gt.hbbm_reg[0]<0 ||
-        gt.hbbm_reg[0]>250) 
-        continue;
+        gt.hbbm_reg[0]>250 ||
+	gt.jotPt[0][gt.hbbjtidx[0][0]]<=25 ||
+	gt.jotPt[0][gt.hbbjtidx[0][1]]<=25
+	) continue;
     }
     if(ao.debug) printf("  Passed jet kinematics\n");
     if(ao.debug) printf("Passed preselection!\n");
@@ -1297,10 +1341,11 @@ void analyzeSample(
     bLoad(b["jotCMVA"],ientry);
     bLoad(b["jotCSV"],ientry);
     if(ao.year==2016) {
-      bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
-      bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
-      bjet1IsLoose = bjet1btag > cmvaLoose;
-      bjet2IsLoose = bjet2btag > cmvaLoose;
+      bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
+      bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
+      bjet1IsLoose = bjet1btag > 0.2219;
+      bjet2IsLoose = bjet2btag > 0.2219;
+      //bjetIsMinimum = bjet1btag > 0.2 && bjet2btag > 0.2;
     } else if(ao.year==2017) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
@@ -1309,10 +1354,10 @@ void analyzeSample(
       bjetIsMinimum = bjet1btag > 0.2 && bjet2btag > 0.2;
     }
 
-    for(unsigned iJES=0; iJES<NJES; iJES++) {
-      bLoad(b[Form("jotPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-      bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-    }
+    //for(unsigned iJES=0; iJES<NJES; iJES++) {
+    //  bLoad(b[Form("jotPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+    //  bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
+    //}
     bLoad(b["nJot"],ientry);
     bLoad(b["jotPt"],ientry);
     bLoad(b["jotEta"],ientry);
@@ -1326,12 +1371,23 @@ void analyzeSample(
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
       for(unsigned iJES=0; iJES<NJES; iJES++) 
-      for(unsigned char iJ=0; iJ<gt.nJot[iJES]; iJ++) {
+      for(unsigned char iJ=0; iJ<gt.nJotMax; iJ++) {
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         if(fabs(gt.jotEta[iJ])>2.4) continue;
         float dR2JetFatjet=pow(gt.jotEta[iJ]-gt.fjEta,2)+pow(TVector2::Phi_mpi_pi(gt.jotPhi[iJ]-gt.fjPhi),2);
         if(dR2JetFatjet<0.64) continue;
         
         float isojetBtag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+        if(iJES!=0) {
+          jecAk4UncMutex.lock();
+          bool isUp = !(iJES%2==0);
+          ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt[0][iJ]);
+          ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta  [iJ]);
+          float relUnc = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+          jecAk4UncMutex.unlock();
+          if(!isUp) relUnc*=-1;
+          gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
+        }
         if(gt.jotPt[iJES][iJ]>30) {
           isojets[iJES].push_back(iJ);
           if(isojetBtag>ao.isojetBtagCut) isojetNBtags[iJES]++;
@@ -1375,9 +1431,9 @@ void analyzeSample(
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
-        if(ao.debug>=3) printf("jet with (pt,|eta|)=(%.2f,%.3f) => (iPt,iEta) = (%d,%d)\n",gt.jotPt[0][iJ],jetAbsEta,iPt,iEta);
+        float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+        if(ao.debug>=3) printf("jet with (pt,|eta|,flav,btag)=(%.2f,%.3f,%d,%.4f) => (iPt,iEta) = (%d,%d)\n",gt.jotPt[0][iJ],jetAbsEta,gt.jotFlav[iJ],btag,iPt,iEta);
         if(iPt>=0 && iEta>=0) {
-          float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
           jetPts    [iPt][iEta].push_back(gt.jotPt[0][iJ]);
           jetEtas   [iPt][iEta].push_back(gt.jotEta[iJ]);
           jetFlavors[iPt][iEta].push_back(gt.jotFlav[iJ]);
@@ -1385,7 +1441,7 @@ void analyzeSample(
         }
       }
     }
-    
+
     // Load branches and calculate stuff for the cuts
     bLoad(b["eventNumber"],ientry);
     bLoad(b["ZBosonPt"],ientry);
@@ -1395,15 +1451,78 @@ void analyzeSample(
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjPhi"],ientry);
       bLoad(b["fjEta"],ientry);
-      //bLoad(b["fjMSD_corr"],ientry);
-      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+      bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjDoubleCSV"],ientry);
       bLoad(b["fjTau21SD"],ientry);
+      if(type!=vhbbPlot::kData) for(unsigned iJES=1; iJES<NJES; iJES++) {
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        jecAk8UncMutex.lock();
+        bool isUp = !(iJES%2==0);
+        ao.jecUncsAK8[iJES]->setJetPt (gt.fjPt[0] );
+        ao.jecUncsAK8[iJES]->setJetEta(gt.fjEta   );
+        float relUnc = ao.jecUncsAK8[iJES]->getUncertainty(isUp);
+        jecAk8UncMutex.unlock();
+        if(!isUp) relUnc*=-1;
+        gt.fjPt[iJES] = gt.fjPt[0]*(1+relUnc);
+        gt.fjMSD_corr[iJES] = gt.fjPt[0]*(1+relUnc);
+      }
+
     } else {
       bLoad(b["hbbpt_reg"],ientry);
       bLoad(b["hbbphi"],ientry);
       bLoad(b["hbbeta"],ientry);
       bLoad(b["hbbm_reg"],ientry);
+      if(type!=vhbbPlot::kData) for(unsigned iJES=1; iJES<NJES; iJES++) {
+	if(gt.jotPt [0][gt.hbbjtidx[0][0]]<=0 || gt.jotPt [0][gt.hbbjtidx[0][1]]<=0) continue;
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        jecAk4UncMutex.lock();
+        bool isUp = !(iJES%2==0);
+        ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt [0][gt.hbbjtidx[0][0]]);
+        ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta   [gt.hbbjtidx[0][0]]);
+        float relUnc1 = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+        ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt [0][gt.hbbjtidx[0][1]]);
+        ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta   [gt.hbbjtidx[0][1]]);
+        float relUnc2 = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+        jecAk4UncMutex.unlock();
+        if(!isUp) { relUnc1*=-1; relUnc2*=-1; }
+        gt.jotPt[iJES][gt.hbbjtidx[0][0]] = gt.jotPt[0][gt.hbbjtidx[0][0]]*(1+relUnc1);
+        gt.jotPt[iJES][gt.hbbjtidx[0][1]] = gt.jotPt[0][gt.hbbjtidx[0][1]]*(1+relUnc2);
+        TLorentzVector hbbjt1,hbbjt2,hbbsystem;
+        hbbjt1.SetPtEtaPhiM(
+          gt.jotPt [iJES][gt.hbbjtidx[0][0]],
+          gt.jotEta      [gt.hbbjtidx[0][0]],
+          gt.jotPhi      [gt.hbbjtidx[0][0]],
+          gt.jotM        [gt.hbbjtidx[0][0]]);
+        hbbjt2.SetPtEtaPhiM(
+          gt.jotPt [iJES][gt.hbbjtidx[0][1]],
+          gt.jotEta      [gt.hbbjtidx[0][1]],
+          gt.jotPhi      [gt.hbbjtidx[0][1]],
+          gt.jotM        [gt.hbbjtidx[0][1]]);
+        hbbsystem=hbbjt1+hbbjt2;
+        // Assume the regression is conformal...
+        gt.hbbpt_reg[iJES] = gt.hbbpt_reg[0] * hbbsystem.Pt()/gt.hbbpt[0];
+        gt.hbbm_reg[iJES]  = gt.hbbm_reg[0]  * hbbsystem.M() /gt.hbbm[0];
+      }
+      // Handle the NJET variations
+      for(unsigned iJES=1; iJES<NJES; iJES++) {
+        if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
+        gt.nJet[iJES]=0;
+        gt.nJot[iJES]=0;
+        for(unsigned char iJ=0; iJ<gt.nJotMax; iJ++) {
+          jecAk4UncMutex.lock();
+          bool isUp = !(iJES%2==0);
+          ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt[0][iJ]);
+          ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta  [iJ]);
+          float relUnc = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+          jecAk4UncMutex.unlock();
+          if(!isUp) relUnc*=-1;
+          gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
+          if(gt.jotPt[iJES][iJ] < 25) continue;
+          gt.nJot[iJES]++;
+          if(fabs(gt.jotEta[iJ])<2.4)
+            gt.nJet[iJES]++;
+        }
+      }
     }
     float deltaPhiZH    = -1;
     float ptBalanceZH   = -1;
@@ -1424,7 +1543,7 @@ void analyzeSample(
     TLorentzVector ZBosonP4, fjP4, ZHFJP4;
     if(isBoostedCategory) {
       ZBosonP4.SetPtEtaPhiM(gt.ZBosonPt,gt.ZBosonEta,gt.ZBosonPhi,gt.ZBosonM);
-      fjP4.SetPtEtaPhiM(gt.fjPt[0],gt.fjEta,gt.fjPhi,gt.fjMSD[0]);  // TEMPORARY DGH
+      fjP4.SetPtEtaPhiM(gt.fjPt[0],gt.fjEta,gt.fjPhi,gt.fjMSD_corr[0]);
       ZHFJP4 = ZBosonP4 + fjP4;
       ptBalanceZHFJ = gt.fjPt[0] / gt.ZBosonPt;
       mTZHFJ = ZHFJP4.Mt();
@@ -1432,7 +1551,7 @@ void analyzeSample(
       dRL1L2 = sqrt(pow(lepton1Eta-lepton2Eta,2)+pow(TVector2::Phi_mpi_pi(lepton1Phi-lepton2Phi),2));
       dEtaZHFJ = fabs(gt.fjEta - gt.ZBosonEta);
       deltaM = fabs(gt.ZBosonM-91.1876);
-      mH_rescaled = gt.fjMSD[0] / ptBalanceZHFJ;
+      mH_rescaled = gt.fjMSD_corr[0] / ptBalanceZHFJ;
     } else {
       deltaPhiZH    = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[0] - gt.ZBosonPhi));
       ptBalanceZH   = gt.hbbpt_reg[0] /  gt.ZBosonPt;
@@ -1469,8 +1588,7 @@ void analyzeSample(
         if(isBoostedCategory) {
           bLoad(b[Form("fjPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
           bLoad(b[Form("fjPhi_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-          //bLoad(b[Form("fjMSD_corr_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-          bLoad(b[Form("fjMSD_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry); // TEMPORARY DGH
+          bLoad(b[Form("fjMSD_corr_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
         } else {
           bLoad(b[Form("hbbpt_reg_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
           bLoad(b[Form("hbbphi_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
@@ -1483,17 +1601,11 @@ void analyzeSample(
         cut["lowMET"] = gt.pfmet[iJES] < 60;
       }
       if(isBoostedCategory) {
-        //cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
-        //cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
-	//if(ao.MVAVarType == 1) cut["mSD_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<150;
-        //cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
-        //cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
-        // TEMPORARY DGH
-        cut["mSD"     ] = gt.fjMSD[iJES] >= 40;
-        cut["mSD_SR"  ] = gt.fjMSD[iJES] >= 80 && gt.fjMSD[iJES]<150;
-	if(ao.MVAVarType == 1) cut["mSD_SR"] = gt.fjMSD[iJES] >= 50 && gt.fjMSD[iJES]<150;
-        cut["mSDVZ_SR"] = gt.fjMSD[iJES] >= 50 && gt.fjMSD[iJES]<120;
-        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD[iJES]<80;
+        cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
+        cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
+	if(ao.MVAVarType == 1) cut["mSD_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<150;
+        cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
+        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
         cut["0ijb"    ] = isojetNBtags[iJES]==0; // not used in SR
         cut["1ijb"    ] = isojetNBtags[iJES]==1;
@@ -1756,11 +1868,11 @@ void analyzeSample(
           ao.selection==kZllHFJSR || ao.selection==kZllHVZbbFJCR
         )) { 
           TLorentzVector fjP4_jes, ZHFJP4_jes;
-          fjP4_jes.SetPtEtaPhiM(gt.fjPt[iJES],gt.fjEta,gt.fjPhi,gt.fjMSD[iJES]);  // TEMPORARY DGH
+          fjP4_jes.SetPtEtaPhiM(gt.fjPt[iJES],gt.fjEta,gt.fjPhi,gt.fjMSD_corr[iJES]);
           ZHFJP4_jes = ZBosonP4 + fjP4_jes;
           ao.mvaInputs[nThread][ 0] = nIsojet[iJES]                   ; //"nIsojet"       
           ao.mvaInputs[nThread][ 1] = gt.fjPt[iJES]                   ; //"fjPt"          
-          ao.mvaInputs[nThread][ 2] = gt.fjMSD[iJES]                  ; //"MSD"           
+          ao.mvaInputs[nThread][ 2] = gt.fjMSD_corr[iJES]             ; //"MSD"           
           ao.mvaInputs[nThread][ 3] = gt.fjTau21SD                    ; //"Tau21SD"       
           ao.mvaInputs[nThread][ 4] = gt.fjPt[iJES]/gt.ZBosonPt;      ; //"ptBalanceZHFJ" 
           ao.mvaInputs[nThread][ 5] = dEtaZHFJ                        ; //"dEtaZHFJ"      
@@ -1793,8 +1905,7 @@ void analyzeSample(
             ao.selection==kZllHHeavyFlavorFJCR       ||
             ao.selection==kZllHTT2bFJCR              ||
             ao.selection==kZllHTT1bFJCR)
-            //MVAVar[iJES]=gt.fjMSD_corr[iJES];
-            MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
+            MVAVar[iJES]=gt.fjMSD_corr[iJES];
           break;
         case 3:
           if(ao.selection==kZllHSR || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbCR || ao.selection==kZllHVZbbFJCR)
@@ -1808,8 +1919,7 @@ void analyzeSample(
             ao.selection==kZllHHeavyFlavorFJCR       ||
             ao.selection==kZllHTT2bFJCR              ||
             ao.selection==kZllHTT1bFJCR)
-            //MVAVar[iJES]=gt.fjMSD_corr[iJES];
-            MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
+            MVAVar[iJES]=gt.fjMSD_corr[iJES];
           break;
       }
       // Handle overflow
@@ -1876,8 +1986,7 @@ void analyzeSample(
     bLoad(b["ZBosonLep1CosThetaStar"],ientry);
     bLoad(b["ZBosonLep1CosThetaStarFJ"],ientry);
     if(isBoostedCategory) {
-      //bLoad(b["fjMSD_corr"],ientry);
-      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+      bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjDoubleCSV"],ientry);
     } else {
@@ -1922,9 +2031,8 @@ void analyzeSample(
         mvaTreeMutex.lock();
         ao.mva_nIsojet       = nIsojet[0]      ; 
         ao.mva_nIsoBjet      = isojetNBtags[0] ; 
-        //ao.mva_MSD           = fjMSD_corr[0]  ;
+        ao.mva_MSD           = gt.fjMSD_corr[0];
         ao.mva_fjPt          = gt.fjPt[0]      ; 
-        ao.mva_MSD           = gt.fjMSD[0]     ; // TEMPORARY DGH 
         ao.mva_Tau21SD       = gt.fjTau21SD    ; 
         ao.mva_ptBalanceZHFJ = ptBalanceZHFJ   ; 
         ao.mva_dEtaZHFJ      = dEtaZHFJ        ; 
@@ -1979,8 +2087,7 @@ void analyzeSample(
       else if (ao.histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Mjj_rescaled"            ) { theVar = mH_rescaled                ; makePlot = passFullSel; }
       // fatjet
-      //else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
+      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="mSD_rescaled"            ) { theVar = mH_rescaled                ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Tau21SD"                 ) { theVar = gt.fjTau21SD               ; makePlot = passFullSel; }
@@ -2006,7 +2113,7 @@ void analyzeSample(
   } // End Event Loop
 }
 
-void writeDatacards(analysisObjects &ao, TString dataCardDir) {  
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna) {  
   TString binZptSuffix="";
   if(ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
     !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
@@ -2043,12 +2150,20 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++) {
       if(!ao.histo_Baseline[lep][ic] || ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
-      if(ic==kPlotZH)
-        newcardShape << Form("%d  ",0);
-      else if(ic==kPlotGGZH)
-        newcardShape << Form("%d  ",-1);
-      else
-        newcardShape << Form("%d  ",ic);
+      if(!isVZbbAna) {
+        if(ic==kPlotZH)
+          newcardShape << Form("%d  ",0);
+         else if(ic==kPlotGGZH)
+          newcardShape << Form("%d  ",-1);
+        else
+          newcardShape << Form("%d  ",ic);
+      } 
+      else {
+        if(ic==kPlotVZbb)
+          newcardShape << Form("%d  ",0);
+        else
+          newcardShape << Form("%d  ",ic);
+      }
     }
     newcardShape << Form("\n");
 
@@ -2274,7 +2389,8 @@ void datacardsFromHistograms(
   bool useBoostedCategory=false,
   int MVAVarType=3,
   char binZpt=-1, 
-  unsigned year=2016
+  unsigned year=2016,
+  bool isVZbbAna = false
 ) {
   struct analysisObjects ao;
   ao.useBoostedCategory=useBoostedCategory;
@@ -2359,5 +2475,5 @@ void datacardsFromHistograms(
     infile->Close();
   }
   
-  writeDatacards(ao, dataCardDir);
+  writeDatacards(ao, dataCardDir, isVZbbAna);
 }
