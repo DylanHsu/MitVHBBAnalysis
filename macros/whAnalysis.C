@@ -568,8 +568,9 @@ void whAnalysis(
     btagSystNames);
   ao.deepcsvCalib = new BTagCalibration(
     "DeepCSV", 
-    ao.year==2016?
-      "PandaAnalysis/data/csv/DeepCSV_Moriond17_B_H.csv":
+    // no iterative fit, waiting on BTV
+    //ao.year==2016?
+    //  "PandaAnalysis/data/csv/DeepCSV_Moriond17_B_H.csv":
       "PandaAnalysis/data/csv/DeepCSV_94XSF_V2_B_F.csv"
   );
   ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
