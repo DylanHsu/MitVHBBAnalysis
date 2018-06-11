@@ -12,7 +12,6 @@
 #include "CondFormats/BTauObjects/interface/BTagEntry.h"
 #include "CondFormats/BTauObjects/interface/BTagCalibration.h"
 #include "CondTools/BTau/interface/BTagCalibrationReader.h"
-#include "PandaAnalysis/Utilities/src/CSVHelper.cc"
 
 #include <Compression.h>
 #include <TFile.h>
@@ -101,7 +100,6 @@ struct analysisObjects {
   TH2D *kfactors_ZJets=0;
   BTagCalibrationReader *deepcsvSFs=0; 
   BTagCalibration *deepcsvCalib=0; 
-  CSVHelper *cmvaReweighter=0;
   vector<double> ZjetsEWKCorr;
   
   vector<JetCorrectionUncertainty*> jecUncsAK4, jecUncsAK8;
@@ -533,33 +531,28 @@ void zllhAnalysis(
 
   ////////////////////////////////////////////////////////////////////////
   // Load corrections to apply offline
-  // CMVA reweighting for 2016, DeepCSV reweighting for 2017
   std::vector<std::string> btagSystNames;
-  if(ao.year==2016) {
-    ao.cmvaReweighter = new CSVHelper(
-      "PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root", 
-      "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root", 
-       5);
-  } else if(ao.year==2017) {
-    // get the official syst name strings
-    btagSystNames.reserve(GeneralTree::nCsvShifts);
-    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-      GeneralTree::csvShift shift = gt.csvShifts[iShift];
-      if (shift==GeneralTree::csvCent) continue;
-      btagSystNames.push_back(GeneralTree::csvShiftName(shift).Data());
-    }    
-    ao.deepcsvSFs = new BTagCalibrationReader(
-      BTagEntry::OP_RESHAPING,
-      GeneralTree::csvShiftName(GeneralTree::csvCent).Data(), 
-      btagSystNames);
-    ao.deepcsvCalib = new BTagCalibration(
-      "DeepCSV", 
-      "PandaAnalysis/data/csv/DeepCSV_94XSF_V2_B_F.csv");
-    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
-    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_C, "iterativeFit");
-    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_UDSG, "iterativeFit");
-    
-  }
+  // get the official syst name strings
+  btagSystNames.reserve(GeneralTree::nCsvShifts);
+  for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+    GeneralTree::csvShift shift = gt.csvShifts[iShift];
+    if (shift==GeneralTree::csvCent) continue;
+    btagSystNames.push_back(GeneralTree::csvShiftName(shift).Data());
+  }    
+  ao.deepcsvSFs = new BTagCalibrationReader(
+    BTagEntry::OP_RESHAPING,
+    GeneralTree::csvShiftName(GeneralTree::csvCent).Data(), 
+    btagSystNames);
+  ao.deepcsvCalib = new BTagCalibration(
+    "DeepCSV", 
+    ao.year==2016?
+      "PandaAnalysis/data/csv/DeepCSV_Moriond17_B_H.csv":
+      "PandaAnalysis/data/csv/DeepCSV_94XSF_V2_B_F.csv"
+  );
+  ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
+  ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_C, "iterativeFit");
+  ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_UDSG, "iterativeFit");
+ 
   ao.ZjetsEWKCorr = EWKCorrPars(kZjets);
   if(!useHtBinnedVJetsKFactor) {
     TFile *kfactorsFile = TFile::Open("PandaAnalysis/data/higgs/hbb_kfactors.root","read");
@@ -741,7 +734,6 @@ void zllhAnalysis(
   }
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
-  if(ao.cmvaReweighter) delete ao.cmvaReweighter;
   
   // Clean up JES
   for(unsigned iJES=0; iJES<NJES; iJES++) {
@@ -1324,9 +1316,9 @@ void analyzeSample(
         gt.hbbpt[0]<50 || 
         gt.hbbm_reg[0]<0 ||
         gt.hbbm_reg[0]>250 ||
-	gt.jotPt[0][gt.hbbjtidx[0][0]]<=25 ||
-	gt.jotPt[0][gt.hbbjtidx[0][1]]<=25
-	) continue;
+        gt.jotPt[0][gt.hbbjtidx[0][0]]<=25 ||
+        gt.jotPt[0][gt.hbbjtidx[0][1]]<=25
+        ) continue;
     }
     if(ao.debug) printf("  Passed jet kinematics\n");
     if(ao.debug) printf("Passed preselection!\n");
@@ -1343,8 +1335,8 @@ void analyzeSample(
     if(ao.year==2016) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
-      bjet1IsLoose = bjet1btag > 0.2219;
-      bjet2IsLoose = bjet2btag > 0.2219;
+      bjet1IsLoose = bjet1btag > deepcsv16Loose;
+      bjet2IsLoose = bjet2btag > deepcsv16Loose;
       //bjetIsMinimum = bjet1btag > 0.2 && bjet2btag > 0.2;
     } else if(ao.year==2017) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
@@ -1473,7 +1465,7 @@ void analyzeSample(
       bLoad(b["hbbeta"],ientry);
       bLoad(b["hbbm_reg"],ientry);
       if(type!=vhbbPlot::kData) for(unsigned iJES=1; iJES<NJES; iJES++) {
-	if(gt.jotPt [0][gt.hbbjtidx[0][0]]<=0 || gt.jotPt [0][gt.hbbjtidx[0][1]]<=0) continue;
+        if(gt.jotPt [0][gt.hbbjtidx[0][0]]<=0 || gt.jotPt [0][gt.hbbjtidx[0][1]]<=0) continue;
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         jecAk4UncMutex.lock();
         bool isUp = !(iJES%2==0);
@@ -1603,7 +1595,7 @@ void analyzeSample(
       if(isBoostedCategory) {
         cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
         cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
-	if(ao.MVAVarType == 1) cut["mSD_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<150;
+        if(ao.MVAVarType == 1) cut["mSD_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<150;
         cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
         cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
@@ -1740,14 +1732,34 @@ void analyzeSample(
       
       // Hack for the central Btag weights 
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-        if(ao.year==2016) {
-          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
-          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          weight *= ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
-        } else if(ao.year==2017) {
-          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-          unsigned iShift=0;
+        // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
+        unsigned iShift=0;
+        GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+        for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
+          unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
+          BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
+            (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
+          float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
+            GeneralTree::csvShiftName(theShift).Data(),
+            flav,
+            jetEtas[iPt][iEta][iJ], 
+            jetPts[iPt][iEta][iJ],
+            jetBtags[iPt][iEta][iJ]
+          );
+          if(reshapeFactor<0.001) reshapeFactor=1;
+          weight *= reshapeFactor;
+          weight_btag[0][iPt][iEta] = reshapeFactor;
+        }
+        
+      }
+      if((ao.selection==kZllHSR || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbCR || ao.selection==kZllHVZbbFJCR) && ao.MVAVarType>1)
+        weight *= sf_training;
+    
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
+        for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
           GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+          weight_btag[iShift][iPt][iEta] = 1.0;
           for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
             unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
             BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
@@ -1759,50 +1771,11 @@ void analyzeSample(
               jetPts[iPt][iEta][iJ],
               jetBtags[iPt][iEta][iJ]
             );
-            if(reshapeFactor<0.001) reshapeFactor=1;
-            weight *= reshapeFactor;
-            weight_btag[0][iPt][iEta] = reshapeFactor;
+            if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor/weight_btag[0][iPt][iEta];
+            else                    weight_btag[iShift][iPt][iEta] *= 1;
           }
         }
-      }
-      if((ao.selection==kZllHSR || ao.selection==kZllHFJSR || ao.selection==kZllHVZbbCR || ao.selection==kZllHVZbbFJCR) && ao.MVAVarType>1)
-        weight *= sf_training;
-    
-      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-        if(ao.year==2016) {
-          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
-          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          double centralWeight = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
-          for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-            weight_btag[iShift][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(
-              jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
-              theShift,
-              cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
-            )/centralWeight; 
-            if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
-          }
-        } else if(ao.year==2017) {
-          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-          for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
-            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-	    weight_btag[iShift][iPt][iEta] = 1.0;
-            for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
-              unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
-              BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
-                (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
-              float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
-                GeneralTree::csvShiftName(theShift).Data(),
-                flav,
-                jetEtas[iPt][iEta][iJ], 
-                jetPts[iPt][iEta][iJ],
-                jetBtags[iPt][iEta][iJ]
-              );
-              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor/weight_btag[0][iPt][iEta];
-              else                    weight_btag[iShift][iPt][iEta] *= 1;
-            }
-          }
-        }
+        
       }
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) { // Boosted only weighting
       bLoad(b["fjHighestPtGen"],ientry);
@@ -2430,12 +2403,12 @@ void datacardsFromHistograms(
       ao.histo_VHCorrDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrDown"        , plotBaseNames[ic].Data()));
       ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTUp"  , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
       ao.histo_QCDScaleDown [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTDown", plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-      ao.histo_eleSFUp      [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"               , plotBaseNames[ic].Data()));			     
-      ao.histo_eleSFDown    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFDown"             , plotBaseNames[ic].Data()));			     
-      ao.histo_muSFUp       [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFUp"                , plotBaseNames[ic].Data()));			     
-      ao.histo_muSFDown     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFDown"              , plotBaseNames[ic].Data()));			     
-      ao.histo_triggerSFUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_triggerSFUp"           , plotBaseNames[ic].Data()));  		    
-      ao.histo_triggerSFDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_triggerSFDown"         , plotBaseNames[ic].Data()));  		    
+      ao.histo_eleSFUp      [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"               , plotBaseNames[ic].Data()));                             
+      ao.histo_eleSFDown    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFDown"             , plotBaseNames[ic].Data()));                             
+      ao.histo_muSFUp       [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFUp"                , plotBaseNames[ic].Data()));                             
+      ao.histo_muSFDown     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFDown"              , plotBaseNames[ic].Data()));                             
+      ao.histo_triggerSFUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_triggerSFUp"           , plotBaseNames[ic].Data()));                      
+      ao.histo_triggerSFDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_triggerSFDown"         , plotBaseNames[ic].Data()));                      
       ao.histo_pileupUp     [lep][ic]->SetDirectory(0);
       ao.histo_pileupDown   [lep][ic]->SetDirectory(0);
       ao.histo_VHCorrUp     [lep][ic]->SetDirectory(0);

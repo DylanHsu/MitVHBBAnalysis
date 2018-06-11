@@ -12,7 +12,6 @@
 #include "CondFormats/BTauObjects/interface/BTagEntry.h"
 #include "CondFormats/BTauObjects/interface/BTagCalibration.h"
 #include "CondTools/BTau/interface/BTagCalibrationReader.h"
-#include "PandaAnalysis/Utilities/src/CSVHelper.cc"
 
 #include <Compression.h>
 #include <TFile.h>
@@ -95,7 +94,6 @@ struct analysisObjects {
   TH2D *kfactors_ZJets=0, *kfactors_WJets=0;
   BTagCalibrationReader *deepcsvSFs=0; 
   BTagCalibration *deepcsvCalib=0; 
-  CSVHelper *cmvaReweighter=0;
   vector<double> ZjetsEWKCorr, WjetsEWKCorr;
   
   vector<JetCorrectionUncertainty*> jecUncsAK4, jecUncsAK8;
@@ -159,11 +157,11 @@ void whAnalysis(
   ao.selection = selection;
   ao.vzbbMode = vzbbMode;
   TString ntupleDir2016 = multithread?
-    "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh"    :
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb2/wh/split";
+    "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb3":
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb3/split";
   TString ntupleDir2017 = multithread?
-    "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh"    :    
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb2/wh/split";    
+    "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb3":    
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb3/split";    
   TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
 
   // Analysis Cuts
@@ -453,8 +451,8 @@ void whAnalysis(
       ao.histoNames[p]="pTjj"               ; ao.histoTitles[p]="Dijet pT [GeV]"          ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
       ao.histoNames[p]="bjet1Pt"            ; ao.histoTitles[p]="B-jet 1 pT [GeV]"        ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       ao.histoNames[p]="bjet2Pt"            ; ao.histoTitles[p]="B-jet 2 pT [GeV]"        ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet1btag"          ; ao.histoTitles[p]="B-jet 1 btag"            ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="bjet2btag"          ; ao.histoTitles[p]="B-jet 2 btag"            ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet1btag"          ; ao.histoTitles[p]="B-jet 1 btag"            ; ao.nbins[p]=  50; ao.xmin[p]=    0.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"          ; ao.histoTitles[p]="B-jet 2 btag"            ; ao.nbins[p]=  50; ao.xmin[p]=    0.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="nJet"               ; ao.histoTitles[p]="N central AK4CHS jets"   ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
       ao.histoNames[p]="deltaPhiWH"         ; ao.histoTitles[p]="#Delta#phi(W,H) [Rad]"   ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
       ao.histoNames[p]="ptBalanceWH"        ; ao.histoTitles[p]="|H pT / W pT|"           ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
@@ -556,33 +554,28 @@ void whAnalysis(
 
   ////////////////////////////////////////////////////////////////////////
   // Load corrections to apply offline
-  // CMVA reweighting for 2016, DeepCSV reweighting for 2017
   std::vector<std::string> btagSystNames;
-  if(ao.year==2016) {
-    ao.cmvaReweighter = new CSVHelper(
-      "PandaAnalysis/data/csvweights/cmva_rwt_fit_hf_v0_final_2017_3_29.root", 
-      "PandaAnalysis/data/csvweights/cmva_rwt_fit_lf_v0_final_2017_3_29.root", 
-       5);
-  } else if(ao.year==2017) {
-    // get the official syst name strings
-    btagSystNames.reserve(GeneralTree::nCsvShifts);
-    for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-      GeneralTree::csvShift shift = gt.csvShifts[iShift];
-      if (shift==GeneralTree::csvCent) continue;
-      btagSystNames.push_back(GeneralTree::csvShiftName(shift).Data());
-    }    
-    ao.deepcsvSFs = new BTagCalibrationReader(
-      BTagEntry::OP_RESHAPING,
-      GeneralTree::csvShiftName(GeneralTree::csvCent).Data(), 
-      btagSystNames);
-    ao.deepcsvCalib = new BTagCalibration(
-      "DeepCSV", 
-      "PandaAnalysis/data/csv/DeepCSV_94XSF_V2_B_F.csv");
-    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
-    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_C, "iterativeFit");
-    ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_UDSG, "iterativeFit");
-    
-  }
+  // get the official syst name strings
+  btagSystNames.reserve(GeneralTree::nCsvShifts);
+  for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+    GeneralTree::csvShift shift = gt.csvShifts[iShift];
+    if (shift==GeneralTree::csvCent) continue;
+    btagSystNames.push_back(GeneralTree::csvShiftName(shift).Data());
+  }    
+  ao.deepcsvSFs = new BTagCalibrationReader(
+    BTagEntry::OP_RESHAPING,
+    GeneralTree::csvShiftName(GeneralTree::csvCent).Data(), 
+    btagSystNames);
+  ao.deepcsvCalib = new BTagCalibration(
+    "DeepCSV", 
+    ao.year==2016?
+      "PandaAnalysis/data/csv/DeepCSV_Moriond17_B_H.csv":
+      "PandaAnalysis/data/csv/DeepCSV_94XSF_V2_B_F.csv"
+  );
+  ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_B, "iterativeFit");
+  ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_C, "iterativeFit");
+  ao.deepcsvSFs->load(*(ao.deepcsvCalib), BTagEntry::FLAV_UDSG, "iterativeFit");
+  
   ao.ZjetsEWKCorr = EWKCorrPars(kZjets);
   ao.WjetsEWKCorr = EWKCorrPars(kWjets);
   if(!useHtBinnedVJetsKFactor) {
@@ -756,7 +749,6 @@ void whAnalysis(
   }
   if(ao.deepcsvSFs) delete ao.deepcsvSFs;
   if(ao.deepcsvCalib) delete ao.deepcsvCalib;
-  if(ao.cmvaReweighter) delete ao.cmvaReweighter;
   
   // Clean up JES
   for(unsigned iJES=0; iJES<NJES; iJES++) {
@@ -990,10 +982,7 @@ void analyzeSample(
   gt.is_leptonic    = true;
   gt.btagWeights    = true;
   gt.is_breg        = false;
-  if(ao.year==2017) 
-    gt.useCMVA = false;
-  else 
-    gt.useCMVA = true; 
+  gt.useCMVA        = false;
   // Branches not in GeneralTree;
   std::map<TString, void*> extraAddresses;
   float normalizedWeight; unsigned char npnlo;
@@ -1197,8 +1186,7 @@ void analyzeSample(
     bool isBoostedCategory=false;
     float deltaPhiWHFJ=-1;
     if(ao.useBoostedCategory) { 
-      //bLoad(b["fjMSD_corr"],ientry);
-      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+      bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjEta"],ientry);
       bLoad(b["fjPhi"],ientry);
@@ -1208,8 +1196,7 @@ void analyzeSample(
         deltaPhiWHFJ = fabs(TVector2::Phi_mpi_pi(gt.topWBosonPhi-gt.fjPhi));
       if(
         gt.fjPt[0] >= 250 && 
-        //gt.fjMSD_corr[0] >= 40 &&
-        gt.fjMSD[0] >= 40 && // TEMPORARY DGH
+        gt.fjMSD_corr[0] >= 40 &&
         fabs(gt.fjEta) < 2.4 &&
         gt.topWBosonPt >= 250 &&
         deltaPhiWHFJ >= 2.5
@@ -1258,6 +1245,7 @@ void analyzeSample(
     if(isBoostedCategory) {
       // No checks here? 
     } else { 
+      bLoad(b["jotPt"],ientry);
       bLoad(b["nJet"],ientry);
       bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
       bLoad(b["hbbpt"],ientry);
@@ -1285,12 +1273,12 @@ void analyzeSample(
     bLoad(b["jotCMVA"],ientry);
     bLoad(b["jotCSV"],ientry);
     if(ao.year==2016) {
-      bjet1btag = gt.jotCMVA[gt.hbbjtidx[0][0]];
-      bjet2btag = gt.jotCMVA[gt.hbbjtidx[0][1]];
-      bjet1IsLoose  = bjet1btag > cmvaLoose;
-      bjet1IsMedium = bjet1btag > cmvaMedium;
-      bjet1IsTight  = bjet1btag > cmvaTight;
-      bjet2IsLoose  = bjet2btag > cmvaLoose;
+      bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
+      bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
+      bjet1IsLoose  = bjet1btag > deepcsv16Loose;
+      bjet1IsMedium = bjet1btag > deepcsv16Medium;
+      bjet1IsTight  = bjet1btag > deepcsv16Tight;
+      bjet2IsLoose  = bjet2btag > deepcsv16Loose;
     } else if(ao.year==2017) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
@@ -1300,10 +1288,6 @@ void analyzeSample(
       bjet2IsLoose  = bjet2btag > deepcsvLoose;
     }
 
-    //for(unsigned iJES=0; iJES<NJES; iJES++) {
-    //  bLoad(b[Form("jotPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-    //  bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
-    //}
     bLoad(b["nJot"],ientry);
     bLoad(b["nJotMax"],ientry);
     bLoad(b["jotPt"],ientry);
@@ -1383,7 +1367,7 @@ void analyzeSample(
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
-        float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+        float btag = gt.jotCSV[iJ];
         if(ao.debug>=3) printf("jet with (pt,|eta|,flav,btag)=(%.2f,%.3f,%d,%.4f) => (iPt,iEta) = (%d,%d)\n",gt.jotPt[0][iJ],jetAbsEta,gt.jotFlav[iJ],btag,iPt,iEta);
         if(iPt>=0 && iEta>=0) {
           jetPts    [iPt][iEta].push_back(gt.jotPt[0][iJ]);
@@ -1401,8 +1385,7 @@ void analyzeSample(
       bLoad(b["fjPt"],ientry);
       bLoad(b["fjPhi"],ientry);
       bLoad(b["fjEta"],ientry);
-      //bLoad(b["fjMSD_corr"],ientry);
-      bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+      bLoad(b["fjMSD_corr"],ientry);
       bLoad(b["fjDoubleCSV"],ientry);
       bLoad(b["fjTau21SD"],ientry);
       bLoad(b["fjTau32SD"],ientry);
@@ -1416,8 +1399,7 @@ void analyzeSample(
         jecAk8UncMutex.unlock();
         if(!isUp) relUnc*=-1;
         gt.fjPt[iJES] = gt.fjPt[0]*(1+relUnc);
-        gt.fjMSD[iJES] = gt.fjMSD[0]*(1+relUnc);
-        //gt.fjMSD_corr[iJES] = gt.fjPt[0]*(1+relUnc); // TEMPORARY DGH
+        gt.fjMSD_corr[iJES] = gt.fjPt[0]*(1+relUnc);
       }
 
     } else {
@@ -1580,15 +1562,10 @@ void analyzeSample(
       }
 
       if(isBoostedCategory) {
-        //cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
-        //cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
-        //cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
-        //cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
-        // TEMPORARY DGH
-        cut["mSD"     ] = gt.fjMSD[iJES] >= 40;
-        cut["mSD_SR"  ] = gt.fjMSD[iJES] >= 80 && gt.fjMSD[iJES]<150;
-        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD[iJES]<80;
-        cut["mSDVZ_SR"] = gt.fjMSD[iJES] >= 50 && gt.fjMSD[iJES]<120;
+        cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
+        cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
+        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
+        cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
         cut["0ijb"    ] = isojetNBtags[iJES]==0;
         cut["1ijb"    ] = !cut["0ijb"];
@@ -1716,16 +1693,33 @@ void analyzeSample(
       
       // Hack for the central Btag weights 
       for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-        if(ao.year==2016) {
-          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
-          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          weight_btag[0][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta], GeneralTree::csvCent, cmvaWgtHF, cmvaWgtLF, cmvaWgtCF);
-          weight *= weight_btag[0][iPt][iEta];
-          if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, weight_btag[0][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),weight_btag[0][iPt][iEta]);
-        } else if(ao.year==2017) {
-          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-          unsigned iShift=0;
+        unsigned iShift=0;
+        GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+        for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
+          unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
+          BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
+            (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
+          float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
+            GeneralTree::csvShiftName(theShift).Data(),
+            flav,
+            jetEtas[iPt][iEta][iJ], 
+            jetPts[iPt][iEta][iJ],
+            jetBtags[iPt][iEta][iJ]
+          );
+          if(reshapeFactor<0.001) reshapeFactor=1;
+          weight *= reshapeFactor;
+          weight_btag[0][iPt][iEta] = reshapeFactor;
+        }
+        
+      }
+      if((ao.selection==kWHSR || ao.selection==kWHVZbbCR || ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR) && ao.MVAVarType>1)
+        weight *= sf_training;
+    
+      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
+        // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
+        for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
           GeneralTree::csvShift theShift = gt.csvShifts[iShift];
+          weight_btag[iShift][iPt][iEta] = 1.0;
           for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
             unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
             BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
@@ -1737,47 +1731,8 @@ void analyzeSample(
               jetPts[iPt][iEta][iJ],
               jetBtags[iPt][iEta][iJ]
             );
-            if(reshapeFactor<0.001) reshapeFactor=1;
-            weight *= reshapeFactor;
-            weight_btag[0][iPt][iEta] = reshapeFactor;
-          }
-        }
-      }
-      if((ao.selection==kWHSR || ao.selection==kWHVZbbCR || ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR) && ao.MVAVarType>1)
-        weight *= sf_training;
-    
-      for(unsigned iPt=0; iPt<5; iPt++) for(unsigned iEta=0; iEta<3; iEta++) {
-        if(ao.year==2016) {
-          // in 2016 we can use the CSVHelper to calculate the total shift for each jet kinematic bin
-          double cmvaWgtHF, cmvaWgtLF, cmvaWgtCF;
-          for(unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
-            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-            weight_btag[iShift][iPt][iEta] = ao.cmvaReweighter->getCSVWeight(
-              jetPts[iPt][iEta], jetEtas[iPt][iEta], jetBtags[iPt][iEta], jetFlavors[iPt][iEta],
-              theShift,
-              cmvaWgtHF, cmvaWgtLF, cmvaWgtCF
-            )/weight_btag[0][iPt][iEta];
-            if(ao.debug>=3) printf("iPt=%d, iEta=%d, %zu jets, iShift=%d, weight_btag[iShift][iPt][iEta] = %.3f\n", iPt,iEta,jetPts[iPt][iEta].size(),iShift, weight_btag[iShift][iPt][iEta]);
-          }
-        } else if(ao.year==2017) {
-          // in 2017, we have to calculate the reshape factor for each jet in each kinematic bin
-          for(unsigned iShift=1; iShift<GeneralTree::nCsvShifts; iShift++) {
-            GeneralTree::csvShift theShift = gt.csvShifts[iShift];
-            weight_btag[iShift][iPt][iEta] = 1.0;
-            for(unsigned iJ=0; iJ<jetPts[iPt][iEta].size(); iJ++) {
-              unsigned absid = abs(jetFlavors[iPt][iEta][iJ]);
-              BTagEntry::JetFlavor flav = absid == 5 ? BTagEntry::FLAV_B : 
-                (absid == 4 ? BTagEntry::FLAV_C : BTagEntry::FLAV_UDSG);
-              float reshapeFactor = ao.deepcsvSFs->eval_auto_bounds(
-                GeneralTree::csvShiftName(theShift).Data(),
-                flav,
-                jetEtas[iPt][iEta][iJ], 
-                jetPts[iPt][iEta][iJ],
-                jetBtags[iPt][iEta][iJ]
-              );
-              if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor/weight_btag[0][iPt][iEta];
-              else                    weight_btag[iShift][iPt][iEta] *= 1;
-            }
+            if(reshapeFactor>0.001) weight_btag[iShift][iPt][iEta] *= reshapeFactor/weight_btag[0][iPt][iEta];
+            else                    weight_btag[iShift][iPt][iEta] *= 1;
           }
         }
       }
@@ -1876,8 +1831,7 @@ void analyzeSample(
             ao.selection==kWHHeavyFlavorFJCR       ||
             ao.selection==kWHTT2bFJCR              ||
             ao.selection==kWHTT1bFJCR)
-            //MVAVar[iJES]=gt.fjMSD_corr[iJES];
-            MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
+            MVAVar[iJES]=gt.fjMSD_corr[iJES];
           break;
         case 3:
           if(ao.selection==kWHSR || ao.selection==kWHVZbbCR || ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR)
@@ -1891,8 +1845,7 @@ void analyzeSample(
             ao.selection==kWHHeavyFlavorFJCR       ||
             ao.selection==kWHTT2bFJCR              ||
             ao.selection==kWHTT1bFJCR)
-            //MVAVar[iJES]=gt.fjMSD_corr[iJES];
-            MVAVar[iJES]=gt.fjMSD[iJES]; // TEMPORARY DGH
+            MVAVar[iJES]=gt.fjMSD_corr[iJES];
           break;
       }
     }
@@ -1953,8 +1906,7 @@ void analyzeSample(
     bLoad(b["pfmet"],ientry);
     bLoad(b["pfmetsig"],ientry);
     bLoad(b["topWBosonPhi"],ientry);
-    //bLoad(b["fjMSD_corr"],ientry);
-    bLoad(b["fjMSD"],ientry); // TEMPORARY DGH
+    bLoad(b["fjMSD_corr"],ientry);
     bLoad(b["fjPt"],ientry);
     bLoad(b["fjDoubleCSV"],ientry);
 
@@ -2005,8 +1957,7 @@ void analyzeSample(
         ao.mva_lepton1Eta       = lepton1Eta               ;
         ao.mva_lepton1Charge    = lepton1Charge            ;
         ao.mva_pfmet            = gt.pfmet[0]              ;
-        //ao.mva_MSD              = fjMSD_corr[0]            ;
-        ao.mva_MSD              = gt.fjMSD[0]              ; // TEMPORARY DGH 
+        ao.mva_MSD              = gt.fjMSD_corr[0]         ;
         ao.mva_nIsojet          = nIsojet[0]               ; 
         ao.mva_Tau21SD          = gt.fjTau21SD             ; 
         ao.mva_Tau32SD          = gt.fjTau32SD             ; 
@@ -2038,8 +1989,7 @@ void analyzeSample(
       else if (ao.histoNames[p]=="pfmetsig"                ) { theVar = gt.pfmetsig                ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bdtValue"                ) { theVar = bdtValue[0]                ; makePlot = passFullSel; }
       // boosted
-      //else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
-      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD[0]                ; makePlot = passFullSel; } // TEMPORARY DGH
+      else if (ao.histoNames[p]=="mSD"                     ) { theVar = gt.fjMSD_corr[0]           ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="pTFJ"                    ) { theVar = gt.fjPt[0]                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Tau21SD"                 ) { theVar = gt.fjTau21SD               ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="Tau32SD"                 ) { theVar = gt.fjTau32SD               ; makePlot = passFullSel; }
