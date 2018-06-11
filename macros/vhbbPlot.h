@@ -10,7 +10,8 @@ namespace vhbbPlot {
   float theLumi=35900.;
   //const float bDiscrLoose = 0.5426, bDiscrMedium = 0.8484, bDiscrTight  = 0.9535; //csv
   const float cmvaLoose = -0.5884, cmvaMedium = 0.4432, cmvaTight  = 0.9432; //cmva
-  const float deepcsvLoose = 0.1522, deepcsvMedium = 0.4941, deepcsvTight = 0.8001; //cmva
+  const float deepcsv16Loose = 0.2219, deepcsv16Medium = 0.6324, deepcsv16Tight = 0.8958;
+  const float deepcsvLoose = 0.1522, deepcsvMedium = 0.4941, deepcsvTight = 0.8001; 
   const float doubleBCut = 0.8; // double b tagger
   
   TString trainTreeEventSplitStr="(eventNumber % 10)<3";
