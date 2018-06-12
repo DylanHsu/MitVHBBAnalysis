@@ -1,0 +1,23 @@
+root -b -l << EOF
+.L MitVHBBAnalysis/macros/finalPlot2018.C+g
+finalPlot2018(kWH2TopCR             , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenH2TopCR.root"             , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHVZbbFJCR           , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHVZbbFJCR.root"           , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHHeavyFlavorFJCR    , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHHeavyFlavorFJCR.root"    , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHHeavyFlavorHiMassCR, "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHHeavyFlavorHiMassCR.root", "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHHeavyFlavorLoMassCR, "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHHeavyFlavorLoMassCR.root", "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHLightFlavorCR      , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHLightFlavorCR.root"      , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHLightFlavorFJCR    , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHLightFlavorFJCR.root"    , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHVZbbCR             , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHVZbbCR.root"             , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHTT1bFJCR           , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHTT1bFJCR.root"           , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHTT2bFJCR           , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WenHTT2bFJCR.root"           , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWH2TopCR             , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnH2TopCR.root"             , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHVZbbFJCR           , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHVZbbFJCR.root"           , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHHeavyFlavorFJCR    , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHHeavyFlavorFJCR.root"    , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHHeavyFlavorHiMassCR, "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHHeavyFlavorHiMassCR.root", "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHHeavyFlavorLoMassCR, "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHHeavyFlavorLoMassCR.root", "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHLightFlavorCR      , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHLightFlavorCR.root"      , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHLightFlavorFJCR    , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHLightFlavorFJCR.root"    , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHVZbbCR             , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHVZbbCR.root"             , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHTT1bFJCR           , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHTT1bFJCR.root"           , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+finalPlot2018(kWHTT2bFJCR           , "MitVHBBAnalysis/datacards/whbb/june11_test2016/VZbb/plots_WmnHTT2bFJCR.root"           , "","",false,false,"MitVHBBAnalysis/plots/whbb/june11_test2016/VZbb","",2016,true)  
+EOF
