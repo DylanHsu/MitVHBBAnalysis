@@ -1,4 +1,9 @@
-// does not compile in Aclic, use in CINT only
+#include <TROOT.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TKey.h>
+#include <TString.h>
+#include <iostream>
 void splitPandaExpress(string inputFile, Long64_t nEvtsPerFile=500000) {
   printf("Opening file \"%s\" and splitting it into files with %lld events...\n", inputFile.c_str(), nEvtsPerFile);
   TFile *f = TFile::Open(inputFile.c_str(),"update"); assert(f);

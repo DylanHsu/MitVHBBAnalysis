@@ -116,7 +116,7 @@ namespace vhbbPlot {
   std::map<int, int> plotColors={
     { kPlotData , kBlack      },
     { kPlotQCD  , kGray       },
-    { kPlotVZbb , 842         },
+    { kPlotVZbb , kTeal+2     },
     { kPlotVVLF , kAzure-9    },
     { kPlotTT   , kOrange-2   },
     { kPlotTop  , kOrange-1   },
