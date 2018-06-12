@@ -171,7 +171,7 @@ void zllhAnalysis(
   initialize_trgEff(ao.trgEff, ao.trgEffE, ao.year);
 
   // Analysis Cuts
-  ao.isojetBtagCut = (ao.year==2017)? deepcsvLoose : cmvaLoose;
+  ao.isojetBtagCut = (ao.year==2016)? deepcsv16Loose : deepcsvLoose;
   ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto"};
   ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
   ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"};
@@ -195,16 +195,17 @@ void zllhAnalysis(
     // Handle batch mode for Condor
     //multithread=false; // force single threading
     dataCardDir = dataCardDir + "/split/"; // write output in a subdirectory
+    ntupleDir = ntupleDir + "/split";
     batchSuffix = "_"+batchSampleName; // add a suffix to the output with this sample's name
     samples.emplace_back(batchSampleName, batchSampleType);
   } else if(year==2016) {
-    samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
+    samples.emplace_back("LeptonPDSalad2016"              , vhbbPlot::kData   );
+    samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
+    samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
+    samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );
     samples.emplace_back("SingleTop_tW"                   , vhbbPlot::kTop    );       
     samples.emplace_back("SingleTop_tbarW"                , vhbbPlot::kTop    );       
     samples.emplace_back("TTTo2L2Nu"                      , vhbbPlot::kTT     );       
-    samples.emplace_back("WWTo2L2Nu"                      , vhbbPlot::kWW     );
-    samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );       
-    samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );       
     samples.emplace_back("ZJets_ht100to200"               , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_ht200to400"               , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_ht400to600"               , vhbbPlot::kZjets  );       
@@ -217,10 +218,10 @@ void zllhAnalysis(
     samples.emplace_back("ZJets_pt250to400"               , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_pt400to650"               , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_pt650toinf"               , vhbbPlot::kZjets  );       
-    samples.emplace_back("ZJets_bHadrons"                 , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bHadrons_incl"            , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_bHadrons_pt100to200"      , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_bHadrons_pt200toinf"      , vhbbPlot::kZjets  );       
-    samples.emplace_back("ZJets_bQuarks"                  , vhbbPlot::kZjets  );       
+    samples.emplace_back("ZJets_bQuarks_incl"             , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_bQuarks_pt100to200"       , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_bQuarks_pt200toinf"       , vhbbPlot::kZjets  );       
     samples.emplace_back("ZJets_m10"                      , vhbbPlot::kZjets  );
@@ -229,10 +230,10 @@ void zllhAnalysis(
   } else if(year==2017) {
     //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
     //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
-    samples.emplace_back("LeptonPDSalad"                  , vhbbPlot::kData   );
+    samples.emplace_back("LeptonPDSalad2017"              , vhbbPlot::kData   );
     samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );
     samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );
-    samples.emplace_back("Diboson_ww_CP5"                 , vhbbPlot::kWW     );
+    samples.emplace_back("WWTo2L2Nu_CP5"                  , vhbbPlot::kWW     );
     samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
     samples.emplace_back("SingleTop_tW_CP5"               , vhbbPlot::kTop    );
     samples.emplace_back("SingleTop_tbarW_CP5"            , vhbbPlot::kTop    );
@@ -251,7 +252,7 @@ void zllhAnalysis(
     samples.emplace_back("ZJets_m4_ht400to600_CP5"        , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_m4_ht600toinf_CP5"        , vhbbPlot::kZjets  );
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
-    samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
+    //samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
     // Ntuples we produce but do not currently use
     //samples.emplace_back("ZJets_ht100to200_CP5"           , vhbbPlot::kZjets  );
     //samples.emplace_back("ZJets_ht200to400_CP5"           , vhbbPlot::kZjets  );
@@ -332,16 +333,16 @@ void zllhAnalysis(
       ao.shapeType="ptShape";
     } else if(selection==kZllHLightFlavorCR) {
       if(year==2016)
-        ao.MVAbins={-1.00, -0.80, -0.60, -0.40, -0.20, 0.00, 0.20, 0.40, 0.60, 0.80, 0.90, 1.00};
+        ao.MVAbins={ 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
       else
         ao.MVAbins={ 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
-      ao.MVAVarName="Leading H(bb) BTAG";
+      ao.MVAVarName="Subleading H(bb) BTAG";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
       if(year==2016)
-        ao.MVAbins={-0.6000, -0.4500, -0.3000,-0.1500, 0.0000, 0.2000, 0.4000, 0.6000, 0.7500, 0.9000, 1.0000};
+        ao.MVAbins={ 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
       else
-        ao.MVAbins={ 0.4500,  0.6000,  0.6500, 0.7000, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
+        ao.MVAbins={ 0.45, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00};
        ao.MVAVarName="Subleading H(bb) BTAG";
       ao.shapeType="lesserCMVAShape";
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -357,30 +358,30 @@ void zllhAnalysis(
     // 3 - normal BDT in SR, subleading CMVA in CR
     if(selection==kZllHLightFlavorCR) {
       if(year==2016)
-        ao.MVAbins={-1.00, -0.80, -0.60, -0.40, -0.20, 0.00, 0.20, 0.40, 0.60, 0.80, 0.90, 1.00};
+        ao.MVAbins={ 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
       else
         ao.MVAbins={ 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
-      ao.MVAVarName="Leading H(bb) CMVA";
+      ao.MVAVarName="Subleading H(bb) BTAG";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHHeavyFlavorCR || selection==kZllH2TopCR || selection==kZllHPresel) {
       if(year==2016)
-        ao.MVAbins={-0.6000, -0.4500, -0.3000,-0.1500, 0.0000, 0.2000, 0.4000, 0.6000, 0.7500, 0.9000, 1.0000};
+        ao.MVAbins={ 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00};
       else
-        ao.MVAbins={ 0.4500,  0.6000,  0.6500, 0.7000, 0.7500, 0.8000, 0.8500, 0.9000, 0.9500, 1.0000};
+        ao.MVAbins={ 0.45, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00};
       ao.MVAVarName="Subleading H(bb) CMVA";
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.14, 0.05,0.18,0.29,0.39,0.50,0.62,1.00};
+        ao.MVAbins={-1.00,-0.10,0.09,0.22,0.32,0.42,0.52,0.63,1.00};
       else
-        ao.MVAbins={-1.00,-0.19,-0.01,0.12,0.23,0.34,0.45,0.59,1.00};
+        ao.MVAbins={-1.00,-0.11,0.03,0.13,0.22,0.31,0.41,0.53,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
       if(year==2016)
-         ao.MVAbins={-1.00,-0.03,0.12,0.23,0.33,0.45,1.00};
+         ao.MVAbins={-1.00,-0.01,0.14,0.24,0.35,0.46,1.00};
       else
-         ao.MVAbins={-1.00,-0.01,0.15,0.27,0.39,0.52,1.00};
+         ao.MVAbins={-1.00, 0.08,0.21,0.30,0.38,0.47,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -435,8 +436,8 @@ void zllhAnalysis(
       ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       if(year==2016) {
-      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   0.0; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  50; ao.xmin[p]=   0.0; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  45; ao.xmin[p]=   0.1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  45; ao.xmin[p]=   0.1; ao.xmax[p]=    1.; p++; 
       } else {
       ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   0.2; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  40; ao.xmin[p]=   0.2; ao.xmax[p]=    1.; p++; 
@@ -1076,21 +1077,24 @@ void analyzeSample(
         }
       }
     } else if(ao.year==2017) {
-      if(useNPNLOLookup) {
-        // Here, we perform the lookup of the NPNLO (number of NLO partons) for inclusive Z+jets
-        // This is not a quantity in Panda, we must use a lookup table. Can potentially add this to the ntuples as an extra tree later
-        bLoad(b["npnlo"],ientry);
-        bLoad(b["eventNumber"],ientry);
-        bLoad(b["trueGenBosonPt"],ientry); 
-        if(npnlo==255) {
-          printf("WARNING: NPNLO=255 for eventtNumber %llu\n", gt.eventNumber);
-          continue;
+      if(type==kZjets) {
+        if(useNPNLOLookup) {
+          // Here, we perform the lookup of the NPNLO (number of NLO partons) for inclusive Z+jets
+          // This is not a quantity in Panda, we must use a lookup table. Can potentially add this to the ntuples as an extra tree later
+          bLoad(b["npnlo"],ientry);
+          bLoad(b["eventNumber"],ientry);
+          bLoad(b["trueGenBosonPt"],ientry); 
+          if(npnlo==255) {
+            printf("WARNING: NPNLO=255 for eventtNumber %llu\n", gt.eventNumber);
+            continue;
+          }
+          if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
+          else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
+          else stitchWeight=1;
+        } else if(isV12jets) {
+          stitchWeight=0.8;
         }
-        if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
-        else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
-        else stitchWeight=1;
-      } else if(isV12jets) {
-        stitchWeight=0.8;
+        stitchWeight*=0.6;
       }
     }
 
@@ -1307,8 +1311,9 @@ void analyzeSample(
     if(isBoostedCategory) {
       // No checks here? 
     } else { 
-      bLoad(b["jotPt"],ientry);
       bLoad(b["nJet"],ientry);
+      bLoad(b["jotPt"],ientry);
+      bLoad(b["jotEta"],ientry);
       bLoad(b["hbbjtidx"],ientry); // indices of Higgs daughter jets
       bLoad(b["hbbpt"],ientry);
       bLoad(b["hbbm_reg"],ientry);
@@ -1317,11 +1322,13 @@ void analyzeSample(
         gt.hbbpt[0]<50 || 
         gt.hbbm_reg[0]<0 ||
         gt.hbbm_reg[0]>250 ||
-        gt.jotPt[0][gt.hbbjtidx[0][0]]<=25 ||
-        gt.jotPt[0][gt.hbbjtidx[0][1]]<=25
+        gt.jotPt[0][gt.hbbjtidx[0][0]]<=0 ||
+        gt.jotPt[0][gt.hbbjtidx[0][1]]<=0 ||
+        gt.jotEta[gt.hbbjtidx[0][0]]<=-90 ||
+        gt.jotEta[gt.hbbjtidx[0][1]]<=-90
         ) continue;
     }
-    if(ao.debug) printf("  Passed jet kinematics\n");
+    if(ao.debug) printf("Passed jet kinematics\n");
     if(ao.debug) printf("Passed preselection!\n");
     
     // Met
@@ -1338,7 +1345,7 @@ void analyzeSample(
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet1IsLoose = bjet1btag > deepcsv16Loose;
       bjet2IsLoose = bjet2btag > deepcsv16Loose;
-      //bjetIsMinimum = bjet1btag > 0.2 && bjet2btag > 0.2;
+      bjetIsMinimum = bjet1btag > 0.1 && bjet2btag > 0.1;
     } else if(ao.year==2017) {
       bjet1btag = TMath::Max(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
       bjet2btag = TMath::Min(gt.jotCSV[gt.hbbjtidx[0][0]],gt.jotCSV[gt.hbbjtidx[0][1]]);
@@ -1353,7 +1360,6 @@ void analyzeSample(
     //}
     bLoad(b["nJot"],ientry);
     bLoad(b["jotPt"],ientry);
-    bLoad(b["jotEta"],ientry);
     bLoad(b["jotPhi"],ientry);
     bLoad(b["jotFlav"],ientry);
     float bjet1Pt = gt.jotPt[0][gt.hbbjtidx[0][0]];
@@ -1370,7 +1376,7 @@ void analyzeSample(
         float dR2JetFatjet=pow(gt.jotEta[iJ]-gt.fjEta,2)+pow(TVector2::Phi_mpi_pi(gt.jotPhi[iJ]-gt.fjPhi),2);
         if(dR2JetFatjet<0.64) continue;
         
-        float isojetBtag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+        float isojetBtag = gt.jotCSV[iJ];
         if(iJES!=0) {
           jecAk4UncMutex.lock();
           bool isUp = !(iJES%2==0);
@@ -1424,7 +1430,7 @@ void analyzeSample(
         if      (jetAbsEta >= 0   && jetAbsEta < 0.8  ) iEta = 0;
         else if (jetAbsEta >= 0.8 && jetAbsEta < 1.6  ) iEta = 1;
         else if (jetAbsEta >= 1.6 && jetAbsEta < 2.41 ) iEta = 2;
-        float btag = (ao.year==2016)? gt.jotCMVA[iJ] : gt.jotCSV[iJ];
+        float btag = gt.jotCSV[iJ];
         if(ao.debug>=3) printf("jet with (pt,|eta|,flav,btag)=(%.2f,%.3f,%d,%.4f) => (iPt,iEta) = (%d,%d)\n",gt.jotPt[0][iJ],jetAbsEta,gt.jotFlav[iJ],btag,iPt,iEta);
         if(iPt>=0 && iEta>=0) {
           jetPts    [iPt][iEta].push_back(gt.jotPt[0][iJ]);
@@ -1465,17 +1471,18 @@ void analyzeSample(
       bLoad(b["hbbphi"],ientry);
       bLoad(b["hbbeta"],ientry);
       bLoad(b["hbbm_reg"],ientry);
+      bLoad(b["jotM"],ientry);
+      bLoad(b["hbbm"],ientry);
       if(type!=vhbbPlot::kData) for(unsigned iJES=1; iJES<NJES; iJES++) {
-        if(gt.jotPt [0][gt.hbbjtidx[0][0]]<=0 || gt.jotPt [0][gt.hbbjtidx[0][1]]<=0) continue;
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         jecAk4UncMutex.lock();
         bool isUp = !(iJES%2==0);
         ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt [0][gt.hbbjtidx[0][0]]);
         ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta   [gt.hbbjtidx[0][0]]);
-        float relUnc1 = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+        float relUnc1 = 0;//ao.jecUncsAK4[iJES]->getUncertainty(isUp);
         ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt [0][gt.hbbjtidx[0][1]]);
         ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta   [gt.hbbjtidx[0][1]]);
-        float relUnc2 = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+        float relUnc2 = 0;//ao.jecUncsAK4[iJES]->getUncertainty(isUp);
         jecAk4UncMutex.unlock();
         if(!isUp) { relUnc1*=-1; relUnc2*=-1; }
         gt.jotPt[iJES][gt.hbbjtidx[0][0]] = gt.jotPt[0][gt.hbbjtidx[0][0]]*(1+relUnc1);
@@ -1502,11 +1509,13 @@ void analyzeSample(
         gt.nJet[iJES]=0;
         gt.nJot[iJES]=0;
         for(unsigned char iJ=0; iJ<gt.nJotMax; iJ++) {
+	  if(gt.jotPt[0][iJ] <=   0) continue;
+	  if(gt.jotEta  [iJ] <= -90) continue;
           jecAk4UncMutex.lock();
           bool isUp = !(iJES%2==0);
           ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt[0][iJ]);
           ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta  [iJ]);
-          float relUnc = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+          float relUnc = 0;//ao.jecUncsAK4[iJES]->getUncertainty(isUp);
           jecAk4UncMutex.unlock();
           if(!isUp) relUnc*=-1;
           gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
@@ -1631,7 +1640,6 @@ void analyzeSample(
       weight_pileupDown = nPUScaleFactor(ao.puWeightsDown, gt.pu)/puWeight;
       
       weight = normalizedWeight * ao.lumi * puWeight * stitchWeight; 
-      if(ao.year==2016 && type==vhbbPlot::kTT) weight = weight * 1.159; // HACK!!!
       
       if(type==kWjets || type==kZjets) {
         bLoad(b["trueGenBosonPt"],ientry);
