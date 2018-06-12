@@ -1412,6 +1412,7 @@ void analyzeSample(
       bLoad(b["hbbm"],ientry);
       bLoad(b["pfmet"],ientry);
       bLoad(b["pfmetsig"],ientry);
+      bLoad(b["jotM"],ientry);
       if(type!=vhbbPlot::kData) for(unsigned iJES=1; iJES<NJES; iJES++) {
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
         jecAk4UncMutex.lock();
@@ -1441,6 +1442,7 @@ void analyzeSample(
         // Assume the regression is conformal...
         gt.hbbpt_reg[iJES] = gt.hbbpt_reg[0] * hbbsystem.Pt()/gt.hbbpt[0];
         gt.hbbm_reg[iJES]  = gt.hbbm_reg[0]  * hbbsystem.M() /gt.hbbm[0];
+        gt.hbbphi[iJES]    = hbbsystem.Phi();
       }
       // Handle the NJET variations
       for(unsigned iJES=1; iJES<NJES; iJES++) {
@@ -1456,7 +1458,7 @@ void analyzeSample(
           jecAk4UncMutex.unlock();
           if(!isUp) relUnc*=-1;
           gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
-          if(gt.jotPt[iJES][iJ] < 25) continue;
+          if(gt.jotPt[iJES][iJ] < 20) continue;
           gt.nJot[iJES]++;
           if(fabs(gt.jotEta[iJ])<2.4)
             gt.nJet[iJES]++;
