@@ -252,7 +252,7 @@ void zllhAnalysis(
     samples.emplace_back("ZJets_m4_ht400to600_CP5"        , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_m4_ht600toinf_CP5"        , vhbbPlot::kZjets  );
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
-    //samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
+    samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
     // Ntuples we produce but do not currently use
     //samples.emplace_back("ZJets_ht100to200_CP5"           , vhbbPlot::kZjets  );
     //samples.emplace_back("ZJets_ht200to400_CP5"           , vhbbPlot::kZjets  );
@@ -1479,10 +1479,10 @@ void analyzeSample(
         bool isUp = !(iJES%2==0);
         ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt [0][gt.hbbjtidx[0][0]]);
         ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta   [gt.hbbjtidx[0][0]]);
-        float relUnc1 = 0;//ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+        float relUnc1 = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
         ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt [0][gt.hbbjtidx[0][1]]);
         ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta   [gt.hbbjtidx[0][1]]);
-        float relUnc2 = 0;//ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+        float relUnc2 = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
         jecAk4UncMutex.unlock();
         if(!isUp) { relUnc1*=-1; relUnc2*=-1; }
         gt.jotPt[iJES][gt.hbbjtidx[0][0]] = gt.jotPt[0][gt.hbbjtidx[0][0]]*(1+relUnc1);
@@ -1502,6 +1502,7 @@ void analyzeSample(
         // Assume the regression is conformal...
         gt.hbbpt_reg[iJES] = gt.hbbpt_reg[0] * hbbsystem.Pt()/gt.hbbpt[0];
         gt.hbbm_reg[iJES]  = gt.hbbm_reg[0]  * hbbsystem.M() /gt.hbbm[0];
+        gt.hbbphi[iJES] = hbbsystem.Phi();
       }
       // Handle the NJET variations
       for(unsigned iJES=1; iJES<NJES; iJES++) {
@@ -1515,11 +1516,11 @@ void analyzeSample(
           bool isUp = !(iJES%2==0);
           ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt[0][iJ]);
           ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta  [iJ]);
-          float relUnc = 0;//ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+          float relUnc = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
           jecAk4UncMutex.unlock();
           if(!isUp) relUnc*=-1;
           gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
-          if(gt.jotPt[iJES][iJ] < 25) continue;
+          if(gt.jotPt[iJES][iJ] < 20) continue;
           gt.nJot[iJES]++;
           if(fabs(gt.jotEta[iJ])<2.4)
             gt.nJet[iJES]++;
