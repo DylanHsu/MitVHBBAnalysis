@@ -1046,13 +1046,17 @@ void analyzeSample(
       if(type==kWjets||type==kZjets) {
         bLoad(b["nStatus2BHadrons"],ientry); // number of B hadrons at matrix element level
         bLoad(b["nB"],ientry); // number of B quarks
+        bLoad(b["trueGenBosonPt"],ientry);
+        if(isInclusiveZjets && (isBQuarkEnriched||isBHadronEnriched) && gt.trueGenBosonPt>=100) continue;
         bool hasBQuarks  = gt.nB > 0;
         bool hasBHadrons = gt.nStatus2BHadrons>0 && gt.nB==0;
         // Orthogonalize        
         if(isBQuarkEnriched && !hasBQuarks) continue;
         if(isBHadronEnriched && !hasBHadrons) continue;
         // Downweight
-        if(hasBQuarks) {
+        if(gt.trueGenBosonPt<100) {
+           stitchWeight = 1;
+        } else if(hasBQuarks) {
           if(isBQuarkEnriched) stitchWeight = 0.9;
           else                 stitchWeight = 0.1;
         } else if(hasBHadrons) {
@@ -1060,8 +1064,6 @@ void analyzeSample(
           else                  stitchWeight = 0.1;
         }
       }
-      if(type==vhbbPlot::kTT)
-        stitchWeight*=1.061; // hack because of bug in ntuple production, remove this
     } else if(ao.year==2017) {
       //if(isW2jets) {
       //  // Handle the overlap of the samples W2JetsToLNu_WpT100to150_CP5, W2JetsToLNu_WpT50to150_CP5
@@ -1568,7 +1570,7 @@ void analyzeSample(
         cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
         cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
         cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
-        cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 50 && gt.fjMSD_corr[iJES]<120;
+        cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 40 && gt.fjMSD_corr[iJES]<120;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
         cut["0ijb"    ] = isojetNBtags[iJES]==0;
         cut["1ijb"    ] = !cut["0ijb"];
