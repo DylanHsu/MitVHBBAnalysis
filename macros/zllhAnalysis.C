@@ -34,8 +34,8 @@
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 
-TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb3";
-TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb3";
+TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb4";
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb4";
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
@@ -228,8 +228,6 @@ void zllhAnalysis(
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
   } else if(year==2017) {
-    //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
-    //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
     samples.emplace_back("LeptonPDSalad2017"              , vhbbPlot::kData   );
     samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );
     samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );
@@ -237,7 +235,7 @@ void zllhAnalysis(
     samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
     samples.emplace_back("SingleTop_tW_CP5"               , vhbbPlot::kTop    );
     samples.emplace_back("SingleTop_tbarW_CP5"            , vhbbPlot::kTop    );
-    // 0 files produced by CMS for DY1JetsToLL_M-50_LHEZpT_50-150_TuneCP5_13TeV-amcnloFXFX-pythia8, work around it
+    samples.emplace_back("Z1Jets_ZpT50to150_CP5"          , vhbbPlot::kZjets  );
     samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("Z1Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("Z1Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  );
@@ -1088,13 +1086,11 @@ void analyzeSample(
             printf("WARNING: NPNLO=255 for eventtNumber %llu\n", gt.eventNumber);
             continue;
           }
-          if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
-          else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
+          if(npnlo==1 || npnlo==2) stitchWeight=0.2;
           else stitchWeight=1;
         } else if(isV12jets) {
           stitchWeight=0.8;
         }
-        stitchWeight*=0.6;
       }
     }
 
@@ -1463,7 +1459,7 @@ void analyzeSample(
         jecAk8UncMutex.unlock();
         if(!isUp) relUnc*=-1;
         gt.fjPt[iJES] = gt.fjPt[0]*(1+relUnc);
-        gt.fjMSD_corr[iJES] = gt.fjPt[0]*(1+relUnc);
+        gt.fjMSD_corr[iJES] = gt.fjMSD_corr[0]*(1+relUnc);
       }
 
     } else {
