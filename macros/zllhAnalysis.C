@@ -34,6 +34,9 @@
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 
+//Interactive jo example, as it runs on batch
+//MitVHBBAnalysis/bash/runZllhAnalysis.sh  zhbb/testcondor2017 kZllHSR true 3 1 2017 ZJets_inclNLO_CP5_7   vhbbPlot::kZjets
+
 TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb4";
 TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb4";
 const bool useHtBinnedVJetsKFactor=true;
@@ -370,16 +373,16 @@ void zllhAnalysis(
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.10,0.09,0.22,0.32,0.42,0.52,0.63,1.00};
+        ao.MVAbins={-1.00,-0.11, 0.07,0.20,0.31,0.41,0.51,0.63,1.00};
       else
-        ao.MVAbins={-1.00,-0.11,0.03,0.13,0.22,0.31,0.41,0.53,1.00};
+        ao.MVAbins={-1.00,-0.20,-0.02,0.11,0.23,0.34,0.45,0.59,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
       if(year==2016)
-         ao.MVAbins={-1.00,-0.01,0.14,0.24,0.35,0.46,1.00};
+         ao.MVAbins={-1.00,-0.01,0.13,0.24,0.35,0.45,1.00};
       else
-         ao.MVAbins={-1.00, 0.08,0.21,0.30,0.38,0.47,1.00};
+         ao.MVAbins={-1.00, 0.02,0.17,0.28,0.39,0.51,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -397,7 +400,7 @@ void zllhAnalysis(
   ao.xmin.resize(nPlots);
   ao.xmax.resize(nPlots);
   ao.nbins.resize(nPlots);
-  ao.histoNames.resize(nPlots); 
+  ao.histoNames.resize(nPlots);
   ao.histoTitles.resize(nPlots);
   { int p=0;
     ao.histoNames[p]="MVAVar"                  ; ao.histoTitles[p]=""                      ;                                                p++;
@@ -630,8 +633,8 @@ void zllhAnalysis(
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_VZ_boosted_2017.weights.xml";
     else if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) 
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2016.weights.xml":
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2017.weights.xml";
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_ZH_boosted_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_ZH_boosted_2017.weights.xml";
     else if(ao.binZpt==0 && ao.selection==kZllHVZbbCR)
       bdtWeights = (ao.year==2016)?
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin0_2016.weights.xml":
@@ -642,12 +645,12 @@ void zllhAnalysis(
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin1_2017.weights.xml";
     else if(ao.binZpt==0)
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2016.weights.xml":
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2017.weights.xml";
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin0_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin0_2017.weights.xml";
     else if(ao.binZpt==1) 
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1_2016.weights.xml":
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1_2017.weights.xml";
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin1_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin1_2017.weights.xml";
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
       // This object is never deleted, which is a small memory leak,
@@ -942,7 +945,7 @@ void analyzeSample(
   bool isBQuarkEnriched = sampleName.Contains("bQuarks");
   bool isBHadronEnriched = sampleName.Contains("bHadrons");
   bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
-  bool useNPNLOLookup = (ao.year==2017 && sampleName=="ZJets_inclNLO_CP5");
+  bool useNPNLOLookup = (ao.year==2017 && sampleName.Contains("ZJets_inclNLO_CP5"));
   bool isV12jets = sampleName.Contains("Z1Jets") || sampleName.Contains("Z2Jets");
   bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
 
@@ -1354,13 +1357,15 @@ void analyzeSample(
     //  bLoad(b[Form("jotPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
     //  bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
     //}
+    bLoad(b["nJet"],ientry);
     bLoad(b["nJot"],ientry);
     bLoad(b["jotPt"],ientry);
+    bLoad(b["jotEta"],ientry);
     bLoad(b["jotPhi"],ientry);
     bLoad(b["jotFlav"],ientry);
     float bjet1Pt = gt.jotPt[0][gt.hbbjtidx[0][0]];
     float bjet2Pt = gt.jotPt[0][gt.hbbjtidx[0][1]];
-    
+
     if(isBoostedCategory) {
       // Isojets for boosted category
       bLoad(b["fjEta"],ientry);
