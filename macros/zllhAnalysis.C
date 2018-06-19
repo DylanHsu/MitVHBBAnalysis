@@ -43,9 +43,9 @@ const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
 const int nPlots=50; // Max number of plots
-const unsigned char nBinsZpt = 2;
+const unsigned char nBinsZpt = 3;
 const int nThreads=10;
-vector<float> binsZpt = {50,150,3000};
+vector<float> binsZpt = {50,125,200,3000};
 vector<TString> leptonStrings={"mm","ee","em"};
 float sf_training=1.4286;
 using namespace vhbbPlot;
@@ -373,9 +373,9 @@ void zllhAnalysis(
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.11,0.08,0.21,0.31,0.41,0.51,0.62,1.00};
+        ao.MVAbins={-1.00,-0.12, 0.06,0.18,0.29,0.39,0.49,0.60,1.00};
       else
-        ao.MVAbins={-1.00,-0.15,0.00,0.11,0.22,0.32,0.43,0.55,1.00};
+        ao.MVAbins={-1.00,-0.17,-0.01,0.11,0.21,0.31,0.42,0.54,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
@@ -408,7 +408,7 @@ void zllhAnalysis(
     ao.histoNames[p]="lepton2Pt"               ; ao.histoTitles[p]="Lepton 2 p_{T} [GeV]"  ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
     ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton 1 #eta"         ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="lepton2Eta"              ; ao.histoTitles[p]="Lepton 2 #eta"         ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
-    ao.histoNames[p]="ZBosonPt"                ; ao.histoTitles[p]="Z boson pT [GeV]"      ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
+    ao.histoNames[p]="ZBosonPt"                ; ao.histoTitles[p]="Z boson pT [GeV]"      ; ao.nbins[p]=  45; ao.xmin[p]=    50; ao.xmax[p]=   500; p++; 
     ao.histoNames[p]="ZBosonEta"               ; ao.histoTitles[p]="Z boson #eta"          ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="ZBosonPhi"               ; ao.histoTitles[p]="Z boson phi"           ; ao.nbins[p]=  32; ao.xmin[p]=     0; ao.xmax[p]= 3.142; p++; 
     ao.histoNames[p]="ZBosonM"                 ; ao.histoTitles[p]="Z boson mass [GeV]"    ; ao.nbins[p]=  60; ao.xmin[p]=     0; ao.xmax[p]=   120; p++; 
@@ -418,10 +418,10 @@ void zllhAnalysis(
     if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
       // fatjet only plots
       ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"         ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
-      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"          ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
+      ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"          ; ao.nbins[p]=  35; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
       ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"     ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="doubleB"                 ; ao.histoTitles[p]="Fatjet double b-tag"      ; ao.nbins[p]=  40; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
-      ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"      ; ao.nbins[p]=  20; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="ZBosonLep1CosThetaStarFJ"; ao.histoTitles[p]="cos#theta* Z(ll)+FJ"      ; ao.nbins[p]=  20; ao.xmin[p]=   -1.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="deltaEtaZHFJ"            ; ao.histoTitles[p]="|#Delta#eta(Z,FJ)|"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=    5.; p++; 
       ao.histoNames[p]="deltaPhiZHFJ"            ; ao.histoTitles[p]="#Delta#phi(Z,FJ)"         ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
       ao.histoNames[p]="mTZHFJ"                  ; ao.histoTitles[p]="m_{T} (Z+FJ) [GeV]"       ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]=  200.; p++; 
@@ -433,7 +433,7 @@ void zllhAnalysis(
       ao.histoNames[p]="mSD_rescaled"            ; ao.histoTitles[p]="Rescaled Fatjet mSD [GeV]"; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
     } else {
       ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
-      ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
+      ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  20; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
       ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  30; ao.xmin[p]=    25; ao.xmax[p]=   400; p++; 
       ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  30; ao.xmin[p]=    25; ao.xmax[p]=   400; p++; 
       if(year==2016) {
@@ -643,6 +643,10 @@ void zllhAnalysis(
       bdtWeights = (ao.year==2016)?
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin1_2016.weights.xml":
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin1_2017.weights.xml";
+    else if(ao.binZpt==2 && ao.selection==kZllHVZbbCR) 
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin2_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin2_2017.weights.xml";
     else if(ao.binZpt==0)
       bdtWeights = (ao.year==2016)?
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin0_2016.weights.xml":
@@ -651,6 +655,10 @@ void zllhAnalysis(
       bdtWeights = (ao.year==2016)?
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin1_2016.weights.xml":
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin1_2017.weights.xml";
+    else if(ao.binZpt==2) 
+      bdtWeights = (ao.year==2016)?
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin2_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin2_2017.weights.xml";
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
       // This object is never deleted, which is a small memory leak,
@@ -1123,6 +1131,25 @@ void analyzeSample(
     if(gt.nLooseLep!=2) continue; 
     if(ao.debug) printf("  Passed lepton multiplicity\n");
 
+    // Z boson basics
+    bLoad(b["ZBosonPt"],ientry);
+    bLoad(b["ZBosonEta"],ientry);
+    bLoad(b["ZBosonPhi"],ientry);
+    bLoad(b["ZBosonM"],ientry);
+    // Apply the ZpT window for this pt bin if doing resolved, provided
+    // we have chosen to do so by choosing a non-negative value of binZpt
+    float preselMinZpt=30, preselMaxZpt=9999;
+    if(
+      ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
+      !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel)
+    ) {
+      preselMinZpt = binsZpt[ao.binZpt];
+      preselMaxZpt = binsZpt[ao.binZpt+1];
+    }
+    if(gt.ZBosonPt<preselMinZpt || gt.ZBosonPt>=preselMaxZpt) continue;
+    if(gt.ZBosonM<10) continue;
+    if(ao.debug) printf("  Passed Z boson reconstruction\n");
+
     // Trigger
     bLoad(b["trigger"],ientry);
     bool passTrigger = (gt.trigger & ao.whichTriggers) !=0;
@@ -1161,25 +1188,6 @@ void analyzeSample(
     ) typeLepSel=2;
     if(typeLepSel!=0 && typeLepSel!=1 && typeLepSel!=2) continue;
     if(ao.debug) printf("  Passed lepton ID/iso multiplicity\n");
-    
-    // Z boson basics
-    bLoad(b["ZBosonPt"],ientry);
-    bLoad(b["ZBosonEta"],ientry);
-    bLoad(b["ZBosonPhi"],ientry);
-    bLoad(b["ZBosonM"],ientry);
-    // Apply the ZpT window for this pt bin if doing resolved, provided
-    // we have chosen to do so by choosing a non-negative value of binZpt
-    float preselMinZpt=30, preselMaxZpt=9999;
-    if(
-      ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
-      !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel)
-    ) {
-      preselMinZpt = binsZpt[ao.binZpt];
-      preselMaxZpt = binsZpt[ao.binZpt+1];
-    }
-    if(gt.ZBosonPt<preselMinZpt || gt.ZBosonPt>=preselMaxZpt) continue;
-    if(gt.ZBosonM<10) continue;
-    if(ao.debug) printf("  Passed Z boson reconstruction\n");
 
     // Lepton kinematics
     float lepton1Pt,lepton1Eta,lepton1Phi,lepton1RelIso,lepton1D0,lepton1DZ,

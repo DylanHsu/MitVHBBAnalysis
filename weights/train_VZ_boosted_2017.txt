@@ -125,22 +125,22 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : #events: (unweighted) sig: 1356 bkg: 18300
                          : Training 400 Decision Trees ... patience please
 0%, time left: unknown
-6%, time left: 10 sec
-12%, time left: 9 sec
-19%, time left: 8 sec
-25%, time left: 8 sec
-31%, time left: 7 sec
-37%, time left: 6 sec
-44%, time left: 6 sec
-50%, time left: 5 sec
-56%, time left: 4 sec
-62%, time left: 4 sec
-69%, time left: 3 sec
-75%, time left: 2 sec
+6%, time left: 12 sec
+12%, time left: 11 sec
+19%, time left: 10 sec
+25%, time left: 10 sec
+31%, time left: 9 sec
+37%, time left: 8 sec
+44%, time left: 7 sec
+50%, time left: 6 sec
+56%, time left: 5 sec
+62%, time left: 5 sec
+69%, time left: 4 sec
+75%, time left: 3 sec
 81%, time left: 2 sec
 87%, time left: 1 sec
 94%, time left: 0 sec
-                         : Elapsed time for training with 19656 events: 11.6 sec         
+                         : Elapsed time for training with 19656 events: 13.3 sec         
 <HEADER> BDT_singleClass_booste...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_boosted_VZ_boosted_2017 on training sample (19656 events)
 0%, time left: unknown
 6%, time left: 0 sec
@@ -158,7 +158,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 81%, time left: 0 sec
 87%, time left: 0 sec
 94%, time left: 0 sec
-                         : Elapsed time for evaluation of 19656 events: 0.369 sec       
+                         : Elapsed time for evaluation of 19656 events: 0.398 sec       
                          : Creating xml weight file: MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_VZ_boosted_2017.weights.xml
                          : Creating standalone class: MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_VZ_boosted_2017.class.C
 <HEADER> Factory                  : Training finished
@@ -207,7 +207,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 81%, time left: 0 sec
 87%, time left: 0 sec
 93%, time left: 0 sec
-                         : Elapsed time for evaluation of 45686 events: 0.797 sec       
+                         : Elapsed time for evaluation of 45686 events: 0.802 sec       
 <HEADER> Factory                  : Evaluate all methods
 <HEADER> Factory                  : Evaluate classifier: BDT_singleClass_boosted_VZ_boosted_2017
                          : 

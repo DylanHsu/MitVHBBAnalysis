@@ -5,7 +5,7 @@ useBoosted=$4  # true|false
 
 resolvedSelections="kZllHLightFlavorCR kZllHHeavyFlavorCR kZllH2TopCR kZllHSR kZllHVZbbCR kZllHPresel"
 boostedSelections="kZllHLightFlavorFJCR kZllHHeavyFlavorFJCR kZllHFJSR kZllHVZbbFJCR kZllHFJPresel"
-zptBins="0 1"
+zptBins="0 1 2"
 
 mkdir -p "MitVHBBAnalysis/datacards/${dataCardDir}"
 jobArgsFile="MitVHBBAnalysis/datacards/${dataCardDir}/jobArgs.txt"
