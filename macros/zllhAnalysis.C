@@ -136,7 +136,7 @@ struct analysisObjects {
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
-void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna);
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna, bool applyBtagPtEta);
 
 // useBoostedCategory:
 //   False means you will use all possible events to do the resolved Z(ll)H(bb)
@@ -175,16 +175,16 @@ void zllhAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2016)? deepcsv16Loose : deepcsvLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto"};
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"};
-  ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjjVZ", "boostedVeto"};
-  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"};
-  ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto"};
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto", "bJetPt"};
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjjVZ", "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto", "bJetPt"};
   ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"};
   ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ" };
   ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"};
-  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "2ijb", "Zmass"     , "bvetoFJ" };
+  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "2ijb", "Zmass"     , "bvetoFJ"};
   ao.cuts[kZllHVZbbFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSDVZ_SR",       "Zmass"     , "btagFJ" };
   ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR",         "Zmass"     , "btagFJ" };
   ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                 , "Zmass"                };
@@ -373,14 +373,14 @@ void zllhAnalysis(
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.11, 0.07,0.20,0.31,0.41,0.51,0.63,1.00};
+        ao.MVAbins={-1.00,-0.11,0.08,0.21,0.31,0.41,0.51,0.62,1.00};
       else
-        ao.MVAbins={-1.00,-0.20,-0.02,0.11,0.23,0.34,0.45,0.59,1.00};
+        ao.MVAbins={-1.00,-0.15,0.00,0.11,0.22,0.32,0.43,0.55,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
       if(year==2016)
-         ao.MVAbins={-1.00,-0.01,0.13,0.24,0.35,0.45,1.00};
+         ao.MVAbins={-1.00,-0.02,0.13,0.24,0.35,0.46,1.00};
       else
          ao.MVAbins={-1.00, 0.02,0.17,0.28,0.39,0.51,1.00};
       ao.MVAVarName="BDT Output";
@@ -434,8 +434,8 @@ void zllhAnalysis(
     } else {
       ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
       ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
-      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  30; ao.xmin[p]=    25; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  30; ao.xmin[p]=    25; ao.xmax[p]=   400; p++; 
       if(year==2016) {
       ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  45; ao.xmin[p]=   0.1; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  45; ao.xmin[p]=   0.1; ao.xmax[p]=    1.; p++; 
@@ -911,7 +911,7 @@ void zllhAnalysis(
 
   // Writing datacards - need to move this to separate function
   if(!isBatchMode)
-    writeDatacards(ao, dataCardDir, false);
+    writeDatacards(ao, dataCardDir, false, true);
 
   // Write plots
   char regionName[128];
@@ -1621,7 +1621,8 @@ void analyzeSample(
         if(ao.MVAVarType == 1) cut["mjj"] = gt.hbbm_reg[iJES] >= 60 && gt.hbbm_reg[iJES] < 150;
         cut["mjjVZ"   ] = gt.hbbm_reg[iJES] >= 60 && gt.hbbm_reg[iJES] < 120;
         cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
-      } 
+	cut["bJetPt"  ] = gt.jotPt[iJES][gt.hbbjtidx[0][0]] > 25 && gt.jotPt[iJES][gt.hbbjtidx[0][1]] > 25;
+      }
       selectionBits[iJES]=0; nMinusOneBits=0;
       if(passAllCuts(cut, ao.cuts[ao.selection])) {
         selectionBits[iJES] |= ao.selection;
@@ -2097,7 +2098,7 @@ void analyzeSample(
   } // End Event Loop
 }
 
-void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna) {  
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna, bool applyBtagPtEta) {  
   TString binZptSuffix="";
   if(ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
     !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
@@ -2232,9 +2233,15 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna) {
       newcardShape << Form("\n");
     }
 
+    unsigned int maxBtagPt = 5;
+    unsigned int maxBtagEta = 3;
+    if(applyBtagPtEta == false) {
+      maxBtagPt = 1;
+      maxBtagEta = 1;
+    }
     GeneralTree gt; 
-    for(unsigned iPt=0; iPt<5; iPt++)
-    for(unsigned iEta=0; iEta<3; iEta++)
+    for(unsigned iPt=0; iPt<maxBtagPt; iPt++)
+    for(unsigned iEta=0; iEta<maxBtagEta; iEta++)
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
       GeneralTree::csvShift shift = gt.csvShifts[iShift];
       if (shift==GeneralTree::csvCent) continue;
@@ -2374,7 +2381,8 @@ void datacardsFromHistograms(
   int MVAVarType=3,
   char binZpt=-1, 
   unsigned year=2016,
-  bool isVZbbAna = false
+  bool isVZbbAna = false,
+  bool applyBtagPtEta = true
 ) {
   struct analysisObjects ao;
   ao.useBoostedCategory=useBoostedCategory;
@@ -2444,6 +2452,14 @@ void datacardsFromHistograms(
         if (shift==GeneralTree::csvCent) continue;
         ao.histo_btag[iShift][iPt][iEta][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_VH_btag%d_pt%d_eta%d_%s",plotBaseNames[ic].Data(),year,iPt,iEta,btagShiftName(shift)));
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetDirectory(0);
+        if(applyBtagPtEta == false && (iPt!=0 || iEta!=0)) ao.histo_btag[iShift][0][0][lep][ic]->Add(ao.histo_btag[iShift][iPt][iEta][lep][ic]);
+      }
+      if(applyBtagPtEta == false) {
+        for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+          GeneralTree::csvShift shift = gt.csvShifts[iShift];
+          if (shift==GeneralTree::csvCent) continue;
+          ao.histo_btag[iShift][0][0][lep][ic]->Scale(1./15);
+        }
       }
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
         ao.histo_VGluUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VjetsGluFracUp"    , plotBaseNames[ic].Data()));
@@ -2459,5 +2475,5 @@ void datacardsFromHistograms(
     infile->Close();
   }
   
-  writeDatacards(ao, dataCardDir, isVZbbAna);
+  writeDatacards(ao, dataCardDir, isVZbbAna, applyBtagPtEta);
 }

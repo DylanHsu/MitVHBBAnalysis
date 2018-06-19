@@ -1,12 +1,12 @@
 
-Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test2017/ZllHFJSR_mvaTree.root",       "ZH_boosted_2017", true,true ,false,false)...
+Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test2017/ZllHFJSR.root",               "ZH_boosted_2017", true,true ,false,false)...
 (int) 50
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Background"
-                         : Add Tree mvaTree of type Background with 73222 events
+                         : Add Tree mvaTree of type Background with 74544 events
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Signal"
-                         : Add Tree mvaTree of type Signal with 73222 events
-                         : Add Tree mvaTree of type Background with 73222 events
-                         : Add Tree mvaTree of type Signal with 73222 events
+                         : Add Tree mvaTree of type Signal with 74544 events
+                         : Add Tree mvaTree of type Background with 74544 events
+                         : Add Tree mvaTree of type Signal with 74544 events
                          : Dataset[MitVHBBAnalysis] : Class index : 0  name : Background
                          : Dataset[MitVHBBAnalysis] : Class index : 1  name : Signal
 <HEADER> Factory                  : Booking method: BDT_singleClass_boosted_ZH_boosted_2017
@@ -19,22 +19,22 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 <HEADER> DataSetInfo              : Correlation matrix (Background):
                          : ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
                          :                nIsojet    fjPt     MSD Tau21SD ptBalanceZHFJ dEtaZHFJ dPhiZHFJ  mTZHFJ ptBalanceL1L2  dRL1L2 ZBosonPt lepton1Pt lepton2Pt  deltaM CosThetaCS nIsoBjet
-                         :       nIsojet:  +1.000  +0.184  +0.126  +0.139        +0.088   +0.057   -0.427  +0.144        -0.002  -0.112   +0.160    +0.125    +0.076  -0.047     +0.002   +0.467
-                         :          fjPt:  +0.184  +1.000  +0.179  -0.132        +0.601   +0.019   -0.043  +0.646        +0.116  -0.309   +0.611    +0.537    +0.159  +0.038     +0.011   +0.031
-                         :           MSD:  +0.126  +0.179  +1.000  -0.112        +0.157   +0.192   -0.043  +0.247        +0.015  -0.081   +0.089    +0.065    +0.047  +0.079     -0.025   +0.006
-                         :       Tau21SD:  +0.139  -0.132  -0.112  +1.000        -0.183   -0.076   -0.023  -0.119        -0.006  -0.020   +0.033    +0.002    +0.067  -0.041     -0.045   +0.192
-                         : ptBalanceZHFJ:  +0.088  +0.601  +0.157  -0.183        +1.000   +0.114   -0.138  +0.274        -0.036  +0.131   -0.234    -0.180    -0.109  +0.020     +0.041   -0.049
-                         :      dEtaZHFJ:  +0.057  +0.019  +0.192  -0.076        +0.114   +1.000   -0.036  +0.664        -0.083  -0.063   -0.076    -0.106    +0.049  +0.105     +0.126   +0.036
-                         :      dPhiZHFJ:  -0.427  -0.043  -0.043  -0.023        -0.138   -0.036   +1.000  -0.020        +0.030  -0.013   +0.062    +0.063    -0.001  -0.015     +0.045   -0.169
-                         :        mTZHFJ:  +0.144  +0.646  +0.247  -0.119        +0.274   +0.664   -0.020  +1.000        +0.058  -0.317   +0.529    +0.439    +0.182  +0.123     +0.061   +0.038
-                         : ptBalanceL1L2:  -0.002  +0.116  +0.015  -0.006        -0.036   -0.083   +0.030  +0.058        +1.000  +0.676   +0.179    +0.547    -0.654  +0.098     +0.004   -0.009
-                         :        dRL1L2:  -0.112  -0.309  -0.081  -0.020        +0.131   -0.063   -0.013  -0.317        +0.676  +1.000   -0.501    -0.085    -0.766  -0.005     +0.010   -0.067
-                         :      ZBosonPt:  +0.160  +0.611  +0.089  +0.033        -0.234   -0.076   +0.062  +0.529        +0.179  -0.501   +1.000    +0.849    +0.316  +0.036     -0.034   +0.102
-                         :     lepton1Pt:  +0.125  +0.537  +0.065  +0.002        -0.180   -0.106   +0.063  +0.439        +0.547  -0.085   +0.849    +1.000    -0.232  +0.072     -0.005   +0.080
-                         :     lepton2Pt:  +0.076  +0.159  +0.047  +0.067        -0.109   +0.049   -0.001  +0.182        -0.654  -0.766   +0.316    -0.232    +1.000  -0.066     -0.060   +0.047
-                         :        deltaM:  -0.047  +0.038  +0.079  -0.041        +0.020   +0.105   -0.015  +0.123        +0.098  -0.005   +0.036    +0.072    -0.066  +1.000     -0.054   -0.070
-                         :    CosThetaCS:  +0.002  +0.011  -0.025  -0.045        +0.041   +0.126   +0.045  +0.061        +0.004  +0.010   -0.034    -0.005    -0.060  -0.054     +1.000   +0.065
-                         :      nIsoBjet:  +0.467  +0.031  +0.006  +0.192        -0.049   +0.036   -0.169  +0.038        -0.009  -0.067   +0.102    +0.080    +0.047  -0.070     +0.065   +1.000
+                         :       nIsojet:  +1.000  +0.187  +0.126  +0.137        +0.090   +0.056   -0.427  +0.145        +0.001  -0.109   +0.160    +0.127    +0.073  -0.046     +0.002   +0.467
+                         :          fjPt:  +0.187  +1.000  +0.178  -0.130        +0.601   +0.018   -0.044  +0.646        +0.115  -0.310   +0.612    +0.537    +0.160  +0.037     +0.010   +0.036
+                         :           MSD:  +0.126  +0.178  +1.000  -0.111        +0.155   +0.189   -0.044  +0.245        +0.013  -0.082   +0.089    +0.063    +0.050  +0.078     -0.026   +0.007
+                         :       Tau21SD:  +0.137  -0.130  -0.111  +1.000        -0.180   -0.073   -0.020  -0.117        -0.004  -0.018   +0.032    +0.002    +0.065  -0.041     -0.041   +0.189
+                         : ptBalanceZHFJ:  +0.090  +0.601  +0.155  -0.180        +1.000   +0.113   -0.140  +0.272        -0.037  +0.130   -0.234    -0.180    -0.108  +0.019     +0.040   -0.043
+                         :      dEtaZHFJ:  +0.056  +0.018  +0.189  -0.073        +0.113   +1.000   -0.036  +0.664        -0.081  -0.061   -0.076    -0.105    +0.047  +0.104     +0.125   +0.035
+                         :      dPhiZHFJ:  -0.427  -0.044  -0.044  -0.020        -0.140   -0.036   +1.000  -0.020        +0.030  -0.014   +0.061    +0.063    -0.000  -0.014     +0.046   -0.171
+                         :        mTZHFJ:  +0.145  +0.646  +0.245  -0.117        +0.272   +0.664   -0.020  +1.000        +0.058  -0.317   +0.530    +0.440    +0.182  +0.121     +0.060   +0.040
+                         : ptBalanceL1L2:  +0.001  +0.115  +0.013  -0.004        -0.037   -0.081   +0.030  +0.058        +1.000  +0.678   +0.178    +0.547    -0.655  +0.097     +0.004   -0.010
+                         :        dRL1L2:  -0.109  -0.310  -0.082  -0.018        +0.130   -0.061   -0.014  -0.317        +0.678  +1.000   -0.500    -0.083    -0.767  -0.006     +0.011   -0.067
+                         :      ZBosonPt:  +0.160  +0.612  +0.089  +0.032        -0.234   -0.076   +0.061  +0.530        +0.178  -0.500   +1.000    +0.849    +0.315  +0.035     -0.035   +0.102
+                         :     lepton1Pt:  +0.127  +0.537  +0.063  +0.002        -0.180   -0.105   +0.063  +0.440        +0.547  -0.083   +0.849    +1.000    -0.233  +0.071     -0.005   +0.080
+                         :     lepton2Pt:  +0.073  +0.160  +0.050  +0.065        -0.108   +0.047   -0.000  +0.182        -0.655  -0.767   +0.315    -0.233    +1.000  -0.065     -0.061   +0.047
+                         :        deltaM:  -0.046  +0.037  +0.078  -0.041        +0.019   +0.104   -0.014  +0.121        +0.097  -0.006   +0.035    +0.071    -0.065  +1.000     -0.054   -0.069
+                         :    CosThetaCS:  +0.002  +0.010  -0.026  -0.041        +0.040   +0.125   +0.046  +0.060        +0.004  +0.011   -0.035    -0.005    -0.061  -0.054     +1.000   +0.066
+                         :      nIsoBjet:  +0.467  +0.036  +0.007  +0.189        -0.043   +0.035   -0.171  +0.040        -0.010  -0.067   +0.102    +0.080    +0.047  -0.069     +0.066   +1.000
                          : ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 <HEADER> DataSetInfo              : Correlation matrix (Signal):
                          : ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -80,68 +80,68 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : Input : variable 'nIsoBjet' <---> Output : variable 'nIsoBjet'
 <HEADER> TFHandler_Factory        :      Variable             Mean             RMS     [        Min             Max ]
                          : ------------------------------------------------------------------------------------
-                         :       nIsojet:        0.98015        0.89646   [         0.0000         7.0000 ]
-                         :          fjPt:         391.50         125.22   [         250.04         1592.1 ]
-                         :           MSD:         100.36         16.112   [         80.001         149.98 ]
-                         :       Tau21SD:        0.37786        0.15267   [       0.074613         1.0000 ]
-                         : ptBalanceZHFJ:         1.0838        0.27648   [        0.45562         4.6628 ]
-                         :      dEtaZHFJ:        0.99718        0.81451   [     0.00029111         4.2085 ]
-                         :      dPhiZHFJ:         2.9871        0.13970   [         2.5000         3.1416 ]
-                         :        mTZHFJ:         949.61         334.15   [         532.88         5225.3 ]
-                         : ptBalanceL1L2:         4.8825         5.2857   [        0.15877         61.408 ]
-                         :        dRL1L2:        0.65921        0.22155   [        0.14197         2.1290 ]
-                         :      ZBosonPt:         367.21         99.515   [         250.03         1371.8 ]
-                         :     lepton1Pt:         278.84         95.891   [         43.154         1290.3 ]
-                         :     lepton2Pt:         94.741         53.206   [         10.017         531.94 ]
-                         :        deltaM:         3.1285         2.9221   [     4.6594e-05         16.139 ]
-                         :    CosThetaCS:       0.060629        0.56776   [        -1.0000        0.99986 ]
-                         :      nIsoBjet:        0.22360        0.45803   [         0.0000         4.0000 ]
+                         :       nIsojet:        0.97818        0.89585   [         0.0000         7.0000 ]
+                         :          fjPt:         391.05         124.89   [         250.04         1592.1 ]
+                         :           MSD:         100.28         16.070   [         80.001         149.98 ]
+                         :       Tau21SD:        0.37728        0.15246   [       0.074613         1.0000 ]
+                         : ptBalanceZHFJ:         1.0836        0.27560   [        0.45562         4.6628 ]
+                         :      dEtaZHFJ:        0.99564        0.81317   [     0.00029111         4.2735 ]
+                         :      dPhiZHFJ:         2.9870        0.13971   [         2.5000         3.1416 ]
+                         :        mTZHFJ:         948.06         333.11   [         532.88         5225.3 ]
+                         : ptBalanceL1L2:         4.8844         5.2769   [        0.15877         61.408 ]
+                         :        dRL1L2:        0.65990        0.22142   [        0.14197         2.1290 ]
+                         :      ZBosonPt:         366.82         99.255   [         250.03         1371.8 ]
+                         :     lepton1Pt:         278.58         95.685   [         43.154         1290.3 ]
+                         :     lepton2Pt:         94.621         53.144   [         10.017         531.94 ]
+                         :        deltaM:         3.1194         2.9195   [     4.6594e-05         16.139 ]
+                         :    CosThetaCS:       0.060308        0.56693   [        -1.0000        0.99986 ]
+                         :      nIsoBjet:        0.22273        0.45729   [         0.0000         4.0000 ]
                          : ------------------------------------------------------------------------------------
                          : Ranking input variables (method unspecific)...
 <HEADER> IdTransformation         : Ranking result (top variable is best ranked)
                          : --------------------------------------
                          : Rank : Variable      : Separation
                          : --------------------------------------
-                         :    1 : MSD           : 2.594e-01
-                         :    2 : Tau21SD       : 1.388e-01
-                         :    3 : dEtaZHFJ      : 1.164e-01
-                         :    4 : dPhiZHFJ      : 1.075e-01
-                         :    5 : nIsojet       : 8.829e-02
-                         :    6 : lepton2Pt     : 8.595e-02
-                         :    7 : ptBalanceZHFJ : 8.190e-02
-                         :    8 : dRL1L2        : 7.584e-02
-                         :    9 : ptBalanceL1L2 : 5.960e-02
-                         :   10 : mTZHFJ        : 5.417e-02
-                         :   11 : CosThetaCS    : 5.292e-02
-                         :   12 : ZBosonPt      : 4.069e-02
-                         :   13 : fjPt          : 3.380e-02
-                         :   14 : lepton1Pt     : 2.919e-02
-                         :   15 : deltaM        : 2.826e-02
-                         :   16 : nIsoBjet      : 1.912e-02
+                         :    1 : MSD           : 2.603e-01
+                         :    2 : Tau21SD       : 1.360e-01
+                         :    3 : dEtaZHFJ      : 1.159e-01
+                         :    4 : dPhiZHFJ      : 1.065e-01
+                         :    5 : nIsojet       : 8.775e-02
+                         :    6 : lepton2Pt     : 8.533e-02
+                         :    7 : ptBalanceZHFJ : 8.065e-02
+                         :    8 : dRL1L2        : 7.649e-02
+                         :    9 : ptBalanceL1L2 : 5.959e-02
+                         :   10 : mTZHFJ        : 5.323e-02
+                         :   11 : CosThetaCS    : 5.229e-02
+                         :   12 : ZBosonPt      : 4.025e-02
+                         :   13 : fjPt          : 3.260e-02
+                         :   14 : deltaM        : 2.747e-02
+                         :   15 : lepton1Pt     : 2.003e-02
+                         :   16 : nIsoBjet      : 1.885e-02
                          : --------------------------------------
 <HEADER> Factory                  : Train method: BDT_singleClass_boosted_ZH_boosted_2017 for Classification
                          : 
-<HEADER> BDT_singleClass_booste...: #events: (reweighted) sig: 5865.5 bkg: 5865.5
-                         : #events: (unweighted) sig: 5564 bkg: 6167
+<HEADER> BDT_singleClass_booste...: #events: (reweighted) sig: 5970.5 bkg: 5970.5
+                         : #events: (unweighted) sig: 5564 bkg: 6377
                          : Training 400 Decision Trees ... patience please
 0%, time left: unknown
-6%, time left: 6 sec
-12%, time left: 6 sec
-19%, time left: 5 sec
-25%, time left: 5 sec
+6%, time left: 7 sec
+12%, time left: 7 sec
+19%, time left: 6 sec
+25%, time left: 6 sec
 31%, time left: 5 sec
-37%, time left: 4 sec
+37%, time left: 5 sec
 44%, time left: 4 sec
-50%, time left: 3 sec
+50%, time left: 4 sec
 56%, time left: 3 sec
-62%, time left: 2 sec
+62%, time left: 3 sec
 69%, time left: 2 sec
-75%, time left: 1 sec
+75%, time left: 2 sec
 81%, time left: 1 sec
-87%, time left: 0 sec
+87%, time left: 1 sec
 94%, time left: 0 sec
-                         : Elapsed time for training with 11731 events: 7.5 sec         
-<HEADER> BDT_singleClass_booste...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_boosted_ZH_boosted_2017 on training sample (11731 events)
+                         : Elapsed time for training with 11941 events: 9.11 sec         
+<HEADER> BDT_singleClass_booste...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_boosted_ZH_boosted_2017 on training sample (11941 events)
 0%, time left: unknown
 6%, time left: 0 sec
 12%, time left: 0 sec
@@ -157,8 +157,8 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 75%, time left: 0 sec
 81%, time left: 0 sec
 87%, time left: 0 sec
-93%, time left: 0 sec
-                         : Elapsed time for evaluation of 11731 events: 0.232 sec       
+94%, time left: 0 sec
+                         : Elapsed time for evaluation of 11941 events: 0.239 sec       
                          : Creating xml weight file: MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_ZH_boosted_2017.weights.xml
                          : Creating standalone class: MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_ZH_boosted_2017.class.C
 <HEADER> Factory                  : Training finished
@@ -168,29 +168,29 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : -----------------------------------------------
                          : Rank : Variable      : Variable Importance
                          : -----------------------------------------------
-                         :    1 : MSD           : 1.381e-01
-                         :    2 : Tau21SD       : 1.072e-01
-                         :    3 : nIsojet       : 7.551e-02
-                         :    4 : ptBalanceZHFJ : 7.256e-02
-                         :    5 : dPhiZHFJ      : 7.040e-02
-                         :    6 : dEtaZHFJ      : 6.829e-02
-                         :    7 : mTZHFJ        : 6.653e-02
-                         :    8 : dRL1L2        : 5.901e-02
-                         :    9 : deltaM        : 5.682e-02
-                         :   10 : lepton2Pt     : 5.558e-02
-                         :   11 : ptBalanceL1L2 : 4.957e-02
-                         :   12 : CosThetaCS    : 4.557e-02
-                         :   13 : ZBosonPt      : 4.273e-02
-                         :   14 : lepton1Pt     : 3.932e-02
-                         :   15 : fjPt          : 3.900e-02
-                         :   16 : nIsoBjet      : 1.378e-02
+                         :    1 : MSD           : 1.408e-01
+                         :    2 : Tau21SD       : 1.030e-01
+                         :    3 : dPhiZHFJ      : 7.657e-02
+                         :    4 : nIsojet       : 7.468e-02
+                         :    5 : ptBalanceZHFJ : 7.148e-02
+                         :    6 : mTZHFJ        : 6.659e-02
+                         :    7 : dRL1L2        : 6.422e-02
+                         :    8 : dEtaZHFJ      : 6.360e-02
+                         :    9 : lepton2Pt     : 5.756e-02
+                         :   10 : ptBalanceL1L2 : 5.371e-02
+                         :   11 : deltaM        : 5.311e-02
+                         :   12 : CosThetaCS    : 4.874e-02
+                         :   13 : ZBosonPt      : 4.076e-02
+                         :   14 : lepton1Pt     : 3.737e-02
+                         :   15 : fjPt          : 3.589e-02
+                         :   16 : nIsoBjet      : 1.183e-02
                          : -----------------------------------------------
 <HEADER> Factory                  : === Destroy and recreate all methods via weight files for testing ===
                          : 
 <HEADER> Factory                  : Test all methods
 <HEADER> Factory                  : Test method: BDT_singleClass_boosted_ZH_boosted_2017 for Classification performance
                          : 
-<HEADER> BDT_singleClass_booste...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_boosted_ZH_boosted_2017 on testing sample (27369 events)
+<HEADER> BDT_singleClass_booste...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_boosted_ZH_boosted_2017 on testing sample (27840 events)
 0%, time left: unknown
 6%, time left: 0 sec
 12%, time left: 0 sec
@@ -207,7 +207,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 81%, time left: 0 sec
 87%, time left: 0 sec
 93%, time left: 0 sec
-                         : Elapsed time for evaluation of 27369 events: 0.457 sec       
+                         : Elapsed time for evaluation of 27840 events: 0.464 sec       
 <HEADER> Factory                  : Evaluate all methods
 <HEADER> Factory                  : Evaluate classifier: BDT_singleClass_boosted_ZH_boosted_2017
                          : 
@@ -215,29 +215,29 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : 
 <HEADER> TFHandler_BDT_singleCl...:      Variable             Mean             RMS     [        Min             Max ]
                          : ------------------------------------------------------------------------------------
-                         :       nIsojet:         1.1297         1.0129   [         0.0000         8.0000 ]
-                         :          fjPt:         405.51         135.47   [         250.00         2073.0 ]
-                         :           MSD:         100.39         16.357   [         80.003         150.00 ]
-                         :       Tau21SD:        0.39341        0.15005   [         0.0000         1.0000 ]
-                         : ptBalanceZHFJ:         1.1092        0.35040   [        0.41975         4.4809 ]
-                         :      dEtaZHFJ:        0.96511        0.73814   [     6.5207e-05         4.4597 ]
-                         :      dPhiZHFJ:         2.9761        0.14610   [         2.5001         3.1416 ]
-                         :        mTZHFJ:         954.34         327.94   [         537.58         4713.1 ]
-                         : ptBalanceL1L2:         5.2052         5.4480   [       0.058547         71.093 ]
-                         :        dRL1L2:        0.66835        0.23678   [        0.13907         2.0482 ]
-                         :      ZBosonPt:         375.56         108.93   [         250.00         1636.2 ]
-                         :     lepton1Pt:         285.05         100.40   [         15.026         1508.0 ]
-                         :     lepton2Pt:         96.827         60.151   [         10.001         643.93 ]
-                         :        deltaM:         2.8618         2.7829   [     0.00019918         16.172 ]
-                         :    CosThetaCS:       0.053576        0.56604   [       -0.99976        0.99994 ]
-                         :      nIsoBjet:        0.23577        0.47489   [         0.0000         4.0000 ]
+                         :       nIsojet:         1.1233         1.0095   [         0.0000         8.0000 ]
+                         :          fjPt:         405.06         135.23   [         250.00         2073.0 ]
+                         :           MSD:         100.35         16.359   [         80.003         150.00 ]
+                         :       Tau21SD:        0.39272        0.14997   [         0.0000         1.0000 ]
+                         : ptBalanceZHFJ:         1.1098        0.34920   [        0.41975         4.4809 ]
+                         :      dEtaZHFJ:        0.96556        0.73697   [     6.5207e-05         4.4597 ]
+                         :      dPhiZHFJ:         2.9763        0.14594   [         2.5001         3.1416 ]
+                         :        mTZHFJ:         952.98         327.33   [         537.58         4713.1 ]
+                         : ptBalanceL1L2:         5.2276         5.4707   [       0.058547         71.093 ]
+                         :        dRL1L2:        0.67038        0.23822   [        0.13907         2.0482 ]
+                         :      ZBosonPt:         374.91         108.75   [         250.00         1636.2 ]
+                         :     lepton1Pt:         284.59         100.31   [         15.026         1508.0 ]
+                         :     lepton2Pt:         96.634         60.255   [         10.001         643.93 ]
+                         :        deltaM:         2.8800         2.8137   [     0.00019918         16.172 ]
+                         :    CosThetaCS:       0.052822        0.56570   [       -0.99976        0.99994 ]
+                         :      nIsoBjet:        0.23559        0.47411   [         0.0000         4.0000 ]
                          : ------------------------------------------------------------------------------------
                          : 
                          : Evaluation results ranked by best signal efficiency and purity (area)
                          : -------------------------------------------------------------------------------------------------------------------
                          : DataSet       MVA                       
                          : Name:         Method:          ROC-integ
-                         : MitVHBBAnalysis BDT_singleClass_boosted_ZH_boosted_2017: 0.888
+                         : MitVHBBAnalysis BDT_singleClass_boosted_ZH_boosted_2017: 0.889
                          : -------------------------------------------------------------------------------------------------------------------
                          : 
                          : Testing efficiency compared to training efficiency (overtraining check)
@@ -245,12 +245,12 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : DataSet              MVA              Signal efficiency: from test sample (from training sample) 
                          : Name:                Method:          @B=0.01             @B=0.10            @B=0.30   
                          : -------------------------------------------------------------------------------------------------------------------
-                         : MitVHBBAnalysis      BDT_singleClass_boosted_ZH_boosted_2017: 0.222 (0.314)       0.679 (0.775)      0.891 (0.932)
+                         : MitVHBBAnalysis      BDT_singleClass_boosted_ZH_boosted_2017: 0.240 (0.313)       0.687 (0.777)      0.890 (0.931)
                          : -------------------------------------------------------------------------------------------------------------------
                          : 
-<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TestTree' with 27369 events
+<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TestTree' with 27840 events
                          : 
-<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TrainTree' with 11731 events
+<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TrainTree' with 11941 events
                          : 
 <HEADER> Factory                  : Thank you for using TMVA!
                          : For citation information, please visit: http://tmva.sf.net/citeTMVA.html
