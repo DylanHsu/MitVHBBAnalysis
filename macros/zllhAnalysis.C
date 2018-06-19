@@ -955,7 +955,7 @@ void analyzeSample(
   bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
   bool useNPNLOLookup = (ao.year==2017 && sampleName.Contains("ZJets_inclNLO_CP5"));
   bool isV12jets = sampleName.Contains("Z1Jets") || sampleName.Contains("Z2Jets");
-  bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
+  bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName.Contains("ZJets_inclNLO_CP5"); 
 
   unsigned nThread = split>=0? split:0;
   // End sample properties
