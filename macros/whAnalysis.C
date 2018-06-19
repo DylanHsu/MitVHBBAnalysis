@@ -126,7 +126,7 @@ struct analysisObjects {
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
-void writeDatacards(analysisObjects &ao, TString dataCardDir);
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool applyBtagPtEta);
 
 // useBoostedCategory:
 //   False means you will use all possible events to do the resolved Z(ll)H(bb)
@@ -158,10 +158,10 @@ void whAnalysis(
   ao.vzbbMode = vzbbMode;
   TString ntupleDir2016 = multithread?
     "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb3":
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb3/split";
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb4/split";
   TString ntupleDir2017 = multithread?
     "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb3":    
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb3/split";    
+    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb4/split";    
   TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
 
   // Analysis Cuts
@@ -453,6 +453,8 @@ void whAnalysis(
       ao.histoNames[p]="bjet2Pt"            ; ao.histoTitles[p]="B-jet 2 pT [GeV]"        ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
       ao.histoNames[p]="bjet1btag"          ; ao.histoTitles[p]="B-jet 1 btag"            ; ao.nbins[p]=  50; ao.xmin[p]=    0.; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="bjet2btag"          ; ao.histoTitles[p]="B-jet 2 btag"            ; ao.nbins[p]=  50; ao.xmin[p]=    0.; ao.xmax[p]=    1.; p++; 
+      ao.histoNames[p]="bjet1Eta"           ; ao.histoTitles[p]="B-jet 1 eta"             ; ao.nbins[p]=  50; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
+      ao.histoNames[p]="bjet2Eta"           ; ao.histoTitles[p]="B-jet 2 eta"             ; ao.nbins[p]=  50; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
       ao.histoNames[p]="nJet"               ; ao.histoTitles[p]="N central AK4CHS jets"   ; ao.nbins[p]=   8; ao.xmin[p]=    0.; ao.xmax[p]=    8.; p++; 
       ao.histoNames[p]="deltaPhiWH"         ; ao.histoTitles[p]="#Delta#phi(W,H) [Rad]"   ; ao.nbins[p]=  20; ao.xmin[p]= 1.571; ao.xmax[p]= 3.142; p++; 
       ao.histoNames[p]="ptBalanceWH"        ; ao.histoTitles[p]="|H pT / W pT|"           ; ao.nbins[p]=  30; ao.xmin[p]=    0.; ao.xmax[p]=    3.; p++; 
@@ -895,7 +897,7 @@ void whAnalysis(
   
   // Writing datacards
   if(!isBatchMode)
-    writeDatacards(ao, dataCardDir);
+    writeDatacards(ao, dataCardDir, false);
   
   // Write plots
   char regionName[128];
@@ -935,10 +937,11 @@ void analyzeSample(
   bool isBQuarkEnriched = sampleName.Contains("bQuarks");
   bool isBHadronEnriched = sampleName.Contains("bHadrons");
   bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
-  bool isV12jets = sampleName.Contains("Z1Jets") || sampleName.Contains("Z2Jets");
+  bool useNPNLOLookup = (ao.year==2017 && sampleName.Contains("ZJets_inclNLO_CP5"));
+  bool isV12jets = sampleName.Contains("1Jets") || sampleName.Contains("2Jets");
   bool isW2jets = sampleName.Contains("W2Jets"); 
   bool isNLOWjets = sampleName.Contains("W2Jets") || sampleName.Contains("W1Jets");
-  bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
+  bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName.Contains("ZJets_inclNLO_CP5"); 
 
   unsigned nThread = split>=0? split:0;
   // End sample properties
@@ -988,6 +991,8 @@ void analyzeSample(
   std::map<TString, void*> extraAddresses;
   float normalizedWeight; unsigned char npnlo;
   extraAddresses["normalizedWeight"] = &normalizedWeight;
+  if(useNPNLOLookup)
+    extraAddresses["npnlo"] = &npnlo;
     
   // Map of the branches
   std::map<TString, TBranch*> b;
@@ -1040,7 +1045,6 @@ void analyzeSample(
     // Stitching Cuts/Weights
     float stitchWeight=1;
     if(ao.year==2016) {
-
       // B-enriched sample stitching
       // Let the b-enriched samples eat 90% of the XS where there are b quarks or status 2 b hadrons
       if(type==kWjets||type==kZjets) {
@@ -1065,12 +1069,28 @@ void analyzeSample(
         }
       }
     } else if(ao.year==2017) {
-      //if(isW2jets) {
-      //  // Handle the overlap of the samples W2JetsToLNu_WpT100to150_CP5, W2JetsToLNu_WpT50to150_CP5
-      //  bLoad(b["trueGenBosonPt"],ientry);
-      //  if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
-      //    stitchWeight = 0.5;
-      //}
+      if(type==kZjets) {
+        if(useNPNLOLookup) {
+          // Here, we perform the lookup of the NPNLO (number of NLO partons) for inclusive Z+jets
+          bLoad(b["npnlo"],ientry);
+          bLoad(b["eventNumber"],ientry);
+          bLoad(b["trueGenBosonPt"],ientry); 
+          if(npnlo==255) {
+            printf("WARNING: NPNLO=255 for eventtNumber %llu\n", gt.eventNumber);
+            continue;
+          }
+          if(npnlo==1 || npnlo==2) stitchWeight=0.2;
+          else stitchWeight=1;
+        } else if(isV12jets) {
+          stitchWeight=0.8;
+        }
+      }
+      if(isW2jets) {
+        // Handle the overlap of the samples W2JetsToLNu_WpT100to150_CP5, W2JetsToLNu_WpT50to150_CP5
+        bLoad(b["trueGenBosonPt"],ientry);
+        if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
+          stitchWeight = 0.5;
+      }
     }
 
     //////////////////////
@@ -1402,7 +1422,7 @@ void analyzeSample(
         jecAk8UncMutex.unlock();
         if(!isUp) relUnc*=-1;
         gt.fjPt[iJES] = gt.fjPt[0]*(1+relUnc);
-        gt.fjMSD_corr[iJES] = gt.fjPt[0]*(1+relUnc);
+        gt.fjMSD_corr[iJES] = gt.fjMSD_corr[0]*(1+relUnc);
       }
 
     } else {
@@ -2016,6 +2036,8 @@ void analyzeSample(
       else if (ao.histoNames[p]=="bjet2Pt"                 ) { theVar = bjet2Pt                    ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet1btag"               ) { theVar = bjet1btag                  ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="bjet2btag"               ) { theVar = bjet2btag                  ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="bjet1Eta"                ) { theVar = bjet1Eta                   ; makePlot = passFullSel; }
+      else if (ao.histoNames[p]=="bjet2Eta"                ) { theVar = bjet2Eta                   ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="deltaPhiWH"              ) { theVar = deltaPhiWH                 ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="ptBalanceWH"             ) { theVar = ptBalanceWH                ; makePlot = passFullSel; }
       else if (ao.histoNames[p]=="nJet"                    ) { theVar = gt.nJet[0]                 ; makePlot = passFullSel; }
@@ -2051,7 +2073,7 @@ void analyzeSample(
   } // End Event Loop
 }
 
-void writeDatacards(analysisObjects &ao, TString dataCardDir) {  
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool applyBtagPtEta) {  
   for(unsigned lep=0; lep<nLepSel; lep++) {
     ofstream newcardShape;
     newcardShape.open(Form("MitVHBBAnalysis/datacards/%s/datacard_W%sH%s.txt",
@@ -2157,9 +2179,15 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir) {
       newcardShape << Form("\n");
     }
     
+    unsigned int maxBtagPt = 5;
+    unsigned int maxBtagEta = 3;
+    if(!applyBtagPtEta) {
+      maxBtagPt = 1;
+      maxBtagEta = 1;
+    }
     GeneralTree gt;
-    for(unsigned iPt=0; iPt<5; iPt++)
-    for(unsigned iEta=0; iEta<3; iEta++)
+    for(unsigned iPt=0; iPt<maxBtagPt; iPt++)
+    for(unsigned iEta=0; iEta<maxBtagEta; iEta++)
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
       GeneralTree::csvShift shift = gt.csvShifts[iShift];
       if (shift==GeneralTree::csvCent) continue;
@@ -2275,7 +2303,8 @@ void datacardsFromHistograms(
   vhbbPlot::selectionType selection,
   bool useBoostedCategory=false,
   int MVAVarType=3,
-  unsigned year=2016
+  unsigned year=2016,
+  bool applyBtagPtEta=false
 ) {
   struct analysisObjects ao;
   ao.useBoostedCategory=useBoostedCategory;
@@ -2333,6 +2362,14 @@ void datacardsFromHistograms(
         if (shift==GeneralTree::csvCent) continue;
         ao.histo_btag[iShift][iPt][iEta][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_VH_btag%d_pt%d_eta%d_%s",plotBaseNames[ic].Data(),year,iPt,iEta,btagShiftName(shift)));
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetDirectory(0);
+        if(applyBtagPtEta == false && (iPt!=0 || iEta!=0)) ao.histo_btag[iShift][0][0][lep][ic]->Add(ao.histo_btag[iShift][iPt][iEta][lep][ic]);
+      }
+      if(applyBtagPtEta == false) {
+        for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+          GeneralTree::csvShift shift = gt.csvShifts[iShift];
+          if (shift==GeneralTree::csvCent) continue;
+          ao.histo_btag[iShift][0][0][lep][ic]->Scale(1./15);
+        }
       }
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
         ao.histo_VGluUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VjetsGluFracUp"    , plotBaseNames[ic].Data()));
@@ -2348,5 +2385,5 @@ void datacardsFromHistograms(
     infile->Close();
   }
   
-  writeDatacards(ao, dataCardDir);
+  writeDatacards(ao, dataCardDir, applyBtagPtEta);
 }
