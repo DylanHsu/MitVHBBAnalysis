@@ -34,8 +34,11 @@
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 
-TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb3";
-TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb3";
+//Interactive jo example, as it runs on batch
+//MitVHBBAnalysis/bash/runZllhAnalysis.sh  zhbb/testcondor2017 kZllHSR true 3 1 2017 ZJets_inclNLO_CP5_7   vhbbPlot::kZjets
+
+TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb4";
+TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb4";
 const bool useHtBinnedVJetsKFactor=true;
 const int NJES = (int)shiftjes::N; // Number of JES variations
 const int nLepSel=3; // Number of lepton selections
@@ -133,7 +136,7 @@ struct analysisObjects {
 };
 
 void analyzeSample(pair<TString,vhbbPlot::sampleType> sample, TTree *events, analysisObjects &ao, int split=-1);
-void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna);
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna, bool applyBtagPtEta);
 
 // useBoostedCategory:
 //   False means you will use all possible events to do the resolved Z(ll)H(bb)
@@ -172,16 +175,16 @@ void zllhAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2016)? deepcsv16Loose : deepcsvLoose;
-  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto"};
-  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto"};
-  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto"};
-  ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjjVZ", "boostedVeto"};
-  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto"};
-  ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto"};
+  ao.cuts[kZllHLightFlavorCR  ] = {"ZpT","bveto","Zmass"                               , "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHHeavyFlavorCR  ] = {"ZpT","btag" ,"ZmassTight","lowMET","dPhiZH","mjjSB", "boostedVeto", "bJetPt"};
+  ao.cuts[kZllH2TopCR         ] = {"ZpT","btag" ,"ZmassSB"                             , "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHVZbbCR         ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjjVZ", "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHSR             ] = {"ZpT","btag" ,"Zmass"              ,"dPhiZH","mjj"  , "boostedVeto", "bJetPt"};
+  ao.cuts[kZllHPresel         ] = {"ZpT"        ,"Zmass"                               , "boostedVeto", "bJetPt"};
   ao.cuts[kZllHLightFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   ,         "Zmass"     , "bvetoFJ"};
   ao.cuts[kZllHHeavyFlavorFJCR] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SB",         "Zmass"     , "btagFJ" };
   ao.cuts[kZllHTT1bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "1ijb", "Zmass"     , "bvetoFJ"};
-  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "2ijb", "Zmass"     , "bvetoFJ" };
+  ao.cuts[kZllHTT2bFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD"   , "2ijb", "Zmass"     , "bvetoFJ"};
   ao.cuts[kZllHVZbbFJCR       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSDVZ_SR",       "Zmass"     , "btagFJ" };
   ao.cuts[kZllHFJSR           ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ","mSD_SR",         "Zmass"     , "btagFJ" };
   ao.cuts[kZllHFJPresel       ] = {"boostedCat","ZpTFJ","pTFJ","dPhiZHFJ"                 , "Zmass"                };
@@ -228,8 +231,6 @@ void zllhAnalysis(
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );       
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );       
   } else if(year==2017) {
-    //samples.emplace_back("DoubleEG"                       , vhbbPlot::kData   );
-    //samples.emplace_back("DoubleMuon"                     , vhbbPlot::kData   );
     samples.emplace_back("LeptonPDSalad2017"              , vhbbPlot::kData   );
     samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );
     samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );
@@ -237,7 +238,7 @@ void zllhAnalysis(
     samples.emplace_back("TTTo2L2Nu_CP5"                  , vhbbPlot::kTT     );
     samples.emplace_back("SingleTop_tW_CP5"               , vhbbPlot::kTop    );
     samples.emplace_back("SingleTop_tbarW_CP5"            , vhbbPlot::kTop    );
-    // 0 files produced by CMS for DY1JetsToLL_M-50_LHEZpT_50-150_TuneCP5_13TeV-amcnloFXFX-pythia8, work around it
+    samples.emplace_back("Z1Jets_ZpT50to150_CP5"          , vhbbPlot::kZjets  );
     samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("Z1Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  );
     samples.emplace_back("Z1Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  );
@@ -372,16 +373,16 @@ void zllhAnalysis(
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.10,0.09,0.22,0.32,0.42,0.52,0.63,1.00};
+        ao.MVAbins={-1.00,-0.11,0.08,0.21,0.31,0.41,0.51,0.62,1.00};
       else
-        ao.MVAbins={-1.00,-0.11,0.03,0.13,0.22,0.31,0.41,0.53,1.00};
+        ao.MVAbins={-1.00,-0.15,0.00,0.11,0.22,0.32,0.43,0.55,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
       if(year==2016)
-         ao.MVAbins={-1.00,-0.01,0.14,0.24,0.35,0.46,1.00};
+         ao.MVAbins={-1.00,-0.02,0.13,0.24,0.35,0.46,1.00};
       else
-         ao.MVAbins={-1.00, 0.08,0.21,0.30,0.38,0.47,1.00};
+         ao.MVAbins={-1.00, 0.02,0.17,0.28,0.39,0.51,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -399,7 +400,7 @@ void zllhAnalysis(
   ao.xmin.resize(nPlots);
   ao.xmax.resize(nPlots);
   ao.nbins.resize(nPlots);
-  ao.histoNames.resize(nPlots); 
+  ao.histoNames.resize(nPlots);
   ao.histoTitles.resize(nPlots);
   { int p=0;
     ao.histoNames[p]="MVAVar"                  ; ao.histoTitles[p]=""                      ;                                                p++;
@@ -433,8 +434,8 @@ void zllhAnalysis(
     } else {
       ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
       ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
-      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
-      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  30; ao.xmin[p]=    25; ao.xmax[p]=   400; p++; 
+      ao.histoNames[p]="bjet2Pt"                 ; ao.histoTitles[p]="B-jet 2 pT [GeV]"         ; ao.nbins[p]=  30; ao.xmin[p]=    25; ao.xmax[p]=   400; p++; 
       if(year==2016) {
       ao.histoNames[p]="bjet1btag"               ; ao.histoTitles[p]="B-jet 1 btag"             ; ao.nbins[p]=  45; ao.xmin[p]=   0.1; ao.xmax[p]=    1.; p++; 
       ao.histoNames[p]="bjet2btag"               ; ao.histoTitles[p]="B-jet 2 btag"             ; ao.nbins[p]=  45; ao.xmin[p]=   0.1; ao.xmax[p]=    1.; p++; 
@@ -632,8 +633,8 @@ void zllhAnalysis(
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_VZ_boosted_2017.weights.xml";
     else if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) 
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2016.weights.xml":
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_boosted_2017.weights.xml";
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_ZH_boosted_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_ZH_boosted_2017.weights.xml";
     else if(ao.binZpt==0 && ao.selection==kZllHVZbbCR)
       bdtWeights = (ao.year==2016)?
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin0_2016.weights.xml":
@@ -644,12 +645,12 @@ void zllhAnalysis(
         "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_VZ_ZptBin1_2017.weights.xml";
     else if(ao.binZpt==0)
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2016.weights.xml":
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin0_2017.weights.xml";
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin0_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin0_2017.weights.xml";
     else if(ao.binZpt==1) 
       bdtWeights = (ao.year==2016)?
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1_2016.weights.xml":
-        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZptBin1_2017.weights.xml";
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin1_2016.weights.xml":
+        "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin1_2017.weights.xml";
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
       // This object is never deleted, which is a small memory leak,
@@ -910,7 +911,7 @@ void zllhAnalysis(
 
   // Writing datacards - need to move this to separate function
   if(!isBatchMode)
-    writeDatacards(ao, dataCardDir, false);
+    writeDatacards(ao, dataCardDir, false, true);
 
   // Write plots
   char regionName[128];
@@ -944,7 +945,7 @@ void analyzeSample(
   bool isBQuarkEnriched = sampleName.Contains("bQuarks");
   bool isBHadronEnriched = sampleName.Contains("bHadrons");
   bool isInclusiveZjets = type==vhbbPlot::kZjets && !sampleName.Contains("_ht") && !sampleName.Contains("_pt");
-  bool useNPNLOLookup = (ao.year==2017 && sampleName=="ZJets_inclNLO_CP5");
+  bool useNPNLOLookup = (ao.year==2017 && sampleName.Contains("ZJets_inclNLO_CP5"));
   bool isV12jets = sampleName.Contains("Z1Jets") || sampleName.Contains("Z2Jets");
   bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName=="ZJets_inclNLO_CP5"; 
 
@@ -1088,13 +1089,11 @@ void analyzeSample(
             printf("WARNING: NPNLO=255 for eventtNumber %llu\n", gt.eventNumber);
             continue;
           }
-          if(npnlo==1 && gt.trueGenBosonPt<150) stitchWeight=1; // HACK because of missing files!
-          else if(npnlo==1 || npnlo==2) stitchWeight=0.2;
+          if(npnlo==1 || npnlo==2) stitchWeight=0.2;
           else stitchWeight=1;
         } else if(isV12jets) {
           stitchWeight=0.8;
         }
-        stitchWeight*=0.6;
       }
     }
 
@@ -1358,13 +1357,15 @@ void analyzeSample(
     //  bLoad(b[Form("jotPt_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
     //  bLoad(b[Form("nJot_%s",jesName(static_cast<shiftjes>(iJES)).Data())],ientry);
     //}
+    bLoad(b["nJet"],ientry);
     bLoad(b["nJot"],ientry);
     bLoad(b["jotPt"],ientry);
+    bLoad(b["jotEta"],ientry);
     bLoad(b["jotPhi"],ientry);
     bLoad(b["jotFlav"],ientry);
     float bjet1Pt = gt.jotPt[0][gt.hbbjtidx[0][0]];
     float bjet2Pt = gt.jotPt[0][gt.hbbjtidx[0][1]];
-    
+
     if(isBoostedCategory) {
       // Isojets for boosted category
       bLoad(b["fjEta"],ientry);
@@ -1463,7 +1464,7 @@ void analyzeSample(
         jecAk8UncMutex.unlock();
         if(!isUp) relUnc*=-1;
         gt.fjPt[iJES] = gt.fjPt[0]*(1+relUnc);
-        gt.fjMSD_corr[iJES] = gt.fjPt[0]*(1+relUnc);
+        gt.fjMSD_corr[iJES] = gt.fjMSD_corr[0]*(1+relUnc);
       }
 
     } else {
@@ -1620,7 +1621,8 @@ void analyzeSample(
         if(ao.MVAVarType == 1) cut["mjj"] = gt.hbbm_reg[iJES] >= 60 && gt.hbbm_reg[iJES] < 150;
         cut["mjjVZ"   ] = gt.hbbm_reg[iJES] >= 60 && gt.hbbm_reg[iJES] < 120;
         cut["mjjSB"   ] = !cut["mjj"] && gt.hbbm_reg[iJES]<250;
-      } 
+	cut["bJetPt"  ] = gt.jotPt[iJES][gt.hbbjtidx[0][0]] > 25 && gt.jotPt[iJES][gt.hbbjtidx[0][1]] > 25;
+      }
       selectionBits[iJES]=0; nMinusOneBits=0;
       if(passAllCuts(cut, ao.cuts[ao.selection])) {
         selectionBits[iJES] |= ao.selection;
@@ -2096,7 +2098,7 @@ void analyzeSample(
   } // End Event Loop
 }
 
-void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna) {  
+void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna, bool applyBtagPtEta) {  
   TString binZptSuffix="";
   if(ao.binZpt>=0 && ao.binZpt<nBinsZpt && 
     !(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel))
@@ -2231,9 +2233,15 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna) {
       newcardShape << Form("\n");
     }
 
+    unsigned int maxBtagPt = 5;
+    unsigned int maxBtagEta = 3;
+    if(applyBtagPtEta == false) {
+      maxBtagPt = 1;
+      maxBtagEta = 1;
+    }
     GeneralTree gt; 
-    for(unsigned iPt=0; iPt<5; iPt++)
-    for(unsigned iEta=0; iEta<3; iEta++)
+    for(unsigned iPt=0; iPt<maxBtagPt; iPt++)
+    for(unsigned iEta=0; iEta<maxBtagEta; iEta++)
     for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
       GeneralTree::csvShift shift = gt.csvShifts[iShift];
       if (shift==GeneralTree::csvCent) continue;
@@ -2373,7 +2381,8 @@ void datacardsFromHistograms(
   int MVAVarType=3,
   char binZpt=-1, 
   unsigned year=2016,
-  bool isVZbbAna = false
+  bool isVZbbAna = false,
+  bool applyBtagPtEta = true
 ) {
   struct analysisObjects ao;
   ao.useBoostedCategory=useBoostedCategory;
@@ -2443,6 +2452,14 @@ void datacardsFromHistograms(
         if (shift==GeneralTree::csvCent) continue;
         ao.histo_btag[iShift][iPt][iEta][lep][ic] = (TH1F*)infile->Get(Form("histo_%s_CMS_VH_btag%d_pt%d_eta%d_%s",plotBaseNames[ic].Data(),year,iPt,iEta,btagShiftName(shift)));
         ao.histo_btag[iShift][iPt][iEta][lep][ic]->SetDirectory(0);
+        if(applyBtagPtEta == false && (iPt!=0 || iEta!=0)) ao.histo_btag[iShift][0][0][lep][ic]->Add(ao.histo_btag[iShift][iPt][iEta][lep][ic]);
+      }
+      if(applyBtagPtEta == false) {
+        for (unsigned iShift=0; iShift<GeneralTree::nCsvShifts; iShift++) {
+          GeneralTree::csvShift shift = gt.csvShifts[iShift];
+          if (shift==GeneralTree::csvCent) continue;
+          ao.histo_btag[iShift][0][0][lep][ic]->Scale(1./15);
+        }
       }
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
         ao.histo_VGluUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VjetsGluFracUp"    , plotBaseNames[ic].Data()));
@@ -2458,5 +2475,5 @@ void datacardsFromHistograms(
     infile->Close();
   }
   
-  writeDatacards(ao, dataCardDir, isVZbbAna);
+  writeDatacards(ao, dataCardDir, isVZbbAna, applyBtagPtEta);
 }
