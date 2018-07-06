@@ -190,8 +190,7 @@ void whAnalysis(
     batchSuffix = "_"+batchSampleName; // add a suffix to the output with this sample's name
     samples.emplace_back(batchSampleName, batchSampleType);
   } else if(year==2016) {
-    samples.emplace_back("SingleElectron"                 , vhbbPlot::kData   );
-    samples.emplace_back("SingleMuon"                     , vhbbPlot::kData   );
+    samples.emplace_back("LeptonPDSalad2016"              , vhbbPlot::kData   );
     samples.emplace_back("QCD_ht100to200"                 , vhbbPlot::kQCD    );
     samples.emplace_back("QCD_ht200to300"                 , vhbbPlot::kQCD    );
     samples.emplace_back("QCD_ht300to500"                 , vhbbPlot::kQCD    );
@@ -239,9 +238,8 @@ void whAnalysis(
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
   } else if(year==2017) {
-    samples.emplace_back("SingleElectron"                 , vhbbPlot::kData   ); 
-    samples.emplace_back("SingleMuon"                     , vhbbPlot::kData   );
-    samples.emplace_back("Diboson_ww_CP5"                 , vhbbPlot::kWW     );
+    samples.emplace_back("LeptonPDSalad2017"              , vhbbPlot::kData   );
+    samples.emplace_back("WWTo1L1Nu2Q_AMC"                , vhbbPlot::kWW     );
     samples.emplace_back("WZTo1L1Nu2Q"                    , vhbbPlot::kVZ     );
     samples.emplace_back("WZTo2L2Q"                       , vhbbPlot::kVZ     );
     samples.emplace_back("ZZTo2L2Q"                       , vhbbPlot::kVZ     );
@@ -264,11 +262,9 @@ void whAnalysis(
     samples.emplace_back("W1JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
     samples.emplace_back("W1JetsToLNu_WpT400toinf_CP5"    , vhbbPlot::kWjets  ); 
     samples.emplace_back("W2JetsToLNu_WpT50to150_CP5"     , vhbbPlot::kWjets  ); 
-    //samples.emplace_back("W2JetsToLNu_WpT100to150_CP5"    , vhbbPlot::kWjets  ); 
-    //samples.emplace_back("W2JetsToLNu_WpT150to250_CP5"    , vhbbPlot::kWjets  ); 
-    //samples.emplace_back("W2JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
-    samples.emplace_back("W2JetsToLNu_WpT150to250_CP5_notTruncated"    , vhbbPlot::kWjets  ); 
-    samples.emplace_back("W2JetsToLNu_WpT250to400_CP5_notTruncated"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT100to150_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT150to250_CP5"    , vhbbPlot::kWjets  ); 
+    samples.emplace_back("W2JetsToLNu_WpT250to400_CP5"    , vhbbPlot::kWjets  ); 
     samples.emplace_back("W2JetsToLNu_WpT400toinf_CP5"    , vhbbPlot::kWjets  ); 
     
     //samples.emplace_back("WJets_ht100to200_CP5"           , vhbbPlot::kWjets  ); 
@@ -280,6 +276,7 @@ void whAnalysis(
 
     samples.emplace_back("WmLNuHbb"                       , vhbbPlot::kWH     );
     samples.emplace_back("WpLNuHbb"                       , vhbbPlot::kWH     );
+    samples.emplace_back("ZJets_inclNLO"                  , vhbbPlot::kZjets  ); 
     samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  ); 
     samples.emplace_back("Z1Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  ); 
     samples.emplace_back("Z1Jets_ZpT400toinf_CP5"         , vhbbPlot::kZjets  ); 
@@ -395,8 +392,8 @@ void whAnalysis(
     }
   } else if((selection>=kWHLightFlavorFJCR && selection<kWHFJSR) || selection==kWHFJPresel) {
     if(selection==kWHHeavyFlavorFJCR) {
-      if(ao.vzbbMode) ao.MVAbins={40,45,50,55,60,65,70,75,80};
-      else            ao.MVAbins={120,130,140,160,180,200};
+      if(ao.vzbbMode) ao.MVAbins={120,130,140,160,180,200};
+      else            ao.MVAbins={40,45,50,55,60,65,70,75,80};
     } else {
       ao.MVAbins={40,45,50,55,60,65,70,75,80,90,100,110,120,130,140,160,180,200};
     }
@@ -1595,7 +1592,8 @@ void analyzeSample(
       if(isBoostedCategory) {
         cut["mSD"     ] = gt.fjMSD_corr[iJES] >= 40;
         cut["mSD_SR"  ] = gt.fjMSD_corr[iJES] >= 80 && gt.fjMSD_corr[iJES]<150;
-        cut["mSD_SB"  ] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
+        if(ao.vzbbMode) cut["mSD_SB"] = gt.fjMSD_corr[iJES] >= 120 && gt.fjMSD_corr[iJES]<200;
+        else            cut["mSD_SB"] = cut["mSD"] && gt.fjMSD_corr[iJES]<80;
         cut["mSDVZ_SR"] = gt.fjMSD_corr[iJES] >= 40 && gt.fjMSD_corr[iJES]<120;
         cut["pTFJ"    ] = gt.fjPt[iJES] > 250;
         cut["0ijb"    ] = isojetNBtags[iJES]==0;
