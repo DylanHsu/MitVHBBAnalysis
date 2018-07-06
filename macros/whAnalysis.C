@@ -156,12 +156,8 @@ void whAnalysis(
   ao.useBoostedCategory=useBoostedCategory;
   ao.selection = selection;
   ao.vzbbMode = vzbbMode;
-  TString ntupleDir2016 = multithread?
-    "/data/t3home000/dhsu/dylansVHSkims/2016/v_009_vhbb3":
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb4/split";
-  TString ntupleDir2017 = multithread?
-    "/data/t3home000/dhsu/dylansVHSkims/2017/v_010_vhbb3":    
-    "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb4/split";    
+  TString ntupleDir2016 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2016/v_009_vhbb4/split";
+  TString ntupleDir2017 = "/mnt/hadoop/scratch/dhsu/dylansVHSkims/2017/v_010_vhbb4/split";    
   TString ntupleDir = (year==2016)? ntupleDir2016:ntupleDir2017;
 
   // Analysis Cuts
@@ -943,6 +939,10 @@ void analyzeSample(
   bool isNLOWjets = sampleName.Contains("W2Jets") || sampleName.Contains("W1Jets");
   bool isNLOZjets = sampleName.Contains("ZJets_pt") || sampleName.Contains("ZJets_m10") || isV12jets || sampleName.Contains("ZJets_inclNLO_CP5"); 
 
+  bool isW2jets250to400 = sampleName.Contains("W2JetsToLNu_WpT250to400_CP5");
+  bool isW2jets400toinf = sampleName.Contains("W2JetsToLNu_WpT400toinf_CP5");
+  
+
   unsigned nThread = split>=0? split:0;
   // End sample properties
   ////////////////////////////////////////////////////////////////////////
@@ -1091,6 +1091,9 @@ void analyzeSample(
         if(gt.trueGenBosonPt>=100 && gt.trueGenBosonPt<150)
           stitchWeight = 0.5;
       }
+      if(isW2jets250to400 || isW2jets400toinf)
+        //stitchWeight *= 0.5397 / 0.3307;
+        stitchWeight *= 3.754;
     }
 
     //////////////////////
@@ -1469,22 +1472,25 @@ void analyzeSample(
       // Handle the NJET variations
       for(unsigned iJES=1; iJES<NJES; iJES++) {
         if(iJES==(unsigned)shiftjes::kJESTotalUp || iJES==(unsigned)shiftjes::kJESTotalDown) continue;
-        gt.nJet[iJES]=0;
-        gt.nJot[iJES]=0;
-        for(unsigned char iJ=0; iJ<gt.nJotMax; iJ++) {
-          jecAk4UncMutex.lock();
-          bool isUp = !(iJES%2==0);
-          ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt[0][iJ]);
-          ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta  [iJ]);
-          float relUnc = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
-          jecAk4UncMutex.unlock();
-          if(!isUp) relUnc*=-1;
-          gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
-          if(gt.jotPt[iJES][iJ] < 20) continue;
-          gt.nJot[iJES]++;
-          if(fabs(gt.jotEta[iJ])<2.4)
-            gt.nJet[iJES]++;
-        }
+        // Hack due to bug in the v4 ntuples with non-nominal jets having eta=-99
+        gt.nJet[iJES]=gt.nJet[0];
+        gt.nJot[iJES]=gt.nJot[0];
+        //gt.nJet[iJES]=0;
+        //gt.nJot[iJES]=0;
+        //for(unsigned char iJ=0; iJ<gt.nJotMax; iJ++) {
+        //  jecAk4UncMutex.lock();
+        //  bool isUp = !(iJES%2==0);
+        //  ao.jecUncsAK4[iJES]->setJetPt (gt.jotPt[0][iJ]);
+        //  ao.jecUncsAK4[iJES]->setJetEta(gt.jotEta  [iJ]);
+        //  float relUnc = ao.jecUncsAK4[iJES]->getUncertainty(isUp);
+        //  jecAk4UncMutex.unlock();
+        //  if(!isUp) relUnc*=-1;
+        //  gt.jotPt[iJES][iJ] = gt.jotPt[0][iJ]*(1+relUnc);
+        //  if(gt.jotPt[iJES][iJ] < 20) continue;
+        //  gt.nJot[iJES]++;
+        //  if(fabs(gt.jotEta[iJ])<2.4)
+        //    gt.nJet[iJES]++;
+        //}
       }
     }
     float deltaPhiWH    = -1;
@@ -1658,7 +1664,6 @@ void analyzeSample(
               TMath::Min(1.39,gt.lheHT         /1000.)
             ));
         }
-        if(ao.year==2017) { gt.sf_ewkV=1; } // hack
         weight *= gt.sf_qcdV * gt.sf_ewkV;
       }
       bLoad(b["scale"],ientry);
