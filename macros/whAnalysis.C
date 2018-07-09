@@ -92,6 +92,8 @@ struct analysisObjects {
   // Corrections storage
   TH1D *puWeights=0, *puWeightsUp=0, *puWeightsDown=0;
   TH2D *kfactors_ZJets=0, *kfactors_WJets=0;
+  TFile *fMuTrigEff=0, *fEleTrigEff=0;
+  TH1F *hMuTrigEff=0, *hEleTrigEffEB=0, *hEleTrigEffEE=0;
   BTagCalibrationReader *deepcsvSFs=0; 
   BTagCalibration *deepcsvCalib=0; 
   vector<double> ZjetsEWKCorr, WjetsEWKCorr;
@@ -317,6 +319,20 @@ void whAnalysis(
   ao.puWeightsDown->SetDirectory(0); 
   delete fPUFile;
   // Done Loading Pileup Weights
+ 
+  // Load trigger efficiencies -- should be in the ntuples, oh well
+  if(year==2017) {
+    ao.fMuTrigEff=TFile::Open("MitVHBBAnalysis/data/singleMuonEfficienciesAndSF_RunBtoF_Nov17Nov2017.root");
+    ao.hMuTrigEff=(TH1F*)ao.fMuTrigEff->Get("IsoMu27_PtBins/efficienciesDATA/histo_pt_DATA");
+    ao.hMuTrigEff->SetDirectory(0);
+    ao.fMuTrigEff->Close();
+    ao.fEleTrigEff=TFile::Open("MitVHBBAnalysis/data/ele32Eff_2017.root");
+    ao.hEleTrigEffEB=(TH1F*)ao.fEleTrigEff->Get("ele32EffEB");
+    ao.hEleTrigEffEB->SetDirectory(0);
+    ao.hEleTrigEffEE=(TH1F*)ao.fEleTrigEff->Get("ele32EffEE");
+    ao.hEleTrigEffEE->SetDirectory(0);
+    ao.fEleTrigEff->Close();
+  }
 
   // Load JEC Uncertainties
   TString ak4JecUncPath = (year==2016)? 
@@ -675,7 +691,7 @@ void whAnalysis(
           bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WZ_july9_fromGui_test2016.weights.xml";
         else
           bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WZ_july9_fromGui_test2017.weights.xml";   
-    
+      }
     }
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
@@ -1703,7 +1719,10 @@ void analyzeSample(
         bLoad(b["muonSfTight"],ientry);
         bLoad(b["muonSfUnc"],ientry);
         bLoad(b["sf_muTrig"],ientry);
-        weight *= gt.sf_muTrig; 
+        if(type!=kData) { // apply trigger efficiency to MC
+          if(ao.year==2017) gt.sf_muTrig = ao.hMuTrigEff->GetBinContent(TMath::Min(1199.99f, gt.muonPt[0]));
+          weight *= gt.sf_muTrig; 
+        }
         weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
         weight_muSF = (1+gt.muonSfUnc[0]);
       } else if(typeLepSel==1) {
@@ -1711,7 +1730,15 @@ void analyzeSample(
         bLoad(b["electronSfMvaWP80"],ientry);
         bLoad(b["electronSfUnc"],ientry);
         bLoad(b["sf_eleTrig"],ientry);
-        weight *= gt.sf_eleTrig; 
+        if(type!=kData) { // apply trigger efficiency to MC
+          if(ao.year==2017) {
+            if(fabs(gt.electronEta[0])<1.479)
+              gt.sf_eleTrig = ao.hEleTrigEffEB->GetBinContent(TMath::Min(249.99f, gt.electronPt[0]));
+            else
+              gt.sf_eleTrig = ao.hEleTrigEffEE->GetBinContent(TMath::Min(249.99f, gt.electronPt[0]));
+          }
+          weight *= gt.sf_eleTrig; 
+        }
         weight *= gt.electronSfReco[0] * gt.electronSfMvaWP80[0];
         weight_elSF = (1+gt.electronSfUnc[0]);
       }
