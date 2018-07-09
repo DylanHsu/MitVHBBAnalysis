@@ -376,11 +376,17 @@ void whAnalysis(
     }
   } else if(ao.MVAVarType==3) {
     if(selection==kWHSR || selection==kWHVZbbCR) {
-      ao.MVAbins={-1,0,0.4,0.6,0.8,0.9};
+      if(year==2016)
+        ao.MVAbins={-1.00,-0.17,0.00,0.12,0.23,0.33,0.44,0.58,1.00};
+      else
+        ao.MVAbins={-1.00,-0.14,0.00,0.11,0.21,0.30,0.40,0.52,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kWHFJSR || selection==kWHVZbbFJCR) {
-      ao.MVAbins={-0.8,-0.4,0,0.4,0.5,0.6};
+      if(year==2016)
+        ao.MVAbins={-1.00,-0.32,-0.23,-0.15,-0.08,-0.01,1.00};
+      else
+        ao.MVAbins={-1.00,-0.35,-0.25,-0.17,-0.10,-0.01,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
