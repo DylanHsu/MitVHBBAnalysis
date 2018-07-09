@@ -1,0 +1,203 @@
+
+Processing MitVHBBAnalysis/macros/whbbMVA.C+("MitVHBBAnalysis/mva/whbb/july9_fromGui_test2016/WHVZbbCR.root","WZ_july9_fromGui_test2016",false,false,false,true)...
+(int) 50
+<HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Background"
+                         : Add Tree mvaTree of type Background with 238818 events
+<HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Signal"
+                         : Add Tree mvaTree of type Signal with 238818 events
+                         : Add Tree mvaTree of type Background with 238818 events
+                         : Add Tree mvaTree of type Signal with 238818 events
+                         : Dataset[MitVHBBAnalysis] : Class index : 0  name : Background
+                         : Dataset[MitVHBBAnalysis] : Class index : 1  name : Signal
+<HEADER> Factory                  : Booking method: BDT_singleClass_resolved_WZ_july9_fromGui_test2016
+                         : 
+                         : Dataset[MitVHBBAnalysis] : DataSet splitmode=BLOCK differs from mixmode=RANDOM
+<HEADER> DataSetFactory           : [MitVHBBAnalysis] : Number of events in input trees
+                         : 
+                         : 
+                         : Dataset[MitVHBBAnalysis] : No weight renormalisation applied: use original global and event weights
+<HEADER> DataSetInfo              : Correlation matrix (Background):
+                         : -------------------------------------------------------------------------------------------------------------------------------------
+                         :              WBosonPt dPhil1W  nSoft5 bjet1Pt bjet2Pt bjet2btag   hbbpt    hbbm  dPhiWH ptBalanceWH topMass dRBjets dEtaLep1H nAddJet
+                         :    WBosonPt:   +1.000  -0.243  +0.022  +0.287  +0.232    -0.113  +0.524  +0.038  +0.109      -0.433  +0.431  -0.292    +0.033  +0.075
+                         :     dPhil1W:   -0.243  +1.000  +0.009  -0.084  -0.054    +0.059  -0.142  -0.006  -0.049      +0.103  -0.020  +0.082    -0.020  -0.007
+                         :      nSoft5:   +0.022  +0.009  +1.000  +0.025  -0.011    -0.040  +0.013  +0.038  -0.146      +0.011  -0.011  +0.017    -0.011  +0.377
+                         :     bjet1Pt:   +0.287  -0.084  +0.025  +1.000  -0.497    -0.110  +0.533  +0.059  +0.078      +0.252  +0.266  -0.287    +0.037  +0.030
+                         :     bjet2Pt:   +0.232  -0.054  -0.011  -0.497  +1.000    +0.023  +0.416  +0.105  +0.057      +0.196  +0.189  -0.217    +0.014  +0.005
+                         :   bjet2btag:   -0.113  +0.059  -0.040  -0.110  +0.023    +1.000  -0.096  -0.060  -0.045      +0.012  -0.108  +0.030    -0.061  -0.020
+                         :       hbbpt:   +0.524  -0.142  +0.013  +0.533  +0.416    -0.096  +1.000  +0.013  +0.132      +0.496  +0.485  -0.636    +0.053  +0.030
+                         :        hbbm:   +0.038  -0.006  +0.038  +0.059  +0.105    -0.060  +0.013  +1.000  +0.010      -0.027  -0.020  +0.664    +0.029  +0.036
+                         :      dPhiWH:   +0.109  -0.049  -0.146  +0.078  +0.057    -0.045  +0.132  +0.010  +1.000      -0.002  +0.141  -0.086    +0.028  -0.218
+                         : ptBalanceWH:   -0.433  +0.103  +0.011  +0.252  +0.196    +0.012  +0.496  -0.027  -0.002      +1.000  +0.071  -0.369    +0.029  -0.011
+                         :     topMass:   +0.431  -0.020  -0.011  +0.266  +0.189    -0.108  +0.485  -0.020  +0.141      +0.071  +1.000  -0.393    +0.346  +0.005
+                         :     dRBjets:   -0.292  +0.082  +0.017  -0.287  -0.217    +0.030  -0.636  +0.664  -0.086      -0.369  -0.393  +1.000    -0.004  +0.014
+                         :   dEtaLep1H:   +0.033  -0.020  -0.011  +0.037  +0.014    -0.061  +0.053  +0.029  +0.028      +0.029  +0.346  -0.004    +1.000  +0.011
+                         :     nAddJet:   +0.075  -0.007  +0.377  +0.030  +0.005    -0.020  +0.030  +0.036  -0.218      -0.011  +0.005  +0.014    +0.011  +1.000
+                         : -------------------------------------------------------------------------------------------------------------------------------------
+<HEADER> DataSetInfo              : Correlation matrix (Signal):
+                         : -------------------------------------------------------------------------------------------------------------------------------------
+                         :              WBosonPt dPhil1W  nSoft5 bjet1Pt bjet2Pt bjet2btag   hbbpt    hbbm  dPhiWH ptBalanceWH topMass dRBjets dEtaLep1H nAddJet
+                         :    WBosonPt:   +1.000  -0.195  +0.115  +0.225  +0.450    -0.046  +0.629  +0.027  +0.027      -0.325  +0.491  -0.476    -0.025  +0.121
+                         :     dPhil1W:   -0.195  +1.000  -0.014  -0.064  -0.092    +0.001  -0.143  +0.003  +0.011      +0.026  -0.017  +0.150    +0.031  -0.083
+                         :      nSoft5:   +0.115  -0.014  +1.000  +0.056  +0.112    +0.033  +0.147  -0.012  -0.225      +0.086  +0.061  -0.139    -0.030  +0.448
+                         :     bjet1Pt:   +0.225  -0.064  +0.056  +1.000  -0.379    -0.004  +0.368  +0.121  +0.025      +0.201  +0.181  -0.307    -0.021  +0.025
+                         :     bjet2Pt:   +0.450  -0.092  +0.112  -0.379  +1.000    -0.016  +0.698  +0.082  -0.037      +0.313  +0.375  -0.465    +0.026  +0.143
+                         :   bjet2btag:   -0.046  +0.001  +0.033  -0.004  -0.016    +1.000  -0.032  +0.062  +0.015      +0.004  -0.010  +0.033    +0.001  +0.001
+                         :       hbbpt:   +0.629  -0.143  +0.147  +0.368  +0.698    -0.032  +1.000  +0.109  -0.028      +0.483  +0.517  -0.750    +0.006  +0.167
+                         :        hbbm:   +0.027  +0.003  -0.012  +0.121  +0.082    +0.062  +0.109  +1.000  +0.001      +0.114  -0.007  +0.402    -0.009  +0.000
+                         :      dPhiWH:   +0.027  +0.011  -0.225  +0.025  -0.037    +0.015  -0.028  +0.001  +1.000      -0.111  +0.085  -0.020    +0.055  -0.298
+                         : ptBalanceWH:   -0.325  +0.026  +0.086  +0.201  +0.313    +0.004  +0.483  +0.114  -0.111      +1.000  +0.052  -0.357    +0.020  +0.108
+                         :     topMass:   +0.491  -0.017  +0.061  +0.181  +0.375    -0.010  +0.517  -0.007  +0.085      +0.052  +1.000  -0.478    +0.384  +0.077
+                         :     dRBjets:   -0.476  +0.150  -0.139  -0.307  -0.465    +0.033  -0.750  +0.402  -0.020      -0.357  -0.478  +1.000    +0.018  -0.127
+                         :   dEtaLep1H:   -0.025  +0.031  -0.030  -0.021  +0.026    +0.001  +0.006  -0.009  +0.055      +0.020  +0.384  +0.018    +1.000  -0.021
+                         :     nAddJet:   +0.121  -0.083  +0.448  +0.025  +0.143    +0.001  +0.167  +0.000  -0.298      +0.108  +0.077  -0.127    -0.021  +1.000
+                         : -------------------------------------------------------------------------------------------------------------------------------------
+<HEADER> DataSetFactory           : [MitVHBBAnalysis] :  
+                         : 
+<HEADER> Factory                  : Train all methods
+<HEADER> Factory                  : [MitVHBBAnalysis] : Create Transformation "I" with events from all classes.
+                         : 
+<HEADER>                          : Transformation, Variable selection : 
+                         : Input : variable 'WBosonPt' <---> Output : variable 'WBosonPt'
+                         : Input : variable 'dPhil1W' <---> Output : variable 'dPhil1W'
+                         : Input : variable 'nSoft5' <---> Output : variable 'nSoft5'
+                         : Input : variable 'bjet1Pt' <---> Output : variable 'bjet1Pt'
+                         : Input : variable 'bjet2Pt' <---> Output : variable 'bjet2Pt'
+                         : Input : variable 'bjet2btag' <---> Output : variable 'bjet2btag'
+                         : Input : variable 'hbbpt' <---> Output : variable 'hbbpt'
+                         : Input : variable 'hbbm' <---> Output : variable 'hbbm'
+                         : Input : variable 'dPhiWH' <---> Output : variable 'dPhiWH'
+                         : Input : variable 'ptBalanceWH' <---> Output : variable 'ptBalanceWH'
+                         : Input : variable 'topMass' <---> Output : variable 'topMass'
+                         : Input : variable 'dRBjets' <---> Output : variable 'dRBjets'
+                         : Input : variable 'dEtaLep1H' <---> Output : variable 'dEtaLep1H'
+                         : Input : variable 'nAddJet' <---> Output : variable 'nAddJet'
+<HEADER> TFHandler_Factory        :    Variable           Mean           RMS   [        Min           Max ]
+                         : --------------------------------------------------------------------------
+                         :    WBosonPt:       151.47       44.440   [       100.01       1114.0 ]
+                         :     dPhil1W:      0.33992      0.27260   [   1.1176e-07       2.8081 ]
+                         :      nSoft5:       1.7574       1.3223   [       0.0000       12.000 ]
+                         :     bjet1Pt:       81.498       42.943   [       25.000       921.01 ]
+                         :     bjet2Pt:       73.730       40.196   [       25.000       858.26 ]
+                         :   bjet2btag:      0.65431      0.26347   [      0.22190       1.0000 ]
+                         :       hbbpt:       145.44       42.230   [       100.00       957.42 ]
+                         :        hbbm:       90.770       17.219   [       60.000       120.00 ]
+                         :      dPhiWH:       2.8523      0.28592   [     0.014211       3.1416 ]
+                         : ptBalanceWH:      0.99352      0.26385   [      0.16377       6.2834 ]
+                         :     topMass:       235.90       84.704   [       92.922       3442.6 ]
+                         :     dRBjets:       1.2505      0.32461   [      0.40253       3.0473 ]
+                         :   dEtaLep1H:      0.85976      0.67069   [   2.3723e-05       4.5222 ]
+                         :     nAddJet:      0.65633      0.47493   [       0.0000       1.0000 ]
+                         : --------------------------------------------------------------------------
+                         : Ranking input variables (method unspecific)...
+<HEADER> IdTransformation         : Ranking result (top variable is best ranked)
+                         : ------------------------------------
+                         : Rank : Variable    : Separation
+                         : ------------------------------------
+                         :    1 : hbbm        : 1.251e-01
+                         :    2 : topMass     : 6.428e-02
+                         :    3 : nSoft5      : 6.092e-02
+                         :    4 : bjet2btag   : 5.034e-02
+                         :    5 : dRBjets     : 4.977e-02
+                         :    6 : hbbpt       : 4.504e-02
+                         :    7 : dPhiWH      : 4.297e-02
+                         :    8 : nAddJet     : 3.785e-02
+                         :    9 : bjet2Pt     : 3.731e-02
+                         :   10 : dEtaLep1H   : 3.163e-02
+                         :   11 : WBosonPt    : 2.305e-02
+                         :   12 : ptBalanceWH : 2.104e-02
+                         :   13 : dPhil1W     : 1.683e-02
+                         :   14 : bjet1Pt     : 1.235e-02
+                         : ------------------------------------
+<HEADER> Factory                  : Train method: BDT_singleClass_resolved_WZ_july9_fromGui_test2016 for Classification
+                         : 
+<WARNING> <WARNING>                : Events with negative event weights are USED during the BDT training. This might cause problems with small node sizes or with the boosting. Please remove negative events from training using the option *IgnoreEventsWithNegWeightsInTraining* in case you observe problems with the boosting
+<HEADER> BDT_singleClass_resolv...: #events: (reweighted) sig: 35948.5 bkg: 35948.5
+                         : #events: (unweighted) sig: 5952 bkg: 65945
+                         : Training 400 Decision Trees ... patience please
+<ERROR>                          :  The error rate in the BDT boosting is < 0. That can happen due to improper treatment of negative weights in a Monte Carlo.. (if you have an idea on how to do it in a better way, please let me know (Helge.Voss@cern.ch) for the time being I set it to its absolute value.. just to continue..
+<ERROR>                          :  The error rate in the BDT boosting is < 0. That can happen due to improper treatment of negative weights in a Monte Carlo.. (if you have an idea on how to do it in a better way, please let me know (Helge.Voss@cern.ch) for the time being I set it to its absolute value.. just to continue..
+<ERROR>                          :  The error rate in the BDT boosting is < 0. That can happen due to improper treatment of negative weights in a Monte Carlo.. (if you have an idea on how to do it in a better way, please let me know (Helge.Voss@cern.ch) for the time being I set it to its absolute value.. just to continue..
+<ERROR>                          :  The error rate in the BDT boosting is < 0. That can happen due to improper treatment of negative weights in a Monte Carlo.. (if you have an idea on how to do it in a better way, please let me know (Helge.Voss@cern.ch) for the time being I set it to its absolute value.. just to continue..
+<ERROR>                          :  The error rate in the BDT boosting is < 0. That can happen due to improper treatment of negative weights in a Monte Carlo.. (if you have an idea on how to do it in a better way, please let me know (Helge.Voss@cern.ch) for the time being I set it to its absolute value.. just to continue..
+<ERROR>                          :  The error rate in the BDT boosting is < 0. That can happen due to improper treatment of negative weights in a Monte Carlo.. (if you have an idea on how to do it in a better way, please let me know (Helge.Voss@cern.ch) for the time being I set it to its absolute value.. just to continue..
+<ERROR>                          :  The error rate in the BDT boosting is < 0. That can happen due to improper treatment of negative weights in a Monte Carlo.. (if you have an idea on how to do it in a better way, please let me know (Helge.Voss@cern.ch) for the time being I set it to its absolute value.. just to continue..
+<WARNING> <WARNING>                : stopped boosting at itree=316
+                         : Elapsed time for training with 71897 events: 23.2 sec         
+<HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_resolved_WZ_july9_fromGui_test2016 on training sample (71897 events)
+                         : Elapsed time for evaluation of 71897 events: 1.61 sec       
+                         : Creating xml weight file: MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WZ_july9_fromGui_test2016.weights.xml
+                         : Creating standalone class: MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WZ_july9_fromGui_test2016.class.C
+<HEADER> Factory                  : Training finished
+                         : 
+                         : Ranking input variables (method specific)...
+<HEADER> BDT_singleClass_resolv...: Ranking result (top variable is best ranked)
+                         : ---------------------------------------------
+                         : Rank : Variable    : Variable Importance
+                         : ---------------------------------------------
+                         :    1 : hbbpt       : 9.315e-02
+                         :    2 : bjet2btag   : 9.291e-02
+                         :    3 : hbbm        : 9.167e-02
+                         :    4 : dPhil1W     : 8.124e-02
+                         :    5 : dEtaLep1H   : 7.703e-02
+                         :    6 : bjet1Pt     : 6.920e-02
+                         :    7 : bjet2Pt     : 6.863e-02
+                         :    8 : ptBalanceWH : 6.796e-02
+                         :    9 : nSoft5      : 6.610e-02
+                         :   10 : dPhiWH      : 6.413e-02
+                         :   11 : nAddJet     : 5.871e-02
+                         :   12 : WBosonPt    : 5.843e-02
+                         :   13 : topMass     : 5.749e-02
+                         :   14 : dRBjets     : 5.335e-02
+                         : ---------------------------------------------
+<HEADER> Factory                  : === Destroy and recreate all methods via weight files for testing ===
+                         : 
+<HEADER> Factory                  : Test all methods
+<HEADER> Factory                  : Test method: BDT_singleClass_resolved_WZ_july9_fromGui_test2016 for Classification performance
+                         : 
+<HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_resolved_WZ_july9_fromGui_test2016 on testing sample (166921 events)
+                         : Elapsed time for evaluation of 166921 events: 3.03 sec       
+<HEADER> Factory                  : Evaluate all methods
+<HEADER> Factory                  : Evaluate classifier: BDT_singleClass_resolved_WZ_july9_fromGui_test2016
+                         : 
+<HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Loop over test events and fill histograms with classifier response...
+                         : 
+<HEADER> TFHandler_BDT_singleCl...:    Variable           Mean           RMS   [        Min           Max ]
+                         : --------------------------------------------------------------------------
+                         :    WBosonPt:       150.58       43.891   [       100.00       1286.2 ]
+                         :     dPhil1W:      0.34104      0.27196   [   2.3246e-06       1.5680 ]
+                         :      nSoft5:       1.7627       1.3243   [       0.0000       11.000 ]
+                         :     bjet1Pt:       81.477       42.114   [       25.000       874.62 ]
+                         :     bjet2Pt:       73.460       39.998   [       25.000       921.89 ]
+                         :   bjet2btag:      0.65568      0.26370   [      0.22190       1.0000 ]
+                         :       hbbpt:       145.02       41.186   [       100.00       976.52 ]
+                         :        hbbm:       91.046       17.240   [       60.001       120.00 ]
+                         :      dPhiWH:       2.8519      0.28546   [     0.053308       3.1416 ]
+                         : ptBalanceWH:      0.99751      0.26510   [      0.12004       7.2031 ]
+                         :     topMass:       234.83       82.296   [       90.760       2000.2 ]
+                         :     dRBjets:       1.2551      0.32131   [      0.39585       3.0930 ]
+                         :   dEtaLep1H:      0.85591      0.66962   [   3.4943e-06       4.6386 ]
+                         :     nAddJet:      0.65929      0.47395   [       0.0000       1.0000 ]
+                         : --------------------------------------------------------------------------
+                         : 
+                         : Evaluation results ranked by best signal efficiency and purity (area)
+                         : -------------------------------------------------------------------------------------------------------------------
+                         : DataSet       MVA                       
+                         : Name:         Method:          ROC-integ
+                         : MitVHBBAnalysis BDT_singleClass_resolved_WZ_july9_fromGui_test2016: 0.759
+                         : -------------------------------------------------------------------------------------------------------------------
+                         : 
+                         : Testing efficiency compared to training efficiency (overtraining check)
+                         : -------------------------------------------------------------------------------------------------------------------
+                         : DataSet              MVA              Signal efficiency: from test sample (from training sample) 
+                         : Name:                Method:          @B=0.01             @B=0.10            @B=0.30   
+                         : -------------------------------------------------------------------------------------------------------------------
+                         : MitVHBBAnalysis      BDT_singleClass_resolved_WZ_july9_fromGui_test2016: 0.096 (0.106)       0.421 (0.430)      0.690 (0.691)
+                         : -------------------------------------------------------------------------------------------------------------------
+                         : 
+<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TestTree' with 166921 events
+                         : 
+<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TrainTree' with 71897 events
+                         : 
+<HEADER> Factory                  : Thank you for using TMVA!
+                         : For citation information, please visit: http://tmva.sf.net/citeTMVA.html

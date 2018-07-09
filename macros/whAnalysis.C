@@ -360,7 +360,7 @@ void whAnalysis(
     }
   } else if(ao.MVAVarType==3) {
     if(selection==kWHSR || selection==kWHVZbbCR) {
-      ao.MVAbins={-1,0,0.4,0.6,0.8,0.9,1};
+      ao.MVAbins={-1,0,0.4,0.6,0.8,0.9};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kWHFJSR || selection==kWHVZbbFJCR) {
@@ -652,16 +652,31 @@ void whAnalysis(
   // Instantiate TMVA reader
   if(MVAVarType>1) {
     TString bdtWeights="";
-    if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) 
-      if(ao.year==2016)
-        bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_wh2016.weights.xml";
-      else
-        bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_wh2017.weights.xml";
-    else
-      if(ao.year==2016)
-        bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_wh2016.weights.xml";
-      else
-        bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_wh2017.weights.xml";
+    if(!ao.vzbbMode) {
+      if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) {
+        if(ao.year==2016)
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_WH_july9_fromGui_test2016.weights.xml";
+        else
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_WH_july9_fromGui_test2017.weights.xml";
+      } else {
+        if(ao.year==2016)
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WH_july9_fromGui_test2016.weights.xml";
+        else
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WH_july9_fromGui_test2017.weights.xml";   
+      }
+    } else {
+      if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) {
+        if(ao.year==2016)
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_WZ_july9_fromGui_test2016.weights.xml";
+        else
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_boosted_WZ_july9_fromGui_test2017.weights.xml";
+      } else {
+        if(ao.year==2016)
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WZ_july9_fromGui_test2016.weights.xml";
+        else
+          bdtWeights = "MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_WZ_july9_fromGui_test2017.weights.xml";   
+    
+    }
     if(bdtWeights!="") for(unsigned nThread=0; nThread < (multithread? nThreads:1); nThread++) {
       TMVA::Reader *theReader = new TMVA::Reader("Silent");
       // This object is never deleted, which is a small memory leak,
