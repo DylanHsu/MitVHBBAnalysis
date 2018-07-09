@@ -235,8 +235,8 @@ void whAnalysis(
     samples.emplace_back("ZJets_ht800to1200"              , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_ht1200to2500"             , vhbbPlot::kZjets  );
     samples.emplace_back("ZJets_ht2500toinf"              , vhbbPlot::kZjets  );
-    samples.emplace_back("WmLNuHbb"                       , vhbbPlot::kWH     );
-    samples.emplace_back("WpLNuHbb"                       , vhbbPlot::kWH     );
+    samples.emplace_back("WmLNuHbb_mH125"                 , vhbbPlot::kWH     );
+    samples.emplace_back("WpLNuHbb_mH125"                 , vhbbPlot::kWH     );
     samples.emplace_back("ZllHbb_mH125"                   , vhbbPlot::kZH     );
     samples.emplace_back("ggZllHbb_mH125"                 , vhbbPlot::kZH     );
   } else if(year==2017) {
@@ -276,8 +276,8 @@ void whAnalysis(
     //samples.emplace_back("WJets_ht800to1200_CP5"          , vhbbPlot::kWjets  ); 
     //samples.emplace_back("WJets_ht1200to2500_CP5"         , vhbbPlot::kWjets  ); 
 
-    samples.emplace_back("WmLNuHbb"                       , vhbbPlot::kWH     );
-    samples.emplace_back("WpLNuHbb"                       , vhbbPlot::kWH     );
+    samples.emplace_back("WmLNuHbb_mH125"                 , vhbbPlot::kWH     );
+    samples.emplace_back("WpLNuHb_mH125b"                 , vhbbPlot::kWH     );
     samples.emplace_back("ZJets_inclNLO"                  , vhbbPlot::kZjets  ); 
     samples.emplace_back("Z1Jets_ZpT150to250_CP5"         , vhbbPlot::kZjets  ); 
     samples.emplace_back("Z1Jets_ZpT250to400_CP5"         , vhbbPlot::kZjets  ); 
@@ -1726,7 +1726,7 @@ void analyzeSample(
         bLoad(b["muonSfUnc"],ientry);
         bLoad(b["sf_muTrig"],ientry);
         if(type!=kData) { // apply trigger efficiency to MC
-          if(ao.year==2017) gt.sf_muTrig = ao.hMuTrigEff->GetBinContent(TMath::Min(1199.99f, gt.muonPt[0]));
+          if(ao.year==2017) gt.sf_muTrig = ao.hMuTrigEff->GetBinContent(ao.hMuTrigEff->GetXaxis()->FindFixBin(TMath::Min(1199.99f, gt.muonPt[0])));
           weight *= gt.sf_muTrig; 
         }
         weight *= gt.muonSfReco[0] * gt.muonSfTight[0];
@@ -1739,9 +1739,9 @@ void analyzeSample(
         if(type!=kData) { // apply trigger efficiency to MC
           if(ao.year==2017) {
             if(fabs(gt.electronEta[0])<1.479)
-              gt.sf_eleTrig = ao.hEleTrigEffEB->GetBinContent(TMath::Min(249.99f, gt.electronPt[0]));
+              gt.sf_eleTrig = ao.hEleTrigEffEB->GetBinContent(ao.hEleTrigEffEB->GetXaxis()->FindFixBin(TMath::Min(249.99f, gt.electronPt[0])));
             else
-              gt.sf_eleTrig = ao.hEleTrigEffEE->GetBinContent(TMath::Min(249.99f, gt.electronPt[0]));
+              gt.sf_eleTrig = ao.hEleTrigEffEE->GetBinContent(ao.hEleTrigEffEE->GetXaxis()->FindFixBin(TMath::Min(249.99f, gt.electronPt[0])));
           }
           weight *= gt.sf_eleTrig; 
         }
