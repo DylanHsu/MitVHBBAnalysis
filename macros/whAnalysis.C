@@ -170,7 +170,6 @@ void whAnalysis(
   ao.cuts[kWH2TopCR             ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
   ao.cuts[kWHVZbbCR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjjVZ"};
   ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
-  ao.cuts[kWHLightFlavorCR      ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
   ao.cuts[kWHLightFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
   ao.cuts[kWHHeavyFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
   ao.cuts[kWHTT2bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
@@ -384,7 +383,7 @@ void whAnalysis(
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kWHFJSR || selection==kWHVZbbFJCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.32,-0.23,-0.15,-0.08,-0.01,1.00};
+        ao.MVAbins={-1.00,-0.32,-0.22,-0.15,-0.08, 0.00,1.00};
       else
         ao.MVAbins={-1.00,-0.35,-0.25,-0.17,-0.10,-0.01,1.00};
       ao.MVAVarName="BDT Output";
@@ -394,24 +393,20 @@ void whAnalysis(
   // 2 - multiclass BDT, not implemented
   if(selection==kWHLightFlavorCR) {
     if(year==2016) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667};
-      ao.MVAVarName="Subleading H(bb) CMVA";
-      ao.shapeType="lesserCMVAShape";
+      ao.MVAbins={0, 0.1, 0.2, 0.3, 0.4, 0.65};
     } else {
-      ao.MVAbins={0, 0.1, 0.2, 0.3, 0.4, 0.5};
-      ao.MVAVarName="Subleading H(bb) DeepCSV";
-      ao.shapeType="lesserCSVShape";
+      ao.MVAbins={0, 0.1, 0.2, 0.3, 0.4, 0.50};
     }
+    ao.MVAVarName="Subleading H(bb) BTAG";
+    ao.shapeType="lesserCMVAShape";
   } else if(selection==kWHHeavyFlavorLoMassCR || selection==kWHHeavyFlavorHiMassCR || selection==kWH2TopCR || selection==kWHPresel) {
     if(year==2016) {
-      ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
-      ao.MVAVarName="Subleading H(bb) CMVA";
-      ao.shapeType="lesserCMVAShape";
+      ao.MVAbins={0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1};
     } else {
       ao.MVAbins={0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1};
-      ao.MVAVarName="Subleading H(bb) DeepCSV";
-      ao.shapeType="lesserCSVShape";
     }
+    ao.MVAVarName="Subleading H(bb) BTAG";
+    ao.shapeType="lesserCMVAShape";
   } else if((selection>=kWHLightFlavorFJCR && selection<kWHFJSR) || selection==kWHFJPresel) {
     if(selection==kWHHeavyFlavorFJCR) {
       if(ao.vzbbMode) ao.MVAbins={120,130,140,160,180,200};
