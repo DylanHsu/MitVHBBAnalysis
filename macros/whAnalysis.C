@@ -2175,8 +2175,12 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir, bool applyBtagPtEt
     if(ao.year==2017) lumiE = 1.023;
     newcardShape << Form("lumi_13TeV    lnN     ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
-    if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0)
+    if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0){
+      if(ic!=kPlotTop&&ic!=kPlotTT&&ic!=kPlotWbb&&ic!=kPlotWb&&ic!=kPlotWLF)
        newcardShape << Form("%6.3f ",lumiE);
+      else
+        newcardShape << Form("-  ");
+    }
     newcardShape << Form("\n");
 
     newcardShape << Form("pileup    shape   ");
