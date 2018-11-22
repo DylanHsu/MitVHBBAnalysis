@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
-<MethodSetup Method="BDT::BDT_singleClass_boosted_WZ_july9_fromGui_test2016">
+<MethodSetup Method="BDT::BDT_singleClass_boosted_WHVZbb_boosted_2016">
   <GeneralInfo>
     <Info name="TMVA Release" value="4.2.1 [262657]"/>
     <Info name="ROOT Release" value="6.10/09 [395785]"/>
-    <Info name="Creator" value="dhsu"/>
-    <Info name="Date" value="Mon Jul  9 14:17:22 2018"/>
+    <Info name="Creator" value="ceballos"/>
+    <Info name="Date" value="Mon Jul 30 04:18:06 2018"/>
     <Info name="Host" value="Linux cmsbuild20.cern.ch 2.6.32-696.23.1.el6.x86_64 #1 SMP Wed Mar 14 11:28:37 CET 2018 x86_64 x86_64 x86_64 GNU/Linux"/>
-    <Info name="Dir" value="/home/dhsu/CMSSW_9_4_6/src"/>
+    <Info name="Dir" value="/home/ceballos/cms/cmssw/048/CMSSW_9_4_6/src"/>
     <Info name="Training events" value="36794"/>
-    <Info name="TrainingTime" value="8.02281189e+00"/>
+    <Info name="TrainingTime" value="1.41526070e+01"/>
     <Info name="AnalysisType" value="Classification"/>
   </GeneralInfo>
   <Options>

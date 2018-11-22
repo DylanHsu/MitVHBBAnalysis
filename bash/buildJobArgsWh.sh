@@ -7,6 +7,8 @@ resolvedSelections="kWHLightFlavorCR kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMass
 boostedSelections="kWHLightFlavorFJCR kWHHeavyFlavorFJCR kWHTT1bFJCR kWHTT2bFJCR kWHFJSR"
 resolvedSelectionsVZ="kWHLightFlavorCR kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWH2TopCR kWHVZbbCR"
 boostedSelectionsVZ="kWHLightFlavorFJCR kWHHeavyFlavorFJCR kWHTT1bFJCR kWHTT2bFJCR kWHVZbbFJCR"
+resolvedSelectionsVZ=""
+boostedSelectionsVZ=""
 
 mkdir -p "MitVHBBAnalysis/datacards/${dataCardDir}/VZbb"
 jobArgsFile="MitVHBBAnalysis/datacards/${dataCardDir}/jobArgs.txt"

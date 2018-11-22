@@ -352,6 +352,7 @@ void finalPlot2018(
       hs->SetMaximum(TMath::Max((float)50.0,float(hTotalBkg->GetBinContent(hTotalBkg->GetMaximumBin())+pow(span,2.0))));
     } else {
       hs->SetMaximum( plotMax*theMax);
+      hs->SetMinimum( 0.0);
     }
     if(!stackSignal) histos[primarySignal]->Draw("HIST SAME");
     hErrorBand->Draw("E2 same");

@@ -2,11 +2,11 @@
 Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test2017/ZllHSR_mvaTree_ZptBin0.root", "ZH_ZptBin0_2017", true,false,false,false)...
 (int) 50
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Background"
-                         : Add Tree mvaTree of type Background with 334105 events
+                         : Add Tree mvaTree of type Background with 294970 events
 <HEADER> DataSetInfo              : [MitVHBBAnalysis] : Added class "Signal"
-                         : Add Tree mvaTree of type Signal with 334105 events
-                         : Add Tree mvaTree of type Background with 334105 events
-                         : Add Tree mvaTree of type Signal with 334105 events
+                         : Add Tree mvaTree of type Signal with 294970 events
+                         : Add Tree mvaTree of type Background with 294970 events
+                         : Add Tree mvaTree of type Signal with 294970 events
                          : Dataset[MitVHBBAnalysis] : Class index : 0  name : Background
                          : Dataset[MitVHBBAnalysis] : Class index : 1  name : Signal
 <HEADER> Factory                  : Booking method: BDT_singleClass_resolved_ZH_ZptBin0_2017
@@ -19,42 +19,42 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 <HEADER> DataSetInfo              : Correlation matrix (Background):
                          : -------------------------------------------------------------------------------------------------------------------------------------------------------------------
                          :               sumEtSoft1 bjet1Pt bjet2Pt bjet1btag bjet2btag ZBosonPt ZBosonM CosThetaCS CosThetaStar   hbbpt    hbbm  dPhiZH ptBalanceZH dRBjets dEtaBjets nAddJet
-                         :   sumEtSoft1:     +1.000  +0.091  +0.118    -0.016    -0.032   +0.094  +0.013     -0.011       +0.012  +0.216  -0.004  -0.219      +0.150  -0.136    -0.073  +0.466
-                         :      bjet1Pt:     +0.091  +1.000  -0.374    +0.050    +0.007   +0.102  +0.005     +0.005       -0.007  +0.350  +0.149  -0.055      +0.257  -0.170    -0.367  +0.096
-                         :      bjet2Pt:     +0.118  -0.374  +1.000    -0.004    +0.041   +0.127  +0.001     -0.003       -0.016  +0.420  +0.117  -0.061      +0.299  -0.251    -0.367  +0.115
-                         :    bjet1btag:     -0.016  +0.050  -0.004    +1.000    +0.545   +0.005  -0.029     -0.009       -0.035  +0.008  -0.002  -0.024      +0.007  -0.043    -0.039  -0.012
-                         :    bjet2btag:     -0.032  +0.007  +0.041    +0.545    +1.000   +0.000  -0.021     -0.018       -0.023  +0.013  +0.001  -0.022      +0.017  -0.057    -0.032  -0.019
-                         :     ZBosonPt:     +0.094  +0.102  +0.127    +0.005    +0.000   +1.000  +0.047     -0.001       +0.008  +0.303  +0.002  +0.071      -0.397  -0.252    -0.061  +0.063
-                         :      ZBosonM:     +0.013  +0.005  +0.001    -0.029    -0.021   +0.047  +1.000     +0.001       +0.000  -0.004  +0.028  +0.024      -0.037  +0.033    +0.004  -0.020
-                         :   CosThetaCS:     -0.011  +0.005  -0.003    -0.009    -0.018   -0.001  +0.001     +1.000       +0.008  +0.010  -0.021  -0.003      +0.010  -0.009    -0.002  +0.007
-                         : CosThetaStar:     +0.012  -0.007  -0.016    -0.035    -0.023   +0.008  +0.000     +0.008       +1.000  -0.020  +0.026  +0.087      -0.027  +0.055    +0.028  -0.021
-                         :        hbbpt:     +0.216  +0.350  +0.420    +0.008    +0.013   +0.303  -0.004     +0.010       -0.020  +1.000  -0.000  -0.057      +0.724  -0.711    -0.118  +0.186
-                         :         hbbm:     -0.004  +0.149  +0.117    -0.002    +0.001   +0.002  +0.028     -0.021       +0.026  -0.000  +1.000  -0.013      +0.000  +0.510    +0.195  +0.008
-                         :       dPhiZH:     -0.219  -0.055  -0.061    -0.024    -0.022   +0.071  +0.024     -0.003       +0.087  -0.057  -0.013  +1.000      -0.122  +0.048    +0.091  -0.290
-                         :  ptBalanceZH:     +0.150  +0.257  +0.299    +0.007    +0.017   -0.397  -0.037     +0.010       -0.027  +0.724  +0.000  -0.122      +1.000  -0.500    -0.070  +0.152
-                         :      dRBjets:     -0.136  -0.170  -0.251    -0.043    -0.057   -0.252  +0.033     -0.009       +0.055  -0.711  +0.510  +0.048      -0.500  +1.000    +0.260  -0.118
-                         :    dEtaBjets:     -0.073  -0.367  -0.367    -0.039    -0.032   -0.061  +0.004     -0.002       +0.028  -0.118  +0.195  +0.091      -0.070  +0.260    +1.000  -0.096
-                         :      nAddJet:     +0.466  +0.096  +0.115    -0.012    -0.019   +0.063  -0.020     +0.007       -0.021  +0.186  +0.008  -0.290      +0.152  -0.118    -0.096  +1.000
+                         :   sumEtSoft1:     +1.000  +0.169  +0.135    -0.039    -0.008   +0.061  -0.001     +0.010       -0.038  +0.258  +0.014  -0.280      +0.209  -0.162    -0.107  +0.647
+                         :      bjet1Pt:     +0.169  +1.000  -0.343    +0.046    +0.006   +0.113  -0.002     +0.019       +0.000  +0.387  +0.133  -0.055      +0.277  -0.212    -0.353  +0.094
+                         :      bjet2Pt:     +0.135  -0.343  +1.000    +0.044    +0.085   +0.092  -0.015     +0.003       -0.035  +0.404  +0.125  -0.090      +0.313  -0.251    -0.355  +0.130
+                         :    bjet1btag:     -0.039  +0.046  +0.044    +1.000    +0.439   +0.015  -0.031     -0.019       -0.040  +0.017  -0.008  +0.000      +0.009  -0.057    -0.050  -0.032
+                         :    bjet2btag:     -0.008  +0.006  +0.085    +0.439    +1.000   +0.007  -0.021     -0.038       -0.025  +0.025  -0.002  -0.028      +0.024  -0.050    -0.045  -0.010
+                         :     ZBosonPt:     +0.061  +0.113  +0.092    +0.015    +0.007   +1.000  +0.029     +0.020       -0.014  +0.236  -0.017  +0.042      -0.411  -0.220    -0.076  +0.073
+                         :      ZBosonM:     -0.001  -0.002  -0.015    -0.031    -0.021   +0.029  +1.000     +0.019       +0.014  -0.019  +0.021  +0.030      -0.035  +0.029    +0.017  -0.029
+                         :   CosThetaCS:     +0.010  +0.019  +0.003    -0.019    -0.038   +0.020  +0.019     +1.000       -0.025  +0.021  +0.003  -0.020      +0.008  +0.002    -0.002  +0.021
+                         : CosThetaStar:     -0.038  +0.000  -0.035    -0.040    -0.025   -0.014  +0.014     -0.025       +1.000  -0.037  +0.010  +0.092      -0.025  +0.071    +0.033  -0.028
+                         :        hbbpt:     +0.258  +0.387  +0.404    +0.017    +0.025   +0.236  -0.019     +0.021       -0.037  +1.000  -0.001  -0.076      +0.759  -0.735    -0.110  +0.177
+                         :         hbbm:     +0.014  +0.133  +0.125    -0.008    -0.002   -0.017  +0.021     +0.003       +0.010  -0.001  +1.000  -0.036      +0.010  +0.473    +0.175  +0.007
+                         :       dPhiZH:     -0.280  -0.055  -0.090    +0.000    -0.028   +0.042  +0.030     -0.020       +0.092  -0.076  -0.036  +1.000      -0.111  +0.050    +0.094  -0.280
+                         :  ptBalanceZH:     +0.209  +0.277  +0.313    +0.009    +0.024   -0.411  -0.035     +0.008       -0.025  +0.759  +0.010  -0.111      +1.000  -0.538    -0.058  +0.133
+                         :      dRBjets:     -0.162  -0.212  -0.251    -0.057    -0.050   -0.220  +0.029     +0.002       +0.071  -0.735  +0.473  +0.050      -0.538  +1.000    +0.265  -0.119
+                         :    dEtaBjets:     -0.107  -0.353  -0.355    -0.050    -0.045   -0.076  +0.017     -0.002       +0.033  -0.110  +0.175  +0.094      -0.058  +0.265    +1.000  -0.113
+                         :      nAddJet:     +0.647  +0.094  +0.130    -0.032    -0.010   +0.073  -0.029     +0.021       -0.028  +0.177  +0.007  -0.280      +0.133  -0.119    -0.113  +1.000
                          : -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 <HEADER> DataSetInfo              : Correlation matrix (Signal):
                          : -------------------------------------------------------------------------------------------------------------------------------------------------------------------
                          :               sumEtSoft1 bjet1Pt bjet2Pt bjet1btag bjet2btag ZBosonPt ZBosonM CosThetaCS CosThetaStar   hbbpt    hbbm  dPhiZH ptBalanceZH dRBjets dEtaBjets nAddJet
-                         :   sumEtSoft1:     +1.000  +0.167  +0.177    -0.012    -0.007   +0.078  +0.006     -0.011       -0.007  +0.377  -0.015  -0.297      +0.348  -0.277    -0.027  +0.511
-                         :      bjet1Pt:     +0.167  +1.000  -0.401    +0.016    -0.003   +0.111  -0.017     -0.009       -0.010  +0.423  +0.186  -0.070      +0.353  -0.234    -0.246  +0.121
-                         :      bjet2Pt:     +0.177  -0.401  +1.000    +0.016    +0.044   +0.123  -0.002     -0.004       -0.029  +0.476  +0.179  -0.068      +0.402  -0.309    -0.248  +0.135
-                         :    bjet1btag:     -0.012  +0.016  +0.016    +1.000    +0.411   -0.005  +0.003     -0.007       +0.007  +0.000  +0.032  +0.003      +0.004  -0.011    -0.011  +0.005
-                         :    bjet2btag:     -0.007  -0.003  +0.044    +0.411    +1.000   -0.008  -0.006     -0.002       +0.002  -0.004  +0.048  +0.008      -0.003  -0.000    -0.019  +0.003
-                         :     ZBosonPt:     +0.078  +0.111  +0.123    -0.005    -0.008   +1.000  +0.020     -0.012       -0.048  +0.371  -0.087  +0.093      -0.239  -0.425    +0.004  +0.051
-                         :      ZBosonM:     +0.006  -0.017  -0.002    +0.003    -0.006   +0.020  +1.000     +0.012       -0.001  -0.025  -0.001  -0.010      -0.035  +0.018    -0.006  -0.003
-                         :   CosThetaCS:     -0.011  -0.009  -0.004    -0.007    -0.002   -0.012  +0.012     +1.000       -0.180  -0.019  +0.003  +0.007      -0.013  +0.019    +0.001  -0.012
-                         : CosThetaStar:     -0.007  -0.010  -0.029    +0.007    +0.002   -0.048  -0.001     -0.180       +1.000  -0.039  +0.013  +0.056      -0.012  +0.051    +0.017  -0.019
-                         :        hbbpt:     +0.377  +0.423  +0.476    +0.000    -0.004   +0.371  -0.025     -0.019       -0.039  +1.000  +0.108  -0.136      +0.783  -0.746    -0.022  +0.302
-                         :         hbbm:     -0.015  +0.186  +0.179    +0.032    +0.048   -0.087  -0.001     +0.003       +0.013  +0.108  +1.000  +0.045      +0.148  +0.273    +0.085  -0.069
-                         :       dPhiZH:     -0.297  -0.070  -0.068    +0.003    +0.008   +0.093  -0.010     +0.007       +0.056  -0.136  +0.045  +1.000      -0.210  +0.103    +0.040  -0.357
-                         :  ptBalanceZH:     +0.348  +0.353  +0.402    +0.004    -0.003   -0.239  -0.035     -0.013       -0.012  +0.783  +0.148  -0.210      +1.000  -0.504    -0.022  +0.295
-                         :      dRBjets:     -0.277  -0.234  -0.309    -0.011    -0.000   -0.425  +0.018     +0.019       +0.051  -0.746  +0.273  +0.103      -0.504  +1.000    +0.092  -0.253
-                         :    dEtaBjets:     -0.027  -0.246  -0.248    -0.011    -0.019   +0.004  -0.006     +0.001       +0.017  -0.022  +0.085  +0.040      -0.022  +0.092    +1.000  -0.019
-                         :      nAddJet:     +0.511  +0.121  +0.135    +0.005    +0.003   +0.051  -0.003     -0.012       -0.019  +0.302  -0.069  -0.357      +0.295  -0.253    -0.019  +1.000
+                         :   sumEtSoft1:     +1.000  +0.197  +0.225    -0.009    -0.001   +0.024  -0.004     -0.013       -0.040  +0.449  -0.045  -0.409      +0.458  -0.324    -0.030  +0.649
+                         :      bjet1Pt:     +0.197  +1.000  -0.386    +0.013    -0.002   +0.104  -0.018     -0.015       -0.007  +0.414  +0.174  -0.074      +0.345  -0.237    -0.240  +0.123
+                         :      bjet2Pt:     +0.225  -0.386  +1.000    +0.019    +0.046   +0.121  -0.000     +0.000       -0.027  +0.482  +0.161  -0.068      +0.409  -0.309    -0.243  +0.135
+                         :    bjet1btag:     -0.009  +0.013  +0.019    +1.000    +0.342   -0.011  -0.005     -0.014       +0.009  -0.016  +0.018  +0.007      -0.011  -0.000    -0.003  -0.004
+                         :    bjet2btag:     -0.001  -0.002  +0.046    +0.342    +1.000   -0.009  -0.008     -0.002       +0.005  -0.012  +0.020  +0.009      -0.010  +0.005    -0.012  +0.002
+                         :     ZBosonPt:     +0.024  +0.104  +0.121    -0.011    -0.009   +1.000  +0.020     -0.012       -0.049  +0.367  -0.079  +0.098      -0.242  -0.420    +0.012  +0.053
+                         :      ZBosonM:     -0.004  -0.018  -0.000    -0.005    -0.008   +0.020  +1.000     +0.010       -0.007  -0.025  -0.002  -0.010      -0.034  +0.016    -0.010  -0.008
+                         :   CosThetaCS:     -0.013  -0.015  +0.000    -0.014    -0.002   -0.012  +0.010     +1.000       -0.172  -0.017  +0.008  +0.011      -0.012  +0.019    +0.002  -0.012
+                         : CosThetaStar:     -0.040  -0.007  -0.027    +0.009    +0.005   -0.049  -0.007     -0.172       +1.000  -0.044  +0.010  +0.064      -0.018  +0.056    +0.014  -0.028
+                         :        hbbpt:     +0.449  +0.414  +0.482    -0.016    -0.012   +0.367  -0.025     -0.017       -0.044  +1.000  +0.103  -0.138      +0.783  -0.753    -0.023  +0.306
+                         :         hbbm:     -0.045  +0.174  +0.161    +0.018    +0.020   -0.079  -0.002     +0.008       +0.010  +0.103  +1.000  +0.046      +0.136  +0.253    +0.065  -0.073
+                         :       dPhiZH:     -0.409  -0.074  -0.068    +0.007    +0.009   +0.098  -0.010     +0.011       +0.064  -0.138  +0.046  +1.000      -0.216  +0.105    +0.040  -0.355
+                         :  ptBalanceZH:     +0.458  +0.345  +0.409    -0.011    -0.010   -0.242  -0.034     -0.012       -0.018  +0.783  +0.136  -0.216      +1.000  -0.513    -0.029  +0.296
+                         :      dRBjets:     -0.324  -0.237  -0.309    -0.000    +0.005   -0.420  +0.016     +0.019       +0.056  -0.753  +0.253  +0.105      -0.513  +1.000    +0.092  -0.259
+                         :    dEtaBjets:     -0.030  -0.240  -0.243    -0.003    -0.012   +0.012  -0.010     +0.002       +0.014  -0.023  +0.065  +0.040      -0.029  +0.092    +1.000  -0.012
+                         :      nAddJet:     +0.649  +0.123  +0.135    -0.004    +0.002   +0.053  -0.008     -0.012       -0.028  +0.306  -0.073  -0.355      +0.296  -0.259    -0.012  +1.000
                          : -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 <HEADER> DataSetFactory           : [MitVHBBAnalysis] :  
                          : 
@@ -80,68 +80,68 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : Input : variable 'nAddJet' <---> Output : variable 'nAddJet'
 <HEADER> TFHandler_Factory        :     Variable            Mean            RMS    [        Min            Max ]
                          : -------------------------------------------------------------------------------
-                         :   sumEtSoft1:        105.85        76.198   [        0.0000        1538.9 ]
-                         :      bjet1Pt:        60.831        28.292   [        25.000        613.60 ]
-                         :      bjet2Pt:        56.968        29.054   [        25.000        826.44 ]
-                         :    bjet1btag:       0.94973      0.096297   [       0.49699        1.0000 ]
-                         :    bjet2btag:       0.81272       0.16725   [       0.49416        1.0000 ]
-                         :     ZBosonPt:        82.369        19.765   [        50.001        125.00 ]
-                         :      ZBosonM:        90.287        5.3992   [        75.001        104.99 ]
-                         :   CosThetaCS:      0.056243       0.56199   [      -0.99998       0.99999 ]
-                         : CosThetaStar:       0.41083       0.38408   [      -0.99856       0.99989 ]
-                         :        hbbpt:        90.114        30.087   [        37.369        859.06 ]
-                         :         hbbm:        118.89        17.140   [        90.000        150.00 ]
-                         :       dPhiZH:        2.8234       0.34514   [      0.054383        3.1416 ]
-                         :  ptBalanceZH:        1.1326       0.40481   [       0.37477        10.033 ]
-                         :      dRBjets:        2.1524       0.43543   [       0.40822        3.5126 ]
-                         :    dEtaBjets:        1.2045       0.69553   [    2.1279e-05        3.2515 ]
-                         :      nAddJet:       0.68901       0.90911   [        0.0000        9.0000 ]
+                         :   sumEtSoft1:        49.430        40.758   [        0.0000        1519.1 ]
+                         :      bjet1Pt:        60.710        27.940   [        25.001        755.02 ]
+                         :      bjet2Pt:        57.043        27.860   [        25.000        713.43 ]
+                         :    bjet1btag:       0.97408      0.046184   [       0.80019        1.0000 ]
+                         :    bjet2btag:       0.83356       0.15789   [       0.49411        1.0000 ]
+                         :     ZBosonPt:        79.425        18.600   [        50.002        125.00 ]
+                         :      ZBosonM:        90.153        6.1517   [        75.003        104.99 ]
+                         :   CosThetaCS:      0.061378       0.57132   [      -0.99998       0.99999 ]
+                         : CosThetaStar:       0.40213       0.38736   [      -0.99524       0.99989 ]
+                         :        hbbpt:        95.100        31.907   [        23.487        775.00 ]
+                         :         hbbm:        118.81        17.038   [        90.000        150.00 ]
+                         :       dPhiZH:        2.7762       0.38168   [      0.071650        3.1416 ]
+                         :  ptBalanceZH:        1.2421       0.46578   [       0.18819        11.307 ]
+                         :      dRBjets:        2.0688       0.43455   [       0.40822        5.2869 ]
+                         :    dEtaBjets:        1.1385       0.67803   [    2.7776e-05        4.8943 ]
+                         :      nAddJet:       0.77529       0.98814   [        0.0000        8.0000 ]
                          : -------------------------------------------------------------------------------
                          : Ranking input variables (method unspecific)...
 <HEADER> IdTransformation         : Ranking result (top variable is best ranked)
                          : -------------------------------------
                          : Rank : Variable     : Separation
                          : -------------------------------------
-                         :    1 : dEtaBjets    : 9.110e-02
-                         :    2 : hbbm         : 5.067e-02
-                         :    3 : bjet1btag    : 3.227e-02
-                         :    4 : ZBosonPt     : 2.883e-02
-                         :    5 : ZBosonM      : 2.541e-02
-                         :    6 : bjet2Pt      : 2.485e-02
-                         :    7 : bjet2btag    : 2.256e-02
-                         :    8 : CosThetaStar : 1.854e-02
-                         :    9 : bjet1Pt      : 1.778e-02
-                         :   10 : dPhiZH       : 1.764e-02
-                         :   11 : ptBalanceZH  : 1.443e-02
-                         :   12 : dRBjets      : 1.340e-02
-                         :   13 : hbbpt        : 8.026e-03
-                         :   14 : CosThetaCS   : 6.637e-03
-                         :   15 : sumEtSoft1   : 3.507e-03
-                         :   16 : nAddJet      : 1.113e-03
+                         :    1 : dEtaBjets    : 7.203e-02
+                         :    2 : ZBosonPt     : 6.599e-02
+                         :    3 : ZBosonM      : 5.830e-02
+                         :    4 : hbbm         : 5.095e-02
+                         :    5 : dPhiZH       : 3.907e-02
+                         :    6 : ptBalanceZH  : 3.657e-02
+                         :    7 : bjet2Pt      : 2.307e-02
+                         :    8 : bjet1btag    : 1.853e-02
+                         :    9 : CosThetaStar : 1.809e-02
+                         :   10 : bjet1Pt      : 1.726e-02
+                         :   11 : bjet2btag    : 1.228e-02
+                         :   12 : sumEtSoft1   : 6.913e-03
+                         :   13 : dRBjets      : 6.811e-03
+                         :   14 : hbbpt        : 6.546e-03
+                         :   15 : CosThetaCS   : 6.069e-03
+                         :   16 : nAddJet      : 1.970e-03
                          : -------------------------------------
 <HEADER> Factory                  : Train method: BDT_singleClass_resolved_ZH_ZptBin0_2017 for Classification
                          : 
-<HEADER> BDT_singleClass_resolv...: #events: (reweighted) sig: 40397 bkg: 40397
-                         : #events: (unweighted) sig: 58335 bkg: 22459
+<HEADER> BDT_singleClass_resolv...: #events: (reweighted) sig: 36819.5 bkg: 36819.5
+                         : #events: (unweighted) sig: 53025 bkg: 20614
                          : Training 200 Decision Trees ... patience please
 0%, time left: unknown
-7%, time left: 30 sec
-13%, time left: 29 sec
-19%, time left: 27 sec
-25%, time left: 26 sec
-32%, time left: 24 sec
-38%, time left: 22 sec
-44%, time left: 19 sec
-50%, time left: 17 sec
-57%, time left: 14 sec
-63%, time left: 12 sec
-69%, time left: 10 sec
-75%, time left: 8 sec
-82%, time left: 5 sec
-88%, time left: 3 sec
-94%, time left: 1 sec
-                         : Elapsed time for training with 80794 events: 31.4 sec         
-<HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_resolved_ZH_ZptBin0_2017 on training sample (80794 events)
+7%, time left: 61 sec
+13%, time left: 54 sec
+19%, time left: 48 sec
+25%, time left: 42 sec
+32%, time left: 37 sec
+38%, time left: 33 sec
+44%, time left: 29 sec
+50%, time left: 25 sec
+57%, time left: 21 sec
+63%, time left: 18 sec
+69%, time left: 14 sec
+75%, time left: 11 sec
+82%, time left: 8 sec
+88%, time left: 5 sec
+94%, time left: 2 sec
+                         : Elapsed time for training with 73639 events: 42.5 sec         
+<HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_resolved_ZH_ZptBin0_2017 on training sample (73639 events)
 0%, time left: unknown
 6%, time left: 0 sec
 12%, time left: 0 sec
@@ -158,7 +158,7 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
 81%, time left: 0 sec
 87%, time left: 0 sec
 93%, time left: 0 sec
-                         : Elapsed time for evaluation of 80794 events: 0.8 sec       
+                         : Elapsed time for evaluation of 73639 events: 0.792 sec       
                          : Creating xml weight file: MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin0_2017.weights.xml
                          : Creating standalone class: MitVHBBAnalysis/weights/bdt_BDT_singleClass_resolved_ZH_ZptBin0_2017.class.C
 <HEADER> Factory                  : Training finished
@@ -168,46 +168,46 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : ----------------------------------------------
                          : Rank : Variable     : Variable Importance
                          : ----------------------------------------------
-                         :    1 : dEtaBjets    : 1.462e-01
-                         :    2 : hbbm         : 9.352e-02
-                         :    3 : CosThetaStar : 8.317e-02
-                         :    4 : ZBosonPt     : 8.230e-02
-                         :    5 : ZBosonM      : 7.900e-02
-                         :    6 : ptBalanceZH  : 7.773e-02
-                         :    7 : dPhiZH       : 7.412e-02
-                         :    8 : bjet2btag    : 6.639e-02
-                         :    9 : dRBjets      : 4.975e-02
-                         :   10 : bjet1Pt      : 4.480e-02
-                         :   11 : bjet2Pt      : 4.136e-02
-                         :   12 : bjet1btag    : 3.966e-02
-                         :   13 : hbbpt        : 3.870e-02
-                         :   14 : sumEtSoft1   : 3.423e-02
-                         :   15 : nAddJet      : 2.655e-02
-                         :   16 : CosThetaCS   : 2.252e-02
+                         :    1 : ZBosonPt     : 1.179e-01
+                         :    2 : dEtaBjets    : 1.153e-01
+                         :    3 : hbbm         : 1.024e-01
+                         :    4 : dPhiZH       : 9.507e-02
+                         :    5 : ZBosonM      : 8.409e-02
+                         :    6 : CosThetaStar : 8.150e-02
+                         :    7 : ptBalanceZH  : 8.117e-02
+                         :    8 : bjet1btag    : 5.077e-02
+                         :    9 : dRBjets      : 4.916e-02
+                         :   10 : bjet2btag    : 4.310e-02
+                         :   11 : sumEtSoft1   : 3.945e-02
+                         :   12 : bjet2Pt      : 3.829e-02
+                         :   13 : CosThetaCS   : 3.237e-02
+                         :   14 : bjet1Pt      : 2.966e-02
+                         :   15 : hbbpt        : 2.480e-02
+                         :   16 : nAddJet      : 1.498e-02
                          : ----------------------------------------------
 <HEADER> Factory                  : === Destroy and recreate all methods via weight files for testing ===
                          : 
 <HEADER> Factory                  : Test all methods
 <HEADER> Factory                  : Test method: BDT_singleClass_resolved_ZH_ZptBin0_2017 for Classification performance
                          : 
-<HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_resolved_ZH_ZptBin0_2017 on testing sample (188764 events)
+<HEADER> BDT_singleClass_resolv...: [MitVHBBAnalysis] : Evaluation of BDT_singleClass_resolved_ZH_ZptBin0_2017 on testing sample (172136 events)
 0%, time left: unknown
 6%, time left: 1 sec
 12%, time left: 1 sec
 18%, time left: 1 sec
 25%, time left: 1 sec
-31%, time left: 2 sec
+31%, time left: 1 sec
 37%, time left: 1 sec
-43%, time left: 1 sec
-50%, time left: 1 sec
-56%, time left: 1 sec
+43%, time left: 0 sec
+50%, time left: 0 sec
+56%, time left: 0 sec
 62%, time left: 0 sec
 68%, time left: 0 sec
 75%, time left: 0 sec
 81%, time left: 0 sec
 87%, time left: 0 sec
 93%, time left: 0 sec
-                         : Elapsed time for evaluation of 188764 events: 2.22 sec       
+                         : Elapsed time for evaluation of 172136 events: 1.73 sec       
 <HEADER> Factory                  : Evaluate all methods
 <HEADER> Factory                  : Evaluate classifier: BDT_singleClass_resolved_ZH_ZptBin0_2017
                          : 
@@ -215,29 +215,29 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : 
 <HEADER> TFHandler_BDT_singleCl...:     Variable            Mean            RMS    [        Min            Max ]
                          : -------------------------------------------------------------------------------
-                         :   sumEtSoft1:        105.19        74.778   [        0.0000        1601.7 ]
-                         :      bjet1Pt:        60.405        28.266   [        25.001        522.02 ]
-                         :      bjet2Pt:        57.210        28.732   [        25.000        681.54 ]
-                         :    bjet1btag:       0.94529       0.10056   [       0.49608        1.0000 ]
-                         :    bjet2btag:       0.80409       0.16887   [       0.49412        1.0000 ]
-                         :     ZBosonPt:        82.652        19.905   [        50.001        125.00 ]
-                         :      ZBosonM:        90.330        5.3749   [        75.000        105.00 ]
-                         :   CosThetaCS:      0.055178       0.55943   [      -0.99998        1.0000 ]
-                         : CosThetaStar:       0.42147       0.37846   [      -0.99660       0.99999 ]
-                         :        hbbpt:        90.245        29.898   [        36.453        772.14 ]
-                         :         hbbm:        118.56        17.009   [        90.000        150.00 ]
-                         :       dPhiZH:        2.8218       0.33903   [      0.039915        3.1416 ]
-                         :  ptBalanceZH:        1.1314       0.40739   [       0.34478        10.616 ]
-                         :      dRBjets:        2.1506       0.43088   [       0.40110        3.6362 ]
-                         :    dEtaBjets:        1.2080       0.68368   [    1.8001e-05        3.3295 ]
-                         :      nAddJet:       0.71097       0.92783   [        0.0000        9.0000 ]
+                         :   sumEtSoft1:        50.127        40.387   [        0.0000        2669.3 ]
+                         :      bjet1Pt:        61.533        28.130   [        25.000        650.41 ]
+                         :      bjet2Pt:        57.447        28.071   [        25.001        1256.7 ]
+                         :    bjet1btag:       0.97395      0.046179   [       0.80016        1.0000 ]
+                         :    bjet2btag:       0.83082       0.15700   [       0.49410        1.0000 ]
+                         :     ZBosonPt:        79.430        18.868   [        50.001        125.00 ]
+                         :      ZBosonM:        90.102        6.2660   [        75.001        105.00 ]
+                         :   CosThetaCS:      0.051702       0.56962   [      -0.99999        1.0000 ]
+                         : CosThetaStar:       0.40644       0.38369   [      -0.99615        1.0000 ]
+                         :        hbbpt:        95.781        32.311   [        25.287        1157.7 ]
+                         :         hbbm:        118.76        17.085   [        90.000        150.00 ]
+                         :       dPhiZH:        2.7731       0.38298   [      0.051821        3.1416 ]
+                         :  ptBalanceZH:        1.2530       0.47453   [       0.30632        20.403 ]
+                         :      dRBjets:        2.0639       0.44108   [       0.23717        5.1575 ]
+                         :    dEtaBjets:        1.1147       0.66269   [    1.8001e-05        4.9475 ]
+                         :      nAddJet:       0.80808        1.0018   [        0.0000        10.000 ]
                          : -------------------------------------------------------------------------------
                          : 
                          : Evaluation results ranked by best signal efficiency and purity (area)
                          : -------------------------------------------------------------------------------------------------------------------
                          : DataSet       MVA                       
                          : Name:         Method:          ROC-integ
-                         : MitVHBBAnalysis BDT_singleClass_resolved_ZH_ZptBin0_2017: 0.788
+                         : MitVHBBAnalysis BDT_singleClass_resolved_ZH_ZptBin0_2017: 0.811
                          : -------------------------------------------------------------------------------------------------------------------
                          : 
                          : Testing efficiency compared to training efficiency (overtraining check)
@@ -245,12 +245,12 @@ Processing MitVHBBAnalysis/macros/zhbbMVA.C+("MitVHBBAnalysis/mva_frozen/test201
                          : DataSet              MVA              Signal efficiency: from test sample (from training sample) 
                          : Name:                Method:          @B=0.01             @B=0.10            @B=0.30   
                          : -------------------------------------------------------------------------------------------------------------------
-                         : MitVHBBAnalysis      BDT_singleClass_resolved_ZH_ZptBin0_2017: 0.092 (0.109)       0.427 (0.447)      0.732 (0.748)
+                         : MitVHBBAnalysis      BDT_singleClass_resolved_ZH_ZptBin0_2017: 0.125 (0.164)       0.482 (0.494)      0.766 (0.794)
                          : -------------------------------------------------------------------------------------------------------------------
                          : 
-<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TestTree' with 188764 events
+<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TestTree' with 172136 events
                          : 
-<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TrainTree' with 80794 events
+<HEADER> Dataset:MitVHBBAnalysis  : Created tree 'TrainTree' with 73639 events
                          : 
 <HEADER> Factory                  : Thank you for using TMVA!
                          : For citation information, please visit: http://tmva.sf.net/citeTMVA.html
