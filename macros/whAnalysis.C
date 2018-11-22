@@ -452,7 +452,7 @@ void whAnalysis(
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"               ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     if(selection>=kWHLightFlavorFJCR && selection<=kWHFJPresel) {
       // fatjet only plots
-      ao.histoNames[p]="WBosonPt"           ; ao.histoTitles[p]="W boson pT [GeV]"      ; ao.nbins[p]=  55; ao.xmin[p]=   250; ao.xmax[p]=   700; p++; 
+      ao.histoNames[p]="WBosonPt"           ; ao.histoTitles[p]="W boson pT [GeV]"      ; ao.nbins[p]=  45; ao.xmin[p]=   250; ao.xmax[p]=   700; p++; 
       ao.histoNames[p]="mSD"                ; ao.histoTitles[p]="Fatjet mSD [GeV]"      ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
       ao.histoNames[p]="pTFJ"               ; ao.histoTitles[p]="Fatjet pT [GeV]"       ; ao.nbins[p]=  25; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
       ao.histoNames[p]="Tau21SD"            ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"  ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
@@ -470,7 +470,7 @@ void whAnalysis(
       ao.histoNames[p]="psi022004030503"    ; ao.histoTitles[p]="#psi(2,2.0,4,3,0.5,3)" ; ao.nbins[p]=  20; ao.xmin[p]=    0.; ao.xmax[p]= 2    ; p++;
       ao.histoNames[p]="dPhil1W"            ; ao.histoTitles[p]="#Delta#phi(lep,W)"       ; ao.nbins[p]=  32; ao.xmin[p]=    0.; ao.xmax[p]= 3.142; p++; 
     } else {
-      ao.histoNames[p]="WBosonPt"           ; ao.histoTitles[p]="W boson pT [GeV]"        ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   500; p++; 
+      ao.histoNames[p]="WBosonPt"           ; ao.histoTitles[p]="W boson pT [GeV]"        ; ao.nbins[p]=  40; ao.xmin[p]=   100; ao.xmax[p]=   500; p++; 
       ao.histoNames[p]="Mjj"                ; ao.histoTitles[p]="Dijet mass [GeV]"        ; ao.nbins[p]=  25; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
       ao.histoNames[p]="pTjj"               ; ao.histoTitles[p]="Dijet pT [GeV]"          ; ao.nbins[p]=  18; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
       ao.histoNames[p]="bjet1Pt"            ; ao.histoTitles[p]="B-jet 1 pT [GeV]"        ; ao.nbins[p]=  38; ao.xmin[p]=    20; ao.xmax[p]=   400; p++; 
