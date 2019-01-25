@@ -123,10 +123,10 @@ struct analysisObjects {
   float mva_nIsojet, mva_MSD, mva_Tau21SD, mva_Tau32SD, mva_fjPt;
   float mva_psi022004031003, mva_psi022004022003, mva_psi022004030503;
   float mva_ptBalanceWHFJ, mva_dEtaLep1FJ, mva_dPhiWHFJ;
-  float mva_HTTFRec;
+  float mva_HTTFRec, mva_doubleBTag;
   // MVA output
   vector<TMVA::Reader*> reader;
-  float mvaInputs[nThreads][16];
+  float mvaInputs[nThreads][20];
   
 };
 
@@ -167,19 +167,18 @@ void whAnalysis(
 
   // Analysis Cuts
   ao.isojetBtagCut = (ao.year==2016)? cmvaLoose : deepcsvLoose;
-  ao.cuts[kWHLightFlavorCR      ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
-  ao.cuts[kWHHeavyFlavorLoMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBLo","metSig"};
-  ao.cuts[kWHHeavyFlavorHiMassCR] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","2jets"    ,"tightBTag","mjjSBHi","metSig"};
-  ao.cuts[kWH2TopCR             ] ={"boostedVeto","WpT","pTjj",           "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
-  ao.cuts[kWHVZbbCR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjjVZ"};
-  ao.cuts[kWHSR                 ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
-  ao.cuts[kWHLightFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"            };
-  ao.cuts[kWHHeavyFlavorFJCR    ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
-  ao.cuts[kWHTT2bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"            };
-  ao.cuts[kWHTT1bFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"            };
-  ao.cuts[kWHVZbbFJCR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSDVZ_SR" };
-  ao.cuts[kWHFJSR               ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
-  ao.cuts[kWHFJPresel           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ"                             };
+  ao.cuts[kWHLightFlavorCR  ] ={"boostedVeto","WpT","pTjj",	      "dPhiLep1Met","looseBTag","mediumBVeto","metSig"};
+  ao.cuts[kWHHeavyFlavorCR  ] ={"boostedVeto","WpT","pTjj",	      "dPhiLep1Met","2jets"    ,"tightBTag","mjjSB","metSig"};
+  ao.cuts[kWH2TopCR         ] ={"boostedVeto","WpT","pTjj",	      "dPhiLep1Met","4+jets"   ,"tightBTag","lowMET"};
+  ao.cuts[kWHVZbbCR         ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjjVZ"};
+  ao.cuts[kWHSR             ] ={"boostedVeto","WpT","pTjj","dPhiWH"  ,"dPhiLep1Met","2-3jets"  ,"tightBTag","looseBTag2","mjj"};
+  ao.cuts[kWHLightFlavorFJCR] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","0ijb"	    };
+  ao.cuts[kWHHeavyFlavorFJCR] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SB"   };
+  ao.cuts[kWHTT2bFJCR       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"1ijb"	    };
+  ao.cuts[kWHTT1bFJCR       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","bvetoFJ","1ijb"	    };
+  ao.cuts[kWHVZbbFJCR       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSDVZ_SR" };
+  ao.cuts[kWHFJSR           ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ","btagFJ" ,"0ijb","mSD_SR"   };
+  ao.cuts[kWHFJPresel       ] ={"boostedCat" ,"WpTFJ","pTFJ","dPhiWHFJ" 			    };
   /////////////////////////////
   // List of Samples
   vector<pair<TString,vhbbPlot::sampleType>> samples;
@@ -390,16 +389,16 @@ void whAnalysis(
   } else if(ao.MVAVarType==3) {
     if(selection==kWHSR || selection==kWHVZbbCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.14,+0.00,0.11,0.20,0.30,0.40,0.52,1.00};
+        ao.MVAbins={-1.00,-0.16,-0.01, 0.10, 0.20, 0.29, 0.39, 0.52,1.00};
       else
-        ao.MVAbins={-1.00,-0.16,-0.01,0.11,0.22,0.32,0.43,0.57,1.00};
+        ao.MVAbins={-1.00,-0.14,-0.01, 0.10, 0.20, 0.30, 0.40, 0.53,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kWHFJSR || selection==kWHVZbbFJCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.34,-0.25,-0.18,-0.11,-0.04,1.00};
+        ao.MVAbins={-1.00,-0.33,-0.26,-0.20,-0.15,-0.10,-0.05, 0.01,1.00};
       else
-        ao.MVAbins={-1.00,-0.34,-0.26,-0.19,-0.13,-0.05,1.00};
+        ao.MVAbins={-1.00,-0.28,-0.21,-0.16,-0.11,-0.07,-0.02, 0.05,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     }
@@ -413,7 +412,7 @@ void whAnalysis(
     }
     ao.MVAVarName="Subleading H(bb) BTAG";
     ao.shapeType="lesserCMVAShape";
-  } else if(selection==kWHHeavyFlavorLoMassCR || selection==kWHHeavyFlavorHiMassCR || selection==kWH2TopCR || selection==kWHPresel) {
+  } else if(selection==kWHHeavyFlavorCR || selection==kWH2TopCR || selection==kWHPresel) {
     if(year==2016) {
       ao.MVAbins={-1.0000, -0.8667, -0.7333, -0.6000, -0.4667, -0.3333, -0.2000, -0.0667, 0.0667, 0.2000, 0.3333, 0.4667, 0.6000, 0.7333, 0.8667, 1.0000};
     } else {
@@ -546,8 +545,8 @@ void whAnalysis(
     if(ic<kPlotVZbb) continue;
     ao.histo_pileupUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupUp"         , plotBaseNames[ic].Data()));
     ao.histo_pileupDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_pileupDown"       , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrUp"         , plotBaseNames[ic].Data()));
-    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VHCorrDown"       , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrUp     [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VH_EWKCorrUp"     , plotBaseNames[ic].Data()));
+    ao.histo_VHCorrDown   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_VH_EWKCorrDown"   , plotBaseNames[ic].Data()));
     ao.histo_QCDr1f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f2"          , plotBaseNames[ic].Data()));
     ao.histo_QCDr1f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr1f5"          , plotBaseNames[ic].Data()));
     ao.histo_QCDr2f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f1"          , plotBaseNames[ic].Data()));
@@ -641,7 +640,6 @@ void whAnalysis(
     ao.mvaTree->Branch("lepton1Eta"          , &ao.mva_lepton1Eta         ); 
     ao.mvaTree->Branch("lepton1Charge"       , &ao.mva_lepton1Charge      ); 
     ao.mvaTree->Branch("pfmet"               , &ao.mva_pfmet              ); 
-    
     ao.mvaTree->Branch("sumEtSoft1"          , &ao.mva_sumEtSoft1         ); 
     ao.mvaTree->Branch("nSoft2"              , &ao.mva_nSoft2             ); 
     ao.mvaTree->Branch("nSoft5"              , &ao.mva_nSoft5             ); 
@@ -686,6 +684,7 @@ void whAnalysis(
     ao.mvaTree->Branch("dEtaLep1FJ"          , &ao.mva_dEtaLep1FJ         ); 
     ao.mvaTree->Branch("dPhiWHFJ"            , &ao.mva_dPhiWHFJ           ); 
     ao.mvaTree->Branch("HTTFRec"             , &ao.mva_HTTFRec            ); 
+    ao.mvaTree->Branch("doubleBTag"          , &ao.mva_doubleBTag         ); 
   }
   
   // Instantiate TMVA reader
@@ -723,36 +722,39 @@ void whAnalysis(
       
       // Vars are hardcoded for now, could make it more general if we care
       if(ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) {
-        theReader->AddVariable("dPhil1W"          , &ao.mvaInputs[nThread][ 0]);
-        theReader->AddVariable("WBosonPt"         , &ao.mvaInputs[nThread][ 1]);
-        theReader->AddVariable("lepton1Charge"    , &ao.mvaInputs[nThread][ 2]);
-        theReader->AddVariable("nIsojet"          , &ao.mvaInputs[nThread][ 3]);
-        theReader->AddVariable("MSD"              , &ao.mvaInputs[nThread][ 4]);
-        theReader->AddVariable("Tau21SD"          , &ao.mvaInputs[nThread][ 5]);
-        theReader->AddVariable("Tau32SD"          , &ao.mvaInputs[nThread][ 6]);
-        theReader->AddVariable("fjPt"             , &ao.mvaInputs[nThread][ 7]);
-        theReader->AddVariable("psi022004031003"  , &ao.mvaInputs[nThread][ 8]);
-        theReader->AddVariable("psi022004022003"  , &ao.mvaInputs[nThread][ 9]);
-        theReader->AddVariable("psi022004030503"  , &ao.mvaInputs[nThread][10]);
-        theReader->AddVariable("ptBalanceWHFJ"    , &ao.mvaInputs[nThread][11]);
-        theReader->AddVariable("dEtaLep1FJ"       , &ao.mvaInputs[nThread][12]);
-        theReader->AddVariable("dPhiWHFJ"         , &ao.mvaInputs[nThread][13]);
-        theReader->AddVariable("HTTFRec"          , &ao.mvaInputs[nThread][14]);
+        theReader->AddVariable("lepton1Pt"	  , &ao.mvaInputs[nThread][ 0]);
+        theReader->AddVariable("lepton1Charge"    , &ao.mvaInputs[nThread][ 1]);
+        theReader->AddVariable("nIsojet"	  , &ao.mvaInputs[nThread][ 2]);
+        theReader->AddVariable("MSD"		  , &ao.mvaInputs[nThread][ 3]);
+        theReader->AddVariable("Tau21SD"	  , &ao.mvaInputs[nThread][ 4]);
+        theReader->AddVariable("Tau32SD"	  , &ao.mvaInputs[nThread][ 5]);
+        theReader->AddVariable("fjPt"		  , &ao.mvaInputs[nThread][ 6]);
+        theReader->AddVariable("psi022004031003"  , &ao.mvaInputs[nThread][ 7]);
+        theReader->AddVariable("psi022004030503"  , &ao.mvaInputs[nThread][ 8]);
+        theReader->AddVariable("ptBalanceWHFJ"    , &ao.mvaInputs[nThread][ 9]);
+        theReader->AddVariable("dEtaLep1FJ"	  , &ao.mvaInputs[nThread][10]);
+        theReader->AddVariable("dPhiWHFJ"	  , &ao.mvaInputs[nThread][11]);
+        theReader->AddVariable("HTTFRec"	  , &ao.mvaInputs[nThread][12]);
+        theReader->AddVariable("doubleBTag"	  , &ao.mvaInputs[nThread][13]);
+        //theReader->AddVariable("psi022004022003"  , &ao.mvaInputs[nThread][14]);
+        //theReader->AddVariable("WBosonPt"         , &ao.mvaInputs[nThread][15]);
       } else {
-        theReader->AddVariable("WBosonPt"         , &ao.mvaInputs[nThread][ 0]);
-        theReader->AddVariable("dPhil1W"          , &ao.mvaInputs[nThread][ 1]);
-        theReader->AddVariable("nSoft5"           , &ao.mvaInputs[nThread][ 2]);
-        theReader->AddVariable("bjet1Pt"          , &ao.mvaInputs[nThread][ 3]);
-        theReader->AddVariable("bjet2Pt"          , &ao.mvaInputs[nThread][ 4]);
-        theReader->AddVariable("bjet2btag"        , &ao.mvaInputs[nThread][ 5]);
-        theReader->AddVariable("hbbpt"            , &ao.mvaInputs[nThread][ 6]);
-        theReader->AddVariable("hbbm"             , &ao.mvaInputs[nThread][ 7]);
-        theReader->AddVariable("dPhiWH"           , &ao.mvaInputs[nThread][ 8]);
-        theReader->AddVariable("ptBalanceWH"      , &ao.mvaInputs[nThread][ 9]);
-        theReader->AddVariable("topMass"          , &ao.mvaInputs[nThread][10]);
-        theReader->AddVariable("dRBjets"          , &ao.mvaInputs[nThread][11]);
+        theReader->AddVariable("lepton1Pt"        , &ao.mvaInputs[nThread][ 0]);
+        theReader->AddVariable("lepton1Charge"    , &ao.mvaInputs[nThread][ 1]);
+        theReader->AddVariable("sumEtSoft1"       , &ao.mvaInputs[nThread][ 2]);
+        theReader->AddVariable("nSoft5"           , &ao.mvaInputs[nThread][ 3]);
+        theReader->AddVariable("bjet1Pt"          , &ao.mvaInputs[nThread][ 4]);
+        theReader->AddVariable("bjet2Pt"          , &ao.mvaInputs[nThread][ 5]);
+        theReader->AddVariable("bjet2btag"        , &ao.mvaInputs[nThread][ 6]);
+        theReader->AddVariable("hbbpt"            , &ao.mvaInputs[nThread][ 7]);
+        theReader->AddVariable("hbbm"	          , &ao.mvaInputs[nThread][ 8]);
+        theReader->AddVariable("dPhiWH"           , &ao.mvaInputs[nThread][ 9]);
+        theReader->AddVariable("ptBalanceWH"      , &ao.mvaInputs[nThread][10]);
+        theReader->AddVariable("topMass"          , &ao.mvaInputs[nThread][11]);
         theReader->AddVariable("dEtaLep1H"        , &ao.mvaInputs[nThread][12]);
         theReader->AddVariable("nAddJet"          , &ao.mvaInputs[nThread][13]);
+        //theReader->AddVariable("WBosonPt"         , &ao.mvaInputs[nThread][14]);
+        //theReader->AddVariable("dRBjets"          , &ao.mvaInputs[nThread][15]);
       }
       theReader->BookMVA("BDT", bdtWeights.Data());
       ao.reader.push_back(theReader);
@@ -1181,6 +1183,33 @@ void analyzeSample(
       if(type==kWjets) {
         stitchWeight *= 1.4;
       }
+      // Additional weights
+      if(isBoostedCategory==false){
+        if     (category==kPlotTT || category==kPlotTop) {
+          stitchWeight *= 1.1226 - 0.000578451 * TMath::Min((double)gt.topWBosonPt,500.0);
+        }
+        else if(category==kPlotWLF) {
+          stitchWeight *= 2.33508 - 0.0170022   * TMath::Min((double)gt.topWBosonPt,300.0) 
+	                          + 6.82493e-05 * TMath::Min((double)gt.topWBosonPt,300.0) * TMath::Min((double)gt.topWBosonPt,300.0)
+				  - 9.01652e-08 * TMath::Min((double)gt.topWBosonPt,300.0) * TMath::Min((double)gt.topWBosonPt,300.0) * TMath::Min((double)gt.topWBosonPt,300.0);
+        }
+        else if(category==kPlotWbb || category==kPlotWb) {
+          stitchWeight *= 4.31573 - 0.0151292   * TMath::Min((double)gt.topWBosonPt,350.0) 
+	                          + 2.37396e-05 * TMath::Min((double)gt.topWBosonPt,350.0) * TMath::Min((double)gt.topWBosonPt,350.0);
+        }
+      }
+      else{
+        if     (category==kPlotTT || category==kPlotTop) {
+          stitchWeight *= 0.924663 - 0.000252598 * TMath::Min((double)gt.topWBosonPt,700.0);
+        }
+        else if(category==kPlotWLF) {
+          stitchWeight *= 1.28248 - 0.00301818  * TMath::Min((double)gt.topWBosonPt,650.0) 
+	                          + 3.39299e-06 * TMath::Min((double)gt.topWBosonPt,650.0) * TMath::Min((double)gt.topWBosonPt,650.0);
+        }
+        else if(category==kPlotWbb || category==kPlotWb) {
+          stitchWeight *= 1.35;
+        }
+      }
     } else if(ao.year==2017) {
       bool isVJetsOption1 = false;
       if(isVJetsOption1 == true){
@@ -1250,6 +1279,36 @@ void analyzeSample(
 	if(type==kWjets && category==kPlotWLF) {
           stitchWeight = 1.4;
 	}
+      }
+      // Additional weights
+      if(isBoostedCategory==false){
+        if     (category==kPlotTT || category==kPlotTop) {
+          stitchWeight *= 1.23982 - 0.00128676 * TMath::Min((double)gt.topWBosonPt,500.0);
+        }
+        else if(category==kPlotWLF) {
+	  if(gt.topWBosonPt <= 150)
+          stitchWeight *= 2.093274 - 0.00696491 * TMath::Min((double)gt.topWBosonPt,150.0);
+	  else 
+          stitchWeight *= 1.20243 - 0.00102595 * TMath::Min((double)gt.topWBosonPt,500.0);
+        }
+        else if(category==kPlotWbb || category==kPlotWb) {
+	  if(gt.topWBosonPt < 153)
+          stitchWeight *= 6.48006 - 0.0332899   * TMath::Min((double)gt.topWBosonPt,150.0);
+	  else
+	  stitchWeight *= 1.37661;
+        }
+      }
+      else{
+        if     (category==kPlotTT || category==kPlotTop) {
+          stitchWeight *= 0.829551 - 0.000165138 * TMath::Min((double)gt.topWBosonPt,700.0);
+        }
+        else if(category==kPlotWLF) {
+          stitchWeight *= 0.929742 - 0.00169774  * TMath::Min((double)gt.topWBosonPt,650.0) 
+	                           + 1.67369e-06 * TMath::Min((double)gt.topWBosonPt,650.0) * TMath::Min((double)gt.topWBosonPt,650.0);
+        }
+        else if(category==kPlotWbb || category==kPlotWb) {
+          stitchWeight *= 0.55;
+        }
       }
     } // end year 2017 Vjets weighting
 
@@ -1708,8 +1767,7 @@ void analyzeSample(
         // Hardcoded Z(bb) mass window
         cut["mjjVZ"      ] = gt.hbbm_dreg[iJES] >= 60 && gt.hbbm_dreg[iJES] < 120; 
         // Sideband mass windows, can be changed with the ao.vzbbMode switch
-        cut["mjjSBLo"    ] = gt.hbbm_dreg[iJES] < mjjLo; 
-        cut["mjjSBHi"    ] = gt.hbbm_dreg[iJES] >= mjjHi && gt.hbbm_dreg[iJES] < 250;
+        cut["mjjSB"      ] = gt.hbbm_dreg[iJES] < mjjLo || (gt.hbbm_dreg[iJES] >= mjjHi && gt.hbbm_dreg[iJES] < 250);
         cut["2jets"      ] = gt.nJet[iJES]==2;
         cut["2-3jets"    ] = gt.nJet[iJES]<4;
         cut["4+jets"     ] = gt.nJet[iJES]>=4;
@@ -1941,40 +1999,43 @@ void analyzeSample(
           (iJES==0 && ao.selection>=kWHLightFlavorCR && ao.selection<=kWHPresel) || 
           ao.selection==kWHSR || ao.selection==kWHVZbbCR
         )) {
-          ao.mvaInputs[nThread][ 0] = gt.topWBosonPt                   ; // "WBosonPt"   
-          ao.mvaInputs[nThread][ 1] = dPhil1W                          ; // "dPhil1W"    
-          ao.mvaInputs[nThread][ 2] = gt.nSoft5                        ; // "nSoft5"     
-          ao.mvaInputs[nThread][ 3] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]; // "bjet1Pt"    
-          ao.mvaInputs[nThread][ 4] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]; // "bjet2Pt"    
-          ao.mvaInputs[nThread][ 5] = bjet2btag                        ; // "bjet2btag"  
-          ao.mvaInputs[nThread][ 6] = gt.hbbpt_dreg[iJES]               ; // "hbbpt"      
-          ao.mvaInputs[nThread][ 7] = gt.hbbm_dreg[iJES]                ; // "hbbm"       
-          ao.mvaInputs[nThread][ 8] = deltaPhiWH                       ; // "dPhiWH"     
-          ao.mvaInputs[nThread][ 9] = ptBalanceWH                      ; // "ptBalanceWH"
-          ao.mvaInputs[nThread][10] = gt.topMassLep1Met[0]             ; // "topMass"    
-          ao.mvaInputs[nThread][11] = dRBjets                          ; // "dRBjets"    
-          ao.mvaInputs[nThread][12] = dEtaLep1H                        ; // "dEtaLep1H"  
-          ao.mvaInputs[nThread][13] = gt.nJet[0]-2                     ; // "nAddJet"    
+          ao.mvaInputs[nThread][ 0] = lepton1Pt 		       ; // "lepton1Pt"    
+          ao.mvaInputs[nThread][ 1] = lepton1Charge		       ; // "lepton1Charge"
+          ao.mvaInputs[nThread][ 2] = gt.sumEtSoft1		       ; // "sumEtSoft1"   
+          ao.mvaInputs[nThread][ 3] = gt.nSoft5 		       ; // "nSoft5"	   
+          ao.mvaInputs[nThread][ 4] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]; // "bjet1Pt"	   
+          ao.mvaInputs[nThread][ 5] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]; // "bjet2Pt"	   
+          ao.mvaInputs[nThread][ 6] = bjet2btag 		       ; // "bjet2btag"    
+          ao.mvaInputs[nThread][ 7] = gt.hbbpt_dreg[iJES]	       ; // "hbbpt"	   
+          ao.mvaInputs[nThread][ 8] = gt.hbbm_dreg[iJES]	       ; // "hbbm"	   
+          ao.mvaInputs[nThread][ 9] = deltaPhiWH		       ; // "dPhiWH"	   
+          ao.mvaInputs[nThread][10] = ptBalanceWH		       ; // "ptBalanceWH"  
+          ao.mvaInputs[nThread][11] = gt.topMassLep1Met[0]	       ; // "topMass"	   
+          ao.mvaInputs[nThread][12] = dEtaLep1H 		       ; // "dEtaLep1H"    
+          ao.mvaInputs[nThread][13] = gt.nJet[0]-2		       ; // "nAddJet"	   
+          //ao.mvaInputs[nThread][14] = gt.topWBosonPt                   ; // "WBosonPt"     
+          //ao.mvaInputs[nThread][15] = dRBjets                          ; // "dRBjets"	   
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
         } else if((selectionBits[iJES] & ao.selection) != 0 && (
           (iJES==0 && ao.selection>=kWHLightFlavorFJCR && ao.selection<=kWHFJPresel) || 
           ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR
         )) { 
-          ao.mvaInputs[nThread][ 0] = dPhil1W                        ; //"dPhil1W"        
-          ao.mvaInputs[nThread][ 1] = gt.topWBosonPt                 ; //"WBosonPt"       
-          ao.mvaInputs[nThread][ 2] = lepton1Charge                  ; //"lepton1Charge"  
-          ao.mvaInputs[nThread][ 3] = nIsojet[iJES]                  ; //"nIsojet"        
-          ao.mvaInputs[nThread][ 4] = gt.fjMSD[iJES]                 ; //"MSD"            
-          ao.mvaInputs[nThread][ 5] = gt.fjTau21SD                   ; //"Tau21SD"        
-          ao.mvaInputs[nThread][ 6] = gt.fjTau32SD                   ; //"Tau32SD"        
-          ao.mvaInputs[nThread][ 7] = gt.fjPt[iJES]                  ; //"fjPt"           
-          ao.mvaInputs[nThread][ 8] = psi022004031003                ; //"psi022004031003"
-          ao.mvaInputs[nThread][ 9] = psi022004022003                ; //"psi022004022003"
-          ao.mvaInputs[nThread][10] = psi022004030503                ; //"psi022004030503"
-          ao.mvaInputs[nThread][11] = gt.fjPt[iJES]/gt.topWBosonPt   ; //"ptBalanceWHFJ"  
-          ao.mvaInputs[nThread][12] = dEtaLep1FJ                     ; //"dEtaLep1FJ"     
-          ao.mvaInputs[nThread][13] = deltaPhiWHFJ                   ; //"dPhiWHFJ"       
-          ao.mvaInputs[nThread][14] = gt.fjHTTFRec                   ; //"HTTFRec"        
+          ao.mvaInputs[nThread][ 0] = lepton1Pt 		     ; //"lepton1Pt"	  
+          ao.mvaInputs[nThread][ 1] = lepton1Charge		     ; //"lepton1Charge"  
+          ao.mvaInputs[nThread][ 2] = nIsojet[iJES]		     ; //"nIsojet"	  
+          ao.mvaInputs[nThread][ 3] = gt.fjMSD[iJES]		     ; //"MSD"  	  
+          ao.mvaInputs[nThread][ 4] = gt.fjTau21SD		     ; //"Tau21SD"	  
+          ao.mvaInputs[nThread][ 5] = gt.fjTau32SD		     ; //"Tau32SD"	  
+          ao.mvaInputs[nThread][ 6] = gt.fjPt[iJES]		     ; //"fjPt" 	  
+          ao.mvaInputs[nThread][ 7] = psi022004031003		     ; //"psi022004031003"
+          ao.mvaInputs[nThread][ 8] = psi022004030503		     ; //"psi022004030503"
+          ao.mvaInputs[nThread][ 9] = gt.fjPt[iJES]/gt.topWBosonPt   ; //"ptBalanceWHFJ"  
+          ao.mvaInputs[nThread][10] = dEtaLep1FJ		     ; //"dEtaLep1FJ"	  
+          ao.mvaInputs[nThread][11] = deltaPhiWHFJ		     ; //"dPhiWHFJ"	  
+          ao.mvaInputs[nThread][12] = gt.fjHTTFRec		     ; //"HTTFRec"	  
+          ao.mvaInputs[nThread][13] = gt.fjDoubleCSV		     ; //"doubleBTag"	  
+          //ao.mvaInputs[nThread][14] = gt.topWBosonPt		       ; //"WBosonPt"	  
+          //ao.mvaInputs[nThread][15] = psi022004022003		       ; //"psi022004022003"
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
         }
       }
@@ -1986,8 +2047,7 @@ void analyzeSample(
           else if(ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR)
             MVAVar[iJES]=gt.fjPt[iJES];
           else if(ao.selection==kWHLightFlavorCR ||
-            ao.selection==kWHHeavyFlavorLoMassCR || 
-            ao.selection==kWHHeavyFlavorHiMassCR || 
+            ao.selection==kWHHeavyFlavorCR || 
             ao.selection==kWH2TopCR)
             MVAVar[iJES]=bjet2btag;
           else if(ao.selection==kWHLightFlavorFJCR ||
@@ -2000,8 +2060,7 @@ void analyzeSample(
           if(ao.selection==kWHSR || ao.selection==kWHVZbbCR || ao.selection==kWHFJSR || ao.selection==kWHVZbbFJCR)
             MVAVar[iJES]=bdtValue[iJES];
           else if(ao.selection==kWHLightFlavorCR ||
-            ao.selection==kWHHeavyFlavorLoMassCR || 
-            ao.selection==kWHHeavyFlavorHiMassCR || 
+            ao.selection==kWHHeavyFlavorCR || 
             ao.selection==kWH2TopCR)
             MVAVar[iJES]=bjet2btag;
           else if(ao.selection==kWHLightFlavorFJCR ||
@@ -2132,6 +2191,7 @@ void analyzeSample(
         ao.mva_dEtaLep1FJ       = dEtaLep1FJ               ; 
         ao.mva_dPhiWHFJ         = deltaPhiWHFJ             ; 
         ao.mva_HTTFRec          = gt.fjHTTFRec             ; 
+        ao.mva_doubleBTag       = gt.fjDoubleCSV           ; 
         ao.mvaTree->Fill();
         mvaTreeMutex.unlock();
       }
@@ -2276,7 +2336,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir, bool applyBtagPtEt
       newcardShape << Form("1.0  ");
     newcardShape << Form("\n");
 
-    newcardShape << Form("VHCorr    shape   ");
+    newcardShape << Form("VH_EWKCorr    shape   ");
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++){
       if(ao.histo_Baseline[lep][ic]->GetSumOfWeights() <= 0)
         continue;
@@ -2476,8 +2536,8 @@ void datacardsFromHistograms(
       if(ic<kPlotVZbb) continue;
       ao.histo_pileupUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupUp"       , plotBaseNames[ic].Data()));
       ao.histo_pileupDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupDown"     , plotBaseNames[ic].Data()));
-      ao.histo_VHCorrUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VHCorrUp"       , plotBaseNames[ic].Data()));
-      ao.histo_VHCorrDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VHCorrDown"     , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrUp    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrUp"   , plotBaseNames[ic].Data()));
+      ao.histo_VHCorrDown  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrDown" , plotBaseNames[ic].Data()));
       ao.histo_QCDScaleUp  [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale%sUp"   , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
       ao.histo_QCDScaleDown[lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale%sDown" , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
       ao.histo_eleSFUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"        , plotBaseNames[ic].Data()));                         

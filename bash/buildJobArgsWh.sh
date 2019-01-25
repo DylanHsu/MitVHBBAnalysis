@@ -3,9 +3,9 @@ MVAVarType=$2  # 1|3
 year=$3        # 2016|2017
 useBoosted=$4  # true|false
 
-resolvedSelections="kWHLightFlavorCR kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWH2TopCR kWHSR"
+resolvedSelections="kWHLightFlavorCR kWHHeavyFlavorCR kWH2TopCR kWHSR"
 boostedSelections="kWHLightFlavorFJCR kWHHeavyFlavorFJCR kWHTT1bFJCR kWHTT2bFJCR kWHFJSR"
-resolvedSelectionsVZ="kWHLightFlavorCR kWHHeavyFlavorLoMassCR kWHHeavyFlavorHiMassCR kWH2TopCR kWHVZbbCR"
+resolvedSelectionsVZ="kWHLightFlavorCR kWHHeavyFlavorCR kWH2TopCR kWHVZbbCR"
 boostedSelectionsVZ="kWHLightFlavorFJCR kWHHeavyFlavorFJCR kWHTT1bFJCR kWHTT2bFJCR kWHVZbbFJCR"
 resolvedSelectionsVZ=""
 boostedSelectionsVZ=""

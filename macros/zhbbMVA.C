@@ -85,39 +85,34 @@ void zhbbMVA(
     dataloader->AddVariable("ptBalanceZHFJ" , "ptBalanceZHFJ" , "", 'F');
     dataloader->AddVariable("dEtaZHFJ"      , "dEtaZHFJ"      , "", 'F');
     dataloader->AddVariable("dPhiZHFJ"      , "dPhiZHFJ"      , "", 'F');
-    dataloader->AddVariable("mTZHFJ"        , "mTZHFJ"        , "", 'F');
-    dataloader->AddVariable("ptBalanceL1L2" , "ptBalanceL1L2" , "", 'F');
     dataloader->AddVariable("dRL1L2"        , "dRL1L2"        , "", 'F');
-    dataloader->AddVariable("ZBosonPt"      , "ZBosonPt"      , "", 'F'); 
     dataloader->AddVariable("lepton1Pt"     , "lepton1Pt"     , "", 'F');
     dataloader->AddVariable("lepton2Pt"     , "lepton2Pt"     , "", 'F');
-    //dataloader->AddVariable("lepton1Eta"    , "lepton1Eta"    , "", 'F');
-    //dataloader->AddVariable("lepton2Eta"    , "lepton2Eta"    , "", 'F');
-    dataloader->AddVariable("deltaM"        , "deltaM"        , "", 'F');
-    dataloader->AddVariable("CosThetaCS"    ,"CosThetaCS"  , "", 'F'); 
-    dataloader->AddVariable("nIsoBjet"      , "nIsoBjet"       , "", 'F');
+    dataloader->AddVariable("CosThetaCS"    , "CosThetaCS"    , "", 'F'); 
+    dataloader->AddVariable("doubleBTag"    ,  "Double B Tag" , "", 'F' ); 
+    //dataloader->AddVariable("ptBalanceL1L2" , "ptBalanceL1L2" , "", 'F');
+    //dataloader->AddVariable("nIsoBjet"      , "nIsoBjet"      , "", 'F');
+    //dataloader->AddVariable("ZBosonPt"      , "ZBosonPt"      , "", 'F'); 
   } else {
-    dataloader->AddVariable("sumEtSoft1"  ,"sumEtSoft1"  , "", 'F'); 
-    //dataloader->AddVariable("nSoft2"      ,"nSoft2"      , "", 'F'); 
-    //dataloader->AddVariable("nSoft5"      ,"nSoft5"      , "", 'F'); 
-    //dataloader->AddVariable("nSoft10"     ,"nSoft10"     , "", 'F'); 
-    dataloader->AddVariable("bjet1Pt"     ,"bjet1Pt"     , "", 'F'); 
-    dataloader->AddVariable("bjet2Pt"     ,"bjet2Pt"     , "", 'F'); 
-    dataloader->AddVariable("bjet1btag"   ,"bjet1btag"   , "", 'F'); 
-    dataloader->AddVariable("bjet2btag"   ,"bjet2btag"   , "", 'F'); 
-    dataloader->AddVariable("ZBosonPt"    ,"ZBosonPt"    , "", 'F'); 
-    dataloader->AddVariable("ZBosonM"     ,"ZBosonM"     , "", 'F'); 
-    dataloader->AddVariable("CosThetaCS"  ,"CosThetaCS"  , "", 'F'); 
-    dataloader->AddVariable("CosThetaStar","CosThetaStar", "", 'F'); 
-    dataloader->AddVariable("hbbpt"       ,"hbbpt"       , "", 'F'); 
-    dataloader->AddVariable("hbbm"        ,"hbbm"        , "", 'F'); 
-    dataloader->AddVariable("dPhiZH"      ,"dPhiZH"      , "", 'F'); 
-    dataloader->AddVariable("ptBalanceZH" ,"ptBalanceZH" , "", 'F'); 
-    dataloader->AddVariable("dRBjets"     ,"dRBjets"     , "", 'F'); 
-    dataloader->AddVariable("dEtaBjets"   ,"dEtaBjets"   , "", 'F'); 
-    //dataloader->AddVariable("dRZH"        ,"dRZH"        , "", 'F'); 
-    //dataloader->AddVariable("dEtaZH"      ,"dEtaZH"      , "", 'F'); 
-    dataloader->AddVariable("nAddJet"     ,"nAddJet"     , "", 'F'); 
+    dataloader->AddVariable("sumEtSoft1"    , "sumEtSoft1"    , "", 'F'); 
+    dataloader->AddVariable("nSoft5"        , "nSoft5"        , "", 'F'); 
+    dataloader->AddVariable("bjet1Pt"       , "bjet1Pt"       , "", 'F'); 
+    dataloader->AddVariable("bjet2Pt"       , "bjet2Pt"       , "", 'F'); 
+    dataloader->AddVariable("bjet1btag"     , "bjet1btag"     , "", 'F'); 
+    dataloader->AddVariable("bjet2btag"     , "bjet2btag"     , "", 'F'); 
+    dataloader->AddVariable("lepton1Pt"     , "lepton1Pt"     , "", 'F');
+    dataloader->AddVariable("lepton2Pt"     , "lepton2Pt"     , "", 'F');
+    dataloader->AddVariable("ZBosonM"       , "ZBosonM"       , "", 'F'); 
+    dataloader->AddVariable("CosThetaCS"    , "CosThetaCS"    , "", 'F'); 
+    dataloader->AddVariable("CosThetaStar"  , "CosThetaStar"  , "", 'F'); 
+    dataloader->AddVariable("hbbpt"         , "hbbpt"         , "", 'F'); 
+    dataloader->AddVariable("hbbm"          , "hbbm"          , "", 'F'); 
+    dataloader->AddVariable("dPhiZH"        , "dPhiZH"        , "", 'F'); 
+    dataloader->AddVariable("ptBalanceZH"   , "ptBalanceZH"   , "", 'F'); 
+    dataloader->AddVariable("dRZH"          , "dRZH"          , "", 'F'); 
+    dataloader->AddVariable("nAddJet"       , "nAddJet"       , "", 'F'); 
+    //dataloader->AddVariable("dRBjets"       , "dRBjets"       , "", 'F'); 
+    //dataloader->AddVariable("ZBosonPt"      , "ZBosonPt"      , "", 'F'); 
   }
   TString prepareOptions="NormMode=None";
     prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
@@ -129,8 +124,8 @@ void zhbbMVA(
   // for resolved
   TString hyperparameters=
   isBoosted?
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=400:MaxDepth=2:AdaBoostBeta=0.10:nCuts=10000":
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=200:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=500:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000":
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=500:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
 
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
   //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=IgnoreNegWeightsInTraining:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";

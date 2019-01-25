@@ -56,19 +56,13 @@ void whbbMVA(
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTrainSignal, "train");
     dataloader->AddTree(mvaTree, "Background", 1.0, cutTestBkg   , "test");
     dataloader->AddTree(mvaTree, "Signal"    , 1.0, cutTestSignal, "test");
-    dataloader->SetWeightExpression("weight", "Signal");
-    if(isBoosted) 
-      dataloader->SetWeightExpression("weight", "Background");
-    else
-      dataloader->SetWeightExpression("weight*(2*(category==6||category==7)+1.2*(category==8)+(category!=6&&category!=7&&category!=8))", "Background");
-      
+    dataloader->SetWeightExpression("abs(weight)", "Signal");
+    dataloader->SetWeightExpression("abs(weight)", "Background");
   } 
   
   TCut preselectionCut;
   if(isBoosted) {
-    dataloader->AddVariable("dPhil1W"          , "dPhil1W"                    , "", 'F' );
-    //dataloader->AddVariable("dPhiLep1Met"      , "dPhiLep1Met"                , "", 'F' );
-    dataloader->AddVariable("WBosonPt"         ,  "W boson pT"                , "", 'F' ); 
+    dataloader->AddVariable("lepton1Pt"        ,  "lepton pT"                 , "", 'F' ); 
     dataloader->AddVariable("lepton1Charge"    ,  "lepton charge"             , "", 'F' ); 
     dataloader->AddVariable("nIsojet"          ,  "N iso. AK4 jets"           , "", 'F' ); 
     dataloader->AddVariable("MSD"              ,  "mSD"                       , "", 'F' ); 
@@ -76,20 +70,20 @@ void whbbMVA(
     dataloader->AddVariable("Tau32SD"          ,  "#tau3/#tau2 SD"            , "", 'F' ); 
     dataloader->AddVariable("fjPt"             ,  "Fatjet pT"                 , "", 'F' ); 
     dataloader->AddVariable("psi022004031003"  ,  "#psi(2,2.0,4,3,1.0,3)"     , "", 'F' ); 
-    dataloader->AddVariable("psi022004022003"  ,  "#psi(2,2.0,4,2,2.0,3)"     , "", 'F' ); 
     dataloader->AddVariable("psi022004030503"  ,  "#psi(2,2.0,4,3,0.5,3)"     , "", 'F' ); 
     dataloader->AddVariable("ptBalanceWHFJ"    ,  "WH pT balance"             , "", 'F' ); 
     dataloader->AddVariable("dEtaLep1FJ"       ,  "#Delta#eta(lepton,FJ)"     , "", 'F' ); 
     dataloader->AddVariable("dPhiWHFJ"         ,  "#Delta#phi(W,H)"           , "", 'F' ); 
     dataloader->AddVariable("HTTFRec"          ,  "HepTopTagger f_rec"        , "", 'F' ); 
+    dataloader->AddVariable("doubleBTag"       ,  "Double B Tag"              , "", 'F' ); 
+    //dataloader->AddVariable("WBosonPt"         ,  "W boson pT"                , "", 'F' ); 
+    //dataloader->AddVariable("psi022004022003"  ,  "#psi(2,2.0,4,2,2.0,3)"     , "", 'F' ); 
   } else {
-    dataloader->AddVariable("WBosonPt"         , "WBosonPt"                   , "", 'F' );
-    dataloader->AddVariable("dPhil1W"          , "dPhil1W"                    , "", 'F' );
-    //dataloader->AddVariable("dPhiLep1Met"      , "dPhiLep1Met"                , "", 'F' );
-    //dataloader->AddVariable("lepton1Charge"    , "lepton1Charge"              , "", 'F' );
+    dataloader->AddVariable("lepton1Pt"        ,  "lepton pT"                 , "", 'F' ); 
+    dataloader->AddVariable("lepton1Charge"    , "lepton1Charge"              , "", 'F' );
+    dataloader->AddVariable("sumEtSoft1"       , "sumEtSoft1"                 , "", 'F' );
     dataloader->AddVariable("nSoft5"           , "nSoft5"                     , "", 'F' );
     dataloader->AddVariable("bjet1Pt"          , "bjet1Pt"                    , "", 'F' );
-    //dataloader->AddVariable("bjet1btag"        , "bjet1btag"                  , "", 'F' );
     dataloader->AddVariable("bjet2Pt"          , "bjet2Pt"                    , "", 'F' );
     dataloader->AddVariable("bjet2btag"        , "bjet2btag"                  , "", 'F' );
     dataloader->AddVariable("hbbpt"            , "hbbpt"                      , "", 'F' );
@@ -97,9 +91,10 @@ void whbbMVA(
     dataloader->AddVariable("dPhiWH"           , "dPhiWH"                     , "", 'F' );
     dataloader->AddVariable("ptBalanceWH"      , "ptBalanceWH"                , "", 'F' );
     dataloader->AddVariable("topMass"          , "topMass"                    , "", 'F' );
-    dataloader->AddVariable("dRBjets"          , "dRBjets"                    , "", 'F' );
     dataloader->AddVariable("dEtaLep1H"        , "dEtaLep1H"                  , "", 'F' );
     dataloader->AddVariable("nAddJet"          , "nAddJet"                    , "", 'F' );
+    //dataloader->AddVariable("WBosonPt"         , "WBosonPt"                   , "", 'F' );
+    //dataloader->AddVariable("dRBjets"          , "dRBjets"                    , "", 'F' );
   }
   TString prepareOptions="NormMode=None";
     prepareOptions+=":SplitMode=Block"; // use e.g. all events selected by trainTreeEventSplitStr for training
@@ -109,8 +104,8 @@ void whbbMVA(
   // for resolved
   TString hyperparameters=
   isBoosted?
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=10%:NegWeightTreatment=InverseBoostNegWeights:SeparationType=MisClassificationError:NTrees=400:MaxDepth=3:AdaBoostBeta=0.12:nCuts=1000":
-  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=Pray:SeparationType=MisClassificationError:NTrees=400:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=500:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000":
+  "!H:!V:BoostType=AdaBoost:MinNodeSize=5%:NegWeightTreatment=IgnoreNegWeightsInTraining:SeparationType=MisClassificationError:NTrees=500:MaxDepth=3:AdaBoostBeta=0.12:nCuts=10000";
 
   //TString hyperparameters="!H:!V:NTrees=500:MinNodeSize=5%:MaxDepth=3:BoostType=Grad:Shrinkage=0.1:nCuts=30:PruneMethod=CostComplexity";
   //TString hyperparameters="!H:!V:NTrees=500:NegWeightTreatment=Pray:MinNodeSize=5%:MaxDepth=2:BoostType=Grad:Shrinkage=0.1:nCuts=30";

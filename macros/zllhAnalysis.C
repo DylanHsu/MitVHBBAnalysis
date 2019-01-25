@@ -127,10 +127,10 @@ struct analysisObjects {
   float mva_nIsojet, mva_MSD, mva_Tau21SD, mva_fjPt;
   float mva_ptBalanceZHFJ, mva_dEtaZHFJ, mva_dPhiZHFJ, mva_mTZHFJ;
   float mva_ptBalanceL1L2, mva_dRL1L2;
-  float mva_lepton1Pt, mva_lepton2Pt, mva_lepton1Eta, mva_lepton2Eta, mva_deltaM, mva_nIsoBjet;
+  float mva_lepton1Pt, mva_lepton2Pt, mva_lepton1Eta, mva_lepton2Eta, mva_deltaM, mva_doubleBTag, mva_nIsoBjet;
   // MVA output
   vector<TMVA::Reader*> reader;
-  float mvaInputs[nThreads][16];
+  float mvaInputs[nThreads][20];
   // Trigger efficiency SFs
   double trgEff [3][nTrgBinPt1][nTrgBinPt2][nTrgBinEta1][nTrgBinEta2];
   double trgEffE[3][nTrgBinPt1][nTrgBinPt2][nTrgBinEta1][nTrgBinEta2];
@@ -377,16 +377,16 @@ void zllhAnalysis(
       ao.shapeType="lesserCMVAShape";
     } else if(selection==kZllHSR || selection==kZllHVZbbCR) {
       if(year==2016)
-        ao.MVAbins={-1.00,-0.17,-0.01,0.11,0.22,0.33,0.44,0.57,1.00};
+        ao.MVAbins={-1.00,-0.09, 0.01, 0.09, 0.15, 0.21, 0.28, 0.37,1.00};
       else
-        ao.MVAbins={-1.00,-0.17,-0.01,0.11,0.22,0.32,0.43,0.56,1.00};
+        ao.MVAbins={-1.00,-0.08, 0.01, 0.08, 0.14, 0.20, 0.27, 0.35,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if(selection==kZllHFJSR || selection==kZllHVZbbFJCR) {
       if(year==2016)
-         ao.MVAbins={-1.00,-0.02,0.13,0.24,0.35,0.46,1.00};
+         ao.MVAbins={-1.00, 0.00, 0.12, 0.21, 0.31, 0.39,1.00};
       else
-         ao.MVAbins={-1.00, 0.03,0.17,0.28,0.37,0.47,1.00};
+         ao.MVAbins={-1.00, 0.05, 0.17, 0.25, 0.34, 0.43,1.00};
       ao.MVAVarName="BDT Output";
       ao.shapeType="singleClassBDTShape"; 
     } else if((selection>=kZllHLightFlavorFJCR && selection<kZllHFJSR) || selection==kZllHFJPresel) {
@@ -412,7 +412,6 @@ void zllhAnalysis(
     ao.histoNames[p]="lepton2Pt"               ; ao.histoTitles[p]="Lepton 2 p_{T} [GeV]"  ; ao.nbins[p]=  23; ao.xmin[p]=    20; ao.xmax[p]=   250; p++; 
     ao.histoNames[p]="lepton1Eta"              ; ao.histoTitles[p]="Lepton 1 #eta"         ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="lepton2Eta"              ; ao.histoTitles[p]="Lepton 2 #eta"         ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
-    ao.histoNames[p]="ZBosonPt"                ; ao.histoTitles[p]="Z boson pT [GeV]"      ; ao.nbins[p]=  45; ao.xmin[p]=    50; ao.xmax[p]=   500; p++; 
     ao.histoNames[p]="ZBosonEta"               ; ao.histoTitles[p]="Z boson #eta"          ; ao.nbins[p]=  25; ao.xmin[p]=  -2.5; ao.xmax[p]=   2.5; p++; 
     ao.histoNames[p]="ZBosonPhi"               ; ao.histoTitles[p]="Z boson phi"           ; ao.nbins[p]=  32; ao.xmin[p]=     0; ao.xmax[p]= 3.142; p++; 
     ao.histoNames[p]="ZBosonM"                 ; ao.histoTitles[p]="Z boson mass [GeV]"    ; ao.nbins[p]=  60; ao.xmin[p]=     0; ao.xmax[p]=   120; p++; 
@@ -421,6 +420,7 @@ void zllhAnalysis(
     ao.histoNames[p]="bdtValue"                ; ao.histoTitles[p]="BDT Output"            ; ao.nbins[p]=  40; ao.xmin[p]=    -1; ao.xmax[p]=    1.; p++; 
     if(selection>=kZllHLightFlavorFJCR && selection<=kZllHFJPresel) {
       // fatjet only plots
+      ao.histoNames[p]="ZBosonPt"                ; ao.histoTitles[p]="Z boson pT [GeV]"         ; ao.nbins[p]=  45; ao.xmin[p]=   250; ao.xmax[p]=   700; p++; 
       ao.histoNames[p]="mSD"                     ; ao.histoTitles[p]="Fatjet mSD [GeV]"         ; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
       ao.histoNames[p]="pTFJ"                    ; ao.histoTitles[p]="Fatjet pT [GeV]"          ; ao.nbins[p]=  35; ao.xmin[p]=   250; ao.xmax[p]=   600; p++; 
       ao.histoNames[p]="Tau21SD"                 ; ao.histoTitles[p]="#tau_{2}/#tau_{1} SD"     ; ao.nbins[p]=  20; ao.xmin[p]=     0; ao.xmax[p]=    1.; p++; 
@@ -436,6 +436,7 @@ void zllhAnalysis(
       ao.histoNames[p]="isojetNBtags"            ; ao.histoTitles[p]="N isojet b-tags"          ; ao.nbins[p]=   4; ao.xmin[p]=    0.; ao.xmax[p]=    4.; p++; 
       ao.histoNames[p]="mSD_rescaled"            ; ao.histoTitles[p]="Rescaled Fatjet mSD [GeV]"; ao.nbins[p]=  32; ao.xmin[p]=    40; ao.xmax[p]=   200; p++; 
     } else {
+      ao.histoNames[p]="ZBosonPt"                ; ao.histoTitles[p]="Z boson pT [GeV]"         ; ao.nbins[p]=  45; ao.xmin[p]=    50; ao.xmax[p]=   500; p++; 
       ao.histoNames[p]="Mjj"                     ; ao.histoTitles[p]="Dijet mass [GeV]"         ; ao.nbins[p]=  50; ao.xmin[p]=     0; ao.xmax[p]=   250; p++; 
       ao.histoNames[p]="pTjj"                    ; ao.histoTitles[p]="Dijet pT [GeV]"           ; ao.nbins[p]=  20; ao.xmin[p]=    50; ao.xmax[p]=   350; p++; 
       ao.histoNames[p]="bjet1Pt"                 ; ao.histoTitles[p]="B-jet 1 pT [GeV]"         ; ao.nbins[p]=  30; ao.xmin[p]=    25; ao.xmax[p]=   400; p++; 
@@ -504,8 +505,8 @@ void zllhAnalysis(
     ao.histo_QCDr2f2      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr2f2"               , plotBaseNames[ic].Data()));
     ao.histo_QCDr5f1      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f1"               , plotBaseNames[ic].Data()));
     ao.histo_QCDr5f5      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDr5f5"               , plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale_%s_ACCEPTUp"  , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale_%s_ACCEPTDown", plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale_%sUp"         , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+    ao.histo_QCDScaleDown [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_QCDScale_%sDown"       , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
     ao.histo_eleSFUp      [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFUp"               , plotBaseNames[ic].Data()));
     ao.histo_eleSFDown    [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_eleSFDown"             , plotBaseNames[ic].Data()));
     ao.histo_muSFUp       [lep][ic] = (TH1F*)ao.histos[lep][0][ic]->Clone(Form("histo_%s_muSFUp"                , plotBaseNames[ic].Data()));
@@ -600,6 +601,8 @@ void zllhAnalysis(
     ao.mvaTree->Branch("dRZH"        , &ao.mva_dRZH        ); 
     ao.mvaTree->Branch("dEtaZH"      , &ao.mva_dEtaZH      ); 
     ao.mvaTree->Branch("nAddJet"     , &ao.mva_nAddJet     ); 
+    ao.mvaTree->Branch("lepton1Pt"   , &ao.mva_lepton1Pt   ); 
+    ao.mvaTree->Branch("lepton2Pt"   , &ao.mva_lepton2Pt   ); 
     ao.mvaTree->Branch("weight"      , &ao.mva_weight      ); 
     ao.mvaTree->Branch("category"    , &ao.mva_category    ); 
     ao.mvaTree->Branch("eventNumber" , &ao.mva_eventNumber ); 
@@ -626,6 +629,7 @@ void zllhAnalysis(
     ao.mvaTree->Branch("lepton1Eta"    , &ao.mva_lepton1Eta     ); 
     ao.mvaTree->Branch("lepton2Eta"    , &ao.mva_lepton2Eta     ); 
     ao.mvaTree->Branch("deltaM"        , &ao.mva_deltaM         ); 
+    ao.mvaTree->Branch("doubleBTag"    , &ao.mva_doubleBTag     ); 
     ao.mvaTree->Branch("weight"        , &ao.mva_weight         ); 
     ao.mvaTree->Branch("category"      , &ao.mva_category       ); 
     ao.mvaTree->Branch("eventNumber"   , &ao.mva_eventNumber    ); 
@@ -674,38 +678,40 @@ void zllhAnalysis(
       // Vars are hardcoded for now, could make it more general if we care
       if(ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) {
         theReader->AddVariable("nIsojet"       , &ao.mvaInputs[nThread][ 0]); 
-        theReader->AddVariable("fjPt"          , &ao.mvaInputs[nThread][ 1]); 
-        theReader->AddVariable("MSD"           , &ao.mvaInputs[nThread][ 2]); 
+        theReader->AddVariable("fjPt"	       , &ao.mvaInputs[nThread][ 1]); 
+        theReader->AddVariable("MSD"	       , &ao.mvaInputs[nThread][ 2]); 
         theReader->AddVariable("Tau21SD"       , &ao.mvaInputs[nThread][ 3]); 
         theReader->AddVariable("ptBalanceZHFJ" , &ao.mvaInputs[nThread][ 4]); 
         theReader->AddVariable("dEtaZHFJ"      , &ao.mvaInputs[nThread][ 5]); 
         theReader->AddVariable("dPhiZHFJ"      , &ao.mvaInputs[nThread][ 6]); 
-        theReader->AddVariable("mTZHFJ"        , &ao.mvaInputs[nThread][ 7]); 
-        theReader->AddVariable("ptBalanceL1L2" , &ao.mvaInputs[nThread][ 8]); 
-        theReader->AddVariable("dRL1L2"        , &ao.mvaInputs[nThread][ 9]); 
-        theReader->AddVariable("ZBosonPt"      , &ao.mvaInputs[nThread][10]); 
-        theReader->AddVariable("lepton1Pt"     , &ao.mvaInputs[nThread][11]); 
-        theReader->AddVariable("lepton2Pt"     , &ao.mvaInputs[nThread][12]); 
-        theReader->AddVariable("deltaM"        , &ao.mvaInputs[nThread][13]); 
-        theReader->AddVariable("CosThetaCS"    , &ao.mvaInputs[nThread][14]);
-        theReader->AddVariable("nIsoBjet"      , &ao.mvaInputs[nThread][15]); 
+        theReader->AddVariable("dRL1L2"        , &ao.mvaInputs[nThread][ 7]); 
+        theReader->AddVariable("lepton1Pt"     , &ao.mvaInputs[nThread][ 8]); 
+        theReader->AddVariable("lepton2Pt"     , &ao.mvaInputs[nThread][ 9]); 
+        theReader->AddVariable("CosThetaCS"    , &ao.mvaInputs[nThread][10]); 
+        theReader->AddVariable("doubleBTag"    , &ao.mvaInputs[nThread][11]);
+        //theReader->AddVariable("ptBalanceL1L2" , &ao.mvaInputs[nThread][12]); 
+        //theReader->AddVariable("nIsoBjet"      , &ao.mvaInputs[nThread][13]); 
+        //theReader->AddVariable("ZBosonPt"      , &ao.mvaInputs[nThread][14]); 
       } else {
-        theReader->AddVariable("sumEtSoft1"  , &ao.mvaInputs[nThread][ 0]);
-        theReader->AddVariable("bjet1Pt"     , &ao.mvaInputs[nThread][ 1]);
-        theReader->AddVariable("bjet2Pt"     , &ao.mvaInputs[nThread][ 2]);
-        theReader->AddVariable("bjet1btag"   , &ao.mvaInputs[nThread][ 3]);
-        theReader->AddVariable("bjet2btag"   , &ao.mvaInputs[nThread][ 4]);
-        theReader->AddVariable("ZBosonPt"    , &ao.mvaInputs[nThread][ 5]);
-        theReader->AddVariable("ZBosonM"     , &ao.mvaInputs[nThread][ 6]);
-        theReader->AddVariable("CosThetaCS"  , &ao.mvaInputs[nThread][ 7]);
-        theReader->AddVariable("CosThetaStar", &ao.mvaInputs[nThread][ 8]);
-        theReader->AddVariable("hbbpt"       , &ao.mvaInputs[nThread][ 9]);
-        theReader->AddVariable("hbbm"        , &ao.mvaInputs[nThread][10]);
-        theReader->AddVariable("dPhiZH"      , &ao.mvaInputs[nThread][11]);
-        theReader->AddVariable("ptBalanceZH" , &ao.mvaInputs[nThread][12]);
-        theReader->AddVariable("dRBjets"     , &ao.mvaInputs[nThread][13]);
-        theReader->AddVariable("dEtaBjets"   , &ao.mvaInputs[nThread][14]);
-        theReader->AddVariable("nAddJet"     , &ao.mvaInputs[nThread][15]);
+        theReader->AddVariable("sumEtSoft1"    , &ao.mvaInputs[nThread][ 0]);
+        theReader->AddVariable("nSoft5"        , &ao.mvaInputs[nThread][ 1]);
+        theReader->AddVariable("bjet1Pt"       , &ao.mvaInputs[nThread][ 2]);
+        theReader->AddVariable("bjet2Pt"       , &ao.mvaInputs[nThread][ 3]);
+        theReader->AddVariable("bjet1btag"     , &ao.mvaInputs[nThread][ 4]);
+        theReader->AddVariable("bjet2btag"     , &ao.mvaInputs[nThread][ 5]);
+        theReader->AddVariable("lepton1Pt"     , &ao.mvaInputs[nThread][ 6]);
+        theReader->AddVariable("lepton2Pt"     , &ao.mvaInputs[nThread][ 7]);
+        theReader->AddVariable("ZBosonM"       , &ao.mvaInputs[nThread][ 8]);
+        theReader->AddVariable("CosThetaCS"    , &ao.mvaInputs[nThread][ 9]);
+        theReader->AddVariable("CosThetaStar"  , &ao.mvaInputs[nThread][10]);
+        theReader->AddVariable("hbbpt"         , &ao.mvaInputs[nThread][11]);
+        theReader->AddVariable("hbbm"	       , &ao.mvaInputs[nThread][12]);
+        theReader->AddVariable("dPhiZH"        , &ao.mvaInputs[nThread][13]);
+        theReader->AddVariable("ptBalanceZH"   , &ao.mvaInputs[nThread][14]);
+        theReader->AddVariable("dRZH"	       , &ao.mvaInputs[nThread][15]);
+        theReader->AddVariable("nAddJet"       , &ao.mvaInputs[nThread][16]);
+        //theReader->AddVariable("dRBjets"       , &ao.mvaInputs[nThread][17]);
+        //theReader->AddVariable("ZBosonPt"      , &ao.mvaInputs[nThread][18]);
       }
       theReader->BookMVA("BDT", bdtWeights.Data());
       ao.reader.push_back(theReader);
@@ -1200,6 +1206,23 @@ void analyzeSample(
           else                  stitchWeight = 0.1;
         }
       }
+      // Additional weights
+      if(isBoostedCategory==false){
+        if     (category==kPlotTT || category==kPlotTop) {
+          stitchWeight *= 1.10735 - 0.000669385 * TMath::Min((double)gt.ZBosonPt,500.0);
+        }
+        else if(category==kPlotZLF) {
+	  if(gt.ZBosonPt < 75)
+          stitchWeight *= 1.806690 - 0.00964584 * TMath::Min((double)gt.ZBosonPt,500.0);
+	  else
+          stitchWeight *= 0.871570 + 0.00342199 * TMath::Min((double)gt.ZBosonPt,400.0) - 6.95529e-06 * TMath::Min((double)gt.ZBosonPt,400.0) * TMath::Min((double)gt.ZBosonPt,400.0);
+        }
+      }
+      else {
+        if     (category==kPlotZLF) {
+	  stitchWeight *= 0.959506 - 0.000272643 * TMath::Min((double)gt.ZBosonPt,700.0);
+        }
+      }
     } else if(ao.year==2017) {
       bool isVJetsOption1 = false;
       if(isVJetsOption1 == true){
@@ -1258,6 +1281,23 @@ void analyzeSample(
 	    else                     stitchWeight *= 1.2;
 	  }
 	}
+      }
+      // Additional weights
+      if(isBoostedCategory==false){
+        if     (category==kPlotTT || category==kPlotTop) {
+          stitchWeight *= 1.21191 - 0.00123565 * TMath::Min((double)gt.ZBosonPt,500.0);
+        }
+        else if(category==kPlotZLF) {
+          stitchWeight *= 0.867472 + 0.00172643 * TMath::Min((double)gt.ZBosonPt,500.0);
+        }
+      }
+      else {
+        if     (category==kPlotZLF) {
+	  if(gt.ZBosonPt < 430)
+          stitchWeight *= 4.62995 - 0.0278260 * TMath::Min((double)gt.ZBosonPt,430.0) + 4.97615e-05 * TMath::Min((double)gt.ZBosonPt,430.0) * TMath::Min((double)gt.ZBosonPt,430.0);
+	  else
+          stitchWeight *= 7.37323 - 0.0174911 * TMath::Min((double)gt.ZBosonPt,650.0) + 1.06466e-05 * TMath::Min((double)gt.ZBosonPt,650.0) * TMath::Min((double)gt.ZBosonPt,650.0);
+        }
       }
     } // end year 2017 Vjets weighting
 
@@ -1909,23 +1949,26 @@ void analyzeSample(
           (iJES==0 && ao.selection>=kZllHLightFlavorCR && ao.selection<=kZllHPresel) || 
           ao.selection==kZllHSR || ao.selection==kZllHVZbbCR
         )) {
-          ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1                                           ; //"sumEtSoft1"  
-          ao.mvaInputs[nThread][ 1] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]                       ; //"bjet1Pt"     
-          ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]                       ; //"bjet2Pt"     
-          ao.mvaInputs[nThread][ 3] = bjet1btag                                               ; //"bjet1btag"   
-          ao.mvaInputs[nThread][ 4] = bjet2btag                                               ; //"bjet2btag"   
-          ao.mvaInputs[nThread][ 5] = gt.ZBosonPt                                             ; //"ZBosonPt"    
-          ao.mvaInputs[nThread][ 6] = gt.ZBosonM                                              ; //"ZBosonM"     
-          ao.mvaInputs[nThread][ 7] = gt.ZBosonLep1CosThetaCS                                 ; //"CosThetaCS"  
-          ao.mvaInputs[nThread][ 8] = gt.ZBosonLep1CosThetaStar                               ; //"CosThetaStar"
-          ao.mvaInputs[nThread][ 9] = gt.hbbpt_dreg[iJES]                                      ; //"hbbpt"       
-          ao.mvaInputs[nThread][10] = gt.hbbm_dreg[iJES]                                       ; //"hbbm"        
-          ao.mvaInputs[nThread][11] = fabs(TVector2::Phi_mpi_pi(gt.hbbphi[iJES]-gt.ZBosonPhi)); //"dPhiZH"      
-          ao.mvaInputs[nThread][12] = gt.hbbpt_dreg[iJES]/gt.ZBosonPt                          ; //"ptBalanceZH" 
-          ao.mvaInputs[nThread][13] = dRBjets                                                 ; //"dRBjets"     
-          ao.mvaInputs[nThread][14] = dEtaBjets                                               ; //"dEtaBjets"   
-          ao.mvaInputs[nThread][15] = gt.nJet[iJES]-2                                         ; //"nAddJet"     
-          bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
+          ao.mvaInputs[nThread][ 0] = gt.sumEtSoft1		       ; //"sumEtSoft1"  
+          ao.mvaInputs[nThread][ 1] = gt.nSoft5 		       ; //"nSoft5"	
+          ao.mvaInputs[nThread][ 2] = gt.jotPt[iJES][gt.hbbjtidx[0][0]]; //"bjet1Pt"	
+          ao.mvaInputs[nThread][ 3] = gt.jotPt[iJES][gt.hbbjtidx[0][1]]; //"bjet2Pt"	
+          ao.mvaInputs[nThread][ 4] = bjet1btag 		       ; //"bjet1btag"     
+          ao.mvaInputs[nThread][ 5] = bjet2btag 		       ; //"bjet2btag"     
+          ao.mvaInputs[nThread][ 6] = lepton1Pt 		       ; //"lepton1Pt"  
+          ao.mvaInputs[nThread][ 7] = lepton2Pt 		       ; //"lepton2Pt"   
+          ao.mvaInputs[nThread][ 8] = gt.ZBosonM		       ; //"ZBosonM"	
+          ao.mvaInputs[nThread][ 9] = gt.ZBosonLep1CosThetaCS	       ; //"CosThetaCS"  
+          ao.mvaInputs[nThread][10] = gt.ZBosonLep1CosThetaStar        ; //"CosThetaStar"
+          ao.mvaInputs[nThread][11] = gt.hbbpt_dreg[iJES]	       ; //"hbbpt"	
+          ao.mvaInputs[nThread][12] = gt.hbbm_dreg[iJES]	       ; //"hbbm"	 
+          ao.mvaInputs[nThread][13] = deltaPhiZH		       ; //"dPhiZH"	 
+          ao.mvaInputs[nThread][14] = gt.hbbpt_dreg[iJES]/gt.ZBosonPt  ; //"ptBalanceZH" 
+          ao.mvaInputs[nThread][15] = dRZH			       ; //"dRZH"	 
+          ao.mvaInputs[nThread][16] = gt.nJet[iJES]-2		       ; //"nAddJet"	
+          //ao.mvaInputs[nThread][17] = dEtaBjets  		         ; //"dRBjets"	 
+          //ao.mvaInputs[nThread][18] = gt.ZBosonPt  		         ; //"ZBosonPt"    
+          bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT") ;
         } else if((selectionBits[iJES] & ao.selection) != 0 && (
           (iJES==0 && ao.selection>=kZllHLightFlavorFJCR && ao.selection<=kZllHFJPresel) || 
           ao.selection==kZllHFJSR || ao.selection==kZllHVZbbFJCR
@@ -1933,22 +1976,21 @@ void analyzeSample(
           TLorentzVector fjP4_jes, ZHFJP4_jes;
           fjP4_jes.SetPtEtaPhiM(gt.fjPt[iJES],gt.fjEta,gt.fjPhi,gt.fjMSD_corr[iJES]);
           ZHFJP4_jes = ZBosonP4 + fjP4_jes;
-          ao.mvaInputs[nThread][ 0] = nIsojet[iJES]                   ; //"nIsojet"       
-          ao.mvaInputs[nThread][ 1] = gt.fjPt[iJES]                   ; //"fjPt"          
-          ao.mvaInputs[nThread][ 2] = gt.fjMSD_corr[iJES]             ; //"MSD"           
-          ao.mvaInputs[nThread][ 3] = gt.fjTau21SD                    ; //"Tau21SD"       
-          ao.mvaInputs[nThread][ 4] = gt.fjPt[iJES]/gt.ZBosonPt;      ; //"ptBalanceZHFJ" 
-          ao.mvaInputs[nThread][ 5] = dEtaZHFJ                        ; //"dEtaZHFJ"      
-          ao.mvaInputs[nThread][ 6] = deltaPhiZHFJ                    ; //"dPhiZHFJ"      
-          ao.mvaInputs[nThread][ 7] = ZHFJP4_jes.Mt()                 ; //"mTZHFJ"        
-          ao.mvaInputs[nThread][ 8] = ptBalanceL1L2                   ; //"ptBalanceL1L2" 
-          ao.mvaInputs[nThread][ 9] = dRL1L2                          ; //"dRL1L2"        
-          ao.mvaInputs[nThread][10] = gt.ZBosonPt                     ; //"ZBosonPt"      
-          ao.mvaInputs[nThread][11] = lepton1Pt                       ; //"lepton1Pt"     
-          ao.mvaInputs[nThread][12] = lepton2Pt                       ; //"lepton2Pt"     
-          ao.mvaInputs[nThread][13] = deltaM                          ; //"deltaM"        
-          ao.mvaInputs[nThread][14] = gt.ZBosonLep1CosThetaCS         ; //"CosThetaCS"        
-          ao.mvaInputs[nThread][15] = isojetNBtags[iJES]              ; //"nIsoBjet"       
+          ao.mvaInputs[nThread][ 0] = nIsojet[iJES]	       ; //"nIsojet"	  
+          ao.mvaInputs[nThread][ 1] = gt.fjPt[iJES]	       ; //"fjPt"	  
+          ao.mvaInputs[nThread][ 2] = gt.fjMSD_corr[iJES]      ; //"MSD"	  
+          ao.mvaInputs[nThread][ 3] = gt.fjTau21SD	       ; //"Tau21SD"	  
+          ao.mvaInputs[nThread][ 4] = gt.fjPt[iJES]/gt.ZBosonPt; //"ptBalanceZHFJ"
+          ao.mvaInputs[nThread][ 5] = dEtaZHFJ  	       ; //"dEtaZHFJ"	  
+          ao.mvaInputs[nThread][ 6] = deltaPhiZHFJ	       ; //"dPhiZHFJ"	  
+          ao.mvaInputs[nThread][ 7] = dRL1L2		       ; //"dRL1L2"	 
+          ao.mvaInputs[nThread][ 8] = lepton1Pt 	       ; //"lepton1Pt"   
+          ao.mvaInputs[nThread][ 9] = lepton2Pt 	       ; //"lepton2Pt"   
+          ao.mvaInputs[nThread][10] = gt.ZBosonLep1CosThetaCS  ; //"CosThetaCS"   
+          ao.mvaInputs[nThread][11] = gt.fjDoubleCSV	       ; //"doubleBTag"   
+          //ao.mvaInputs[nThread][12] = ptBalanceL1L2	         ; //"ptBalanceL1L2"
+          //ao.mvaInputs[nThread][13] = isojetNBtags[0]	         ; //"nIsoBjet"	 
+          //ao.mvaInputs[nThread][14] = gt.ZBosonPt	         ; //"ZBosonPt"	 
           bdtValue[iJES] = ao.reader[nThread]->EvaluateMVA("BDT");
         }
       }
@@ -2076,8 +2118,8 @@ void analyzeSample(
         ao.mva_ZBosonM      = gt.ZBosonM               ; 
         ao.mva_CosThetaCS   = gt.ZBosonLep1CosThetaCS  ; 
         ao.mva_CosThetaStar = gt.ZBosonLep1CosThetaStar; 
-        ao.mva_hbbpt        = gt.hbbpt_dreg[0]          ; 
-        ao.mva_hbbm         = gt.hbbm_dreg[0]           ; 
+        ao.mva_hbbpt        = gt.hbbpt_dreg[0]         ; 
+        ao.mva_hbbm         = gt.hbbm_dreg[0]          ; 
         ao.mva_dPhiZH       = deltaPhiZH               ; 
         ao.mva_ptBalanceZH  = ptBalanceZH              ; 
         ao.mva_dRBjets      = dRBjets                  ; 
@@ -2085,6 +2127,8 @@ void analyzeSample(
         ao.mva_dRZH         = dRZH                     ; 
         ao.mva_dEtaZH       = dEtaZH                   ; 
         ao.mva_nAddJet      = gt.nJet[0]-2             ; 
+        ao.mva_lepton1Pt    = lepton1Pt                ; 
+        ao.mva_lepton2Pt    = lepton2Pt                ; 
         ao.mva_weight       = weight                   ; 
         ao.mva_category     = category                 ;
         ao.mva_eventNumber  = gt.eventNumber           ;
@@ -2110,6 +2154,7 @@ void analyzeSample(
         ao.mva_lepton1Eta    = fabs(lepton1Eta);
         ao.mva_lepton2Eta    = fabs(lepton2Eta);
         ao.mva_deltaM        = deltaM          ;
+	ao.mva_doubleBTag    = gt.fjDoubleCSV  ;
         ao.mva_weight        = weight          ; 
         ao.mva_category      = category        ;
         ao.mva_eventNumber   = gt.eventNumber  ;
@@ -2289,7 +2334,7 @@ void writeDatacards(analysisObjects &ao, TString dataCardDir, bool isVZbbAna, bo
 
     for(unsigned ic=kPlotVZbb; ic!=nPlotCategories; ic++)
     if(ao.histo_Baseline[lep][ic] && ao.histo_Baseline[lep][ic]->GetSumOfWeights() > 0) {
-      newcardShape << Form("QCDScale_%s_ACCEPT    shape   ",plotBaseNames[ic].Data());
+      newcardShape << Form("QCDScale_%s    shape   ",plotBaseNames[ic].Data());
       for(unsigned ic2=kPlotVZbb; ic2!=nPlotCategories; ic2++) {
         if(ao.histo_Baseline[lep][ic2] && ao.histo_Baseline[lep][ic2]->GetSumOfWeights() > 0) {
           if(ic==ic2) newcardShape << Form("1.0  ");
@@ -2498,8 +2543,8 @@ void datacardsFromHistograms(
       ao.histo_pileupDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_pileupDown"            , plotBaseNames[ic].Data()));
       ao.histo_VHCorrUp     [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrUp"          , plotBaseNames[ic].Data()));
       ao.histo_VHCorrDown   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_VH_EWKCorrDown"        , plotBaseNames[ic].Data()));
-      ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTUp"  , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
-      ao.histo_QCDScaleDown [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%s_ACCEPTDown", plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleUp   [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%sUp"         , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
+      ao.histo_QCDScaleDown [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_QCDScale_%sDown"       , plotBaseNames[ic].Data(),plotBaseNames[ic].Data()));
       ao.histo_eleSFUp      [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFUp"               , plotBaseNames[ic].Data()));                             
       ao.histo_eleSFDown    [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_eleSFDown"             , plotBaseNames[ic].Data()));                             
       ao.histo_muSFUp       [lep][ic] = (TH1F*)infile->Get(Form("histo_%s_muSFUp"                , plotBaseNames[ic].Data()));                             
