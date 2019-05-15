@@ -103,6 +103,7 @@ void finalPlot2018(
     TString outPng = Form("%s/%s_%s.png", plotDir.Data(), regionName.c_str(), theHistoName.Data()); 
     TString xlabel=""; TString plotName;
     TH1F *histos[nPlotCategories], *hTotalBkg=0, *hTotalBkgPrefit=0;
+    double sumBkg[5] = {0, 0, 0, 0, 0};
     for(int iCat=kPlotData; iCat!=nPlotCategories; iCat++) {
       plotCategory i = static_cast<plotCategory>(iCat);
       if(!plotQCD && i==kPlotQCD) continue;
@@ -171,8 +172,21 @@ void finalPlot2018(
       if(xlabel=="") xlabel=histos[i]->GetTitle();
       histos[i]->SetName(plotName);
       histos[i]->SetTitle(plotTitle);
-
+      if(i != kPlotData) {
+        sumBkg[0] = sumBkg[0] + histos[i]->GetSumOfWeights();
+	if(i == kPlotWLF) sumBkg[1] = sumBkg[1] + histos[i]->GetSumOfWeights();
+	if(i == kPlotWb || i == kPlotWbb) sumBkg[2] = sumBkg[2] + histos[i]->GetSumOfWeights();
+	if(i == kPlotZLF) sumBkg[3] = sumBkg[3] + histos[i]->GetSumOfWeights();
+	if(i == kPlotZb || i == kPlotZbb) sumBkg[4] = sumBkg[4] + histos[i]->GetSumOfWeights();
+      }
     }
+    if(theHistoName.Contains("Charge")){
+      if(sumBkg[1] > 0) printf("wlf = %f | ",(histos[kData]->GetSumOfWeights()-sumBkg[0]+sumBkg[1])/sumBkg[1]);
+      if(sumBkg[2] > 0) printf("whf = %f | ",(histos[kData]->GetSumOfWeights()-sumBkg[0]+sumBkg[2])/sumBkg[2]);
+      if(sumBkg[3] > 0) printf("zlf = %f | ",(histos[kData]->GetSumOfWeights()-sumBkg[0]+sumBkg[3])/sumBkg[3]);
+      if(sumBkg[4] > 0) printf("zhf = %f | ",(histos[kData]->GetSumOfWeights()-sumBkg[0]+sumBkg[4])/sumBkg[4]);
+      printf("\n");
+     }
     if(mlfit && isFitShape) {
       TH1F *postfitTotalBkg = (TH1F*)mlfit->Get(Form("shapes_fit_s/%s/total_background",regionName.c_str()));
       TH1F *prefitTotalBkg = (TH1F*)mlfit->Get(Form("shapes_prefit/%s/total_background",regionName.c_str()));
@@ -396,7 +410,11 @@ void finalPlot2018(
     //cmsText->AddText("#splitline{#font[62]{CMS}}{#font[52]{Preliminary}}");
     TText *cmsTextL1 = cmsText->AddText("#font[62]{CMS}");
     TText *cmsTextL2 = cmsText->AddText("#font[52]{Preliminary}");
-    TText *cmsTextL3 = cmsText->AddText(year==2016? "#font[42]{35.9 fb^{-1} (2016)}":"#font[42]{41.5 fb^{-1} (2017)}");
+    TText *cmsTextL3;
+    if     (year == 2016) cmsTextL3 = cmsText->AddText("#font[42]{35.9 fb^{-1} (2016)}");
+    else if(year == 2017) cmsTextL3 = cmsText->AddText("#font[42]{41.5 fb^{-1} (2017)}");
+    else if(year == 2018) cmsTextL3 = cmsText->AddText("#font[42]{60.0 fb^{-1} (2018)}");
+    else {printf("Year problem\n"); return;}
     cmsTextL1->SetTextAlign(11);
     cmsTextL2->SetTextAlign(11);
     cmsTextL3->SetTextAlign(11);

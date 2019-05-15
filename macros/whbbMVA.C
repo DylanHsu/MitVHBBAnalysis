@@ -42,10 +42,10 @@ void whbbMVA(
   if(useMulticlass) {
     return;
   } else {
-    TCut cutTrainSignal = Form("%s && (category==%d)",trainTreeEventSplitStr.Data(),signalIdx);
-    TCut cutTrainBkg    = Form("%s && (category!=%d)",trainTreeEventSplitStr.Data(),signalIdx);
-    TCut cutTestSignal  = Form("%s && (category==%d)",testTreeEventSplitStr.Data() ,signalIdx);
-    TCut cutTestBkg     = Form("%s && (category!=%d)",testTreeEventSplitStr.Data() ,signalIdx);
+    TCut cutTrainSignal = Form("%s && (category==%d&&category!=%d&&category!=%d)",trainTreeEventSplitStr.Data(),signalIdx,(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTrainBkg    = Form("%s && (category!=%d&&category!=%d&&category!=%d)",trainTreeEventSplitStr.Data(),signalIdx,(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestSignal  = Form("%s && (category==%d&&category!=%d&&category!=%d)",testTreeEventSplitStr.Data() ,signalIdx,(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
+    TCut cutTestBkg     = Form("%s && (category!=%d&&category!=%d&&category!=%d)",testTreeEventSplitStr.Data() ,signalIdx,(int)vhbbPlot::kPlotZH,(int)vhbbPlot::kPlotGGZH);
     if(isBoosted) {
       cutTrainBkg     = cutTrainBkg   && "psi022004022003>=0";
       cutTrainSignal  = cutTrainSignal&& "psi022004022003>=0";
